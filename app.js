@@ -328,7 +328,7 @@
   function showLogin(msg) {
     stopCam();
     document.body.innerHTML = demoStrip() +
-      '<div class="login"><div class="login-hero"><div class="logo">' + logoImg() + '</div><h1>منظومة الأمن الحيوي المتكاملة</h1><span class="login-en" dir="ltr">Integrated Biosecurity System · Cairo 3A</span><p>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · تتبع حركة الأفراد والمركبات والمعدات بين المواقع وتطبيق فترات العزل لحظياً</p>' +
+      '<div class="login"><div class="login-hero"><div class="logo">' + logoImg() + '</div><div class="brand-lock"><h1><small>منظومة</small><span>الأمن الحيوي</span></h1><div class="bl-en" dir="ltr"><b>BIOSECURITY SYSTEM</b><i></i><span>CAIRO 3A</span></div></div>' +
       '<div class="login-feats"><span>' + icon('shield') + ' قواعد عزل تلقائية</span><span>' + icon('bell') + ' قرارات فورية للمدير</span><span>' + icon('wifioff') + ' يعمل دون إنترنت</span><span>' + icon('wa') + ' تنبيهات واتساب</span></div></div>' +
       '<div class="login-side"><div class="login-card"><div class="lc-title"><b>تسجيل الدخول</b><span class="small muted">أدخل رقمك السري · يُحفظ الدخول على هذا الجهاز</span></div>' +
       '<div class="pin-dots" id="pinDots"></div><div class="keypad" id="keypad"></div><div class="login-err" id="loginErr" role="alert">' + esc(msg || '') + '</div>' +
@@ -338,7 +338,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 12.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 13</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -400,7 +400,7 @@
   function navItems() {
     if (vrOnly()) return [['vr', 'تقارير الزيارات', 'clip'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -457,7 +457,7 @@
     clearInterval(S.poll);
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -542,7 +542,7 @@
       '<div class="gate-grid"><div class="card">' +
       (sites.length > 1 ? '<div class="field"><label for="siteSel">' + icon('pin') + ' الموقع المتجه إليه أو الخارج منه</label><select id="siteSel">' + opts + '</select></div>' : sites.length ? '<div class="spread"><b>' + icon('pin') + ' ' + esc(sites[0].name) + '</b><span class="pill p-n">مستوى ' + sites[0].level + '</span></div>' : '<div class="infobox">لم يتم ربط حسابك ببوابة. اطلب من المدير ضبط «البوابة» في بيانات المستخدمين.</div>') +
       '<div class="seg" role="group" aria-label="الاتجاه"><button type="button" data-dir="IN" class="' + (S.dir === 'IN' ? 'on' : '') + '">' + icon('inn') + ' دخول</button><button type="button" data-dir="OUT" class="' + (S.dir === 'OUT' ? 'on' : '') + '">' + icon('out') + ' خروج</button></div>' +
-      '<div class="field" id="extWrap"' + (S.dir === 'OUT' ? '' : ' hidden') + '><label for="extDest">إقرار الوجهة بعد الخروج</label><select id="extDest"><option value="">موقع من مواقع الشركة أو المنزل</option>' + ext.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join('') + '</select><span class="hint">اختيار وجهة خارجية يجعل النظام يحسب فترة العزل عند العودة.</span></div>' +
+      '<div class="field xd" id="extWrap"' + (S.dir === 'OUT' ? '' : ' hidden') + '><label>' + icon('out') + ' إقرار الوجهة بعد الخروج <span class="xs muted">· اسأل: إلى أين ستتجه؟</span></label>' + xdHtml(ext) + '</div>' +
       '<div class="scan-hero"><button type="button" class="scan-btn ' + (S.dir === 'OUT' ? 'out' : '') + '" id="scanBtn">' + icon('scan') + '<span>' + (S.dir === 'OUT' ? 'امسح للخروج' : 'امسح الكارت') + '</span></button>' +
       '<span class="small muted">يفتح الكاميرا لقراءة كود QR على الكارت أو ملصق السيارة</span></div>' +
       '<div class="row"><label class="btn grow" for="photoIn">' + icon('camera') + ' تصوير الكود</label><input id="photoIn" type="file" accept="image/*" capture="environment" hidden></div>' +
@@ -569,7 +569,32 @@
     $('manualForm').onsubmit = function (e) { e.preventDefault(); var c = $('codeIn').value.trim(); if (c) { $('codeIn').value = ''; manualEntry(c); } };
     if ($('chips')) $('chips').onclick = function (e) { var b = e.target.closest('[data-code]'); if (b) doScan(b.dataset.code); };
     $('sosBtn').onclick = function () { reportSheet(); };
-    renderGateBanner(); renderGateStats(); renderMyReports(); renderShowers(); renderVisits(); bindGateTools();
+    bindXd(); renderGateBanner(); renderGateStats(); renderMyReports(); renderShowers(); renderVisits(); bindGateTools();
+  }
+  /* v13: إقرار الوجهة بعد الخروج — اختيارات واضحة بدلاً من قائمة فارغة */
+  var XD = { kind: '', site: '', note: '' };
+  function xdHtml(ext) {
+    var list = (window.BIO_EXT_DEST || []).concat(ext.filter(function (s) { return !s.virtual && !/^XD-/.test(s.id); }).map(function (s) { return { id: s.id, name: s.name, risk: 1, icon: 'alert' }; }));
+    var co = myScopeSites().filter(function (s) { return s.id !== S.siteId; });
+    var cur = list.filter(function (d) { return d.id === XD.kind; })[0];
+    return '<div class="xd-grid" id="xdGrid">' + list.map(function (d) { return '<button type="button" class="xd-chip' + (d.risk ? ' risk' : '') + (XD.kind === d.id ? ' on' : '') + '" data-xd="' + esc(d.id) + '">' + icon(d.icon || 'pin') + '<span>' + esc(d.name) + '</span></button>'; }).join('') + '</div>' +
+      (XD.kind === 'XD-CO' ? '<select id="xdSite" aria-label="موقع الشركة"><option value="">اختر الموقع</option>' + co.map(function (s) { return '<option value="' + esc(s.id) + '"' + (XD.site === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select>' : '') +
+      (XD.kind ? '<input id="xdNote" type="text" maxlength="120" placeholder="' + (XD.kind === 'XD-OTHER' ? 'اكتب الجهة' : 'توضيح اختياري: الاسم أو المكان') + '" value="' + esc(XD.note) + '">' : '') +
+      '<span class="hint">' + (cur && cur.risk ? '<b class="bad-t">' + icon('alert') + ' وجهة عالية الخطورة:</b> تُسجَّل زيارة خارجية ويُحسب العزل تلقائياً قبل دخوله أي موقع للشركة.' : 'الاختيار يُحفظ مع حركة الخروج في السجل. الوجهات الحمراء تُحسب لها فترة عزل عند العودة.') + (XD.kind ? ' <button type="button" class="linkbtn" id="xdClear">إلغاء الاختيار</button>' : '') + '</span>';
+  }
+  function xdRedraw() {
+    var w = $('extWrap'); if (!w) return;
+    var lab = w.querySelector('label');
+    w.innerHTML = (lab ? lab.outerHTML : '') + xdHtml((S.ref ? S.ref.sites : []).filter(function (s) { return s.external; }));
+    bindXd();
+  }
+  function bindXd() {
+    var w = $('extWrap'); if (!w) return;
+    var redraw = xdRedraw;
+    w.querySelectorAll('[data-xd]').forEach(function (b) { b.onclick = function () { XD.kind = XD.kind === b.dataset.xd ? '' : b.dataset.xd; XD.site = ''; XD.note = ''; redraw(); }; });
+    if ($('xdSite')) $('xdSite').onchange = function () { XD.site = this.value; };
+    if ($('xdNote')) $('xdNote').oninput = function () { XD.note = this.value; };
+    if ($('xdClear')) $('xdClear').onclick = function () { XD.kind = ''; XD.site = ''; XD.note = ''; redraw(); };
   }
   function renderGateBanner() {
     var el = $('gateBanner'); if (!el) return;
@@ -660,7 +685,8 @@
     if (S.busy) return;
     if (!S.siteId) return toast('لا يوجد موقع مرتبط بهذه البوابة');
     S.busy = true;
-    var p = Object.assign({ id: 'M' + uid(), itemId: String(code).trim(), dir: S.dir, siteId: S.siteId, extSiteId: S.dir === 'OUT' && $('extDest') ? $('extDest').value : '' }, extra || {});
+    var p = Object.assign({ id: 'M' + uid(), itemId: String(code).trim(), dir: S.dir, siteId: S.siteId, extKind: S.dir === 'OUT' ? XD.kind : '', extSiteId: S.dir === 'OUT' && XD.kind === 'XD-CO' ? XD.site : '', extNote: S.dir === 'OUT' ? XD.note : '' }, extra || {});
+    if (S.dir === 'OUT' && XD.kind === 'XD-OTHER' && !XD.note.trim()) { S.busy = false; return toast('اكتب الجهة التي سيتجه إليها'); }
     var useServer = S.online && !S.outbox.length;
     (useServer ? remote('scan', [S.session.pin, p]) : Promise.reject(netErr()))
       .then(function (r) { rememberLocal(r, p); if (p.manual) r.manual = p.manual; return r; })
@@ -699,7 +725,9 @@
     if (r.manual) body += '<div class="infobox">' + icon('card') + ' إدخال يدوي بدون مسح الكارت: ' + esc(r.manual) + '. سُجّل بالسبب في السجل.' + (/مفقود/.test(r.manual) ? ' وصل تنبيه للمدير لإيقاف الكارت وإصدار بديل.' : '') + '</div>';
     if (r.dir === 'OUT') {
       head = '<div class="sheet-head sh-out">' + permitTag(r) + '<div class="big-ico">' + icon('out') + '</div><h2>تم تسجيل الخروج</h2></div>';
-      if (r.ext) body += '<div class="warnbox">تم تسجيل إقرار بزيارة «' + esc(r.ext.name) + '». سيُحسب العزل تلقائياً عند العودة.</div>';
+      if (r.ext) body += '<div class="warnbox">' + icon('alert') + ' إقرار بالتوجه إلى «' + esc(r.dest || r.ext.name) + '». سُجّلت زيارة خارجية وسيُحسب العزل تلقائياً عند العودة لأي موقع.</div>';
+      else if (r.dest) body += '<div class="infobox">' + icon('check') + ' الوجهة المُقرّة: ' + esc(r.dest) + '</div>';
+      XD.kind = ''; XD.site = ''; XD.note = ''; xdRedraw();
       if (r.reasons.length) body += '<div class="warnbox">' + esc(r.reasons.join('، ')) + '</div>';
       acts = '<button class="btn primary big" data-a="close">التالي</button>';
     } else if (r.decision === B.ALLOW) {
@@ -1223,7 +1251,7 @@
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
       '<button class="btn" id="syncBtn">' + icon('refresh') + ' مزامنة الآن</button></div>' +
       (me.user.isManager && (can('analytics') || isAdmin()) ? '<div class="card"><h2>' + icon('network') + ' أدوات الإدارة</h2><div class="tool-links">' + (isAdmin() ? [['users', 'user', 'المستخدمون والصلاحيات']] : []).concat(can('analytics') ? [['map', 'map', 'الخريطة الحية'], ['trace', 'trace', 'تتبع العدوى'], ['plan', 'calendar', 'مخطط الزيارات الذكي'], ['network', 'network', 'شبكة المخالطة'], ['audit', 'shield', 'ملف اعتماد المنشأة المعزولة']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '') +
-      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
+      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
       '<a class="card" href="#ref" style="text-decoration:none;color:inherit"><h2>' + icon('book') + ' مرجع قواعد الأمن الحيوي</h2><p class="small muted">فترات العزل المعتمدة وإجراءات هابرد إفيشنسي بلس.</p></a>' +
       '</div></section>';
     $('logoutBtn').onclick = function () { logout(); };
@@ -2773,6 +2801,7 @@
         if (b.dataset.send) sendCardSheet(byId(b.dataset.send));
         else cardIssueSheet(byId(b.dataset.issue), function () { items = S.ref.items; draw(); });
       };
+      if (S.cardsQ) { $('cardQ').value = S.cardsQ; S.cardsQ = ''; }
       $('cardQ').oninput = draw; $('cardK').onchange = draw;
       if ($('printBtn')) $('printBtn').onclick = function () { window.print(); };
       draw();
@@ -3499,11 +3528,12 @@
       [['مسارات الهجرة الأربعة فوق مصر', 'BirdLife International، ممر البحر الأحمر والوادي المتصدع، اتفاقية طيور الماء الأفريقية الأوراسية AEWA: مكان المسار وشدته لكل شهر', '<span class="pill p-n">نموذج علمي ثابت</span>'],
         ['تجمعات البط والطيور المائية', 'تعداد الطيور المائية الشتوي في بحيرات الدلتا وقارون ووادي الريان ووادي النطرون', '<span class="pill p-n">نموذج موسمي</span>'],
         ['الرياح على ارتفاع الطيران (1500 م)', 'Open-Meteo مجاناً وبدون مفتاح، لكل موقع كل 3 ساعات: تحدد اتجاه انجراف الأسراب وسرعتها', live ? '<span class="pill p-ok">حي</span>' : /محاكاة/.test(d.wx.source || '') ? '<span class="pill p-warn">محاكاة في نسخة العرض · حي على الخادم</span>' : '<span class="pill p-warn">مناخي حتى أول تحديث</span>'],
-        ['مشاهدات eBird', 'مشاهدات حقيقية للطيور حول كل موقع (Cornell Lab) مجاناً بمفتاح يُكتب في الإعدادات EBIRD_KEY، مع تصفية الأنواع الناقلة لإنفلونزا الطيور', d.ebird ? '<span class="pill p-ok">حي</span>' : '<span class="pill p-n">يحتاج مفتاحاً مجانياً</span>'],
+        ['مشاهدات eBird', 'مشاهدات حقيقية للطيور حول كل موقع (Cornell Lab) مجاناً بمفتاح يُكتب في الإعدادات EBIRD_KEY، مع تصفية الأنواع الناقلة لإنفلونزا الطيور', (d.ebird ? '<span class="pill p-ok">حي</span>' : '<span class="pill p-n">يحتاج مفتاحاً مجانياً</span>') + '<button type="button" class="btn sm" data-ebird="1">' + icon('key') + (d.ebird ? ' إدارة المفتاح' : ' طريقة التفعيل') + '</button>'],
         ['مشاهدات الأمن والعاملين', 'زر «مشاهدة طيور» في البوابة والتطبيق، وكل مشاهدة ترفع خطر المواقع القريبة فوراً وتنبه المدير', '<span class="pill p-ok">حي</span>']].map(function (r) { return '<tr><td><b>' + r[0] + '</b></td><td class="small">' + r[1] + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
       '<p class="small muted">لكل موقع: قُرب الموقع من كل مسار × شدة الهجرة هذا الشهر × مدى توافق اتجاه طيران الأسراب (سرعة الطيور 40 كم/س + متجه الرياح) مع اتجاه الموقع، ومثلها لتجمعات البط في البحيرات القريبة، ثم تُضاف المشاهدات القريبة الحديثة. عند تجاوز ' + d.alertLevel + ' يصل تنبيه فوري بالإجراءات لمديري القطاع ومدير الأمن الحيوي. لا توجد خدمة مجانية ترصد الأسراب لحظياً فوق مصر بالرادار، لذلك «السرب المتوقع» تقدير احتياطي من الموسم والمسار والرياح والمشاهدات.</p></div>';
     out.innerHTML = html;
     out.querySelectorAll('[data-bsite]').forEach(function (b) { b.onclick = function () { birdSiteSheet(b.dataset.bsite); }; });
+    out.querySelectorAll('[data-ebird]').forEach(function (b) { b.onclick = ebirdSheet; });
     out.querySelectorAll('.bd-site').forEach(function (c) { c.onclick = function () { birdSiteSheet(c.dataset.site); }; });
     out.querySelectorAll('[data-mode]').forEach(function (b) { b.onclick = function () { S.birdMode = b.dataset.mode; drawBirds(d); }; });
     var bindFocus = function () { out.querySelectorAll('[data-bfocus]').forEach(function (b) { b.onclick = function () { if (S.birdMode && S.birdMode !== 'live') { birdSiteSheet(b.dataset.bfocus); return; } if (S.bTour) birdTour(d, false); var m = $('bdLive'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); birdFocus(d, b.dataset.bfocus, true); }; }); };
@@ -3668,7 +3698,6 @@
   function drawDisposal(d) {
     var out = $('v5Out'); if (!out) return;
     var mgr = S.session.user.isManager, sites = mgr ? myScopeSites() : gateSites(), items = S.ref ? S.ref.items : [];
-    var veh = items.filter(function (i) { return i.kind === 'مركبة'; }), drv = items.filter(function (i) { return i.kind === 'سائق'; });
     var spikes = d.bySite.filter(function (s) { return s.spike; });
     var html = kpiRow([['k-bad', 'box', d.totals.today, 'نافق اليوم'], ['k-warn', 'list', d.totals.dead, 'نافق آخر ' + d.days + ' يوماً'], ['k-ok', 'truck', d.totals.litterTons + ' طن', 'سبلة خرجت'], ['k-bad', 'lock', d.blocked.length, 'مركبات ممنوعة الآن']]);
     spikes.forEach(function (s) { html += '<div class="cc-alert a-bad">' + icon('alert') + '<span><b>نفوق مرتفع في «' + esc(s.name) + '»</b>: ' + s.today + ' طائر اليوم مقابل متوسط ' + s.avg + ' يومياً. أُبلغ المدير والطبيب البيطري. المطلوب سحب عينات ومنع خروج الأفراد والمعدات لمواقع أخرى حتى التشخيص.</span></div>'; });
@@ -3677,7 +3706,10 @@
       '<div class="field"><label for="dpSite">الموقع</label><select id="dpSite">' + siteOptions(sites, S.siteId) + '</select></div>' +
       '<div class="row"><div class="field grow" id="dpCountW"><label for="dpCount">عدد الطيور النافقة</label><input id="dpCount" type="number" min="0" inputmode="numeric" placeholder="0"></div><div class="field grow"><label for="dpWeight">الوزن بالكيلو</label><input id="dpWeight" type="number" min="0" inputmode="numeric" placeholder="اختياري للنافق"></div></div>' +
       '<div class="field"><label for="dpMethod">طريقة التخلص</label><select id="dpMethod">' + d.methods.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('') + '</select></div>' +
-      '<div class="row"><div class="field grow"><label for="dpVeh">المركبة الناقلة (إن خرج من الموقع)</label><select id="dpVeh"><option value="">بدون مركبة</option>' + veh.map(function (i) { return '<option value="' + esc(i.id) + '">' + esc(i.name) + (i.plate ? ' · ' + esc(i.plate) : '') + '</option>'; }).join('') + '</select></div><div class="field grow"><label for="dpDrv">السائق</label><select id="dpDrv"><option value="">—</option>' + drv.map(function (i) { return '<option value="' + esc(i.id) + '">' + esc(i.name) + '</option>'; }).join('') + '</select></div></div>' +
+      '<fieldset class="dp-trans"><legend>' + icon('truck') + ' النقل (إن خرج من الموقع)</legend><div class="row"><div class="field grow"><label for="dpPlate">رقم العربية</label><input id="dpPlate" type="text" list="dpPlateL" autocomplete="off" placeholder="مثال: س ب ل 5821"><datalist id="dpPlateL">' + ((d.suggest && d.suggest.plates) || []).map(function (v) { return '<option value="' + esc(v.plate) + '">' + esc(v.name + ' · ' + v.id) + '</option>'; }).join('') + '</datalist></div>' +
+      '<div class="field grow"><label for="dpDrvN">اسم السائق</label><input id="dpDrvN" type="text" list="dpDrvL" autocomplete="off"><datalist id="dpDrvL">' + ((d.suggest && d.suggest.drivers) || []).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist></div></div>' +
+      '<div class="field"><label for="dpCo">اسم المقاول أو شركة النقل</label><input id="dpCo" type="text" list="dpCoL" autocomplete="off" placeholder="اختر أو اكتب اسماً جديداً"><datalist id="dpCoL">' + ((d.suggest && d.suggest.contractors) || []).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist></div>' +
+      '<span class="xs muted">العربية أو السائق أو المقاول غير المسجل يُسجَّل تلقائياً بكود جديد، ليتتبعه النظام على كل البوابات.</span></fieldset>' +
       '<span class="hint xs muted" id="dpHint">المركبة والسائق يُمنعان من دخول أي منطقة نظيفة ' + d.blockHours + ' ساعة، وترفضهما كل البوابات تلقائياً.</span>' +
       '<div class="field"><label for="dpNote">ملاحظات</label><input id="dpNote" type="text" placeholder="مثال: العنبر 4، أعراض تنفسية"></div>' +
       '<button class="btn primary big" type="submit">' + icon('check') + ' تسجيل</button></form>' +
@@ -3686,19 +3718,19 @@
       '<div class="card"><div class="card-head"><div><span class="kick">آخر ' + d.days + ' يوماً</span><h2>' + icon('shield') + ' طرق التخلص من النافق</h2></div></div>' + (function () { var tot = Object.keys(d.methodTotals).reduce(function (a, k) { return a + d.methodTotals[k]; }, 0) || 1; return Object.keys(d.methodTotals).map(function (k) { return '<div class="dp-m"><span>' + esc(k) + '</span>' + bar(d.methodTotals[k] / tot * 100, 'var(--ink-2)') + '<b class="mono">' + d.methodTotals[k] + '</b></div>'; }).join('') || '<p class="empty">لا توجد بيانات</p>'; })() + '</div></div></div>';
     html += '<div class="card"><div class="card-head"><div><span class="kick">النافق اليومي · آخر ' + d.days + ' يوماً · العمود الأخير اليوم</span><h2>' + icon('dash') + ' النفوق حسب الموقع</h2></div><span class="sub">تنبيه تلقائي عند تجاوز ضعف متوسط آخر 7 أيام (30 طائراً على الأقل)</span></div><div class="dp-sites">' +
       (d.bySite.length ? d.bySite.map(function (s) { return '<div class="dp-site' + (s.spike ? ' spike' : '') + '"><div class="t"><b>' + esc(shortSite(s.name)) + '</b><span>متوسط ' + s.avg + ' يومياً · إجمالي ' + s.total + '</span></div>' + miniBars(s.days, s.spike) + '<div class="dp-today"><b class="mono">' + s.today + '</b><span>' + (s.spike ? '<span class="pill p-bad">نفوق مرتفع</span>' : 'اليوم') + '</span></div></div>'; }).join('') : '<p class="empty">لا يوجد نافق مسجل</p>') + '</div></div>';
-    html += '<div class="card"><div class="card-head"><h2>' + icon('list') + ' آخر السجلات</h2></div><div class="tbl"><table><thead><tr><th>الوقت</th><th>الموقع</th><th>النوع</th><th>العدد / الوزن</th><th>التخلص</th><th>المركبة</th><th>سجّله</th></tr></thead><tbody>' +
-      d.rows.slice(0, 30).map(function (r) { return '<tr><td>' + esc(fmt(r.time)) + '</td><td>' + esc(shortSite(r.siteName)) + '</td><td><span class="pill ' + (r.kind === 'نافق' ? 'p-n' : 'p-warn') + '">' + esc(r.kind) + '</span></td><td class="mono">' + (r.kind === 'نافق' ? r.count + ' طائر' : (r.weight / 1000).toFixed(1) + ' طن') + '</td><td class="small">' + esc(r.method) + '</td><td class="small">' + esc(r.vehicleName || '—') + '</td><td class="small muted">' + esc(r.by) + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    html += '<div class="card"><div class="card-head"><h2>' + icon('list') + ' آخر السجلات</h2></div><div class="tbl"><table><thead><tr><th>الوقت</th><th>الموقع</th><th>النوع</th><th>العدد / الوزن</th><th>التخلص</th><th>العربية</th><th>السائق</th><th>المقاول</th><th>سجّله</th></tr></thead><tbody>' +
+      d.rows.slice(0, 30).map(function (r) { return '<tr><td>' + esc(fmt(r.time)) + '</td><td>' + esc(shortSite(r.siteName)) + '</td><td><span class="pill ' + (r.kind === 'نافق' ? 'p-n' : 'p-warn') + '">' + esc(r.kind) + '</span></td><td class="mono">' + (r.kind === 'نافق' ? r.count + ' طائر' : (r.weight / 1000).toFixed(1) + ' طن') + '</td><td class="small">' + esc(r.method) + '</td><td class="small">' + (r.plate ? plateTag(r.plate) : esc(r.vehicleName || '—')) + '</td><td class="small">' + esc(r.driverName || '—') + '</td><td class="small">' + esc(r.contractor || '—') + '</td><td class="small muted">' + esc(r.by) + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
     out.innerHTML = html;
     var kind = 'نافق';
     out.querySelectorAll('.dp-seg button').forEach(function (b) { b.onclick = function () { kind = b.dataset.k; out.querySelectorAll('.dp-seg button').forEach(function (x) { x.classList.toggle('on', x === b); }); $('dpCountW').hidden = kind === 'سبلة'; $('dpWeight').placeholder = kind === 'سبلة' ? 'مثال: 6000' : 'اختياري للنافق'; if (kind === 'سبلة') $('dpMethod').value = 'سيارة سبلة خارجية مرخصة'; }; });
     $('dpForm').onsubmit = function (e) {
       e.preventDefault();
-      var r = { id: 'DP' + uid(), siteId: $('dpSite').value, kind: kind, count: $('dpCount').value, weight: $('dpWeight').value, method: $('dpMethod').value, vehicleId: $('dpVeh').value, driverId: $('dpDrv').value, note: $('dpNote').value };
+      var r = { id: 'DP' + uid(), siteId: $('dpSite').value, kind: kind, count: $('dpCount').value, weight: $('dpWeight').value, method: $('dpMethod').value, plate: $('dpPlate').value, driverName: $('dpDrvN').value, contractor: $('dpCo').value, note: $('dpNote').value };
       var b = this.querySelector('[type=submit]'); b.disabled = true;
       act('disposalAdd', [r]).then(function (x) {
         var res = x.data || {};
         if (res.spike) openSheet('<div class="sheet-head sh-bad"><span class="permit">وصل تنبيه فوري للمدير والطبيب البيطري</span><div class="big-ico">' + icon('alert') + '</div><h2>نفوق مرتفع</h2><p>' + res.spike.today + ' طائر اليوم مقابل متوسط ' + res.spike.avg + '</p></div><div class="sheet-body"><ul class="bd-acts">' + ['أبلغ الطبيب البيطري فوراً لسحب عينات', 'لا يخرج أي فرد أو معدة من الموقع إلى موقع آخر حتى التشخيص', 'افصل العنبر المصاب وراقب الأكل والمياه والأعراض التنفسية', 'تخلص من النافق داخل الموقع بالمحرقة أو حفرة التحلل المغلقة'].map(function (t) { return '<li>' + icon('check') + t + '</li>'; }).join('') + '</ul><button class="btn primary big" data-a="close">فهمت</button></div>', function () { closeSheet(); });
-        else toast(x.queued ? 'حُفظ التسجيل ويُرسل عند عودة الاتصال' : r.vehicleId ? 'سُجل، والمركبة ممنوعة من المناطق النظيفة ' + d.blockHours + ' ساعة' : 'تم التسجيل');
+        else toast(x.queued ? 'حُفظ التسجيل ويُرسل عند عودة الاتصال' : res.vehicleId ? 'سُجل، والعربية والسائق ممنوعان من المناطق النظيفة ' + d.blockHours + ' ساعة' + (res.created && res.created.length ? ' · سُجل تلقائياً: ' + res.created.join('، ') : '') : 'تم التسجيل', 6000);
         return sync();
       }).then(function () { if (S.route === 'disposal') viewDisposal(); }).catch(function (x) { b.disabled = false; toast(errText(x)); });
     };
@@ -4072,11 +4104,236 @@
   function gateTools() {
     return '<div class="gate-tools"><button type="button" class="gtool" id="gtPlate">' + icon('truck') + '<span><b>قراءة لوحة مركبة</b><small>بالكاميرا بدلاً من الكارت</small></span></button>' +
       '<a class="gtool" href="#disposal">' + icon('box') + '<span><b>نافق أو سبلة</b><small>تسجيل وخروج سيارة السبلة</small></span></a>' +
+      '<button type="button" class="gtool" id="gtVeh">' + icon('plus') + '<span><b>مركبة جديدة</b><small>تسجيل سيارة أو معدة بلا كارت</small></span></button>' +
       '<button type="button" class="gtool" id="gtBird">' + icon('bird') + '<span><b>مشاهدة طيور</b><small>أسراب حول الموقع</small></span></button></div>';
   }
   function bindGateTools() {
     if ($('gtPlate')) $('gtPlate').onclick = plateSheet;
+    if ($('gtVeh')) $('gtVeh').onclick = function () { vehicleSheet({}); };
     if ($('gtBird')) $('gtBird').onclick = function () { birdSightingSheet(S.siteId); };
+  }
+
+  /* ============================ الإصدار 13 ============================ */
+  function dayIn(ms) { var d = new Date((ms || Date.now()) + 3 * 36e5); return d.toISOString().slice(0, 10); }
+  function dayMs(v) { if (!v) return 0; var t = new Date(v + 'T12:00:00+03:00').getTime(); return isNaN(t) ? 0 : t; }
+  function plateTag(p) { return p ? '<span class="plate" dir="rtl"><i>مصر</i>' + esc(p) + '</span>' : ''; }
+  function riskTag(r) { return '<span class="pill ' + (r >= 3 ? 'lv-crit' : r === 2 ? 'lv-mid' : 'lv-low') + '">' + (r >= 3 ? 'خطورة عالية' : r === 2 ? 'خطورة متوسطة' : 'خطورة منخفضة') + '</span>'; }
+  var PH_C = { ok: 'var(--ok)', info: 'var(--info)', warn: 'var(--warn)', bad: 'var(--bad)', n: 'var(--muted)' };
+
+  /* ---------- لوحة حالة المحطات ---------- */
+  function viewStations() {
+    $('main').innerHTML = '<section class="view">' + v5Head('حالة المحطات حتى تاريخه', 'layers', 'آخر وضع لكل محطة وموقع: المرحلة الحالية وعمر القطيع ونشاط البوابة والنافق وآخر تقرير زيارة. تُستنتج تلقائياً من كل إدخالات التطبيق وتقارير الزيارات، وتُحفظ لقطة يومية في الشيت كل فجر.', '<button class="btn" type="button" id="stRef">' + icon('refresh') + ' تحديث</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('stRef').onclick = viewStations;
+    v5Load('stationStatus', [], drawStations, 'حالة المحطات');
+  }
+  function drawStations(d) {
+    var out = $('v5Out'); if (!out) return;
+    S.stData = d;
+    var secs = []; d.rows.forEach(function (r) { if (secs.indexOf(r.sector) < 0) secs.push(r.sector); });
+    var f = S.stF || '', sec = secs.indexOf(S.stSec) >= 0 ? S.stSec : '';
+    var rows = d.rows.filter(function (r) { return (!f || (f === 'risk' ? r.risk >= 30 : r.phase === f)) && (!sec || r.sector === sec); });
+    var html = kpiRow([['k-brand', 'layers', d.rows.filter(function (r) { return r.cycle; }).length, 'محطات تسمين'], ['k-ok', 'shield', d.counts['تربية'] || 0, 'في التربية'], ['k-warn', 'out', (d.counts['بيع'] || 0) + (d.counts['تحميل سبلة'] || 0), 'بيع أو تحميل سبلة'], ['k-bad', 'alert', d.rows.filter(function (r) { return r.risk >= 60; }).length, 'خطر مرتفع']]);
+    html += '<div class="st-src"><span class="' + (d.reports.linked ? 'on' : 'off') + '">' + icon('clip') + (d.reports.linked ? ' تقارير الزيارات مربوطة · ' + d.reports.count + ' تقرير' : ' تقارير الزيارات غير مربوطة' + (d.reports.error ? ': ' + esc(d.reports.error) : '')) + '</span><span class="on">' + icon('scan') + ' حركة البوابات حية</span><span class="on">' + icon('box') + ' النافق والسبلة</span><span class="' + (d.snapshot ? 'on' : 'mod') + '">' + icon('calendar') + (d.snapshot ? ' آخر لقطة يومية: ' + esc(d.snapshot) : ' أول لقطة يومية فجر الغد') + '</span></div>';
+    html += '<div class="card st-filter"><div class="chips">' + [['', 'الكل', d.rows.length]].concat(d.phases.filter(function (p) { return d.counts[p.k]; }).map(function (p) { return [p.k, p.k, d.counts[p.k]]; }), [['risk', 'خطر متوسط أو أعلى', d.rows.filter(function (r) { return r.risk >= 30; }).length]]).map(function (c) { return '<button type="button" class="chip st-chip' + (f === c[0] ? ' on' : '') + '" data-stf="' + esc(c[0]) + '">' + esc(c[1]) + ' <b>' + c[2] + '</b></button>'; }).join('') + '</div>' +
+      (secs.length > 1 ? '<div class="chips">' + [''].concat(secs).map(function (s) { return '<button type="button" class="chip' + (sec === s ? ' on' : '') + '" data-sts="' + esc(s) + '">' + (s ? 'قطاع ' + esc(s) : 'كل القطاعات') + '</button>'; }).join('') + '</div>' : '') + '</div>';
+    html += '<div class="st-grid">' + (rows.map(stCard).join('') || '<div class="card"><p class="empty">لا توجد مواقع بهذا التصنيف</p></div>') + '</div>';
+    html += '<div class="card"><div class="card-head"><h2>' + icon('book') + ' كيف تُحدَّد المرحلة تلقائياً</h2></div><div class="st-how">' +
+      [['clip', 'تقرير زيارة الأمن الحيوي', '«أثناء التربية» = تربية، «التجهيز والتطهير» = تجهيز وتطهير، مع درجة التقرير وملاحظاته الحرجة.'], ['truck', 'المركبات على البوابة', 'دخول سيارة كتاكيت = استقبال كتاكيت ثم تربية، سيارة طيور حية = بيع، سيارة سبلة = تحميل سبلة.'], ['box', 'سجل النافق والسبلة', 'خروج السبلة يسجل المرحلة، والنافق اليومي يرفع مؤشر الخطر عند تجاوز ضعف المتوسط.'], ['edit', 'تسجيل المشرف', 'المسؤول أو المشرف أو مدير الموقع يصحح المرحلة ويكتب تاريخ التسكين وعدد الطيور من زر «تحديث المرحلة».']].map(function (x) { return '<div><span class="ki">' + icon(x[0]) + '</span><b>' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div><p class="xs muted">أحدث إشارة هي التي تحدد المرحلة. الموقع المغلق بقرار الأمن الحيوي يظهر «متوقفة». لقطة كل يوم تُحفظ في شيت «حالة المحطات اليومية» ليبقى تاريخ كل محطة.</p></div>';
+    out.innerHTML = html;
+    out.querySelectorAll('[data-stf]').forEach(function (b) { b.onclick = function () { S.stF = b.dataset.stf; drawStations(d); }; });
+    out.querySelectorAll('[data-sts]').forEach(function (b) { b.onclick = function () { S.stSec = b.dataset.sts; drawStations(d); }; });
+    out.querySelectorAll('[data-stph]').forEach(function (b) { b.onclick = function () { phaseSheet(d.rows.filter(function (r) { return r.id === b.dataset.stph; })[0], d); }; });
+    out.querySelectorAll('[data-sth]').forEach(function (b) { b.onclick = function () { stationHistorySheet(d.rows.filter(function (r) { return r.id === b.dataset.sth; })[0]); }; });
+  }
+  function stCard(r) {
+    var c = PH_C[r.phaseC] || PH_C.n, rep = r.report, lv = r.risk >= 60 ? 'crit' : r.risk >= 30 ? 'mid' : 'low';
+    var src = { manual: 'تسجيل يدوي', report: 'تقرير زيارة', litter: 'سجل السبلة', gate: 'حركة البوابة' };
+    return '<div class="stn" style="--ph:' + c + '"><div class="stn-top"><div><b>' + esc(shortSite(r.name)) + '</b><span>' + esc(r.sector) + ' · مستوى ' + r.level + '</span></div>' + (r.status !== 'نشط' ? '<span class="pill p-bad">' + esc(r.status) + '</span>' : '<span class="pill lv-' + lv + '">خطر ' + esc(r.riskLabel) + '</span>') + '</div>' +
+      '<div class="stn-ph"><span class="ph-dot"></span><div><b>' + esc(r.phase) + '</b><span>' + (r.days != null ? (r.days ? 'منذ ' + r.days + ' يوم' : 'بدأت اليوم') + ' · ' + esc(new Date(r.since).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })) : r.cycle ? 'لا توجد إشارة بعد: سجّل المرحلة' : 'موقع تشغيل مستمر') + '</span></div>' +
+      (r.age ? '<div class="stn-age"><b class="mono">' + r.age + '</b><span>يوم عمر القطيع</span></div>' : '') + '</div>' +
+      (r.next ? '<div class="xs muted stn-next">' + icon('arrow') + ' المرحلة التالية المتوقعة: ' + esc(r.next) + (r.birds ? ' · ' + r.birds.toLocaleString('ar-EG') + ' طائر' : '') + '</div>' : '') +
+      '<div class="stn-m"><div><b class="mono">' + r.today.in + '</b><span>دخول اليوم</span></div><div' + (r.today.deny ? ' class="bad"' : '') + '><b class="mono">' + r.today.deny + '</b><span>رفض</span></div><div' + (r.spike ? ' class="bad"' : '') + '><b class="mono">' + r.dead + '</b><span>نافق اليوم</span></div><div><b class="mono">' + r.inside + '</b><span>بالداخل الآن</span></div></div>' +
+      (rep ? '<div class="stn-rep"><div class="spread"><span class="xs muted">' + icon('clip') + ' آخر تقرير زيارة · ' + esc(new Date(rep.time).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })) + '</span>' + (rep.score != null ? '<b class="mono ' + (rep.score >= 85 ? 'ok-t' : rep.score >= 70 ? 'warn-t' : 'bad-t') + '">' + rep.score + '%</b>' : '') + '</div><span class="small">' + esc(rep.type) + (rep.grade ? ' · ' + esc(rep.grade) : '') + (rep.status ? ' · ' + esc(rep.status) : '') + '</span>' + (rep.critical || rep.major ? '<span class="xs"><b class="bad-t">' + rep.critical + ' حرجة</b> · ' + rep.major + ' رئيسية</span>' : '') + '</div>' : '<div class="stn-rep none xs muted">' + icon('clip') + ' لا يوجد تقرير زيارة لهذا الموقع بعد</div>') +
+      (r.why.length ? '<div class="stn-why xs">' + r.why.map(function (w) { return '<span>' + esc(w) + '</span>'; }).join('') + '</div>' : '') +
+      '<div class="stn-foot"><span class="xs muted">' + (r.source ? 'المصدر: ' + esc(src[r.source.src] || '') + ' · ' + esc(ago(r.source.time)) : '') + '</span><div class="row">' + (S.stData && S.stData.canEdit ? '<button type="button" class="btn sm primary" data-stph="' + esc(r.id) + '">' + icon('edit') + ' تحديث المرحلة</button>' : '') + '<button type="button" class="btn sm" data-sth="' + esc(r.id) + '">' + icon('history') + ' السجل</button></div></div></div>';
+  }
+  function phaseSheet(r, d) {
+    if (!r) return;
+    var cur = { phase: r.cycle ? (r.next || 'تربية') : 'تشغيل' };
+    var phs = d.phases.filter(function (p) { return r.cycle ? p.k !== 'تشغيل' : ['تشغيل', 'تجهيز وتطهير', 'متوقفة'].indexOf(p.k) >= 0; });
+    var body = function () {
+      return '<div class="sheet-head sh-brand"><h2>' + icon('layers') + ' تحديث مرحلة «' + esc(shortSite(r.name)) + '»</h2><span class="small">المرحلة الحالية: ' + esc(r.phase) + '</span></div><div class="sheet-body"><div class="xd-grid">' + phs.map(function (p) { return '<button type="button" class="xd-chip' + (cur.phase === p.k ? ' on' : '') + '" data-a="ph" data-k="' + esc(p.k) + '">' + icon(p.icon) + '<span>' + esc(p.k) + '</span></button>'; }).join('') + '</div>' +
+        '<div class="row"><div class="field grow"><label for="phStart">بداية المرحلة</label><input id="phStart" type="date" value="' + dayIn() + '"></div>' + (['استقبال كتاكيت', 'تربية', 'بيع'].indexOf(cur.phase) >= 0 ? '<div class="field grow"><label for="phFlock">تاريخ التسكين</label><input id="phFlock" type="date"' + (r.flockAt ? ' value="' + dayIn(r.flockAt) + '"' : '') + '></div>' : '') + '</div>' +
+        (['استقبال كتاكيت', 'تربية', 'بيع'].indexOf(cur.phase) >= 0 ? '<div class="field"><label for="phBirds">عدد الطيور (اختياري)</label><input id="phBirds" type="number" min="0" inputmode="numeric"' + (r.birds ? ' value="' + r.birds + '"' : '') + '></div>' : '') +
+        '<div class="field"><label for="phNote">ملاحظات</label><input id="phNote" type="text" maxlength="200" placeholder="مثال: بداية الداون تايم 14 يوماً"></div>' +
+        '<button class="btn primary big" data-a="save">' + icon('check') + ' حفظ</button></div>';
+    };
+    var keep = function () { return { s: $('phStart') && $('phStart').value, f: $('phFlock') && $('phFlock').value, b: $('phBirds') && $('phBirds').value, n: $('phNote') && $('phNote').value }; };
+    openSheet(body(), function (a, el) {
+      if (a === 'ph') { var k = keep(); cur.phase = el.dataset.k; $('sheetRoot').querySelector('.sheet').innerHTML = body(); if (k.s) $('phStart').value = k.s; if (k.f && $('phFlock')) $('phFlock').value = k.f; if (k.n) $('phNote').value = k.n; return; }
+      if (a !== 'save') return;
+      var p = { id: 'PH' + uid(), siteId: r.id, phase: cur.phase, startAt: dayMs($('phStart').value), flockAt: $('phFlock') ? dayMs($('phFlock').value) : 0, birds: $('phBirds') ? $('phBirds').value : '', note: $('phNote').value };
+      el.disabled = true;
+      act('setPhase', [p]).then(function (x) { closeSheet(); toast(x.queued ? 'حُفظ ويُرسل عند عودة الاتصال' : 'تم تحديث مرحلة ' + shortSite(r.name)); if (S.route === 'stations') viewStations(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+  }
+  function stationHistorySheet(r) {
+    if (!r) return;
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('history') + ' سجل «' + esc(shortSite(r.name)) + '»</h2></div><div class="sheet-body" id="stHist"><p class="empty"><span class="spin"></span></p></div>', function (a) { if (a === 'close') closeSheet(); });
+    var ev = '<h3 class="pp-sec">آخر الإشارات التي حددت المرحلة</h3><div class="list">' + (r.history.map(function (h) { return '<div class="li"><span class="dot d-n"></span><div class="t"><b>' + esc(h.phase) + '</b><span>' + esc(h.label) + '</span></div><div class="meta"><time>' + esc(fmt(h.time)) + '</time></div></div>'; }).join('') || '<p class="empty">لا توجد إشارات</p>') + '</div>';
+    var reps = '<h3 class="pp-sec">تقارير الزيارات</h3><div class="list">' + (r.reports.map(function (x) { return '<div class="li"><span class="dot ' + (x.score >= 85 ? 'd-ok' : x.score >= 70 ? 'd-warn' : 'd-bad') + '"></span><div class="t"><b>' + esc(x.type) + (x.score != null ? ' · ' + x.score + '%' : '') + '</b><span>' + esc([x.no, x.by, x.grade, x.status].filter(Boolean).join(' · ')) + '</span></div><div class="meta"><time>' + esc(new Date(x.time).toLocaleDateString('ar-EG')) + '</time>' + (x.pdf ? '<a class="btn sm" target="_blank" rel="noopener" href="' + esc(x.pdf) + '">PDF</a>' : '') + '</div></div>'; }).join('') || '<p class="empty">لا توجد تقارير</p>') + '</div>';
+    remote('stationHistory', [S.session.pin, r.id]).then(function (h) {
+      var box = $('stHist'); if (!box) return;
+      box.innerHTML = ev + reps + '<h3 class="pp-sec">اللقطات اليومية</h3>' + (h.days.length ? '<div class="tbl"><table><thead><tr><th>اليوم</th><th>المرحلة</th><th>العمر</th><th>دخول</th><th>رفض</th><th>نافق</th><th>الخطر</th></tr></thead><tbody>' + h.days.map(function (x) { return '<tr><td class="mono">' + esc(x.day) + '</td><td>' + esc(x.phase) + '</td><td class="mono">' + esc(x.age || '—') + '</td><td class="mono">' + x.entries + '</td><td class="mono">' + x.denied + '</td><td class="mono">' + x.dead + '</td><td class="mono">' + x.risk + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="empty small">أول لقطة يومية تُحفظ فجر الغد تلقائياً.</p>') + '<button class="btn big" data-a="close">إغلاق</button>';
+    }).catch(function (e) { var box = $('stHist'); if (box) box.innerHTML = ev + reps + '<p class="empty">' + esc(errText(e)) + '</p><button class="btn big" data-a="close">إغلاق</button>'; });
+  }
+
+  /* ---------- المركبات والمعدات ---------- */
+  function viewFleet() {
+    S.flDays = S.flDays || 7;
+    $('main').innerHTML = '<section class="view">' + v5Head('المركبات والمعدات', 'truck', 'كل مركبة ومعدة بنوعها ولوحتها: أين هي الآن، ومسارها اليوم بين البوابات والمواقع، وتنقلها بين القطاعات، والممنوع منها.',
+      '<div class="bd-seg light" id="flDays">' + [[1, 'اليوم'], [7, '7 أيام'], [30, '30 يوماً']].map(function (x) { return '<button type="button" data-d="' + x[0] + '" class="' + (S.flDays === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div><button class="btn primary" type="button" id="flAdd">' + icon('plus') + ' تسجيل مركبة أو معدة</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('flDays').onclick = function (e) { var b = e.target.closest('[data-d]'); if (b) { S.flDays = +b.dataset.d; viewFleet(); } };
+    $('flAdd').onclick = function () { vehicleSheet({}); };
+    v5Load('fleet', [S.flDays], drawFleet, 'المركبات والمعدات');
+  }
+  function drawFleet(d) {
+    var out = $('v5Out'); if (!out) return;
+    S.flData = d;
+    var t = S.flT || '', q = (S.flQ || '').trim();
+    var html = kpiRow([['k-brand', 'truck', d.totals.all, 'مركبة ومعدة مسجلة'], ['k-ok', 'pin', d.totals.inside, 'داخل المواقع الآن'], ['k-warn', 'trace', d.totals.cross, 'تنقل بين القطاعات'], ['k-bad', 'lock', d.totals.blocked, 'ممنوعة الآن (سبلة / نافق)']]);
+    var types = Object.keys(d.types).sort(function (a, b) { return d.types[b] - d.types[a]; });
+    html += '<div class="card"><div class="toolbar"><div class="search">' + icon('search') + '<input type="search" id="flQ" placeholder="بحث باللوحة أو الاسم أو الكود" value="' + esc(q) + '"></div></div><div class="chips">' + [['', 'كل الأنواع', d.totals.all]].concat(types.map(function (k) { return [k, k.replace('معدة: ', 'معدة · '), d.types[k]]; })).map(function (c) { return '<button type="button" class="chip st-chip' + (t === c[0] ? ' on' : '') + '" data-flt="' + esc(c[0]) + '">' + esc(c[1]) + ' <b>' + c[2] + '</b></button>'; }).join('') + '</div></div><div id="flList" class="fl-grid"></div>';
+    out.innerHTML = html;
+    var draw = function () {
+      var qq = ($('flQ').value || '').trim(), qn = qq.replace(/\s+/g, '');
+      S.flQ = qq;
+      var list = d.list.filter(function (v) { return (!t || v.vtype === t) && (!qn || (v.name + v.id + String(v.plate).replace(/\s+/g, '') + v.companyName).indexOf(qn) >= 0 || (v.name + ' ' + v.plate).indexOf(qq) >= 0); });
+      $('flList').innerHTML = list.map(flCard).join('') || '<div class="card"><p class="empty">لا توجد مركبات مطابقة. سجّل مركبة جديدة من الزر أعلاه.</p></div>';
+      bindGoto($('flList'));
+    };
+    $('flQ').oninput = draw;
+    out.querySelectorAll('[data-flt]').forEach(function (b) { b.onclick = function () { S.flT = b.dataset.flt; drawFleet(d); }; });
+    draw();
+  }
+  function pathChain(today) {
+    if (!today.length) return '';
+    return '<div class="fl-path">' + today.slice(-6).map(function (p) { return '<span class="' + (p.dir === 'خروج' ? 'o' : 'i') + '"><b>' + esc(shortSite(p.site)) + '</b><small>' + esc(p.dir) + ' ' + esc(fmt(p.time, false)) + '</small></span>'; }).join('<i>' + icon('arrow') + '</i>') + '</div>';
+  }
+  function flCard(v) {
+    var tr = v.track;
+    return '<div class="fl-card' + (v.blockedUntil ? ' blocked' : '') + '"><div class="fl-top"><span class="av">' + icon(v.kind === 'معدة' ? 'tool' : 'truck') + '</span><div class="t"><b>' + esc(v.name) + '</b><span><span class="mono">' + esc(v.id) + '</span>' + (v.companyName ? ' · ' + esc(v.companyName) : '') + '</span></div>' + plateTag(v.plate) + '</div>' +
+      '<div class="row fl-tags"><span class="pill p-n">' + esc(v.vtype) + '</span>' + riskTag(v.risk) + (v.blockedUntil ? '<span class="pill p-bad">' + icon('lock') + ' ممنوعة ' + esc(left(v.blockedUntil)) + '</span>' : '') + (v.companyStopped ? '<span class="pill p-bad">الشركة موقوفة</span>' : '') + (!v.active ? '<span class="pill p-bad">موقوف</span>' : '') + '</div>' +
+      '<div class="fl-now">' + (tr.inside ? '<span class="pill p-ok">' + icon('pin') + ' داخل ' + esc(shortSite(tr.inside.site)) + '</span><span class="xs muted">منذ ' + esc(ago(tr.inside.since).replace('منذ ', '')) + '</span>' : tr.last ? '<span class="xs muted">' + icon('clock') + ' آخر ظهور: ' + esc(tr.last.dir) + ' ' + esc(shortSite(tr.last.site)) + ' · ' + esc(ago(tr.last.time)) + '</span>' : '<span class="xs muted">لم تتحرك بعد</span>') + '</div>' +
+      pathChain(tr.today) +
+      (tr.cross.length ? '<div class="fl-cross">' + tr.cross.slice(-2).map(function (x) { return '<span class="' + (x.flag || x.override ? 'bad' : '') + '">' + icon('trace') + ' ' + esc(x.fromSector) + ' ← ' + esc(x.toSector) + ': ' + esc(shortSite(x.from)) + ' ثم ' + esc(shortSite(x.to)) + ' بعد ' + x.gapH + ' ساعة' + (x.flag ? ' · مخالفة' : x.override ? ' · استثناء' : '') + '</span>'; }).join('') + '</div>' : '') +
+      '<div class="fl-foot xs muted"><span>' + tr.visits + ' دخول · ' + tr.sectors.length + ' قطاع' + (tr.denied ? ' · <b class="bad-t">' + tr.denied + ' رفض</b>' : '') + (tr.flags ? ' · <b class="bad-t">' + tr.flags + ' مخالفة</b>' : '') + '</span><button type="button" class="btn sm" data-goto="history/' + esc(v.id) + '">' + icon('history') + ' كل الحركات</button></div></div>';
+  }
+  function vehicleSheet(o) {
+    o = o || {};
+    var vt = (window.BIO_VEHICLE_TYPES || []).map(function (x) { return x.k; }), et = window.BIO_EQUIP_TYPES || [];
+    var st = { kind: o.kind || 'مركبة', vtype: o.vtype || '' };
+    var cos = (S.ref ? S.ref.companies : []);
+    var body = function () {
+      var list = st.kind === 'معدة' ? et : vt;
+      return '<div class="sheet-head sh-brand"><h2>' + icon('truck') + ' ' + (o.company ? 'إضافة لـ ' + esc(o.companyName || o.company) : 'تسجيل مركبة أو معدة') + '</h2><span class="small">يأخذ كوداً تلقائياً ويُطبع له ملصق QR</span></div><div class="sheet-body">' +
+        '<div class="seg" role="group"><button type="button" data-a="k" data-k="مركبة" class="' + (st.kind === 'مركبة' ? 'on' : '') + '">' + icon('truck') + ' مركبة</button><button type="button" data-a="k" data-k="معدة" class="' + (st.kind === 'معدة' ? 'on' : '') + '">' + icon('tool') + ' معدة</button></div>' +
+        '<label class="xs muted">النوع</label><div class="xd-grid vt-grid">' + list.map(function (k) { var r = (window.BIO_vtype && BIO_vtype(k)) || { risk: 3 }; return '<button type="button" class="xd-chip' + (r.risk >= 3 ? ' risk' : '') + (st.vtype === k ? ' on' : '') + '" data-a="t" data-k="' + esc(k) + '"><span>' + esc(k) + '</span></button>'; }).join('') + '</div>' +
+        (st.kind === 'مركبة' ? '<div class="field"><label for="vhPlate">رقم اللوحة</label><input id="vhPlate" type="text" placeholder="مثال: ن ق ص 1234" autocomplete="off"></div>' : '') +
+        '<div class="field"><label for="vhName">الاسم أو الوصف ' + (st.kind === 'مركبة' ? '(اختياري)' : '') + '</label><input id="vhName" type="text" maxlength="80" placeholder="' + (st.kind === 'مركبة' ? 'مثال: سيارة د. أحمد، تريلا علف' : 'مثال: لودر كاتربيلر أصفر') + '"></div>' +
+        (o.company ? '' : '<div class="field"><label for="vhCo">الشركة أو المقاول (اختياري)</label><input id="vhCo" type="text" list="vhCoL" placeholder="اختر أو اكتب اسماً جديداً"><datalist id="vhCoL">' + cos.map(function (c) { return '<option value="' + esc(c.name) + '">' + esc(c.id) + '</option>'; }).join('') + '</datalist></div>' +
+        '<div class="field"><label for="vhOwner">الجهة أو المالك (اختياري)</label><input id="vhOwner" type="text" maxlength="60" placeholder="مثال: الطب البيطري، المبيعات"></div>') +
+        '<button class="btn primary big" data-a="save">' + icon('check') + ' تسجيل</button></div>';
+    };
+    var keep = function () { return ['vhPlate', 'vhName', 'vhCo', 'vhOwner'].map(function (i) { return $(i) ? $(i).value : ''; }); };
+    var redraw = function () { var k = keep(); $('sheetRoot').querySelector('.sheet').innerHTML = body(); ['vhPlate', 'vhName', 'vhCo', 'vhOwner'].forEach(function (i, n) { if ($(i)) $(i).value = k[n]; }); };
+    openSheet(body(), function (a, el) {
+      if (a === 'k') { st.kind = el.dataset.k; st.vtype = ''; return redraw(); }
+      if (a === 't') { st.vtype = el.dataset.k; return redraw(); }
+      if (a === 'close') return closeSheet();
+      if (a !== 'save') return;
+      if (!st.vtype) return toast('اختر النوع');
+      var p = { kind: st.kind, vtype: st.vtype, plate: $('vhPlate') ? $('vhPlate').value : '', name: $('vhName').value };
+      var fn = 'vehicleAdd';
+      if (o.company) { fn = 'contractorMember'; p.company = o.company; } else { p.company = $('vhCo').value; p.owner = $('vhOwner').value; }
+      el.disabled = true;
+      remote(fn, [S.session.pin, p]).then(function (r) {
+        toast('تم التسجيل بالكود ' + r.id);
+        closeSheet(); return sync().then(function () { if (o.done) o.done(r); else if (S.route === 'fleet') viewFleet(); else if (S.route === 'gate') render(); });
+      }).catch(function (e) { el.disabled = false; toast(e.net ? 'التسجيل يحتاج اتصالاً بالإنترنت' : errText(e)); });
+    });
+  }
+
+  /* ---------- المقاولون ومعداتهم ---------- */
+  var MEMBER_L = { 'عامل': ['user', 'W'], 'سائق': ['user', 'D'], 'مشرف': ['user', 'S'], 'مركبة': ['truck', 'V'], 'معدة': ['tool', 'E'] };
+  function viewContractors() {
+    S.ctDays = S.ctDays || 30;
+    $('main').innerHTML = '<section class="view">' + v5Head('المقاولون ومعداتهم', 'tool', 'لكل مقاول كود (CO06)، ولكل فرد ومركبة ومعدة تابعة له كود مشتق منه (CO06-W01 عامل، CO06-V01 مركبة، CO06-E01 معدة). النظام يتتبع حركتهم بين المحطات داخل القطاع وبين القطاعات، ويطبق العزل، ويوقفهم جميعاً بضغطة واحدة.',
+      '<div class="bd-seg light" id="ctDays"><button type="button" data-d="30" class="' + (S.ctDays === 30 ? 'on' : '') + '">آخر 30 يوماً</button><button type="button" data-d="90" class="' + (S.ctDays === 90 ? 'on' : '') + '">آخر 90 يوماً</button></div>' + (can('data') ? '<button class="btn primary" type="button" id="ctAdd">' + icon('plus') + ' مقاول جديد</button>' : ''), ['companies', 'شركات النقل والمقاولون']) + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('ctDays').onclick = function (e) { var b = e.target.closest('[data-d]'); if (b) { S.ctDays = +b.dataset.d; viewContractors(); } };
+    if ($('ctAdd')) $('ctAdd').onclick = contractorSheet;
+    v5Load('contractors', [S.ctDays], drawContractors, 'المقاولون');
+  }
+  function drawContractors(d) {
+    var out = $('v5Out'); if (!out) return;
+    var all = !!S.ctAll, list = d.list.filter(function (c) { return all || c.contractor; });
+    var html = kpiRow([['k-brand', 'tool', d.totals.contractors, 'مقاول'], ['k-ok', 'user', d.totals.members, 'فرد ومركبة ومعدة بأكواد'], ['k-warn', 'pin', d.totals.inside, 'داخل المواقع الآن'], ['k-bad', 'trace', d.totals.cross, 'انتقال بين القطاعات']]);
+    html += '<div class="spread"><label class="switch"><input type="checkbox" id="ctAll"' + (all ? ' checked' : '') + '> عرض كل الشركات (النقل والتوريد أيضاً)</label><span class="xs muted">الكود: CO + رقم · W عامل · S مشرف · D سائق · V مركبة · E معدة</span></div>';
+    html += list.map(function (c) {
+      return '<div class="card ct-card"><div class="card-head"><div><span class="kick">' + esc(c.type || 'شركة') + '</span><h2><span class="mono ct-code">' + esc(c.id) + '</span> ' + esc(c.name) + '</h2>' + (c.contact || c.phone ? '<span class="xs muted">' + esc([c.contact, c.phone].filter(Boolean).join(' · ')) + '</span>' : '') + '</div>' + (c.status === 'موقوف' ? '<span class="pill p-bad">موقوف' + (c.reason ? ': ' + esc(c.reason) : '') + '</span>' : '<span class="pill p-ok">نشط</span>') + '</div>' +
+        '<div class="ct-stats"><span>' + icon('user') + ' ' + c.counts.people + ' فرد</span><span>' + icon('truck') + ' ' + c.counts.vehicles + ' مركبة</span><span>' + icon('tool') + ' ' + c.counts.equipment + ' معدة</span><span class="' + (c.counts.inside ? 'on' : '') + '">' + icon('pin') + ' ' + c.counts.inside + ' بالداخل الآن</span><span>' + icon('layers') + ' القطاعات: ' + (c.sectors.length ? esc(c.sectors.join('، ')) : '—') + '</span><span>' + icon('arrow') + ' ' + c.hops + ' تنقل داخل القطاع</span><span class="' + (c.crossCount ? 'bad' : '') + '">' + icon('trace') + ' ' + c.crossCount + ' بين القطاعات</span>' + (c.flags ? '<span class="bad">' + icon('alert') + ' ' + c.flags + ' مخالفة</span>' : '') + '</div>' +
+        (c.cross.length ? '<div class="fl-cross">' + c.cross.slice(0, 4).map(function (x) { return '<span class="' + (x.flag || x.override ? 'bad' : '') + '">' + icon('trace') + ' <b>' + esc(x.who) + '</b>: ' + esc(shortSite(x.from)) + ' (' + esc(x.fromSector) + ') ثم ' + esc(shortSite(x.to)) + ' (' + esc(x.toSector) + ') بعد ' + x.gapH + ' ساعة · ' + esc(fmt(x.time)) + (x.flag ? ' · ' + esc(x.flag) : x.override ? ' · دخول استثنائي' : '') + '</span>'; }).join('') + '</div>' : '') +
+        (c.members.length ? '<div class="tbl"><table><thead><tr><th>الكود</th><th>الاسم</th><th>النوع</th><th>الآن</th><th>الحركة</th><th></th></tr></thead><tbody>' + c.members.map(function (m) { return '<tr><td class="mono">' + esc(m.id) + '</td><td><b>' + esc(m.name) + '</b>' + (m.plate ? '<br>' + plateTag(m.plate) : '') + '</td><td class="small">' + esc(m.vtype ? m.vtype.replace('معدة: ', '') : m.kind) + '</td><td class="small">' + (m.blockedUntil ? '<span class="pill p-bad">ممنوع ' + esc(left(m.blockedUntil)) + '</span>' : m.inside ? '<span class="pill p-ok">داخل ' + esc(shortSite(m.inside.site)) + '</span>' : m.last ? esc(m.last.dir + ' ' + shortSite(m.last.site) + ' · ' + ago(m.last.time)) : '<span class="muted">لم يتحرك</span>') + '</td><td class="small mono">' + m.visits + ' دخول' + (m.cross.length ? ' · <b class="bad-t">' + m.cross.length + ' بين القطاعات</b>' : '') + (m.denied ? ' · ' + m.denied + ' رفض' : '') + '</td><td><button type="button" class="btn sm" data-goto="history/' + esc(m.id) + '">' + icon('history') + '</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="empty small">لا يوجد أفراد أو معدات مسجلة لهذا المقاول بعد</p>') +
+        '<div class="row ct-acts">' + (d.canEdit ? Object.keys(MEMBER_L).map(function (k) { return '<button type="button" class="btn sm" data-ctm="' + esc(c.id) + '" data-k="' + esc(k) + '">' + icon('plus') + ' ' + k + '</button>'; }).join('') : '') + '<button type="button" class="btn sm" data-ctp="' + esc(c.id) + '">' + icon('printer') + ' كروت وملصقات المقاول</button></div></div>';
+    }).join('') || '<div class="card"><p class="empty">لا يوجد مقاولون مسجلون بعد. أضف أول مقاول من زر «مقاول جديد».</p></div>';
+    out.innerHTML = html;
+    $('ctAll').onchange = function () { S.ctAll = this.checked; drawContractors(d); };
+    bindGoto(out);
+    out.querySelectorAll('[data-ctm]').forEach(function (b) { b.onclick = function () { var c = d.list.filter(function (x) { return x.id === b.dataset.ctm; })[0]; memberSheet(c, b.dataset.k, d); }; });
+    out.querySelectorAll('[data-ctp]').forEach(function (b) { b.onclick = function () { S.cardsQ = b.dataset.ctp; go('cards'); }; });
+  }
+  function contractorSheet() {
+    var types = window.BIO_CONTRACTOR_TYPES || [];
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('tool') + ' مقاول جديد</h2><span class="small">يأخذ كوداً تلقائياً (CO + رقم)، ثم تضيف أفراده ومعداته</span></div><div class="sheet-body">' +
+      '<div class="field"><label for="ctName">اسم المقاول أو الشركة</label><input id="ctName" type="text" maxlength="80"></div>' +
+      '<div class="field"><label for="ctType">النشاط</label><select id="ctType">' + types.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="row"><div class="field grow"><label for="ctContact">المسؤول</label><input id="ctContact" type="text"></div><div class="field grow"><label for="ctPhone">الهاتف</label><input id="ctPhone" type="tel" inputmode="tel"></div></div>' +
+      '<div class="field"><label for="ctNote">نطاق العمل</label><input id="ctNote" type="text" placeholder="مثال: صيانة عنابر محطات 8 و20"></div>' +
+      '<button class="btn primary big" data-a="save">' + icon('check') + ' إضافة</button></div>', function (a, el) {
+      if (a !== 'save') return;
+      el.disabled = true;
+      remote('contractorAdd', [S.session.pin, { name: $('ctName').value, type: $('ctType').value, contact: $('ctContact').value, phone: $('ctPhone').value, note: $('ctNote').value }]).then(function (r) { closeSheet(); toast('أُضيف المقاول بالكود ' + r.id); return sync().then(viewContractors); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+  }
+  function memberSheet(c, kind, d) {
+    if (kind === 'مركبة' || kind === 'معدة') return vehicleSheet({ kind: kind, company: c.id, companyName: c.name, done: function () { viewContractors(); } });
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('user') + ' ' + esc(kind) + ' لـ ' + esc(c.name) + '</h2><span class="small">الكود التالي: ' + esc(c.id) + '-' + MEMBER_L[kind][1] + '..</span></div><div class="sheet-body">' +
+      '<div class="field"><label for="mbName">الاسم</label><input id="mbName" type="text" maxlength="80"></div><div class="field"><label for="mbPhone">الهاتف (اختياري)</label><input id="mbPhone" type="tel" inputmode="tel"></div>' +
+      '<p class="xs muted">يخضع لكل قواعد العزل، ولا يدخل إلا بمأمورية معتمدة إن كانت مفعلة للزوار، ويوقف تلقائياً إذا أوقف المقاول.</p><button class="btn primary big" data-a="save">' + icon('check') + ' إضافة</button></div>', function (a, el) {
+      if (a !== 'save') return;
+      el.disabled = true;
+      remote('contractorMember', [S.session.pin, { company: c.id, kind: kind, name: $('mbName').value, phone: $('mbPhone').value }]).then(function (r) { closeSheet(); toast('أُضيف بالكود ' + r.id); return sync().then(viewContractors); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+  }
+
+  /* ---------- eBird ---------- */
+  function ebirdSheet() {
+    var steps = [['1', 'أنشئ حساباً مجانياً في Cornell Lab', 'بالإيميل فقط، بدون أي دفع.', 'https://secure.birds.cornell.edu/identity/account/create', 'إنشاء الحساب'],
+      ['2', 'اطلب مفتاح eBird API', 'سجّل الدخول بنفس الحساب، اكتب في سبب الاستخدام: Biosecurity monitoring of wild birds near poultry farms، وافق على الشروط، ثم اضغط Generate key. يظهر المفتاح فوراً.', 'https://ebird.org/api/keygen', 'صفحة طلب المفتاح'],
+      ['3', 'الصق المفتاح هنا واحفظ', 'أو اكتبه في شيت «الإعدادات» أمام EBIRD_KEY. بعدها يجلب النظام كل 3 ساعات مشاهدات آخر 3 أيام في دائرة 50 كم حول كل موقع، ويصفّي الأنواع الناقلة لإنفلونزا الطيور (البط والإوز والنوارس والبلشون واللقلق...).', '', '']];
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('bird') + ' تفعيل مشاهدات eBird الحقيقية</h2><span class="small">مجاني من مختبر كورنيل لعلم الطيور</span></div><div class="sheet-body" id="ebBody"><div class="eb-steps">' + steps.map(function (s) { return '<div><span class="hn">' + s[0] + '</span><div><b>' + s[1] + '</b><span class="small">' + s[2] + '</span>' + (s[3] ? '<a class="btn sm" target="_blank" rel="noopener" href="' + s[3] + '">' + icon('link') + ' ' + s[4] + '</a>' : '') + '</div></div>'; }).join('') + '</div>' +
+      (isAdmin() ? '<div class="field"><label for="ebKey">مفتاح eBird</label><input id="ebKey" type="text" dir="ltr" autocomplete="off" spellcheck="false" placeholder="مثال: a1b2c3d4e5f6"></div><div id="ebState" class="xs muted"></div><button class="btn primary big" data-a="save">' + icon('check') + ' حفظ وتفعيل</button>' : '<div class="infobox">حفظ المفتاح من التطبيق لمدير الأمن الحيوي فقط. أرسل له المفتاح أو اكتبه في شيت الإعدادات.</div>') +
+      '<p class="xs muted">شروط الاستخدام: <a target="_blank" rel="noopener" href="https://www.birds.cornell.edu/home/ebird-api-terms-of-use/">eBird API Terms of Use</a>. الاستخدام غير تجاري وداخلي ولا يُعاد نشر البيانات.</p><button class="btn big" data-a="close">إغلاق</button></div>', function (a, el) {
+      if (a === 'close') return closeSheet();
+      if (a !== 'save') return;
+      el.disabled = true;
+      remote('setEbirdKey', [S.session.pin, $('ebKey').value]).then(function (r) {
+        var f = r.fetched; closeSheet();
+        toast(r.active ? 'تم تفعيل eBird' + (f && f.observations != null ? ' · ' + f.observations + ' مشاهدة' : '') + (f && f.error ? ' · تحقق من المفتاح: ' + f.error : '') : 'تم إيقاف eBird', 6000);
+        if (S.route === 'birds') render();
+      }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+    if (isAdmin()) remote('ebirdStatus', [S.session.pin]).then(function (s) { var x = $('ebState'); if (x) x.innerHTML = s.active ? '<span class="pill p-ok">مفعل</span> المفتاح الحالي ' + esc(s.masked) + ' · ' + s.observations + ' مشاهدة مسجلة. اترك الخانة فارغة واحفظ لإيقافه.' : '<span class="pill p-n">غير مفعل</span>'; }).catch(function () {});
   }
 
   /* ============================ نسخة العرض: الإشعارات ============================ */

@@ -531,6 +531,8 @@ function BIO_api(store, deps) {
     store.all('sites').forEach(function (s) {
       m[BIO_norm(s.id)] = { id: BIO_norm(s.id), name: s.name, sector: s.sector || '', level: Number(s.level), type: s.type, status: String(s.status || '').trim() || BIO.ST_ACTIVE, external: BIO_isYes(s.external), lat: s.lat === '' || s.lat == null ? null : Number(s.lat), lng: s.lng === '' || s.lng == null ? null : Number(s.lng), geo: String(s.geo || '') };
     });
+    // v13: وجهات الخروج الخطرة تُعامل كمواقع خارجية (مستوى 4) حتى لو لم تُضف في شيت المواقع
+    BIO_EXT_DEST.forEach(function (d) { if (d.risk && !m[d.id]) m[d.id] = { id: d.id, name: d.name, sector: 'خارج الشركة', level: 4, type: 'وجهة خارجية', status: BIO.ST_ACTIVE, external: true, lat: null, lng: null, geo: '', virtual: true }; });
     return m;
   }
   function sitesList(sites) { return Object.keys(sites).map(function (k) { return sites[k]; }); }
@@ -621,7 +623,7 @@ function BIO_api(store, deps) {
   function movesOf(itemId, before) {
     return allMoves().filter(function (m) { return m.itemId === itemId && (before == null || m.time < before); });
   }
-  function itemInfo(it) { return it ? { id: BIO_norm(it.id), name: it.name, kind: it.kind || '', dept: it.dept || '', phone: it.phone ? String(it.phone) : '', active: it.active === true || BIO_isYes(it.active), card: Number(it.card) || 1, watch: it.watch ? String(it.watch) : '', company: it.company ? BIO_norm(it.company) : '', plate: it.plate ? String(it.plate) : '', added: it.added ? BIO_ms(it.added) : 0 } : null; }
+  function itemInfo(it) { return it ? { id: BIO_norm(it.id), name: it.name, kind: it.kind || '', dept: it.dept || '', phone: it.phone ? String(it.phone) : '', active: it.active === true || BIO_isYes(it.active), card: Number(it.card) || 1, watch: it.watch ? String(it.watch) : '', company: it.company ? BIO_norm(it.company) : '', plate: it.plate ? String(it.plate) : '', vtype: it.vtype ? String(it.vtype) : '', added: it.added ? BIO_ms(it.added) : 0 } : null; }
   function checksFor(item, st) {
     if (!item) return [];
     var k = String(item.kind);
@@ -940,10 +942,11 @@ function BIO_api(store, deps) {
       }
 
       if (p.dir === 'OUT') {
-        record(Object.assign({}, base, { dir: BIO.OUT, decision: BIO.ALLOW, reason: '' }));
-        var ext = p.extSiteId ? sites[BIO_norm(p.extSiteId)] : null;
-        if (ext) record(Object.assign({}, base, { id: base.id + '-X', time: t + 1, siteId: ext.id, siteName: ext.name, dir: BIO.EXT, decision: BIO.ALLOW, reason: 'إقرار عند الخروج من ' + site.name }));
-        return { dir: 'OUT', decision: BIO.ALLOW, item: item, itemId: itemId, site: site, ext: ext, moveId: base.id, reasons: item ? [] : ['الكود غير مسجل في النظام'], warnings: [], checks: [] };
+        var dest = BIO_destOf(p, sites, site);
+        record(Object.assign({}, base, { dir: BIO.OUT, decision: BIO.ALLOW, reason: dest.label ? 'الوجهة المُقرّة: ' + dest.label : '' }));
+        var ext = dest.ext;
+        if (ext) record(Object.assign({}, base, { id: base.id + '-X', time: t + 1, siteId: ext.id, siteName: ext.name, dir: BIO.EXT, decision: BIO.ALLOW, reason: 'إقرار عند الخروج من ' + site.name + (dest.note ? ': ' + dest.note : '') }));
+        return { dir: 'OUT', decision: BIO.ALLOW, item: item, itemId: itemId, site: site, ext: ext, dest: dest.label, moveId: base.id, reasons: item ? [] : ['الكود غير مسجل في النظام'], warnings: [], checks: [] };
       }
 
       var res;
@@ -1869,6 +1872,7 @@ function BIO_api(store, deps) {
   BIO_ext(api, H_);
   BIO_vrBridge(api, H_);
   BIO_codes(api, H_);
+  BIO_v13(api, H_);
   return api;
 }
 
@@ -2707,4 +2711,461 @@ function BIO_codes(api, H) {
     list.sort(function (a, b) { return (a.group === 'الإدارة العامة' ? -1 : 0) - (b.group === 'الإدارة العامة' ? -1 : 0) || a.group.localeCompare(b.group, 'ar') || (order[a.lvl] == null ? 99 : order[a.lvl]) - (order[b.lvl] == null ? 99 : order[b.lvl]) || a.id.localeCompare(b.id); });
     return { appUrl: H.settings().APP_URL || '', cards: list };
   };
+}
+
+
+/* ============================================================
+ * v13 — إقرار الوجهة بعد الخروج
+ * الوجهات الخطرة (risk) تُسجَّل كزيارة خارجية مستوى 4 فيُحسب العزل تلقائياً عند العودة.
+ * ============================================================ */
+var BIO_EXT_DEST = [
+  { id: 'XD-HOME', name: 'المنزل أو السكن', risk: 0, icon: 'user' },
+  { id: 'XD-CO', name: 'موقع آخر للشركة', risk: 0, icon: 'gate', pick: true },
+  { id: 'XD-OFFICE', name: 'مكتب أو جهة إدارية', risk: 0, icon: 'file' },
+  { id: 'XD-MKT', name: 'سوق طيور حية أو محل دواجن', risk: 1, icon: 'alert' },
+  { id: 'XD-FRM', name: 'مزرعة دواجن خارجية', risk: 1, icon: 'alert' },
+  { id: 'XD-SLH', name: 'مجزر', risk: 1, icon: 'alert' },
+  { id: 'XD-HAT', name: 'معمل تفريخ خارجي', risk: 1, icon: 'alert' },
+  { id: 'XD-FEED', name: 'مصنع علف أو مورد خامات', risk: 1, icon: 'alert' },
+  { id: 'XD-VET', name: 'عيادة أو معمل بيطري', risk: 1, icon: 'alert' },
+  { id: 'XD-PET', name: 'طيور منزلية أو صيد طيور', risk: 1, icon: 'alert' },
+  { id: 'XD-OTHER', name: 'جهة أخرى', risk: 0, icon: 'edit', note: true }
+];
+/** p.extKind = كود الوجهة (XD-..) أو كود موقع خارجي من الشيت، p.extSiteId = موقع الشركة عند XD-CO، p.extNote = توضيح */
+function BIO_destOf(p, sites, from) {
+  var kind = BIO_norm(p.extKind || ''), note = String(p.extNote || '').trim().slice(0, 120), sid = BIO_norm(p.extSiteId || '');
+  if (!kind && sid && sites[sid] && sites[sid].external) kind = sid; // نسخ قديمة من التطبيق
+  if (!kind) return { label: '', ext: null, note: note };
+  var d = BIO_EXT_DEST.filter(function (x) { return x.id === kind; })[0];
+  if (kind === 'XD-CO') { var co = sites[sid]; return { label: 'موقع للشركة: ' + (co && !co.external ? co.name : 'غير محدد') + (note ? ' (' + note + ')' : ''), ext: null, note: note }; }
+  var s = sites[kind];
+  var label = (d ? d.name : s ? s.name : kind) + (note ? ' (' + note + ')' : '');
+  return { label: label, ext: s && s.external ? s : null, note: note };
+}
+
+/* =====================================================================
+ * الإصدار 13: المركبات بأنواعها وتتبعها، تكويد المقاولين ومعداتهم،
+ * بيانات النقل في النافق والسبلة، ولوحة حالة المحطات حتى تاريخه
+ * ===================================================================== */
+var BIO_VEHICLE_TYPES = [
+  { k: 'ملاكي', risk: 1 }, { k: 'نقل موظفين / أتوبيس', risk: 1 }, { k: 'نقل علف', risk: 2 }, { k: 'نقل خامات ومستلزمات', risk: 2 },
+  { k: 'نقل كتاكيت', risk: 2, phase: 'استقبال كتاكيت' }, { k: 'نقل بيض تفريخ', risk: 2 }, { k: 'نقل طيور حية (بيع)', risk: 3, phase: 'بيع' },
+  { k: 'نقل سبلة', risk: 3, phase: 'تحميل سبلة' }, { k: 'نقل نافق', risk: 3 }, { k: 'غاز وسولار', risk: 2 }, { k: 'مياه', risk: 2 },
+  { k: 'صيانة', risk: 2 }, { k: 'إسعاف وطوارئ', risk: 1 }, { k: 'جهة حكومية / بيطرية', risk: 2 }, { k: 'مقاول', risk: 3 }, { k: 'أخرى', risk: 2 }
+];
+var BIO_EQUIP_TYPES = ['لودر', 'حفار أو بلدوزر', 'جرار وعربة', 'ونش', 'ماكينة رش وتطهير', 'مولد كهرباء', 'معدات لحام وصيانة', 'أقفاص وصناديق نقل', 'أخرى'];
+var BIO_CONTRACTOR_TYPES = ['مقاول أعمال وإنشاءات', 'مقاول تحميل وتنزيل', 'مقاول تنظيف وتطهير', 'مقاول سبلة ونافق', 'مقاول صيانة'];
+/** مراحل المحطة: الدورة المعتادة للتسمين. next = المرحلة المتوقعة بعدها */
+var BIO_PHASES = [
+  { k: 'استقبال كتاكيت', c: 'info', next: 'تربية', icon: 'truck' },
+  { k: 'تربية', c: 'ok', next: 'بيع', icon: 'shield' },
+  { k: 'بيع', c: 'warn', next: 'تحميل سبلة', icon: 'out' },
+  { k: 'تحميل سبلة', c: 'bad', next: 'تجهيز وتطهير', icon: 'truck' },
+  { k: 'تجهيز وتطهير', c: 'info', next: 'فترة راحة', icon: 'refresh' },
+  { k: 'فترة راحة', c: 'n', next: 'استقبال كتاكيت', icon: 'clock' },
+  { k: 'متوقفة', c: 'n', next: '', icon: 'pause' },
+  { k: 'تشغيل', c: 'ok', next: '', icon: 'check' }
+];
+TABLES.items.cols.vtype = 'النوع التفصيلي';
+TABLES.disposal.cols.plate = 'رقم العربية';
+TABLES.disposal.cols.driverName = 'اسم السائق';
+TABLES.disposal.cols.contractor = 'المقاول';
+TABLES.disposal.cols.contractorId = 'كود المقاول';
+TABLES.phases = { sheet: 'مراحل المحطات', key: 'id', cols: { id: 'الرقم', time: 'وقت التسجيل', siteId: 'كود الموقع', siteName: 'الموقع', phase: 'المرحلة', startAt: 'بداية المرحلة', flockAt: 'تاريخ التسكين', birds: 'عدد الطيور', by: 'سجّلها', source: 'المصدر', note: 'ملاحظات' } };
+TABLES.statusDaily = { sheet: 'حالة المحطات اليومية', key: 'id', cols: { id: 'الرقم', day: 'اليوم', siteId: 'كود الموقع', siteName: 'الموقع', phase: 'المرحلة', days: 'يوم في المرحلة', age: 'عمر القطيع (يوم)', entries: 'دخول اليوم', denied: 'رفض اليوم', dead: 'نافق اليوم', report: 'آخر تقرير زيارة', score: 'درجة التقرير', status: 'حالة الموقع', risk: 'مؤشر الخطر', note: 'ملاحظات' } };
+(function () {
+  var f = ADMIN.items.fields, i = 0;
+  for (; i < f.length; i++) if (f[i].k === 'plate') break;
+  f.splice(i + 1, 0, { k: 'vtype', type: 'select', opts: [''].concat(BIO_VEHICLE_TYPES.map(function (x) { return x.k; }), BIO_EQUIP_TYPES.map(function (x) { return 'معدة: ' + x; })), hint: 'للمركبات والمعدات: النوع التفصيلي (ملاكي، علف، كتاكيت، سبلة، لودر...)' });
+  var c = ADMIN.companies.fields.filter(function (x) { return x.k === 'type'; })[0];
+  if (c) c.opts = c.opts.slice(0, -1).concat(BIO_CONTRACTOR_TYPES, ['أخرى']);
+})();
+function BIO_phase(k) { for (var i = 0; i < BIO_PHASES.length; i++) if (BIO_PHASES[i].k === k) return BIO_PHASES[i]; return null; }
+function BIO_vtype(k) { k = String(k || '').trim(); for (var i = 0; i < BIO_VEHICLE_TYPES.length; i++) if (BIO_VEHICLE_TYPES[i].k === k) return BIO_VEHICLE_TYPES[i]; return null; }
+/** هل الموقع محطة تسمين لها دورة (تربية/بيع/سبلة)؟ */
+function BIO_isCycleSite(s) { return !!s && !s.external && (Number(s.level) === 3 || /تسمين|محطة/.test(String(s.name) + ' ' + String(s.type))); }
+/** يطابق نص «المحطة / الموقع» في تقرير الزيارة مع موقع في المنصة (محطة 13، مصنع علف، المفرخ...) */
+function BIO_matchSite(text, code, sites) {
+  var t = String(text || '').trim(), c = String(code || '').trim().toUpperCase(), list = sites.filter(function (s) { return !s.external; });
+  if (!t && !c) return null;
+  var byId = list.filter(function (s) { return s.id === c || s.id === BIO_norm(t); })[0];
+  if (byId) return byId;
+  var sec = /^OAS|^W-|واحات/i.test(c + ' ' + t) ? 'الواحات' : /^RIG|^R-|ريجوا/i.test(c + ' ' + t) ? 'ريجوا' : '';
+  var pick = function (arr) { if (!arr.length) return null; if (sec) { var a = arr.filter(function (s) { return s.sector === sec; }); if (a.length) return a[0]; } return arr[0]; };
+  var n = (t.match(/(?:محطة|محطه|station)\s*(\d+)/i) || c.match(/(\d+)\s*$/) || [])[1];
+  if (n) { var hit = pick(list.filter(function (s) { var m = String(s.name).match(/محطة\s*(\d+)/); return m && Number(m[1]) === Number(n); })); if (hit) return hit; }
+  if (/علف/.test(t)) return pick(list.filter(function (s) { return /علف/.test(s.name); }));
+  if (/تفريخ|مفرخ/.test(t)) return pick(list.filter(function (s) { return /تفريخ|مفرخ/.test(s.name); }));
+  if (/أمهات|امهات/.test(t)) return pick(list.filter(function (s) { return /أمهات/.test(s.name); }));
+  return pick(list.filter(function (s) { return t && (s.name.indexOf(t) >= 0 || t.indexOf(s.name) >= 0); }));
+}
+
+function BIO_v13(api, H) {
+  var store = H.store, deps = H.deps, D = 24 * BIO.HOUR;
+  function st() { return H.settings(); }
+  function num(v, d) { var n = Number(v); return isNaN(n) || v === '' || v == null ? d : n; }
+  function day0(t) { return t - ((t + 3 * BIO.HOUR) % D); }
+  function dayKey(t) { var d = new Date(t + 3 * BIO.HOUR); return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
+  function has(t) { try { store.all(t); return true; } catch (e) { return false; } }
+  function log(u, t, k, a, b, c) { if (api._log) api._log(u, t, k, a, b, c); }
+  function clean(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 80); }
+  function nameKey(v) { return String(v || '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim(); }
+  function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }
+  /** الكود التالي المتاح: V001، CO07، CO03-V02 ... */
+  function nextId(table, prefix, w) {
+    var re = new RegExp('^' + prefix.replace(/[-]/g, '\\-') + '(\\d+)$'), max = 0;
+    store.all(table).forEach(function (r) { var m = BIO_norm(r.id).match(re); if (m) max = Math.max(max, Number(m[1])); });
+    return prefix + pad(max + 1, w);
+  }
+  var MEMBER = { 'عامل': 'W', 'سائق': 'D', 'مركبة': 'V', 'معدة': 'E', 'مشرف': 'S' };
+  function canData(u) { return u.isManager && u.perms.indexOf('data') >= 0; }
+  function findCompany(q) {
+    var id = BIO_norm(q), k = nameKey(q);
+    if (!k) return null;
+    return store.all('companies').filter(function (c) { return BIO_norm(c.id) === id || nameKey(c.name) === k; })[0] || null;
+  }
+  function findPlate(plate) {
+    var p = BIO_plateNorm(plate).all; if (!p) return null;
+    return store.all('items').filter(function (i) { return i.plate && BIO_plateNorm(i.plate).all === p; })[0] || null;
+  }
+  function addCompany(u, name, type, extra) {
+    var row = Object.assign({ id: nextId('companies', 'CO', 2), name: clean(name, 80), type: type || 'أخرى', contact: '', phone: '', email: '', status: 'نشط', reason: '', note: '' }, extra || {});
+    deps.lock(function () { store.append('companies', row); });
+    log(u, 'companies', row.id, 'إضافة مقاول / شركة', null, row);
+    return row;
+  }
+  function addItem(u, it) {
+    var row = Object.assign({ phone: '', active: BIO.YES, card: 1, watch: '', company: '', plate: '', vtype: '', dept: '', added: deps.now() }, it);
+    deps.lock(function () { store.append('items', row); });
+    log(u, 'items', row.id, 'تسجيل ' + row.kind, null, row);
+    return row;
+  }
+  function memberId(co, kind) { return co ? nextId('items', BIO_norm(co.id) + '-' + (MEMBER[kind] || 'W'), 2) : nextId('items', kind === 'مركبة' ? 'V' : kind === 'معدة' ? 'Q' : kind === 'سائق' ? 'D' : 'C', 3); }
+
+  /* ---------- النافق والسبلة: رقم العربية والسائق والمقاول (تسجيل تلقائي لما لم يُسجَّل) ---------- */
+  var baseAdd = api.disposalAdd, baseList = api.disposals;
+  api.disposalAdd = function (pin, r) {
+    var u = H.auth(pin); r = Object.assign({}, r || {});
+    if (r.id && store.find('disposal', r.id)) return { ok: true, duplicate: true };
+    var sites = H.sitesById(), site = sites[BIO_norm(r.siteId)];
+    if (!site || site.external) throw new Error('اختر الموقع');
+    var plate = clean(r.plate, 30), drvName = clean(r.driverName, 60), coName = clean(r.contractor, 80), created = [];
+    var veh = r.vehicleId ? store.find('items', BIO_norm(r.vehicleId)) : plate ? findPlate(plate) : null;
+    var co = coName ? findCompany(coName) : veh && veh.company ? store.find('companies', veh.company) : null;
+    if (coName && !co) { co = addCompany(u, coName, r.kind === 'سبلة' ? 'مقاول سبلة ونافق' : 'نقل سبلة ونافق', { note: 'أُضيف تلقائياً من سجل النافق والسبلة' }); created.push('المقاول ' + co.id); }
+    if (!veh && plate) {
+      veh = addItem(u, { id: memberId(co, 'مركبة'), name: (r.kind === 'سبلة' ? 'سيارة سبلة ' : 'سيارة نافق ') + plate, kind: 'مركبة', vtype: r.kind === 'سبلة' ? 'نقل سبلة' : 'نقل نافق', plate: plate, company: co ? co.id : '', dept: co ? co.name : 'النقل' });
+      created.push('المركبة ' + veh.id);
+    } else if (veh && co && !veh.company) store.update('items', veh.id, { company: co.id });
+    var drv = r.driverId ? store.find('items', BIO_norm(r.driverId)) : null;
+    if (!drv && drvName) {
+      var k = nameKey(drvName);
+      drv = store.all('items').filter(function (i) { return i.kind === 'سائق' && nameKey(i.name) === k; })[0] || null;
+      if (!drv) { drv = addItem(u, { id: memberId(co, 'سائق'), name: drvName, kind: 'سائق', company: co ? co.id : '', dept: co ? co.name : 'النقل' }); created.push('السائق ' + drv.id); }
+    }
+    r.vehicleId = veh ? BIO_norm(veh.id) : ''; r.driverId = drv ? BIO_norm(drv.id) : '';
+    if (r.kind === 'سبلة' && !num(r.weight, 0) && !r.vehicleId) throw new Error('اكتب وزن السبلة أو رقم العربية الناقلة');
+    var res = baseAdd(pin, r);
+    if (res && res.ok && !res.duplicate) {
+      var patch = { plate: veh ? String(veh.plate || plate) : plate, driverName: drv ? drv.name : drvName, contractor: co ? co.name : '', contractorId: co ? BIO_norm(co.id) : '' };
+      deps.lock(function () { store.update('disposal', res.id, patch); });
+      res.created = created; res.vehicleId = r.vehicleId; res.driverId = r.driverId;
+    }
+    return res;
+  };
+  api.disposals = function (pin, days) {
+    var d = baseList(pin, days), by = {};
+    store.all('disposal').forEach(function (x) { by[String(x.id)] = x; });
+    d.rows.forEach(function (r) { var x = by[String(r.id)] || {}; r.plate = String(x.plate || ''); r.driverName = x.driverName || ''; r.contractor = x.contractor || ''; if (!r.driverName && x.driverId) { var dv = store.find('items', x.driverId); if (dv) r.driverName = dv.name; } if (!r.plate && r.vehicleId) { var v = store.find('items', r.vehicleId); if (v) r.plate = String(v.plate || ''); } });
+    var cos = {}; store.all('companies').forEach(function (c) { cos[c.name] = 1; });
+    d.suggest = {
+      plates: store.all('items').filter(function (i) { return i.kind === 'مركبة' && i.plate; }).map(function (i) { return { id: BIO_norm(i.id), plate: String(i.plate), name: i.name }; }),
+      drivers: store.all('items').filter(function (i) { return i.kind === 'سائق'; }).map(function (i) { return i.name; }),
+      contractors: Object.keys(cos)
+    };
+    return d;
+  };
+
+  /* ---------- المركبات والمعدات بأنواعها: تسجيل وتتبع بين كل النقاط ---------- */
+  api.vehicleAdd = function (pin, r) {
+    var u = H.auth(pin); r = r || {};
+    if (u.isManager && !canData(u)) throw new Error('ليست لديك صلاحية: إضافة وتعديل الأفراد والمركبات والكروت');
+    var kind = r.kind === 'معدة' ? 'معدة' : 'مركبة', plate = clean(r.plate, 30), name = clean(r.name, 80);
+    var vtype = kind === 'مركبة' ? (BIO_vtype(r.vtype) ? r.vtype : 'أخرى') : 'معدة: ' + (BIO_EQUIP_TYPES.indexOf(r.vtype) >= 0 ? r.vtype : 'أخرى');
+    if (kind === 'مركبة' && !plate) throw new Error('اكتب رقم اللوحة');
+    if (plate) { var dup = findPlate(plate); if (dup) throw new Error('هذه اللوحة مسجلة بالفعل بكود ' + BIO_norm(dup.id) + ' (' + dup.name + ')'); }
+    var co = r.company ? findCompany(r.company) : null;
+    if (r.company && !co) { if (!canData(u)) throw new Error('الشركة غير مسجلة. اطلب من المدير إضافتها'); co = addCompany(u, r.company, r.coType || 'أخرى'); }
+    var id = memberId(co, kind);
+    var row = addItem(u, { id: id, name: name || (vtype.replace('معدة: ', '') + (plate ? ' ' + plate : '')), kind: kind, vtype: vtype, plate: plate, company: co ? BIO_norm(co.id) : '', dept: co ? co.name : clean(r.owner, 60), phone: clean(r.phone, 20) });
+    if (!u.isManager) deps.notify({ kind: 'notice', title: '🚗 مركبة جديدة سُجلت من البوابة', body: row.name + ' (' + row.id + ')' + (plate ? '\nاللوحة: ' + plate : '') + '\nالنوع: ' + vtype + '\nسجّلها: ' + u.name + H.appUrl('#fleet') });
+    return { ok: true, id: row.id, item: H.itemInfo(row) };
+  };
+  function sectorOf(sites, id) { var s = sites[id]; return s ? s.sector : ''; }
+  function trackOf(list, sites, now, since) {
+    var inside = null, last = null, path = [], secs = {}, cross = [], hops = 0, denied = 0, flags = 0, visits = 0, prevIn = null;
+    list.forEach(function (m) {
+      if (m.dir === BIO.EXT) return;
+      if (m.time >= since) { if (m.flag) flags++; if (m.dir === BIO.IN && !BIO_counted(m) && m.decision !== BIO.PENDING && m.decision !== BIO.CANCELLED) denied++; }
+      if (!BIO_counted(m) && m.dir === BIO.IN) return;
+      last = m;
+      if (m.dir === BIO.IN) {
+        inside = m;
+        if (m.time >= since) {
+          visits++; var sec = sectorOf(sites, m.siteId); if (sec) secs[sec] = 1;
+          if (prevIn && prevIn.siteId !== m.siteId) { var ps = sectorOf(sites, prevIn.siteId); if (ps && sec && ps !== sec) cross.push({ time: m.time, from: prevIn.siteName, to: m.siteName, fromSector: ps, toSector: sec, gapH: Math.round((m.time - prevIn.time) / BIO.HOUR), flag: m.flag || '', override: m.decision === BIO.OVERRIDE }); else hops++; }
+        }
+        prevIn = m;
+      } else if (m.dir === BIO.OUT && inside && inside.siteId === m.siteId) inside = null;
+      if (m.time >= day0(now)) path.push({ time: m.time, site: m.siteName, siteId: m.siteId, dir: m.dir });
+    });
+    return { inside: inside ? { siteId: inside.siteId, site: inside.siteName, since: inside.time } : null, last: last ? { time: last.time, site: last.siteName, dir: last.dir, checkpoint: last.checkpoint || '' } : null, today: path, sectors: Object.keys(secs), cross: cross, hops: hops, denied: denied, flags: flags, visits: visits };
+  }
+  function blockedUntil(itemId, now) {
+    var bh = num(st().LITTER_BLOCK_HOURS, 24), last = 0;
+    if (has('disposal')) store.all('disposal').forEach(function (d) { var t = BIO_ms(d.time); if ((BIO_norm(d.vehicleId) === itemId || BIO_norm(d.driverId) === itemId) && t > last) last = t; });
+    return last && last + bh * BIO.HOUR > now ? last + bh * BIO.HOUR : 0;
+  }
+  function movesByItem() { var by = {}; H.allMoves().forEach(function (m) { (by[m.itemId] = by[m.itemId] || []).push(m); }); return by; }
+  api.fleet = function (pin, days) {
+    var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(); days = Math.min(90, Number(days) || 7);
+    var since = now - days * D, by = movesByItem(), cos = {};
+    store.all('companies').forEach(function (c) { cos[BIO_norm(c.id)] = { name: c.name, status: String(c.status || 'نشط').trim() }; });
+    var list = store.all('items').map(H.itemInfo).filter(function (i) { return i && (i.kind === 'مركبة' || i.kind === 'معدة'); }).map(function (i) {
+      var tr = trackOf(by[i.id] || [], sites, now, since), vt = BIO_vtype(i.vtype), co = cos[i.company];
+      var seen = tr.last && H.inScope(u, tr.last && (by[i.id] || []).slice(-1)[0].siteId, sites);
+      return { id: i.id, name: i.name, kind: i.kind, vtype: i.vtype || (i.kind === 'معدة' ? 'معدة' : 'غير محدد'), risk: vt ? vt.risk : i.kind === 'معدة' ? 3 : 2, plate: i.plate, company: i.company, companyName: co ? co.name : '', companyStopped: !!(co && co.status === 'موقوف'), active: i.active, track: tr, blockedUntil: blockedUntil(i.id, now), inScope: !tr.last || seen || u.scope.all };
+    }).filter(function (v) { return v.inScope; });
+    list.sort(function (a, b) { return (b.track.inside ? 1 : 0) - (a.track.inside ? 1 : 0) || ((b.track.last || {}).time || 0) - ((a.track.last || {}).time || 0); });
+    var types = {}; list.forEach(function (v) { types[v.vtype] = (types[v.vtype] || 0) + 1; });
+    return { now: now, days: days, list: list, types: types, vtypes: BIO_VEHICLE_TYPES, etypes: BIO_EQUIP_TYPES, companies: Object.keys(cos).map(function (k) { return { id: k, name: cos[k].name }; }),
+      totals: { all: list.length, inside: list.filter(function (v) { return v.track.inside; }).length, movedToday: list.filter(function (v) { return v.track.today.length; }).length, cross: list.reduce(function (a, v) { return a + v.track.cross.length; }, 0), blocked: list.filter(function (v) { return v.blockedUntil; }).length, highRisk: list.filter(function (v) { return v.risk >= 3; }).length },
+      canEdit: canData(u) };
+  };
+
+  /* ---------- تكويد المقاولين ومعداتهم وتتبع حركتهم داخل القطاع وبين القطاعات ---------- */
+  api.contractorAdd = function (pin, r) {
+    var u = H.auth(pin, 'data'); r = r || {};
+    var name = clean(r.name, 80); if (!name) throw new Error('اكتب اسم المقاول أو الشركة');
+    if (findCompany(name)) throw new Error('هذا الاسم مسجل بالفعل');
+    var row = addCompany(u, name, BIO_CONTRACTOR_TYPES.indexOf(r.type) >= 0 ? r.type : BIO_CONTRACTOR_TYPES[0], { contact: clean(r.contact, 60), phone: clean(r.phone, 20), note: clean(r.note, 200) });
+    return { ok: true, id: row.id };
+  };
+  api.contractorMember = function (pin, r) {
+    var u = H.auth(pin, 'data'); r = r || {};
+    var co = store.find('companies', r.company); if (!co) throw new Error('اختر المقاول');
+    var kind = MEMBER[r.kind] ? r.kind : 'عامل', name = clean(r.name, 80), plate = clean(r.plate, 30);
+    if (!name && !plate && kind !== 'معدة') throw new Error('اكتب الاسم أو رقم اللوحة');
+    if (plate) { var dup = findPlate(plate); if (dup) throw new Error('هذه اللوحة مسجلة بكود ' + BIO_norm(dup.id)); }
+    var vt = kind === 'مركبة' ? (BIO_vtype(r.vtype) ? r.vtype : 'مقاول') : kind === 'معدة' ? 'معدة: ' + (BIO_EQUIP_TYPES.indexOf(r.vtype) >= 0 ? r.vtype : 'أخرى') : '';
+    var row = addItem(u, { id: memberId(co, kind), name: name || (vt.replace('معدة: ', '') + ' ' + (plate || co.name)).trim(), kind: kind === 'مشرف' ? 'عامل' : kind, vtype: vt, plate: plate, company: BIO_norm(co.id), dept: co.name + (kind === 'مشرف' ? ' · مشرف المقاول' : ''), phone: clean(r.phone, 20) });
+    return { ok: true, id: row.id };
+  };
+  api.contractors = function (pin, days) {
+    var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(); days = Math.min(90, Number(days) || 30);
+    var since = now - days * D, by = movesByItem();
+    var members = store.all('items').map(H.itemInfo).filter(function (i) { return i && i.company; });
+    var list = store.all('companies').map(function (c) {
+      var id = BIO_norm(c.id), mem = members.filter(function (i) { return i.company === id; }).map(function (i) {
+        var tr = trackOf(by[i.id] || [], sites, now, since);
+        return { id: i.id, name: i.name, kind: i.kind, vtype: i.vtype, plate: i.plate, active: i.active, inside: tr.inside, last: tr.last, sectors: tr.sectors, cross: tr.cross, hops: tr.hops, visits: tr.visits, denied: tr.denied, flags: tr.flags, today: tr.today, blockedUntil: blockedUntil(i.id, now) };
+      });
+      var secs = {}, cross = [];
+      mem.forEach(function (m) { m.sectors.forEach(function (s) { secs[s] = 1; }); m.cross.forEach(function (x) { cross.push(Object.assign({ who: m.name, id: m.id }, x)); }); });
+      cross.sort(function (a, b) { return b.time - a.time; });
+      var contractor = /مقاول/.test(c.type || '') || mem.some(function (m) { return m.kind === 'معدة' || m.kind === 'عامل'; });
+      return { id: id, name: c.name, type: c.type || '', contact: c.contact || '', phone: String(c.phone || ''), status: String(c.status || 'نشط').trim(), reason: c.reason || '', contractor: contractor, members: mem, counts: { people: mem.filter(function (m) { return m.kind !== 'مركبة' && m.kind !== 'معدة'; }).length, vehicles: mem.filter(function (m) { return m.kind === 'مركبة'; }).length, equipment: mem.filter(function (m) { return m.kind === 'معدة'; }).length, inside: mem.filter(function (m) { return m.inside; }).length },
+        sectors: Object.keys(secs), cross: cross.slice(0, 20), crossCount: cross.length, hops: mem.reduce(function (a, m) { return a + m.hops; }, 0), visits: mem.reduce(function (a, m) { return a + m.visits; }, 0), flags: mem.reduce(function (a, m) { return a + m.flags; }, 0), denied: mem.reduce(function (a, m) { return a + m.denied; }, 0) };
+    }).sort(function (a, b) { return (b.contractor ? 1 : 0) - (a.contractor ? 1 : 0) || b.counts.inside - a.counts.inside || b.visits - a.visits; });
+    return { now: now, days: days, list: list, types: BIO_CONTRACTOR_TYPES, vtypes: BIO_VEHICLE_TYPES.map(function (x) { return x.k; }), etypes: BIO_EQUIP_TYPES, canEdit: canData(u),
+      totals: { contractors: list.filter(function (c) { return c.contractor; }).length, members: members.length, inside: list.reduce(function (a, c) { return a + c.counts.inside; }, 0), cross: list.reduce(function (a, c) { return a + c.crossCount; }, 0), stopped: list.filter(function (c) { return c.status === 'موقوف'; }).length } };
+  };
+
+  /* ---------- لوحة حالة المحطات حتى تاريخه (تحديث لحظي + لقطة يومية) ---------- */
+  function visitReports() {
+    if (!deps.visitReports) return { list: [], linked: false };
+    try { var r = deps.visitReports() || []; return { list: r, linked: true }; } catch (e) { return { list: [], linked: false, error: String(e && e.message || e) }; }
+  }
+  /** تقارير الزيارة لكل موقع (الأحدث أولاً) */
+  function reportsBySite(sites) {
+    var vr = visitReports(), list = H.sitesList(sites), out = {};
+    vr.list.forEach(function (r) {
+      var s = BIO_matchSite(r.station, r.farmCode, list); if (!s) return;
+      var t = BIO_ms(r.date) || BIO_ms(r.updatedAt); if (!t) return;
+      (out[s.id] = out[s.id] || []).push({ id: String(r.id || r.no || ''), no: String(r.no || ''), time: t, type: String(r.type || ''), visitType: String(r.visitType || ''), by: String(r.by || ''), score: r.score === '' || r.score == null ? null : Number(r.score), grade: String(r.grade || ''), decision: String(r.decision || ''), critical: num(r.critical, 0), major: num(r.major, 0), minor: num(r.minor, 0), open: num(r.open, 0), status: String(r.status || ''), downtime: r.downtime === '' || r.downtime == null ? null : Number(r.downtime), pdf: String(r.pdf || '') });
+    });
+    Object.keys(out).forEach(function (k) { out[k].sort(function (a, b) { return b.time - a.time; }); });
+    return { by: out, linked: vr.linked, error: vr.error || '', count: vr.list.length };
+  }
+  function phaseFromReport(r) { return /تجهيز|تطهير/.test(r.type) ? 'تجهيز وتطهير' : /تربية/.test(r.type) ? 'تربية' : ''; }
+  /** يستنتج مرحلة كل محطة من آخر إشارة: تسجيل يدوي، تقرير زيارة، سبلة، سيارة كتاكيت أو بيع على البوابة */
+  function siteSignals(sites, reps, now) {
+    var sig = {}, push = function (id, x) { (sig[id] = sig[id] || []).push(x); };
+    if (has('phases')) store.all('phases').forEach(function (p) { var id = BIO_norm(p.siteId); if (!sites[id] || !BIO_phase(p.phase)) return; push(id, { time: BIO_ms(p.startAt) || BIO_ms(p.time), phase: p.phase, src: 'manual', label: 'تسجيل ' + (p.by || ''), flockAt: BIO_ms(p.flockAt) || 0, birds: num(p.birds, 0), note: p.note || '', at: BIO_ms(p.time) }); });
+    Object.keys(reps).forEach(function (id) { reps[id].slice(0, 6).forEach(function (r) { var ph = phaseFromReport(r); if (ph) push(id, { time: r.time, phase: ph, src: 'report', label: 'تقرير زيارة ' + (r.no || r.id) + ' · ' + r.type }); }); });
+    if (has('disposal')) store.all('disposal').forEach(function (d) { var id = BIO_norm(d.siteId); if (d.kind === 'سبلة' && sites[id]) push(id, { time: BIO_ms(d.time), phase: 'تحميل سبلة', src: 'litter', label: 'خروج سبلة ' + (d.plate ? 'بالعربية ' + d.plate : '') }); });
+    var vt = {}; store.all('items').forEach(function (i) { var t = BIO_vtype(i.vtype); if (t && t.phase) vt[BIO_norm(i.id)] = t.phase; });
+    var lim = now - 75 * D;
+    H.allMoves().forEach(function (m) { if (m.time < lim || m.dir !== BIO.IN || !BIO_counted(m) || !vt[m.itemId] || !sites[m.siteId]) return; push(m.siteId, { time: m.time, phase: vt[m.itemId], src: 'gate', label: m.itemName + ' دخلت من ' + (m.checkpoint || 'البوابة') }); });
+    Object.keys(sig).forEach(function (k) { sig[k].sort(function (a, b) { return a.time - b.time; }); });
+    return sig;
+  }
+  function statusRows(u, now) {
+    var sites = H.sitesById(), rep = reportsBySite(sites), sig = siteSignals(sites, rep.by, now), d0 = day0(now), all = H.allMoves();
+    var today = {}, week = {}, inside = {};
+    all.forEach(function (m) {
+      if (m.time >= d0 && m.dir === BIO.IN) { var t = today[m.siteId] = today[m.siteId] || { in: 0, deny: 0, flags: 0 }; if (BIO_counted(m)) t.in++; else if (m.decision !== BIO.PENDING && m.decision !== BIO.CANCELLED) t.deny++; if (m.flag) t.flags++; }
+      if (m.time >= now - 7 * D && m.flag) week[m.siteId] = (week[m.siteId] || 0) + 1;
+    });
+    var on = {}; all.forEach(function (m) { if (m.dir === BIO.EXT || (!BIO_counted(m) && m.dir === BIO.IN)) return; if (m.dir === BIO.IN) on[m.itemId] = m.siteId; else if (m.dir === BIO.OUT && on[m.itemId] === m.siteId) delete on[m.itemId]; });
+    Object.keys(on).forEach(function (k) { inside[on[k]] = (inside[on[k]] || 0) + 1; });
+    var dead = {}, dead7 = {};
+    if (has('disposal')) store.all('disposal').forEach(function (x) { if (x.kind !== 'نافق') return; var id = BIO_norm(x.siteId), t = BIO_ms(x.time); if (t >= d0) dead[id] = (dead[id] || 0) + num(x.count, 0); else if (t >= d0 - 7 * D) dead7[id] = (dead7[id] || 0) + num(x.count, 0); });
+    var urgent = {}; store.all('reports').forEach(function (r) { if (String(r.status) !== BIO.R_DONE) { var id = BIO_norm(r.siteId); urgent[id] = (urgent[id] || 0) + 1; } });
+    var rows = H.sitesList(sites).filter(function (s) { return !s.external && H.inScope(u, s.id, sites); }).map(function (s) {
+      var cyc = BIO_isCycleSite(s), list = sig[s.id] || [], cur = list[list.length - 1] || null, phase, start, src;
+      if (cur) { phase = cur.phase; start = cur.time; src = cur; } else { phase = cyc ? '' : 'تشغيل'; start = 0; src = null; }
+      // الإشارات المتتالية لنفس المرحلة تُحسب من أولها
+      if (cur) for (var i = list.length - 2; i >= 0 && list[i].phase === phase; i--) start = list[i].time;
+      if (phase === 'استقبال كتاكيت' && now - start > 2 * D) phase = 'تربية';
+      if (phase === 'تجهيز وتطهير' && cur && cur.src !== 'manual' && now - start > 10 * D) phase = 'فترة راحة';
+      if (s.status === BIO.ST_CLOSED) phase = 'متوقفة';
+      var flockAt = 0; for (var j = list.length - 1; j >= 0; j--) { if (list[j].flockAt) { flockAt = list[j].flockAt; break; } if (list[j].phase === 'استقبال كتاكيت') { flockAt = list[j].time; break; } if (list[j].phase === 'تحميل سبلة' || list[j].phase === 'تجهيز وتطهير' || list[j].phase === 'فترة راحة') break; }
+      if (['تربية', 'استقبال كتاكيت', 'بيع'].indexOf(phase) < 0) flockAt = 0;
+      var birds = 0; if (flockAt || phase === 'تربية' || phase === 'بيع') for (var b = list.length - 1; b >= 0; b--) { if (list[b].birds) { birds = list[b].birds; break; } if (list[b].phase === 'تحميل سبلة') break; }
+      var reps = rep.by[s.id] || [], lr = reps[0] || null, t = today[s.id] || { in: 0, deny: 0, flags: 0 }, avg = (dead7[s.id] || 0) / 7, dd = dead[s.id] || 0;
+      var spike = dd >= Math.max(30, avg * 2), risk = 0, why = [];
+      if (s.status === BIO.ST_ALERT) { risk += 35; why.push('الموقع في حالة إنذار'); } else if (s.status === BIO.ST_CLOSED) { risk += 50; why.push('الموقع مغلق'); }
+      if (spike) { risk += 30; why.push('نفوق مرتفع اليوم'); }
+      if (lr && lr.critical) { risk += 20; why.push(lr.critical + ' ملاحظة حرجة في آخر تقرير'); }
+      if (lr && lr.score != null && lr.score < 75) { risk += 12; why.push('درجة آخر تقرير ' + lr.score + '%'); }
+      if (urgent[s.id]) { risk += 15; why.push(urgent[s.id] + ' بلاغ عاجل مفتوح'); }
+      if (t.deny >= 3) { risk += 8; why.push(t.deny + ' حالة رفض اليوم'); }
+      if (week[s.id]) { risk += Math.min(15, week[s.id] * 5); why.push(week[s.id] + ' مخالفة خلال 7 أيام'); }
+      if (cyc && !lr) { risk += 5; why.push('لا يوجد تقرير زيارة مسجل'); } else if (lr && now - lr.time > 14 * D) { risk += 6; why.push('آخر تقرير زيارة منذ ' + Math.round((now - lr.time) / D) + ' يوماً'); }
+      risk = Math.min(100, risk);
+      var ph = BIO_phase(phase);
+      return { id: s.id, name: s.name, sector: s.sector, level: s.level, type: s.type, status: s.status, cycle: cyc, phase: phase || 'غير محددة', phaseC: ph ? ph.c : 'n', next: ph ? ph.next : '', since: start, days: start ? Math.max(0, Math.floor((now - start) / D)) : null, flockAt: flockAt, age: flockAt ? Math.max(0, Math.floor((now - flockAt) / D)) + 1 : null, birds: birds,
+        source: src ? { src: src.src, label: src.label, time: src.time } : null, history: list.slice(-6).reverse().map(function (x) { return { time: x.time, phase: x.phase, src: x.src, label: x.label }; }),
+        today: t, inside: inside[s.id] || 0, dead: dd, deadAvg: Math.round(avg * 10) / 10, spike: spike, urgent: urgent[s.id] || 0,
+        report: lr, reports: reps.slice(0, 3), risk: risk, riskLabel: risk >= 60 ? 'مرتفع' : risk >= 30 ? 'متوسط' : 'منخفض', why: why };
+    });
+    rows.sort(function (a, b) { return String(a.sector).localeCompare(String(b.sector)) || (a.cycle ? 1 : 0) - (b.cycle ? 1 : 0) || String(a.name).localeCompare(String(b.name), 'ar', { numeric: true }); });
+    return { rows: rows, reports: { linked: rep.linked, error: rep.error, count: rep.count } };
+  }
+  function canPhase(u) { return u.isManager && u.role !== BIO.ROLE_VIEWER && (u.perms.indexOf('decide') >= 0 || u.perms.indexOf('reports') >= 0 || u.perms.indexOf('vr_write') >= 0 || u.perms.indexOf('admin') >= 0); }
+  api.stationStatus = function (pin) {
+    var u = H.auth(pin, true), now = deps.now(), r = statusRows(u, now);
+    var snap = has('statusDaily') ? store.all('statusDaily').reduce(function (a, x) { return String(x.day) > a ? String(x.day) : a; }, '') : '';
+    var counts = {}; r.rows.forEach(function (x) { counts[x.phase] = (counts[x.phase] || 0) + 1; });
+    return { now: now, day: dayKey(now), rows: r.rows, counts: counts, phases: BIO_PHASES, reports: r.reports, snapshot: snap, canEdit: canPhase(u), reportsUrl: String(st().REPORTS_URL || BIO_REPORTS_URL) };
+  };
+  api.setPhase = function (pin, p) {
+    var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(); p = p || {};
+    if (!canPhase(u)) throw new Error('تحديث مرحلة المحطة لمسؤولي ومشرفي الأمن الحيوي ومديري المواقع');
+    var s = sites[BIO_norm(p.siteId)]; if (!s || s.external) throw new Error('اختر الموقع');
+    if (!H.inScope(u, s.id, sites)) throw new Error('هذا الموقع خارج نطاق إدارتك');
+    if (!BIO_phase(p.phase)) throw new Error('اختر المرحلة');
+    var start = BIO_ms(p.startAt) || now; if (start > now + D) throw new Error('تاريخ بداية المرحلة في المستقبل');
+    var row = { id: p.id || deps.id('PH'), time: now, siteId: s.id, siteName: s.name, phase: p.phase, startAt: start, flockAt: BIO_ms(p.flockAt) || (p.phase === 'استقبال كتاكيت' ? start : ''), birds: num(p.birds, '') , by: u.name, source: 'تسجيل يدوي', note: clean(p.note, 200) };
+    if (store.find('phases', row.id)) return { ok: true, duplicate: true };
+    deps.lock(function () { store.append('phases', row); });
+    log(u, 'phases', row.id, 'تحديث مرحلة ' + s.name, null, row);
+    if (['بيع', 'تحميل سبلة', 'استقبال كتاكيت'].indexOf(p.phase) >= 0) deps.notify({ kind: 'site', siteId: s.id, title: '📍 «' + s.name + '»: مرحلة ' + p.phase, body: 'سجّلها ' + u.name + (row.note ? '\n' + row.note : '') + (p.phase === 'تحميل سبلة' ? '\nسيارات السبلة ممنوعة من المناطق النظيفة ' + num(st().LITTER_BLOCK_HOURS, 24) + ' ساعة بعد الخروج.' : '') + H.appUrl('#stations') });
+    return { ok: true, id: row.id };
+  };
+  /** لقطة يومية (من المهمة المجدولة 2 فجراً): تحفظ حالة كل محطة في شيت «حالة المحطات اليومية» */
+  api._statusSnapshot = function () {
+    var now = deps.now(), key = dayKey(now), r = statusRows({ scope: { all: true }, isManager: true, perms: [] }, now), have = {};
+    store.all('statusDaily').forEach(function (x) { have[String(x.id)] = 1; });
+    var rows = r.rows.filter(function (x) { return !have[key + '-' + x.id]; }).map(function (x) { return { id: key + '-' + x.id, day: key, siteId: x.id, siteName: x.name, phase: x.phase, days: x.days == null ? '' : x.days, age: x.age == null ? '' : x.age, entries: x.today.in, denied: x.today.deny, dead: x.dead, report: x.report ? (x.report.no || x.report.id) + ' · ' + x.report.type + ' · ' + BIO_fmtTime(x.report.time) : '', score: x.report && x.report.score != null ? x.report.score : '', status: x.status, risk: x.risk, note: x.why.join('، ') }; });
+    if (rows.length) deps.lock(function () { if (store.appendMany) store.appendMany('statusDaily', rows); else rows.forEach(function (x) { store.append('statusDaily', x); }); });
+    return { day: key, rows: rows.length };
+  };
+  /** سجل اللقطات اليومية لمحطة (آخر 30 يوماً) */
+  api.stationHistory = function (pin, siteId) {
+    var u = H.auth(pin, true), id = BIO_norm(siteId);
+    if (!H.inScope(u, id)) throw new Error('هذا الموقع خارج نطاق إدارتك');
+    var rows = has('statusDaily') ? store.all('statusDaily').filter(function (x) { return BIO_norm(x.siteId) === id; }).map(function (x) { return { day: String(x.day), phase: x.phase, days: x.days, age: x.age, entries: num(x.entries, 0), denied: num(x.denied, 0), dead: num(x.dead, 0), score: x.score, risk: num(x.risk, 0) }; }).sort(function (a, b) { return a.day < b.day ? 1 : -1; }).slice(0, 30) : [];
+    var ph = has('phases') ? store.all('phases').filter(function (x) { return BIO_norm(x.siteId) === id; }).map(function (x) { return { time: BIO_ms(x.time), phase: x.phase, startAt: BIO_ms(x.startAt), by: x.by, note: x.note || '' }; }).sort(function (a, b) { return b.time - a.time; }).slice(0, 20) : [];
+    return { days: rows, phases: ph };
+  };
+
+  /* ---------- eBird: حفظ المفتاح من التطبيق (للمدير) ---------- */
+  api.ebirdStatus = function (pin) {
+    H.auth(pin, true); var k = String(st().EBIRD_KEY || '').trim();
+    var n = has('birdobs') ? store.all('birdobs').filter(function (o) { return /eBird/i.test(String(o.source)); }).length : 0;
+    return { active: !!k, masked: k ? k.slice(0, 2) + '••••' + k.slice(-2) : '', observations: n };
+  };
+  api.setEbirdKey = function (pin, key) {
+    var u = H.auth(pin, 'admin'), k = String(key || '').trim();
+    if (k && !/^[A-Za-z0-9]{6,40}$/.test(k)) throw new Error('المفتاح غير صحيح: انسخه كما يظهر في صفحة eBird (حروف وأرقام إنجليزية فقط)');
+    var row = store.find('settings', 'EBIRD_KEY');
+    deps.lock(function () { if (row) store.update('settings', 'EBIRD_KEY', { value: k }); else store.append('settings', { key: 'EBIRD_KEY', value: k, note: 'مفتاح eBird المجاني لمشاهدات الطيور الحقيقية حول المواقع' }); });
+    log(u, 'settings', 'EBIRD_KEY', k ? 'تفعيل eBird' : 'إيقاف eBird', null, { key: k ? '••••' : '' });
+    var fetched = null;
+    if (k && deps.ebirdNow) { try { fetched = deps.ebirdNow(); } catch (e) { fetched = { error: String(e && e.message || e) }; } }
+    return { ok: true, active: !!k, fetched: fetched };
+  };
+}
+
+/* بيانات العرض للإصدار 13: أنواع المركبات، مقاول بمعداته يتنقل بين القطاعين، ومراحل المحطات */
+function BIO_seedV13(s, now) {
+  var H = BIO.HOUR, D = 24 * H, Y = BIO.YES, nm = {};
+  s.sites.forEach(function (x) { nm[x.id] = x.name; });
+  var vt = { V001: 'نقل علف', V002: 'نقل سبلة', V003: 'نقل كتاكيت', V004: 'صيانة', Q001: 'معدة: ماكينة رش وتطهير' };
+  s.items.forEach(function (i) { if (vt[i.id]) i.vtype = vt[i.id]; });
+  s.moves = s.moves.filter(function (m) { return !(m.itemId === 'V003' && m.siteId === 'W-F03'); });
+  (s.companies = s.companies || []).push({ id: 'CO06', name: 'مقاول إنشاءات النخيل (مثال)', type: 'مقاول أعمال وإنشاءات', contact: 'م. شريف', phone: '', email: '', status: 'نشط', reason: '', note: 'صيانة عنابر وأعمال خرسانية' });
+  s.items.push(
+    { id: 'V005', name: 'سيارة ملاكي - طبيب بيطري (مثال)', kind: 'مركبة', vtype: 'ملاكي', dept: 'الطب البيطري', phone: '', active: Y, plate: 'ق ر م 2525' },
+    { id: 'V006', name: 'سيارة تاجر طيور حية (مثال)', kind: 'مركبة', vtype: 'نقل طيور حية (بيع)', dept: 'المبيعات', phone: '', active: Y, plate: 'ب ي ع 7070' },
+    { id: 'V007', name: 'تريلا خامات علف (مثال)', kind: 'مركبة', vtype: 'نقل خامات ومستلزمات', dept: 'المشتريات', phone: '', active: Y, plate: 'خ م ت 6161' },
+    { id: 'CO06-S01', name: 'مشرف المقاول - سامي (مثال)', kind: 'عامل', dept: 'مقاول إنشاءات النخيل (مثال) · مشرف المقاول', phone: '', active: Y, company: 'CO06' },
+    { id: 'CO06-W01', name: 'عامل مقاول - رجب (مثال)', kind: 'عامل', dept: 'مقاول إنشاءات النخيل (مثال)', phone: '', active: Y, company: 'CO06' },
+    { id: 'CO06-W02', name: 'عامل مقاول - صابر (مثال)', kind: 'عامل', dept: 'مقاول إنشاءات النخيل (مثال)', phone: '', active: Y, company: 'CO06' },
+    { id: 'CO06-V01', name: 'نصف نقل المقاول (مثال)', kind: 'مركبة', vtype: 'مقاول', dept: 'مقاول إنشاءات النخيل (مثال)', phone: '', active: Y, company: 'CO06', plate: 'ن خ ل 3131' },
+    { id: 'CO06-E01', name: 'لودر المقاول (مثال)', kind: 'معدة', vtype: 'معدة: لودر', dept: 'مقاول إنشاءات النخيل (مثال)', phone: '', active: Y, company: 'CO06' }
+  );
+  var k = 0, cps = { W: 'منطقة التطهير المركزية - الواحات', R: 'منطقة التطهير المركزية - ريجوا' };
+  function mv(it, name, site, h, dir, extra) { var t = now - h * H; s.moves.push(Object.assign({ id: 'V13-SEED-' + (++k), time: t, itemId: it, itemName: name, siteId: site, siteName: nm[site], dir: dir, decision: BIO.ALLOW, reason: '', checks: dir === BIO.IN ? 'غسيل وتطهير كامل' : '', user: 'أمن البوابة', checkpoint: cps[site.charAt(0)], offline: '', flag: '', via: 'مسح الكارت', updatedAt: t }, extra || {})); }
+  mv('V005', 'سيارة ملاكي - طبيب بيطري (مثال)', 'W-HAT', 6, BIO.IN); mv('V005', 'سيارة ملاكي - طبيب بيطري (مثال)', 'W-HAT', 5, BIO.OUT); mv('V005', 'سيارة ملاكي - طبيب بيطري (مثال)', 'W-BRD', 2, BIO.IN);
+  mv('V006', 'سيارة تاجر طيور حية (مثال)', 'W-F03', 3, BIO.IN, { checks: 'غسيل وتطهير السيارة بالكامل، تطهير الأقفاص' });
+  mv('V007', 'تريلا خامات علف (مثال)', 'W-FEED', 8, BIO.IN); mv('V007', 'تريلا خامات علف (مثال)', 'W-FEED', 6, BIO.OUT);
+  mv('CO06-W01', 'عامل مقاول - رجب (مثال)', 'W-F08', 30, BIO.IN); mv('CO06-W01', 'عامل مقاول - رجب (مثال)', 'W-F08', 26, BIO.OUT);
+  mv('CO06-W01', 'عامل مقاول - رجب (مثال)', 'R-BRD', 5, BIO.IN, { decision: BIO.OVERRIDE, reason: 'دخول استثنائي لإصلاح عاجل', flag: 'انتقل من قطاع الواحات إلى ريجوا قبل اكتمال العزل (مثال)' });
+  mv('CO06-S01', 'مشرف المقاول - سامي (مثال)', 'W-F08', 30, BIO.IN); mv('CO06-S01', 'مشرف المقاول - سامي (مثال)', 'W-F08', 26, BIO.OUT); mv('CO06-S01', 'مشرف المقاول - سامي (مثال)', 'W-F20', 4, BIO.IN);
+  mv('CO06-W02', 'عامل مقاول - صابر (مثال)', 'W-F20', 4, BIO.IN);
+  mv('CO06-V01', 'نصف نقل المقاول (مثال)', 'W-F08', 30, BIO.IN); mv('CO06-V01', 'نصف نقل المقاول (مثال)', 'W-F08', 26, BIO.OUT);
+  mv('CO06-V01', 'نصف نقل المقاول (مثال)', 'R-HAT', 3, BIO.IN, { decision: BIO.DENY, reason: 'لم تكتمل فترة العزل بعد الخروج من محطة 8 (قطاع آخر)', checks: '' });
+  mv('CO06-E01', 'لودر المقاول (مثال)', 'W-F08', 48, BIO.IN); mv('CO06-E01', 'لودر المقاول (مثال)', 'W-F08', 40, BIO.OUT); mv('CO06-E01', 'لودر المقاول (مثال)', 'W-F20', 20, BIO.IN);
+  s.moves.sort(function (a, b) { return a.time - b.time; });
+  var p = 0;
+  function ph(site, phase, startD, extra) { s.phases.push(Object.assign({ id: 'PH-SEED-' + (++p), time: now - startD * D, siteId: site, siteName: nm[site], phase: phase, startAt: now - startD * D, flockAt: '', birds: '', by: 'مشرف الأمن الحيوي (مثال)', source: 'تسجيل يدوي', note: '' }, extra || {})); }
+  s.phases = [];
+  ph('W-F05', 'بيع', 2, { flockAt: now - 36 * D, birds: 42000, note: 'بداية البيع: 3 أيام' });
+  ph('W-F03', 'تربية', 34, { flockAt: now - 34 * D, birds: 38000 });
+  ph('W-F08', 'فترة راحة', 6, { note: 'داون تايم 14 يوماً' });
+  ph('W-F17', 'تجهيز وتطهير', 7);
+  ph('W-F20', 'فترة راحة', 3);
+  ph('W-F10', 'استقبال كتاكيت', 11, { birds: 40000 });
+  s.statusDaily = [];
+  return s;
+}
+var BIO_seedV12_ = BIO_seed;
+BIO_seed = function (now) { return BIO_seedV13(BIO_seedV12_(now), now); };
+/** تقارير زيارة تجريبية لنسخة العرض (على الخادم تُقرأ من شيت تطبيق التقارير) */
+function BIO_demoReports(now) {
+  var D = 24 * BIO.HOUR, n = 0;
+  function r(st, code, type, d, score, grade, crit, maj, min, status, by) { n++; return { id: 'demo-' + n, no: 'VR-' + (1040 + n), type: type, station: st, farmCode: code, date: now - d * D, visitType: 'دورية', by: by || 'معاون أمن حيوي (مثال)', score: score, grade: grade, decision: score >= 85 ? 'مطابق' : score >= 70 ? 'مطابق مع ملاحظات' : 'غير مطابق', critical: crit, major: maj, minor: min, open: crit + maj, status: status || 'معتمد', downtime: /تجهيز/.test(type) ? 12 : '', pdf: '', updatedAt: now - d * D }; }
+  return [
+    r('محطة 10', 'OAS-10', 'أثناء التربية', 3, 88, 'جيد جداً', 0, 1, 2),
+    r('محطة 4', 'OAS-04', 'أثناء التربية', 5, 71, 'مقبول', 1, 2, 3, 'بانتظار المراجعة'),
+    r('محطة 21', 'OAS-21', 'التجهيز والتطهير', 2, 92, 'ممتاز', 0, 0, 1),
+    r('محطة 13', 'OAS-13', 'التجهيز والتطهير', 3, 84, 'جيد', 0, 1, 1),
+    r('محطة 12', 'OAS-12', 'أثناء التربية', 1, 94, 'ممتاز', 0, 0, 0),
+    r('محطة 5', 'OAS-05', 'أثناء التربية', 9, 81, 'جيد', 0, 1, 2),
+    r('مصنع علف الواحات', 'OAS-FM', 'مصنع علف', 6, 79, 'جيد', 0, 2, 2),
+    r('محطة 3', 'OAS-03', 'أثناء التربية', 12, 86, 'جيد جداً', 0, 0, 3)
+  ];
 }
