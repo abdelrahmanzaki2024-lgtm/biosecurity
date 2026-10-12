@@ -153,6 +153,7 @@
 
   function sync() {
     if (!S.session || S.syncing) return Promise.resolve();
+    if (vrOnly()) return Promise.resolve();   // حساب التقارير فقط: لا يحتاج بيانات البوابات
     S.syncing = true; renderNet();
     var ops = S.outbox.slice();
     return remote('sync', [S.session.pin, { ops: ops, since: S.lastSync, refVersion: S.ref && S.ref.version }]).then(function (r) {
@@ -260,18 +261,21 @@
   function instAndroid() { return /Android/i.test(navigator.userAgent || ''); }
   // متصفح Chrome الحقيقي (وليس متصفح الكاميرا أو قارئ QR أو واتساب أو تطبيق Google)
   function instRealChrome() { var u = navigator.userAgent || ''; return /Chrome\/\d/.test(u) && !/; wv\)|SamsungBrowser|EdgA|OPR|YaBrowser|GSA\/|FBAN|FBAV|Instagram|Line\/|Snapchat|MiuiBrowser|HeyTap|UCBrowser/.test(u); }
-  function instCan() { return MODE === 'web' && !instStandalone(); }
+  // رابط النسخة القابلة للتثبيت (GitHub Pages). رابط Apps Script لا يقبل التثبيت، فزر التثبيت هناك يفتح هذه النسخة
+  var PWA_URL = CFG.PWA_URL || 'https://abdelrahmanzaki2024-lgtm.github.io/biosecurity/';
+  function instCan() { return MODE === 'gas' || (MODE === 'web' && !instStandalone()); }
   function instMode() { return S.installEvt ? 'prompt' : instIOS() ? 'ios' : (instAndroid() && !instRealChrome()) ? 'chrome' : instAndroid() ? 'menu' : 'desk'; }
   function instChromeUrl() { return 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end'; }
   function instSnoozed() { try { return Date.now() - Number(localStorage.getItem('bioInstallLater') || 0) < 3 * 864e5; } catch (e) { return false; } }
   function instOffer() {
     if (window.BIO_FORCE_INSTALL) { S.instShown = true; return instDraw(); }
-    if (!instCan() || instSnoozed() || S.instShown) return;
+    if (MODE !== 'web' || !instCan() || instSnoozed() || S.instShown) return;
     var m = instMode(); if (m === 'menu' || m === 'desk') return;
     S.instShown = true; instDraw();
   }
   // زر «تثبيت التطبيق» في التطبيق: خطوة واحدة ثم موافقة المتصفح
   function instGo() {
+    if (MODE === 'gas') { window.open(PWA_URL + '?install=1', '_blank', 'noopener'); return; }
     if (S.installEvt) {
       var ev = S.installEvt; S.installEvt = null; ev.prompt();
       return (ev.userChoice || Promise.resolve({})).then(function (r) { if (r && r.outcome === 'accepted') { instClose(); toast('جارٍ تثبيت التطبيق… ستظهر الأيقونة على شاشتك خلال ثوانٍ', 5000); } else instClose(true); refreshInstBtns(); });
@@ -280,7 +284,7 @@
     S.instShown = true; S.instHelp = true; instDraw();
   }
   function instClose(later) { S.instShown = false; S.instHelp = false; var el = $('instBar'); if (el) el.remove(); if (later) try { localStorage.setItem('bioInstallLater', String(Date.now())); } catch (e) {} }
-  function instBtnHtml(cls) { return instCan() ? '<button type="button" class="' + (cls || 'self-cta inst-cta') + '" data-install="1">' + '<img class="inst-ico sm" src="icons/icon-192.png" alt=""><span><b>ثبّت التطبيق على هذا الجهاز</b><small>ضغطة واحدة وتظهر أيقونة كايرو ثري إيه على شاشتك</small></span>' + icon('download') + '</button>' : ''; }
+  function instBtnHtml(cls) { return instCan() ? '<button type="button" class="' + (cls || 'self-cta inst-cta') + '" data-install="1">' + '<img class="inst-ico sm" src="' + (MODE === 'gas' ? logoSrc() : 'icons/icon-192.png') + '" alt=""><span><b>ثبّت التطبيق على هذا الجهاز</b><small>' + (MODE === 'gas' ? 'يفتح نسخة التطبيق القابلة للتثبيت، ثم اضغط «تثبيت الآن»' : 'ضغطة واحدة وتظهر أيقونة كايرو ثري إيه على شاشتك') + '</small></span>' + icon('download') + '</button>' : ''; }
   function refreshInstBtns() { if (instStandalone()) Array.prototype.forEach.call(document.querySelectorAll('[data-install]'), function (b) { b.remove(); }); }
   document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-install]'); if (b) { e.preventDefault(); instGo(); } });
   function instDraw() {
@@ -312,12 +316,12 @@
       '<div class="login-side"><div class="login-card"><div class="lc-title"><b>تسجيل الدخول</b><span class="small muted">أدخل رقمك السري · يُحفظ الدخول على هذا الجهاز</span></div>' +
       '<div class="pin-dots" id="pinDots"></div><div class="keypad" id="keypad"></div><div class="login-err" id="loginErr" role="alert">' + esc(msg || '') + '</div>' +
       (MODE === 'demo' ? '<div class="demo-pins"><span class="xs muted">أرقام نسخة العرض:</span>' +
-        [['1111', 'أمن التطهير المركزي - الواحات'], ['2222', 'أمن تطهير التسمين كلين - الواحات'], ['3333', 'أمن التطهير المركزي - ريجوا'], ['9999', 'مدير الأمن الحيوي (كل الصلاحيات)'], ['4444', 'مدير قطاع الواحات'], ['5555', 'مدير محطتي 5 و10'], ['6666', 'الإدارة العليا (متابعة فقط)']]
+        [['1111', 'أمن التطهير المركزي - الواحات'], ['2222', 'أمن تطهير التسمين كلين - الواحات'], ['3333', 'أمن التطهير المركزي - ريجوا'], ['9999', 'مدير الأمن الحيوي (كل الصلاحيات)'], ['4444', 'مدير قطاع الواحات'], ['5555', 'مدير محطتي 5 و10'], ['6666', 'الإدارة العليا (متابعة فقط)'], ['7777', 'معاون أمن حيوي (التقارير فقط)']]
           .map(function (p) { return '<button type="button" data-pin="' + p[0] + '"><span>' + p[1] + '</span><b>' + p[0] + '</b></button>'; }).join('') + '</div>' : '') +
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 10</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 11</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -344,8 +348,8 @@
       var sameUser = S.session && S.session.user.id === sess.user.id;
       if (!sameUser) { S.moves = {}; S.lastSync = 0; S.notices = []; S.approvals = {}; S.seenNotices = {}; S.dash = null; S.comms = null; S.chats = {}; }
       S.session = Object.assign({ pin: pin }, sess);
-      S.siteId = ''; S.route = '';
-      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+      S.siteId = ''; S.route = ''; S.vrFrame = null;
+      try { history.replaceState(null, '', location.pathname + location.search + (sess.user.reportsOnly ? '#vr' : sess.user.isManager && (sess.user.perms || []).some(function (p) { return p.indexOf('vr_') === 0; }) ? '#portal' : '')); } catch (e) { location.hash = ''; }
       persist();
       return sync().then(startApp);
     }).catch(function (e) {
@@ -365,16 +369,21 @@
       });
       return;
     }
-    S.session = null; KV.del('session'); clearInterval(S.poll); showLogin();
+    S.session = null; S.vrFrame = null; KV.del('session'); clearInterval(S.poll); showLogin();
   }
 
   /* ============================ الإطار والتنقل ============================ */
   /** صلاحيات المستخدم الحالي (الحسابات القديمة بدون صلاحيات = مدير كامل) */
   function can(p) { var u = S.session && S.session.user; if (!u || !u.isManager) return false; if (!u.perms) return true; return u.perms.indexOf(p) >= 0; }
   function isAdmin() { var u = S.session && S.session.user; return !!(u && u.isManager && (u.isAdmin || !u.perms)); }
+  /** تقارير الزيارات: صلاحيات المستخدم عليها، وهل حسابه للتقارير فقط */
+  function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
+  function hasVr() { return vrPerms().length > 0; }
+  function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
   function navItems() {
+    if (vrOnly()) return [['vr', 'تقارير الزيارات', 'clip'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -392,18 +401,20 @@
     document.body.innerHTML = demoStrip() +
       '<div class="app"><header class="topbar"><div class="topbar-in"><div class="logo">' + logoImg() + '</div>' +
       '<div class="brandtxt"><b>' + esc(me.company || CFG.COMPANY || 'الأمن الحيوي') + '</b><span id="subTitle"></span></div>' +
-      '<div class="top-actions">' + (instCan() ? '<button class="netchip inst-chip" type="button" data-install="1">' + icon('download') + '<span>تثبيت</span></button>' : '') + '<button class="netchip" id="netChip" type="button"></button>' +
+      '<div class="top-actions">' + (hasVr() && !vrOnly() ? '<button class="netchip portal-chip" type="button" id="portalChip">' + icon('layers') + '<span>المنصة</span></button>' : '') + (instCan() ? '<button class="netchip inst-chip" type="button" data-install="1">' + icon('download') + '<span>تثبيت</span></button>' : '') + '<button class="netchip" id="netChip" type="button"></button>' +
       '<button class="iconbtn" id="bellBtn" type="button" aria-label="القرارات">' + icon('bell') + '<span class="badge" id="bellBadge" hidden></span></button></div></div></header>' +
-      '<div class="shell"><nav class="sidenav" id="sideNav" aria-label="التنقل"></nav><main class="main" id="main"></main></div>' +
+      '<div class="shell"><nav class="sidenav" id="sideNav" aria-label="التنقل"></nav><div class="maincol"><main class="main" id="main"></main><div class="vr-host" id="vrHost" hidden></div></div></div>' +
       '<nav class="bottomnav" id="bottomNav" aria-label="التنقل"></nav></div><div class="toasts" id="toasts" aria-live="polite"></div><div id="sheetRoot"></div>';
     bindDemoStrip();
     document.onkeydown = function (e) { if (e.key === 'Escape') closeSheet(); };
     var nav = navItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
-    $('sideNav').innerHTML = '<span class="navlabel">' + (S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
+    $('sideNav').innerHTML = '<span class="navlabel">' + (vrOnly() ? 'تقارير الزيارات' : S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
       '<div class="sidefoot"><b>' + esc(S.session.user.name) + '</b><span>' + esc(S.session.user.isManager ? (S.session.user.roleLabel || 'مدير') + (S.session.user.scope && !S.session.user.scope.all ? ' · ' + S.session.user.scope.label : '') : (S.session.gate.name || 'أمن بوابة')) + '</span></div>';
-    $('bottomNav').innerHTML = navItems().filter(function (n) { return !(S.session.user.isManager && (n[0] === 'gate' || n[0] === 'sim' || n[0] === 'report' || n[0] === 'passport' || n[0] === 'trace' || n[0] === 'map' || n[0] === 'insights' || n[0] === 'users' || ['birds', 'wx', 'inspect', 'disposal', 'companies', 'academy'].indexOf(n[0]) >= 0)); }).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + (n[0] === 'dash' ? 'القيادة' : n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
+    $('bottomNav').innerHTML = navItems().filter(function (n) { return !(S.session.user.isManager && (n[0] === 'gate' || n[0] === 'sim' || n[0] === 'report' || n[0] === 'passport' || n[0] === 'trace' || n[0] === 'map' || n[0] === 'insights' || n[0] === 'users' || ['birds', 'wx', 'inspect', 'disposal', 'companies', 'academy', 'vr'].indexOf(n[0]) >= 0)); }).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + (n[0] === 'dash' ? 'القيادة' : n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     document.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
     $('netChip').onclick = function () { sync(); go('more'); };
+    if ($('portalChip')) $('portalChip').onclick = function () { go('portal'); };
+    if (vrOnly()) { $('netChip').hidden = true; $('bellBtn').hidden = true; }
     $('bellBtn').onclick = function () { go('notices'); };
     if (MODE === 'web' && window.Notification && Notification.permission === 'granted' && CFG.FIREBASE) enablePush(true);
     render();
@@ -412,9 +423,9 @@
   function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(); }
   function currentRoute() {
     var r = (location.hash || '').replace('#', '');
-    var allowed = navItems().map(function (n) { return n[0]; }).concat(S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external'] : [], ['tv'], isAdmin() ? ['backup'] : []) : ['ref', 'passport', 'disposal']);
+    var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external'] : [], ['tv'], isAdmin() ? ['backup'] : []) : ['ref', 'passport', 'disposal']);
     var base = r.split('/')[0];
-    if (allowed.indexOf(base) < 0) return S.session.user.isManager ? 'dash' : 'gate';
+    if (allowed.indexOf(base) < 0) return vrOnly() ? 'vr' : S.session.user.isManager ? 'dash' : 'gate';
     return r;
   }
   function render() {
@@ -424,10 +435,12 @@
     if (base !== 'tv') tvStop();
     if (base !== 'birds') birdLiveStop();
     if (base !== 'wx' && S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; }
+    document.body.classList.toggle('vr-on', base === 'vr');
+    if ($('vrHost')) $('vrHost').hidden = base !== 'vr' || !S.vrFrame;
     clearInterval(S.poll);
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || base === 'users' && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -1095,7 +1108,89 @@
   }
 
   /* ============================ المزيد ============================ */
+
+  /* ============================ المنصة: النظام أو تقارير الزيارات ============================ */
+  var VR_TYPES = [['clip', 'أثناء التربية', 'تقييم 36 بنداً في 8 محاور، والحالة الصحية، والدرجة والتقدير، والإجراءات التصحيحية'], ['shield', 'التجهيز والتطهير', 'برنامج التطهير 30 خطوة، وفحص الجاهزية، والمسحات، وقرار استلام القطيع'], ['box', 'مصنع العلف', 'برنامج المصنع 24 خطوة، والمطابقة، ومسحات المصنع وعينات العلف، وقرار التوريد']];
+  var VR_ROLE_TXT = { mgr: 'الاعتماد النهائي (مدير إدارة الأمن الحيوي)', sup: 'المراجعة والتعديل (مسؤول الأمن الحيوي)', insp: 'تحرير التقارير (مفتش / معاون)', view: 'الاطلاع على التقارير' };
+  function vrRoleOf(perms) { return perms.indexOf('vr_approve') >= 0 ? 'mgr' : perms.indexOf('vr_review') >= 0 ? 'sup' : perms.indexOf('vr_write') >= 0 ? 'insp' : 'view'; }
+  function viewPortal() {
+    var u = S.session.user, vr = vrPerms(), role = vrRoleOf(vr);
+    var h = new Date().toLocaleString('en-US', Object.assign({ hour: 'numeric', hour12: false }, TZ)) | 0;
+    $('main').innerHTML = '<section class="view portal"><div class="portal-head"><span class="crumb">' + icon('layers') + ' منصة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + '</span><h1>' + (h < 12 ? 'صباح الخير' : 'مساء الخير') + '، ' + esc(u.name || '') + '</h1><p>اختر ما تريد العمل عليه الآن. تقدر تنتقل بينهما في أي وقت من زر «المنصة» أعلى الشاشة.</p></div>' +
+      '<div class="portal-grid">' +
+      '<button type="button" class="portal-card sys" data-pt="dash"><span class="pc-ico">' + icon('dash') + '</span><span class="pc-k">النظام</span><b>نظام تتبع الأمن الحيوي</b><span class="pc-d">البوابات وحركة الأفراد والمركبات والمعدات، وفترات العزل، والقرارات والطلبات، ولوحة القيادة والتحليل.</span>' +
+        '<span class="pc-tags"><i>' + esc(u.roleLabel || u.role) + '</i>' + (u.scope && !u.scope.all ? '<i>' + esc(u.scope.label) + '</i>' : '<i>كل القطاعات</i>') + '</span><span class="pc-go">دخول النظام ' + icon('chev') + '</span></button>' +
+      '<button type="button" class="portal-card vr" data-pt="vr"><span class="pc-ico">' + icon('clip') + '</span><span class="pc-k">التقارير</span><b>تقارير زيارات الأمن الحيوي</b><span class="pc-d">' + VR_TYPES.map(function (x) { return x[1]; }).join(' · ') + '، مع دورة المراجعة والاعتماد وملفات PDF.</span>' +
+        '<span class="pc-tags"><i>دورك: ' + esc(VR_ROLE_TXT[role]) + '</i></span><span class="pc-go">فتح التقارير ' + icon('chev') + '</span></button>' +
+      '</div><p class="xs muted portal-note">' + icon('lock') + ' دخول واحد للمنصة كلها. صلاحياتك في النظام والتقارير يحددها مدير الأمن الحيوي من شاشة المستخدمين.</p></section>';
+    $('main').querySelectorAll('[data-pt]').forEach(function (b) { b.onclick = function () { go(b.dataset.pt); }; });
+  }
+  /** يفتح تطبيق التقارير داخل المنصة بتذكرة دخول تُستخدم مرة واحدة (بدون رقم سري ثانٍ) */
+  function viewVr() {
+    if (S.vrFrame) { $('vrHost').hidden = false; vrFit(); return; }
+    $('main').innerHTML = '<section class="view">' + v5Head('تقارير زيارات الأمن الحيوي', 'clip', 'التقارير الثلاثة بدورة المراجعة والاعتماد، بنفس دخولك للمنصة') + '<div class="card vr-wait"><span class="spin"></span><b>جارٍ فتح التقارير بحسابك…</b><span class="small muted">بنتأكد من صلاحياتك ونفتح تطبيق التقارير بدورك</span></div></section>';
+    remote('vrOpen', [S.session.pin]).then(function (r) {
+      if (S.route.split('/')[0] !== 'vr') return;
+      if (r.demo) return vrDemo(r);
+      var host = $('vrHost');
+      host.innerHTML = '<div class="vr-bar"><span class="vr-t">' + icon('clip') + '<b><span class="hide-sm">تقارير زيارات الأمن الحيوي</span><span class="only-sm">التقارير</span></b></span><span class="vr-role">' + esc(r.roleLabel) + '</span><span class="vr-sp"></span>' +
+        '<button type="button" class="btn sm ghost" data-vr="win" title="فتح التقارير في نافذة مستقلة">' + icon('expand') + '<span class="hide-sm"> نافذة مستقلة</span></button>' +
+        '<button type="button" class="btn sm ghost" data-vr="reload" title="إعادة تحميل التقارير">' + icon('refresh') + '</button>' +
+        (vrOnly() ? '' : '<button type="button" class="btn sm" data-vr="sys">' + icon('dash') + '<span class="hide-sm"> النظام</span></button>') + '</div>' +
+        '<iframe class="vr-frame" id="vrFrame" title="تقارير زيارات الأمن الحيوي" allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation" src="' + esc(r.url) + '"></iframe>';
+      S.vrFrame = { url: r.url, role: r.role };
+      $('main').innerHTML = '';
+      host.hidden = false;
+      host.querySelector('.vr-bar').onclick = function (e) {
+        var b = e.target.closest('[data-vr]'); if (!b) return;
+        if (b.dataset.vr === 'sys') go('dash');
+        else if (b.dataset.vr === 'reload') { S.vrFrame = null; host.hidden = true; host.innerHTML = ''; render(); }
+        else if (b.dataset.vr === 'win') {
+          var w = window.open('', '_blank');
+          remote('vrOpen', [S.session.pin]).then(function (x) { if (w) w.location = x.url; else location.href = x.url; }, function (e) { if (w) w.close(); toast(errText(e)); });
+        }
+      };
+      vrFit();
+    }).catch(function (e) {
+      if (S.route.split('/')[0] !== 'vr') return;
+      $('main').innerHTML = '<section class="view">' + v5Head('تقارير زيارات الأمن الحيوي', 'clip', '') + '<div class="card vr-wait">' + icon(e.net ? 'wifioff' : 'alert', 'ico-lg') + '<b>' + esc(e.net ? 'التقارير تحتاج اتصالاً بالإنترنت لفتحها' : errText(e)) + '</b>' +
+        '<span class="small muted">' + (e.net ? 'تطبيق التقارير يحفظ ما تكتبه على الجهاز لو انقطع الاتصال بعد فتحه، لكن أول فتح يحتاج إنترنت.' : 'لو المشكلة مستمرة كلّم مدير الأمن الحيوي.') + '</span><button class="btn primary" type="button" id="vrRetry">' + icon('refresh') + ' حاول مرة أخرى</button></div></section>';
+      $('vrRetry').onclick = function () { render(); };
+    });
+  }
+  function vrFit() {
+    var f = $('vrFrame'); if (!f) return;
+    var bn = $('bottomNav'), bh = bn && getComputedStyle(bn).display !== 'none' ? bn.offsetHeight + 20 : 0;
+    var top = f.getBoundingClientRect().top + window.scrollY;
+    f.style.height = Math.max(420, window.innerHeight - top - bh - 8) + 'px';
+  }
+  window.addEventListener('resize', function () { if (S.route && S.route.split('/')[0] === 'vr') vrFit(); });
+  /** نسخة العرض: تطبيق التقارير الحقيقي يعمل على خادم Apps Script، فنعرض هنا كيف يعمل الدخول والصلاحيات */
+  function vrDemo(r) {
+    var steps = [['edit', 'المفتش / المعاون', 'يحرر التقرير من الموبايل في الموقع، ويحفظ دون إنترنت ويرفعه تلقائياً'], ['eye', 'مسؤول الأمن الحيوي', 'يراجع التقرير ويعدّله أو يعيده للمعد بملاحظاته'], ['check', 'مدير إدارة الأمن الحيوي', 'يعتمد التقرير نهائياً بالتوقيع، ويُحفظ PDF في Drive'], ['mega', 'المتابعة', 'الإجراءات التصحيحية لها مسؤول وموعد وتُتابع حتى الإغلاق']];
+    $('main').innerHTML = '<section class="view">' + v5Head('تقارير زيارات الأمن الحيوي', 'clip', 'تطبيق التقارير الحالي بكل نماذجه يفتح هنا داخل المنصة بنفس دخولك') +
+      '<div class="card vr-demo-hero"><div><span class="kick">' + icon('lock') + ' دخولك الحالي</span><h2>' + esc(S.session.user.name) + '</h2><p class="small muted">دورك في التقارير: <b>' + esc(r.roleLabel) + '</b></p>' +
+        '<div class="chips">' + r.perms.map(function (k) { return '<span class="pill p-info">' + esc(PERM_SHORT[k] || k) + '</span>'; }).join('') + '</div></div>' +
+        '<div class="infobox small">' + icon('alert') + ' في التطبيق الفعلي تفتح شاشة التقارير هنا كاملة. نسخة العرض لا تتصل بخادم التقارير، لذلك نعرض طريقة العمل فقط.</div></div>' +
+      '<div class="vr-types">' + VR_TYPES.map(function (x) { return '<div class="card vr-type"><span class="pc-ico">' + icon(x[0]) + '</span><b>' + esc(x[1]) + '</b><span class="small muted">' + esc(x[2]) + '</span></div>'; }).join('') + '</div>' +
+      '<div class="card"><h2>' + icon('history') + ' دورة التقرير</h2><div class="vr-flow">' + steps.map(function (s, i) { return '<div class="vr-step"><span class="n">' + (i + 1) + '</span>' + icon(s[0]) + '<b>' + esc(s[1]) + '</b><span class="xs muted">' + esc(s[2]) + '</span></div>'; }).join('') + '</div></div>' +
+      '<div class="card"><h2>' + icon('user') + ' مين بيشوف إيه</h2><div class="tbl"><table><thead><tr><th>صلاحية المنصة</th><th>الدور في التقارير</th><th>يقدر</th></tr></thead><tbody>' +
+        [['اعتماد التقارير', 'مدير إدارة الأمن الحيوي', 'يطّلع على الكل، ويعتمد نهائياً، ويحذف'], ['مراجعة التقارير', 'مسؤول الأمن الحيوي', 'يطّلع على الكل، ويراجع ويعدّل ويعيد للمعد'], ['تحرير التقارير', 'مفتش / معاون', 'ينشئ تقاريره ويعدّلها حتى الإرسال'], ['الاطلاع على التقارير', 'اطلاع', 'يقرأ التقارير وملفات PDF فقط']].map(function (x) { return '<tr><td><b>' + x[0] + '</b></td><td>' + x[1] + '</td><td class="small">' + x[2] + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="xs muted">يحددها مدير الأمن الحيوي لكل مستخدم من «المستخدمون والصلاحيات». حساب «مفتش / معاون أمن حيوي» يدخل على التقارير فقط.</p></div></section>';
+  }
+
+  function viewMoreVr() {
+    var me = S.session;
+    $('main').innerHTML = '<section class="view"><div class="viewhead"><h1>المزيد</h1></div><div class="grid-2">' +
+      '<div class="card"><div class="who"><div class="avatar">' + icon('user', 'ico-lg') + '</div><div><b>' + esc(me.user.name) + '</b><span class="small muted">' + esc(me.user.roleLabel || me.user.role) + '</span></div></div>' +
+      '<p class="small muted">حسابك مخصص لتقارير زيارات الأمن الحيوي. لو محتاج صلاحيات أخرى اطلبها من مدير الأمن الحيوي.</p>' +
+      '<button class="btn" id="logoutBtn">' + icon('out') + ' تسجيل الخروج</button></div>' +
+      '<div class="card"><h2>' + icon('download') + ' التطبيق على جهازك</h2><p class="small muted">ثبّت التطبيق على الشاشة الرئيسية ليفتح بضغطة واحدة مثل أي تطبيق.</p>' + (instCan() ? '<button class="btn primary" type="button" data-install="1">' + icon('download') + ' تثبيت التطبيق</button>' : '') + '</div>' +
+      '</div></section>';
+    $('logoutBtn').onclick = function () { logout(); };
+  }
   function viewMore() {
+    if (vrOnly()) return viewMoreVr();
     var me = S.session, pushTxt;
     if (MODE === 'demo') pushTxt = 'في نسخة العرض تظهر الإشعارات أعلى الشاشة كما ستظهر على الموبايل.';
     else if (MODE === 'gas') pushTxt = 'الإشعارات الفورية تعمل عند فتح التطبيق من رابطه المستضاف وتثبيته على الشاشة الرئيسية.';
@@ -2409,8 +2504,8 @@
     });
   }
   /* ============================ المستخدمون والصلاحيات ============================ */
-  var PERM_SHORT = { decide: 'قرار الاستثناء', reports: 'البلاغات والرسائل', notices: 'إصدار القرارات', sites: 'إنذار وإغلاق المواقع', data: 'الأفراد والكروت', analytics: 'التحليل والتتبع', admin: 'إدارة النظام' };
-  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye' };
+  var PERM_SHORT = { decide: 'قرار الاستثناء', reports: 'البلاغات والرسائل', notices: 'إصدار القرارات', sites: 'إنذار وإغلاق المواقع', data: 'الأفراد والكروت', analytics: 'التحليل والتتبع', admin: 'إدارة النظام', vr_write: 'تحرير التقارير', vr_view: 'الاطلاع على التقارير', vr_review: 'مراجعة التقارير', vr_approve: 'اعتماد التقارير' };
+  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye', 'مفتش أمن حيوي': 'clip' };
   function userAccessMsg(u, pin, appUrl) {
     var scope = u.role === 'أمن بوابة' ? 'البوابة: ' + (u.gateName || '') : u.scopeLabel ? 'نطاق الإدارة: ' + u.scopeLabel : 'نطاق الإدارة: كل القطاعات';
     return 'مرحباً ' + u.name + '\nتم تجهيز حسابك على تطبيق الأمن الحيوي - ' + (S.session.company || CFG.COMPANY || '') + '\n\nالدور: ' + u.roleLabel + '\n' + scope +
@@ -2486,10 +2581,14 @@
       $('uScope').querySelectorAll('[data-sc]').forEach(function (x) { x.onclick = function () { var k = x.dataset.sc, i = st.scope.indexOf(k); if (i >= 0) st.scope.splice(i, 1); else st.scope.push(k); x.classList.toggle('on', i < 0); }; });
       var locked = r.k === 'مدير' || r.k === 'أمن بوابة';
       $('uPerms').innerHTML = r.k === 'أمن بوابة' ? '<div class="infobox small">' + icon('scan') + ' أمن البوابة يسجل الدخول والخروج، ويرسل البلاغات العاجلة والرسائل للمدير، ويطّلع على القرارات.</div>' :
-        '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div><div class="u-perms">' + perms.map(function (p) {
-          var on = locked || st.perms.indexOf(p.k) >= 0, dis = locked || p.k === 'admin';
-          return '<button type="button" class="u-perm' + (on && !(p.k === 'admin' && !locked) ? ' on' : '') + '" data-pm="' + p.k + '"' + (dis ? ' disabled' : '') + '><span class="box">' + icon('check') + '</span><span><b>' + esc(p.short) + '</b><span>' + esc(p.label) + '</span></span></button>';
-        }).join('') + '</div>' + (locked ? '<span class="hint">مدير الأمن الحيوي له كل الصلاحيات دائماً.</span>' : '<span class="hint">«إدارة النظام» لمدير الأمن الحيوي فقط.</span>') + '</div>';
+        '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div>' + [['', 'صلاحيات نظام الأمن الحيوي', 'shield'], ['vr', 'صلاحيات تقارير الزيارات', 'clip']].map(function (g) {
+          var ps = perms.filter(function (p) { return (p.group || '') === g[0]; });
+          if (!ps.length || (g[0] === '' && r.reportsOnly)) return '';
+          return '<div class="u-pgroup"><span class="u-pg-h">' + icon(g[2]) + ' ' + g[1] + '</span>' + (g[0] === 'vr' ? '<span class="xs muted">تحدد دور الموظف داخل تطبيق التقارير: الاعتماد ← مدير الإدارة، المراجعة والتعديل ← مسؤول الأمن الحيوي، التحرير ← مفتش / معاون، الاطلاع ← متابعة.</span>' : '') + '<div class="u-perms">' + ps.map(function (p) {
+            var on = locked || st.perms.indexOf(p.k) >= 0, dis = locked || p.k === 'admin';
+            return '<button type="button" class="u-perm' + (on && !(p.k === 'admin' && !locked) ? ' on' : '') + '" data-pm="' + p.k + '"' + (dis ? ' disabled' : '') + '><span class="box">' + icon('check') + '</span><span><b>' + esc(p.short) + '</b><span>' + esc(p.label) + '</span></span></button>';
+          }).join('') + '</div></div>';
+        }).join('') + (locked ? '<span class="hint">مدير الأمن الحيوي له كل الصلاحيات دائماً.</span>' : '<span class="hint">«إدارة النظام» لمدير الأمن الحيوي فقط.</span>') + '</div>';
       $('uPerms').querySelectorAll('[data-pm]:not([disabled])').forEach(function (x) { x.onclick = function () { var k = x.dataset.pm, i = st.perms.indexOf(k); if (i >= 0) st.perms.splice(i, 1); else st.perms.push(k); x.classList.toggle('on', i < 0); }; });
       if ($('uReset')) $('uReset').onclick = function () { st.perms = r.perms.slice(); drawRole(); };
     }

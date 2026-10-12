@@ -93,7 +93,7 @@ var ADMIN = {
     { k: 'hours', type: 'number', req: 1 }, { k: 'note' }] },
   users: { title: 'المستخدمون', fields: [
     { k: 'id', req: 1, upper: 1 }, { k: 'name', req: 1 }, { k: 'pin', req: 1, hint: '4 أرقام أو أكثر، لا يتكرر' },
-    { k: 'role', type: 'select', opts: ['أمن بوابة', 'مدير موقع', 'مدير قطاع', 'متابعة فقط', 'مدير'], req: 1 }, { k: 'gate', type: 'gate' }, { k: 'phone' }, { k: 'scope' }, { k: 'perms' }, { k: 'active', type: 'yesno', def: 'نعم' }] },
+    { k: 'role', type: 'select', opts: ['أمن بوابة', 'مفتش أمن حيوي', 'مدير موقع', 'مدير قطاع', 'متابعة فقط', 'مدير'], req: 1 }, { k: 'gate', type: 'gate' }, { k: 'phone' }, { k: 'scope' }, { k: 'perms' }, { k: 'active', type: 'yesno', def: 'نعم' }] },
   contacts: { title: 'جهات التنبيه (واتساب وإيميل)', fields: [
     { k: 'id', req: 1, upper: 1 }, { k: 'name', req: 1 }, { k: 'phone', hint: 'واتساب بالصيغة الدولية مثل 201001234567 (اختياري إذا أُدخل إيميل)' },
     { k: 'apikey', hint: 'يصل لصاحب الرقم من CallMeBot عند التفعيل' },
@@ -119,7 +119,8 @@ function BIO_userWants(u, evt, sites, checkpoints) {
   if (u.active != null && String(u.active).trim() === BIO.NO) return false;
   var r = BIO_role(u.role);
   if (!r || r.k === BIO.ROLE_GUARD) return false;
-  var perms = BIO_userPerms(u), need = { request: 'decide', report: 'reports', escalation: 'reports', message: 'reports' }[evt.kind];
+  var perms = BIO_userPerms(u), need = { request: 'decide', report: 'reports', escalation: 'reports', message: 'reports' }[evt.kind] || (evt.kind === 'vreport' ? evt.perm || 'vr_view' : '');
+  if (r.reportsOnly && evt.kind !== 'vreport') return false;
   if (need && perms.indexOf(need) < 0) return false;
   if (r.k === BIO.ROLE_VIEWER && ['deny', 'card', 'watch'].indexOf(evt.kind) >= 0) return false;
   var raw = BIO_list(u.scope);
@@ -358,6 +359,9 @@ function BIO_seedV5(s, now) {
     { key: 'EBIRD_KEY', value: '', note: 'اختياري ومجاني: مفتاح eBird لجلب مشاهدات الطيور الحقيقية حول المواقع (ebird.org/api/keygen)' },
     { key: 'TV_SECONDS', value: 12, note: 'مدة عرض كل لوحة في شاشة غرفة العمليات بالثواني' }
   );
+  // حساب «مفتش أمن حيوي» تجريبي: يدخل على التقارير فقط
+  s.users.push({ id: 'U13', pin: '7777', name: 'معاون الأمن الحيوي (مثال)', role: 'مفتش أمن حيوي', gate: '', scope: 'الواحات', phone: '' });
+  s.settings.push({ key: 'REPORTS_URL', value: BIO_REPORTS_URL, note: 'رابط تطبيق تقارير الزيارات (Apps Script) الذي يفتح داخل المنصة بنفس الدخول' });
   return s;
 }
 
@@ -571,12 +575,16 @@ function BIO_api(store, deps) {
     if (u.active != null && String(u.active).trim() === BIO.NO) throw new Error('هذا الحساب موقوف. راجع مدير الأمن الحيوي');
     var role = String(u.role).trim(), r = BIO_role(role) || BIO_role(BIO.ROLE_GUARD);
     var isMgr = r.k !== BIO.ROLE_GUARD, perms = BIO_userPerms({ role: r.k, perms: u.perms });
+    // حساب التقارير فقط (المفتش / المعاون): لا يصل لعمليات نظام البوابات
+    if (r.reportsOnly && need !== 'login' && need !== 'vr') throw new Error('حسابك مخصص لتقارير الزيارات فقط');
+    if (need === 'login') need = null;
+    else if (need === 'vr') need = true;
     if (need && !isMgr) throw new Error('هذه العملية للمديرين فقط');
     if (typeof need === 'string' && perms.indexOf(need) < 0) {
       var pd = BIO_PERMS.filter(function (x) { return x.k === need; })[0];
       throw new Error('ليست لديك صلاحية: ' + (pd ? pd.label : need) + '. اطلبها من مدير الأمن الحيوي');
     }
-    var out = { id: BIO_norm(u.id), name: u.name, role: r.k, roleLabel: r.label, gateId: BIO_norm(u.gate), phone: u.phone, isManager: isMgr, isAdmin: r.k === BIO.ROLE_MANAGER, perms: perms };
+    var out = { id: BIO_norm(u.id), name: u.name, role: r.k, roleLabel: r.label, gateId: BIO_norm(u.gate), phone: u.phone, isManager: isMgr, isAdmin: r.k === BIO.ROLE_MANAGER, reportsOnly: !!r.reportsOnly, perms: perms };
     out.scope = isMgr ? scopeOf(u, sitesById()) : null;
     return out;
   }
@@ -705,7 +713,7 @@ function BIO_api(store, deps) {
   function session(u) {
     var sites = sitesById(), gate = gateFor(u, sites), st = settings();
     return {
-      user: { id: u.id, name: u.name, role: u.role, roleLabel: u.roleLabel, isManager: u.isManager, isAdmin: !!u.isAdmin, perms: u.perms || [], scope: u.scope ? { all: u.scope.all, sectors: u.scope.sectors, sites: u.scope.sites, label: u.scope.label } : null },
+      user: { id: u.id, name: u.name, role: u.role, roleLabel: u.roleLabel, isManager: u.isManager, isAdmin: !!u.isAdmin, reportsOnly: !!u.reportsOnly, perms: u.perms || [], scope: u.scope ? { all: u.scope.all, sectors: u.scope.sectors, sites: u.scope.sites, label: u.scope.label } : null },
       gate: { id: gate.id, name: gate.name, sector: gate.sector, siteIds: gate.sites.map(function (s) { return s.id; }) },
       company: st.COMPANY || '', managerPhone: st.MANAGER_PHONE || '', managerEmail: st.MANAGER_EMAIL || ''
     };
@@ -841,7 +849,7 @@ function BIO_api(store, deps) {
   }
 
   var api = {
-    login: function (pin) { return session(auth(pin)); },
+    login: function (pin) { return session(auth(pin, 'login')); },
 
     /* ---------- المستخدمون والصلاحيات ---------- */
     usersList: function (pin) {
@@ -1857,7 +1865,9 @@ function BIO_api(store, deps) {
       return { ok: true };
     }
   };
-  BIO_ext(api, { store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor });
+  var H_ = { store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor };
+  BIO_ext(api, H_);
+  BIO_vrBridge(api, H_);
   return api;
 }
 
@@ -2506,5 +2516,56 @@ function BIO_ext(api, H) {
       out.deadToday = Object.keys(dead).reduce(function (a, k) { return a + dead[k]; }, 0);
     } catch (e) {}
     return out;
+  };
+  /** يستدعيها خادم تطبيق التقارير (بدون رقم سري) للتحقق من التذكرة؛ التذكرة تُستخدم مرة واحدة */
+  api.vrTicket = function (ticket) {
+    var info = deps.ticket ? deps.ticket.take(ticket) : null;
+    if (!info) throw new Error('تذكرة الدخول غير صالحة أو انتهت');
+    return info;
+  };
+}
+
+/* ============================ تقارير زيارات الأمن الحيوي ============================
+   منصة واحدة ودخول واحد: تطبيق التقارير (نماذج أثناء التربية والتجهيز والتطهير ومصنع العلف، والمراجعة والاعتماد وملفات PDF)
+   يفتح داخل المنصة بنفس الرقم السري. مدير الأمن الحيوي يمنح صلاحيات التقارير لكل مستخدم من شاشة المستخدمين،
+   والمنصة تسلّم تطبيق التقارير تذكرة دخول تُستخدم مرة واحدة، فيدخل المستخدم بدوره المناسب دون كود ثانٍ. */
+var BIO_REPORTS_URL = 'https://script.google.com/macros/s/AKfycbzhk71OJIFJNLcLHa9b2hqw3jHlAXEoBhcoxV6D34H2UvD8-p5fU52XmvEMhqXnG3hN/exec';
+BIO_PERMS.push(
+  { k: 'vr_write', label: 'تحرير تقارير الزيارات (إنشاء تقرير وإرساله)', short: 'تحرير التقارير', group: 'vr' },
+  { k: 'vr_view', label: 'الاطلاع على تقارير الزيارات', short: 'الاطلاع على التقارير', group: 'vr' },
+  { k: 'vr_review', label: 'مراجعة التقارير وتعديلها (مسؤول الأمن الحيوي)', short: 'مراجعة وتعديل التقارير', group: 'vr' },
+  { k: 'vr_approve', label: 'الاعتماد النهائي للتقارير (مدير إدارة الأمن الحيوي)', short: 'اعتماد التقارير', group: 'vr' }
+);
+BIO.ROLE_INSPECTOR = 'مفتش أمن حيوي';
+BIO_ROLES.forEach(function (r) {
+  if (r.k === BIO.ROLE_MANAGER) r.perms = r.perms.concat(['vr_write', 'vr_view', 'vr_review', 'vr_approve']);
+  else if (r.k === BIO.ROLE_SECTOR || r.k === BIO.ROLE_SITE || r.k === BIO.ROLE_VIEWER) r.perms = r.perms.concat(['vr_view']);
+});
+BIO_ROLES.splice(BIO_ROLES.length - 1, 0, { k: BIO.ROLE_INSPECTOR, label: 'مفتش / معاون أمن حيوي', desc: 'يدخل على تقارير الزيارات فقط: يحرر التقارير ويرسلها للمراجعة', scope: 'optional', perms: ['vr_write'], reportsOnly: true });
+/** دور المستخدم في تطبيق التقارير حسب أعلى صلاحية تقارير لديه */
+var BIO_VR_ROLES = { mgr: 'مدير إدارة الأمن الحيوي (اعتماد)', sup: 'مسؤول الأمن الحيوي (مراجعة وتعديل)', insp: 'مفتش / معاون (تحرير)', view: 'اطلاع' };
+function BIO_vrRole(perms) {
+  perms = perms || [];
+  return perms.indexOf('vr_approve') >= 0 ? 'mgr' : perms.indexOf('vr_review') >= 0 ? 'sup' : perms.indexOf('vr_write') >= 0 ? 'insp' : perms.indexOf('vr_view') >= 0 ? 'view' : '';
+}
+function BIO_vrBridge(api, H) {
+  var deps = H.deps;
+  /** يفتح تطبيق التقارير للمستخدم: يرجع الرابط ومعه تذكرة دخول تُستخدم مرة واحدة خلال 10 دقائق */
+  api.vrOpen = function (pin) {
+    var u = H.auth(pin, 'vr'), role = BIO_vrRole(u.perms);
+    if (!role) throw new Error('ليست لديك صلاحية على تقارير الزيارات. اطلبها من مدير الأمن الحيوي');
+    var url = String(H.settings().REPORTS_URL || BIO_REPORTS_URL).trim();
+    var vr = u.perms.filter(function (p) { return p.indexOf('vr_') === 0; });
+    var out = { role: role, roleLabel: BIO_VR_ROLES[role], perms: vr, url: url };
+    if (!deps.ticket) { out.demo = true; return out; }
+    var tk = deps.ticket.make({ bid: u.id, name: String(u.name || '').slice(0, 60), phone: String(u.phone || ''), role: role, at: deps.now() });
+    out.url = url + (url.indexOf('?') < 0 ? '?' : '&') + 'b=' + tk;
+    return out;
+  };
+  /** يستدعيها خادم تطبيق التقارير (بدون رقم سري) للتحقق من التذكرة؛ التذكرة تُستخدم مرة واحدة */
+  api.vrTicket = function (ticket) {
+    var info = deps.ticket ? deps.ticket.take(ticket) : null;
+    if (!info) throw new Error('تذكرة الدخول غير صالحة أو انتهت');
+    return info;
   };
 }
