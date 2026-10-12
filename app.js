@@ -328,7 +328,7 @@
   function showLogin(msg) {
     stopCam();
     document.body.innerHTML = demoStrip() +
-      '<div class="login"><div class="login-hero"><div class="logo">' + logoImg() + '</div><h1>نظام الأمن الحيوي</h1><p>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · تتبع حركة الأفراد والمركبات والمعدات بين المواقع وتطبيق فترات العزل لحظياً</p>' +
+      '<div class="login"><div class="login-hero"><div class="logo">' + logoImg() + '</div><h1>منظومة الأمن الحيوي المتكاملة</h1><span class="login-en" dir="ltr">Integrated Biosecurity System · Cairo 3A</span><p>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · تتبع حركة الأفراد والمركبات والمعدات بين المواقع وتطبيق فترات العزل لحظياً</p>' +
       '<div class="login-feats"><span>' + icon('shield') + ' قواعد عزل تلقائية</span><span>' + icon('bell') + ' قرارات فورية للمدير</span><span>' + icon('wifioff') + ' يعمل دون إنترنت</span><span>' + icon('wa') + ' تنبيهات واتساب</span></div></div>' +
       '<div class="login-side"><div class="login-card"><div class="lc-title"><b>تسجيل الدخول</b><span class="small muted">أدخل رقمك السري · يُحفظ الدخول على هذا الجهاز</span></div>' +
       '<div class="pin-dots" id="pinDots"></div><div class="keypad" id="keypad"></div><div class="login-err" id="loginErr" role="alert">' + esc(msg || '') + '</div>' +
@@ -338,7 +338,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 12</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 12.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };

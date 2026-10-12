@@ -1990,3 +1990,6 @@ body.vr-on .main:empty { display: none; }
   .cd-card { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .cd-top, .cd-lv { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.login-hero .login-en { display: block; font-family: var(--font-mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; opacity: .78; margin: 2px 0 10px; text-align: inherit; white-space: nowrap; }
+@media (max-width: 520px) { .login-hero .login-en { font-size: .64rem; letter-spacing: .05em; } }
+.login-hero h1 { line-height: 1.25; }
