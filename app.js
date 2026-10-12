@@ -338,7 +338,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 11.2</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 12</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -440,7 +440,7 @@
   function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(); }
   function currentRoute() {
     var r = (location.hash || '').replace('#', '');
-    var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external'] : [], ['tv'], isAdmin() ? ['backup'] : []) : ['ref', 'passport', 'disposal']);
+    var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external'] : [], ['tv'], isAdmin() ? ['backup', 'codes'] : []) : ['ref', 'passport', 'disposal']);
     var base = r.split('/')[0];
     if (allowed.indexOf(base) < 0) return vrOnly() ? 'vr' : S.session.user.isManager ? 'dash' : 'gate';
     return r;
@@ -456,8 +456,8 @@
     if ($('vrHost')) $('vrHost').hidden = base !== 'vr' || !S.vrFrame;
     clearInterval(S.poll);
     S.route = r;
-    document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || base === 'users' && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr };
+    document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -2522,7 +2522,7 @@
   }
   /* ============================ المستخدمون والصلاحيات ============================ */
   var PERM_SHORT = { decide: 'قرار الاستثناء', reports: 'البلاغات والرسائل', notices: 'إصدار القرارات', sites: 'إنذار وإغلاق المواقع', data: 'الأفراد والكروت', analytics: 'التحليل والتتبع', admin: 'إدارة النظام', vr_write: 'تحرير التقارير', vr_view: 'الاطلاع على التقارير', vr_review: 'مراجعة التقارير', vr_approve: 'اعتماد التقارير' };
-  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye', 'مفتش أمن حيوي': 'clip' };
+  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye', 'مفتش أمن حيوي': 'clip', 'مسؤول أمن حيوي': 'edit', 'مشرف أمن حيوي': 'network' };
   function userAccessMsg(u, pin, appUrl) {
     var scope = u.role === 'أمن بوابة' ? 'البوابة: ' + (u.gateName || '') : u.scopeLabel ? 'نطاق الإدارة: ' + u.scopeLabel : 'نطاق الإدارة: كل القطاعات';
     return 'مرحباً ' + u.name + '\nتم تجهيز حسابك على تطبيق الأمن الحيوي - ' + (S.session.company || CFG.COMPANY || '') + '\n\nالدور: ' + u.roleLabel + '\n' + scope +
@@ -2601,7 +2601,7 @@
         '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div>' + [['', 'صلاحيات نظام الأمن الحيوي', 'shield'], ['vr', 'صلاحيات تقارير الزيارات', 'clip']].map(function (g) {
           var ps = perms.filter(function (p) { return (p.group || '') === g[0]; });
           if (!ps.length || (g[0] === '' && r.reportsOnly)) return '';
-          return '<div class="u-pgroup"><span class="u-pg-h">' + icon(g[2]) + ' ' + g[1] + '</span>' + (g[0] === 'vr' ? '<span class="xs muted">تحدد دور الموظف داخل تطبيق التقارير: الاعتماد ← مدير الإدارة، المراجعة والتعديل ← مسؤول الأمن الحيوي، التحرير ← مفتش / معاون، الاطلاع ← متابعة.</span>' : '') + '<div class="u-perms">' + ps.map(function (p) {
+          return '<div class="u-pgroup"><span class="u-pg-h">' + icon(g[2]) + ' ' + g[1] + '</span>' + (g[0] === 'vr' ? '<span class="xs muted">تحدد دور الموظف داخل تطبيق التقارير: الاعتماد ← مدير الإدارة، المراجعة والتعديل ← مسؤول الأمن الحيوي، التحرير ← مشرف أو معاون، الاطلاع ← متابعة.</span>' : '') + '<div class="u-perms">' + ps.map(function (p) {
             var on = locked || st.perms.indexOf(p.k) >= 0, dis = locked || p.k === 'admin';
             return '<button type="button" class="u-perm' + (on && !(p.k === 'admin' && !locked) ? ' on' : '') + '" data-pm="' + p.k + '"' + (dis ? ' disabled' : '') + '><span class="box">' + icon('check') + '</span><span><b>' + esc(p.short) + '</b><span>' + esc(p.label) + '</span></span></button>';
           }).join('') + '</div></div>';
@@ -2613,10 +2613,103 @@
     ['uNewPin', 'uStop'].forEach(function (id) { if ($(id)) $(id).onclick = function () { this.classList.toggle('on'); }; });
     drawRole();
   }
+  /* ============================ نظام الأكواد الموحد وكروت الدخول ============================ */
+  var CODE_LV = { MD: ['مدير الإدارة', 'shield'], EX: ['الإدارة العليا', 'eye'], SM: ['مدير قطاع', 'map'], OF: ['مسؤول', 'edit'], SV: ['مشرف', 'network'], AS: ['معاون', 'clip'], GT: ['نقطة بوابة', 'scan'], ST: ['مدير محطة', 'pin'] };
+  function codeAccessMsg(c, appUrl) {
+    return 'السلام عليكم ' + c.name + '\nبيانات دخولك على منصة الأمن الحيوي - ' + S.session.company + '\n\nالوظيفة: ' + c.roleLabel + '\nالمكان: ' + c.place + '\nالكود: ' + c.id + '\nالرقم السري: ' + c.pin + '\nتدخل على: ' + c.access +
+      '\n\nرابط التطبيق: ' + (appUrl || appLink()) + '\nافتح الرابط وثبّت التطبيق، ثم ادخل بالرقم السري. لا تشارك الرقم مع أحد.';
+  }
+  function viewCodes() {
+    if (!isAdmin()) return go('dash');
+    var c = null, prev = null, cards = null, grp = '';
+    $('main').innerHTML = '<section class="view cd-view"><div class="viewhead no-print"><div><a href="#users" class="crumb">' + icon('back') + ' المستخدمون</a><h1>' + icon('key') + ' نظام الأكواد الموحد</h1><p>كود لكل مستوى ومكان، ورقم سري خاص لكل حساب. حدد العدد لكل قطاع، راجع الخطة، ثم طبّقها واطبع كروت الدخول ووزعها على أماكنها.</p></div></div>' +
+      '<div class="card no-print"><div class="card-head"><h2>' + icon('book') + ' دليل الأكواد</h2><span class="sub">حرف القطاع من أكواد مواقعه: W الواحات، R ريجوا</span></div><div class="cd-legend">' +
+      [['HQ-MD01', 'MD', 'مدير إدارة الأمن الحيوي', 'كل القطاعات، النظام والتقارير (اعتماد)'], ['HQ-EX01', 'EX', 'الإدارة العليا', 'متابعة واطلاع على التقارير'], ['W-SM01', 'SM', 'مدير قطاع', 'إدارة القطاع كاملاً'], ['W-OF01', 'OF', 'مسؤول أمن حيوي', 'مراجعة التقارير وتعديلها + بلاغات القطاع'],
+        ['W-SV01', 'SV', 'مشرف أمن حيوي', 'تحرير التقارير + متابعة محطاته'], ['W-AS01', 'AS', 'معاون أمن حيوي', 'تحرير التقارير فقط'], ['W-GT-CP1', 'GT', 'نقطة بوابة', 'منطقة تطهير أو بوابة محطة: تسجيل الدخول والخروج'], ['W-ST-F05', 'ST', 'مدير محطة', 'طلبات وبلاغات محطته + الاطلاع على تقاريرها']].map(function (x) {
+        return '<div class="cd-lg"><span class="cd-ic">' + icon(CODE_LV[x[1]][1]) + '</span><span><b class="mono" dir="ltr">' + x[0] + '</b><b>' + x[2] + '</b><span class="xs muted">' + x[3] + '</span></span></div>';
+      }).join('') + '</div></div>' +
+      '<div class="card no-print"><div class="card-head"><h2>' + icon('user') + ' عدد الحسابات</h2><span class="sub">لكل قطاع، وتقدر تعدّل الأسماء والأرقام بعد التطبيق من «المستخدمون»</span></div><div id="cdCounts"><p class="empty"><span class="spin"></span></p></div></div>' +
+      '<div id="cdPlan" class="no-print"></div>' +
+      '<div class="card cd-cardsbox"><div class="spread no-print"><h2>' + icon('printer') + ' كروت الدخول</h2><div class="row"><select id="cdGrp" aria-label="المكان"></select><button class="btn" id="cdLoad">' + icon('refresh') + ' عرض الكروت</button><button class="btn primary" id="cdPrint" disabled>' + icon('printer') + ' طباعة</button></div></div>' +
+      '<p class="xs muted no-print">كل كارت فيه الكود والرقم السري والمكان ورمز QR لرابط التطبيق. اطبع كروت كل مكان لوحده وسلّمها لأصحابها، أو ابعتها على واتساب.</p><div id="cdCards"></div></div></section>';
+    function stepper(k, label, hint) {
+      return '<div class="cd-step"><span><b>' + label + '</b><span class="xs muted">' + hint + '</span></span><span class="cd-num"><button type="button" class="btn sm ghost" data-st="' + k + '" data-d="-1" aria-label="أقل">−</button><b class="num" id="cdN_' + k + '">' + c[k] + '</b><button type="button" class="btn sm ghost" data-st="' + k + '" data-d="1" aria-label="أكثر">+</button></span></div>';
+    }
+    function toggle(k, label) { return '<label class="check' + (c[k] ? ' on' : '') + '" data-tg="' + k + '"><span class="box">' + icon('check') + '</span><span>' + label + '</span></label>'; }
+    function drawCounts() {
+      $('cdCounts').innerHTML = '<div class="cd-steps">' + stepper('sm', 'مدير قطاع', 'لكل قطاع') + stepper('of', 'مسؤولين', 'لكل قطاع') + stepper('sv', 'مشرفين', 'المحطات تتوزع عليهم') + stepper('as', 'معاونين', 'لكل قطاع') + stepper('ex', 'الإدارة العليا', 'متابعة فقط') + '</div>' +
+        '<div class="cd-tgs">' + toggle('siteGate', 'حساب لبوابة كل محطة وموقع') + toggle('siteMgr', 'حساب لمدير كل محطة وموقع') + '</div><span class="hint">نقطة بوابة لكل منطقة تطهير تُضاف دائماً.</span>';
+      $('cdCounts').querySelectorAll('[data-st]').forEach(function (b) { b.onclick = function () { var k = b.dataset.st; c[k] = Math.max(0, Math.min(20, c[k] + Number(b.dataset.d))); $('cdN_' + k).textContent = c[k]; preview(); }; });
+      $('cdCounts').querySelectorAll('[data-tg]').forEach(function (b) { b.onclick = function () { var k = b.dataset.tg; c[k] = !c[k]; b.classList.toggle('on', c[k]); preview(); }; });
+    }
+    var tmr = 0;
+    function preview() {
+      clearTimeout(tmr);
+      tmr = setTimeout(function () {
+        remote('codesPreview', [S.session.pin, c]).then(function (r) { prev = r; if (!c) { c = r.counts; drawCounts(); } drawPlan(); })
+          .catch(function (e) { $('cdPlan').innerHTML = '<div class="card">' + (e.net ? offlineCard('نظام الأكواد') : '<p class="empty">' + esc(errText(e)) + '</p>') + '</div>'; });
+      }, c ? 250 : 0);
+    }
+    function drawPlan() {
+      var rows = prev.rows, groups = [];
+      rows.forEach(function (r) { if (groups.indexOf(r.group) < 0) groups.push(r.group); });
+      var by = {}; rows.forEach(function (r) { by[r.lvl] = (by[r.lvl] || 0) + 1; });
+      $('cdPlan').innerHTML = '<div class="card"><div class="card-head"><h2>' + icon('list') + ' الخطة: ' + rows.length + ' حساب</h2><span class="sub">الحسابات الحالية: ' + prev.current + ' (تُحفظ نسخة منها في ورقة «المستخدمون - قبل نظام الأكواد»)</span></div>' +
+        '<div class="cd-sum">' + Object.keys(CODE_LV).filter(function (k) { return by[k]; }).map(function (k) { return '<span class="cd-chip">' + icon(CODE_LV[k][1]) + ' ' + CODE_LV[k][0] + ' <b class="num">' + by[k] + '</b></span>'; }).join('') + '</div>' +
+        groups.map(function (g) {
+          return '<details class="cd-grp"' + (groups.length < 3 ? ' open' : '') + '><summary><b>' + esc(g) + '</b> <span class="xs muted">' + rows.filter(function (r) { return r.group === g; }).length + ' حساب</span></summary><div class="tbl"><table><thead><tr><th>الكود</th><th>الاسم</th><th>الدور</th><th>المكان</th></tr></thead><tbody>' +
+            rows.filter(function (r) { return r.group === g; }).map(function (r) { return '<tr><td class="mono" dir="ltr">' + esc(r.id) + '</td><td>' + esc(r.name) + (r.me ? ' <span class="pill p-n">أنت</span>' : '') + '</td><td>' + esc(r.roleLabel) + '</td><td class="small">' + esc(r.place) + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
+        }).join('') +
+        '<div class="warnbox">' + icon('alert') + ' عند التطبيق تتوقف كل الأكواد والأرقام السرية القديمة فوراً، وتتولد أرقام جديدة لكل الحسابات. رقمك السري أنت لا يتغير، وكودك يصبح HQ-MD01.</div>' +
+        '<button class="btn primary big" id="cdApply">' + icon('check') + ' <span>تطبيق نظام الأكواد (' + rows.length + ' حساب)</span></button></div>';
+      $('cdApply').onclick = function () {
+        var b = this;
+        if (!b.dataset.sure) { b.dataset.sure = '1'; b.classList.add('bad'); b.querySelector('span').textContent = 'اضغط مرة أخرى للتأكيد: الأكواد القديمة ستتوقف'; return; }
+        b.disabled = true;
+        remote('codesApply', [S.session.pin, c, 'تطبيق']).then(function (r) {
+          toast('تم: ' + r.created + ' حساب جديد بالأكواد الموحدة');
+          b.querySelector('span').textContent = 'تم التطبيق. اطبع الكروت بالأسفل';
+          loadCards(true);
+        }).catch(function (e) { b.disabled = false; toast(errText(e)); });
+      };
+    }
+    function loadCards(scroll) {
+      $('cdCards').innerHTML = '<p class="empty"><span class="spin"></span></p>';
+      remote('codesCards', [S.session.pin]).then(function (r) {
+        cards = r;
+        var groups = []; r.cards.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+        $('cdGrp').innerHTML = '<option value="">كل الأماكن</option>' + groups.map(function (g) { return '<option' + (g === grp ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('');
+        drawCards();
+        $('cdPrint').disabled = false;
+        if (scroll) $('cdCards').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }).catch(function (e) { $('cdCards').innerHTML = e.net ? offlineCard('كروت الدخول') : '<p class="empty">' + esc(errText(e)) + '</p>'; });
+    }
+    function drawCards() {
+      if (!cards) return;
+      var list = cards.cards.filter(function (x) { return x.active && (!grp || x.group === grp); }), groups = [], url = cards.appUrl || appLink();
+      list.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+      $('cdCards').innerHTML = groups.map(function (g) {
+        return '<div class="cd-pgrp"><h3 class="cd-gh">' + icon('pin') + ' ' + esc(g) + '</h3><div class="cd-cards">' + list.filter(function (x) { return x.group === g; }).map(function (x) {
+          var lv = CODE_LV[x.lvl] || ['حساب', 'user'];
+          return '<div class="cd-card lv-' + esc(x.lvl || 'X') + '"><div class="cd-top"><img src="' + esc(logoSrc()) + '" alt=""><span><b>منصة الأمن الحيوي</b><span>' + esc(S.session.company) + '</span></span><span class="cd-lv">' + icon(lv[1]) + ' ' + esc(x.roleLabel) + '</span></div>' +
+            '<div class="cd-mid"><div class="cd-info"><b class="cd-name">' + esc(x.name) + '</b><span class="cd-place">' + icon('pin') + ' ' + esc(x.place) + '</span>' +
+            '<div class="cd-kv"><span>الكود</span><b class="mono" dir="ltr">' + esc(x.id) + '</b></div><div class="cd-kv pin"><span>الرقم السري</span><b class="num" dir="ltr">' + esc(x.pin) + '</b></div><span class="cd-acc">' + icon('key') + ' يدخل على: ' + esc(x.access) + '</span></div>' +
+            '<div class="cd-qr" data-url="' + esc(url) + '"></div></div><div class="cd-foot">امسح الرمز أو افتح رابط التطبيق، ثبّته على الموبايل، وادخل بالرقم السري. الرقم شخصي ولا يُشارك.</div>' +
+            '<a class="btn sm wa no-print" target="_blank" rel="noopener" href="' + esc(waTo(x.phone, codeAccessMsg(x, url))) + '">' + icon('wa') + ' إرسال على واتساب</a></div>';
+        }).join('') + '</div></div>';
+      }).join('') || '<p class="empty">لا توجد حسابات</p>';
+      if (window.QRCode) document.querySelectorAll('#cdCards .cd-qr').forEach(function (el) { new QRCode(el, { text: el.dataset.url, width: 92, height: 92, correctLevel: QRCode.CorrectLevel.L }); });
+    }
+    $('cdLoad').onclick = function () { loadCards(false); };
+    $('cdGrp').onchange = function () { grp = this.value; drawCards(); };
+    $('cdPrint').onclick = function () { window.print(); };
+    preview();
+    loadCards(false);
+  }
   function viewUsers() {
     if (!isAdmin()) return go('dash');
     $('main').innerHTML = '<section class="view"><div class="viewhead"><div><a href="#data" class="crumb">' + icon('back') + ' البيانات</a><h1>' + icon('user') + ' المستخدمون والصلاحيات</h1><p>أضف أمن البوابات ومديري المواقع والقطاعات، وحدد لكل واحد ما يراه وما يستطيع فعله. كل مستخدم يدخل برقمه السري الخاص.</p></div>' +
-      '<button class="btn primary" id="uAdd">' + icon('plus') + ' إضافة مستخدم</button></div><div id="uBody"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
+      '<div class="row"><a class="btn" href="#codes">' + icon('key') + ' نظام الأكواد وكروت الدخول</a><button class="btn primary" id="uAdd">' + icon('plus') + ' إضافة مستخدم</button></div></div><div id="uBody"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
     var meta = null, filter = '';
     function draw() {
       var users = meta.users, roles = meta.roles;

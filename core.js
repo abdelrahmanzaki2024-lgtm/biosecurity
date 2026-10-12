@@ -1865,9 +1865,10 @@ function BIO_api(store, deps) {
       return { ok: true };
     }
   };
-  var H_ = { store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor };
+  var H_ = { store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor, userByPin: userByPin };
   BIO_ext(api, H_);
   BIO_vrBridge(api, H_);
+  BIO_codes(api, H_);
   return api;
 }
 
@@ -2567,5 +2568,143 @@ function BIO_vrBridge(api, H) {
     var info = deps.ticket ? deps.ticket.take(ticket) : null;
     if (!info) throw new Error('تذكرة الدخول غير صالحة أو انتهت');
     return info;
+  };
+}
+
+/* ============================ نظام الأكواد الموحد (الإصدار 12) ============================
+   كل حساب له كود يدل على قطاعه ومستواه ومكانه، ورقم سري من 6 أرقام لا يتكرر:
+   HQ-MD01 مدير الإدارة · HQ-EX01 الإدارة العليا · W-SM01 مدير قطاع · W-OF01 مسؤول · W-SV01 مشرف · W-AS01 معاون
+   W-GT-CP1 نقطة بوابة (منطقة تطهير) · W-GT-F05 بوابة محطة · W-ST-F05 مدير محطة. حرف القطاع مأخوذ من أكواد مواقعه (W الواحات، R ريجوا). */
+BIO.ROLE_OFFICER = 'مسؤول أمن حيوي';
+BIO.ROLE_SUPERVISOR = 'مشرف أمن حيوي';
+(function () {
+  var ins = BIO_role(BIO.ROLE_INSPECTOR);
+  if (ins) { ins.label = 'معاون أمن حيوي'; ins.desc = 'معاون / مفتش ميداني: يدخل على تقارير الزيارات فقط، يحرر التقرير ويرسله للمراجعة'; }
+  BIO_ROLES.push(
+    { k: BIO.ROLE_OFFICER, label: 'مسؤول أمن حيوي', desc: 'مسؤول القطاع: يراجع تقارير الزيارات ويعدلها، وتصله طلبات وبلاغات قطاعه', scope: 'sector', perms: ['decide', 'reports', 'notices', 'analytics', 'vr_write', 'vr_view', 'vr_review'] },
+    { k: BIO.ROLE_SUPERVISOR, label: 'مشرف أمن حيوي', desc: 'يشرف على مجموعة محطات: يحرر تقارير الزيارات ويتابع بلاغات محطاته ولوحتها', scope: 'site', perms: ['reports', 'analytics', 'vr_write', 'vr_view'] }
+  );
+  var order = [BIO.ROLE_MANAGER, BIO.ROLE_SECTOR, BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_SITE, BIO.ROLE_GUARD, BIO.ROLE_VIEWER];
+  BIO_ROLES.sort(function (a, b) { return order.indexOf(a.k) - order.indexOf(b.k); });
+})();
+TABLES.usersOld = { sheet: 'المستخدمون - قبل نظام الأكواد', key: 'id', cols: { id: 'الكود القديم', pin: 'الرقم السري القديم', name: 'الاسم', role: 'الصلاحية', gate: 'البوابة', phone: 'الهاتف', scope: 'النطاق', perms: 'صلاحيات مخصصة', active: 'نشط', newId: 'الكود الجديد', archivedAt: 'تاريخ الأرشفة' } };
+var BIO_CODE_LEVELS = [
+  { k: 'MD', label: 'مدير إدارة الأمن الحيوي', role: 'مدير' },
+  { k: 'EX', label: 'الإدارة العليا (متابعة)', role: 'متابعة فقط' },
+  { k: 'SM', label: 'مدير قطاع', role: 'مدير قطاع' },
+  { k: 'OF', label: 'مسؤول أمن حيوي', role: 'مسؤول أمن حيوي' },
+  { k: 'SV', label: 'مشرف أمن حيوي', role: 'مشرف أمن حيوي' },
+  { k: 'AS', label: 'معاون أمن حيوي', role: 'مفتش أمن حيوي' },
+  { k: 'GT', label: 'نقطة بوابة (منطقة تطهير أو بوابة محطة)', role: 'أمن بوابة' },
+  { k: 'ST', label: 'مدير محطة / موقع', role: 'مدير موقع' }
+];
+var BIO_CODE_DEFAULTS = { ex: 1, sm: 1, of: 1, sv: 2, as: 3, siteGate: true, siteMgr: true };
+function BIO_codes(api, H) {
+  var store = H.store, deps = H.deps;
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function counts(c) {
+    c = c || {}; var o = {};
+    Object.keys(BIO_CODE_DEFAULTS).forEach(function (k) {
+      var d = BIO_CODE_DEFAULTS[k];
+      o[k] = typeof d === 'boolean' ? (c[k] == null ? d : !!c[k]) : Math.max(0, Math.min(20, Math.round(Number(c[k] == null ? d : c[k]) || 0)));
+    });
+    return o;
+  }
+  /** القطاعات وحرف كل قطاع ومواقعه ومناطق تطهيره */
+  function sectors() {
+    var sites = H.sitesList(H.sitesById()).filter(function (s) { return !s.external; }), cps = store.all('checkpoints').filter(function (c) { return c.id; }), out = [], by = {};
+    function sec(name) { name = String(name || '').trim() || 'عام'; if (!by[name]) { by[name] = { name: name, votes: {}, sites: [], cps: [] }; out.push(by[name]); } return by[name]; }
+    function vote(x, id) { var m = BIO_norm(id).match(/^([A-Z0-9]{1,4})-/); if (m) x.votes[m[1]] = (x.votes[m[1]] || 0) + 1; }
+    sites.forEach(function (s) { var x = sec(s.sector); x.sites.push(s); vote(x, s.id); });
+    cps.forEach(function (c) { var x = sec(c.sector); x.cps.push({ id: BIO_norm(c.id), name: c.name }); vote(x, c.id); });
+    var used = { HQ: 1 };
+    out.forEach(function (x, i) {
+      var best = Object.keys(x.votes).sort(function (a, b) { return x.votes[b] - x.votes[a]; })[0];
+      if (!best || used[best]) { best = 'S' + (i + 1); while (used[best]) best += 'X'; }
+      used[best] = 1; x.p = best;
+    });
+    return out;
+  }
+  function suffix(p, id) { id = BIO_norm(id); return id.indexOf(p + '-') === 0 ? id.slice(p.length + 1) : id; }
+  /** خطة الحسابات الجديدة (بدون أرقام سرية) */
+  function plan(me, c) {
+    var rows = [], seen = {};
+    function add(r) { var id = r.id, n = 2; while (seen[id]) id = r.id + '-' + (n++); r.id = id; seen[id] = 1; rows.push(r); }
+    add({ id: 'HQ-MD01', name: me.name, role: BIO.ROLE_MANAGER, gate: '', scope: '', phone: me.phone || '', group: 'الإدارة العامة', place: 'كل القطاعات', lvl: 'MD', me: true });
+    for (var e = 1; e <= c.ex; e++) add({ id: 'HQ-EX' + pad(e), name: 'الإدارة العليا' + (c.ex > 1 ? ' ' + e : ''), role: BIO.ROLE_VIEWER, gate: '', scope: '', group: 'الإدارة العامة', place: 'كل القطاعات', lvl: 'EX' });
+    sectors().forEach(function (x) {
+      var g = 'قطاع ' + x.name, i;
+      for (i = 1; i <= c.sm; i++) add({ id: x.p + '-SM' + pad(i), name: 'مدير قطاع ' + x.name + (c.sm > 1 ? ' ' + i : ''), role: BIO.ROLE_SECTOR, scope: x.name, group: g, place: g, lvl: 'SM' });
+      for (i = 1; i <= c.of; i++) add({ id: x.p + '-OF' + pad(i), name: 'مسؤول أمن حيوي ' + i + ' - ' + x.name, role: BIO.ROLE_OFFICER, scope: x.name, group: g, place: g, lvl: 'OF' });
+      var share = [];
+      for (i = 0; i < c.sv; i++) share.push([]);
+      x.sites.forEach(function (s, k) { if (c.sv) share[Math.floor(k * c.sv / x.sites.length)].push(s); }); // تقسيم متصل بترتيب المواقع (ترتيب التسكين)
+      for (i = 1; i <= c.sv; i++) {
+        var mine = share[i - 1];
+        add({ id: x.p + '-SV' + pad(i), name: 'مشرف أمن حيوي ' + i + ' - ' + x.name, role: BIO.ROLE_SUPERVISOR, scope: mine.length ? mine.map(function (s) { return s.id; }).join(',') : x.name, group: g, place: mine.length ? mine.map(function (s) { return s.name.replace(/^.* - /, ''); }).join('، ') : g, lvl: 'SV' });
+      }
+      for (i = 1; i <= c.as; i++) add({ id: x.p + '-AS' + pad(i), name: 'معاون أمن حيوي ' + i + ' - ' + x.name, role: BIO.ROLE_INSPECTOR, scope: x.name, group: g, place: g, lvl: 'AS' });
+      x.cps.forEach(function (cp) { add({ id: x.p + '-GT-' + suffix(x.p, cp.id), name: 'نقطة ' + cp.name, role: BIO.ROLE_GUARD, gate: cp.id, scope: '', group: g, place: cp.name, lvl: 'GT' }); });
+      x.sites.forEach(function (s) {
+        if (c.siteGate) add({ id: x.p + '-GT-' + suffix(x.p, s.id), name: 'بوابة ' + s.name, role: BIO.ROLE_GUARD, gate: s.id, scope: '', group: g, place: s.name, lvl: 'GT' });
+        if (c.siteMgr) add({ id: x.p + '-ST-' + suffix(x.p, s.id), name: 'مدير ' + s.name, role: BIO.ROLE_SITE, gate: '', scope: s.id, group: g, place: s.name, lvl: 'ST' });
+      });
+    });
+    return rows;
+  }
+  function roleLabel(k) { var r = BIO_role(k); return r ? r.label : k; }
+  function cardOf(x, sites) {
+    var r = BIO_role(x.role) || BIO_role(BIO.ROLE_GUARD), group = 'الإدارة العامة', place = 'كل القطاعات';
+    if (r.k === BIO.ROLE_GUARD) { var gf = H.gateFor({ gateId: BIO_norm(x.gate), isManager: false }, sites); place = gf.name || BIO_norm(x.gate); if (gf.sector) group = 'قطاع ' + gf.sector; }
+    else {
+      var raw = BIO_list(x.scope);
+      if (raw.length) {
+        var names = raw.map(function (v) { var s = sites[BIO_norm(v)]; if (s) { group = 'قطاع ' + s.sector; return s.name; } group = 'قطاع ' + String(v).trim(); return 'قطاع ' + String(v).trim(); });
+        place = (names.length > 1 ? names.map(function (n) { return n.replace(/^(تسمين|أمهات) [^-]+ - /, ''); }) : names).join('، ');
+      }
+    }
+    var lv = (String(x.id).match(/-(MD|EX|SM|OF|SV|AS|GT|ST)\d*(?:-|$)/) || [])[1] || '';
+    return { id: BIO_norm(x.id), name: x.name, role: r.k, roleLabel: r.label, reportsOnly: !!r.reportsOnly, group: group, place: place, lvl: lv, phone: x.phone ? String(x.phone) : '', pin: String(x.pin == null ? '' : x.pin).trim(), active: !(x.active != null && String(x.active).trim() === BIO.NO),
+      access: r.reportsOnly ? 'التقارير' : BIO_vrRole(BIO_userPerms({ role: r.k, perms: x.perms })) ? (r.k === BIO.ROLE_GUARD ? 'النظام' : 'النظام والتقارير') : 'النظام' };
+  }
+  api.codesPreview = function (pin, c) {
+    var me = H.auth(pin, 'admin'); c = counts(c);
+    var rows = plan(me, c);
+    return { counts: c, defaults: BIO_CODE_DEFAULTS, levels: BIO_CODE_LEVELS, current: store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).length,
+      rows: rows.map(function (r) { return { id: r.id, name: r.name, role: r.role, roleLabel: roleLabel(r.role), group: r.group, place: r.place, lvl: r.lvl, me: !!r.me }; }) };
+  };
+  /** يطبق نظام الأكواد الجديد: يؤرشف الحسابات القديمة في ورقة مستقلة، وينشئ الحسابات الجديدة بأرقام سرية جديدة. رقمك السري لا يتغير */
+  api.codesApply = function (pin, c, sure) {
+    var me = H.auth(pin, 'admin'); c = counts(c);
+    if (sure !== 'تطبيق') throw new Error('أكّد التطبيق أولاً');
+    var rows = plan(me, c), taken = {}, now = deps.now();
+    taken[String(pin).trim()] = 1;
+    var weak = /^(\d)\1+$|^(012345|123456|234567|345678|456789|987654|876543|765432|654321|543210)$/;
+    rows.forEach(function (r) {
+      if (r.me) { r.pin = String(pin).trim(); return; }
+      var p; do { p = String(100000 + Math.floor(Math.random() * 900000)); } while (taken[p] || weak.test(p)); taken[p] = 1; r.pin = p;
+    });
+    var old = store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).map(function (x) { var o = {}; Object.keys(TABLES.users.cols).forEach(function (k) { o[k] = x[k]; }); return o; });
+    deps.lock(function () {
+      var arch = old.map(function (o) { return Object.assign({}, o, { newId: BIO_norm(o.id) === me.id ? 'HQ-MD01' : '', archivedAt: now }); });
+      if (store.appendMany) store.appendMany('usersOld', arch); else arch.forEach(function (o) { store.append('usersOld', o); });
+      var ids = old.map(function (o) { return o.id; });
+      if (store.removeMany) store.removeMany('users', ids); else ids.forEach(function (k) { store.remove('users', k); });
+      var objs = rows.map(function (r) { return { id: r.id, pin: r.pin, name: r.name, role: r.role, gate: r.gate || '', phone: r.phone || '', scope: r.scope || '', perms: '', active: BIO.YES }; });
+      if (store.appendMany) store.appendMany('users', objs); else objs.forEach(function (o) { store.append('users', o); });
+      store.all('devices').filter(function (d) { return BIO_norm(d.userId) === me.id; }).forEach(function (d) { store.update('devices', d.token, { userId: 'HQ-MD01' }); });
+      store.append('cardlog', { id: deps.id('K'), time: now, itemId: 'HQ-MD01', itemName: me.name, action: 'تطبيق نظام الأكواد الموحد: ' + objs.length + ' حساب جديد، وأُرشف ' + old.length + ' حساب قديم', card: '', by: me.name, note: '' });
+    });
+    if (api._log) api._log(me, 'users', '*', 'نظام الأكواد', { count: old.length }, { count: rows.length });
+    return { ok: true, created: rows.length, archived: old.length, myId: 'HQ-MD01' };
+  };
+  /** كروت الدخول للطباعة والتوزيع: الكود والرقم السري والمكان لكل حساب */
+  api.codesCards = function (pin) {
+    H.auth(pin, 'admin');
+    var sites = H.sitesById(), order = {};
+    BIO_CODE_LEVELS.forEach(function (l, i) { order[l.k] = i; });
+    var list = store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).map(function (x) { return cardOf(x, sites); });
+    list.sort(function (a, b) { return (a.group === 'الإدارة العامة' ? -1 : 0) - (b.group === 'الإدارة العامة' ? -1 : 0) || a.group.localeCompare(b.group, 'ar') || (order[a.lvl] == null ? 99 : order[a.lvl]) - (order[b.lvl] == null ? 99 : order[b.lvl]) || a.id.localeCompare(b.id); });
+    return { appUrl: H.settings().APP_URL || '', cards: list };
   };
 }
