@@ -317,7 +317,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 9</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 10</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -374,7 +374,7 @@
   function isAdmin() { var u = S.session && S.session.user; return !!(u && u.isManager && (u.isAdmin || !u.perms)); }
   function navItems() {
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -401,7 +401,7 @@
     var nav = navItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     $('sideNav').innerHTML = '<span class="navlabel">' + (S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
       '<div class="sidefoot"><b>' + esc(S.session.user.name) + '</b><span>' + esc(S.session.user.isManager ? (S.session.user.roleLabel || 'مدير') + (S.session.user.scope && !S.session.user.scope.all ? ' · ' + S.session.user.scope.label : '') : (S.session.gate.name || 'أمن بوابة')) + '</span></div>';
-    $('bottomNav').innerHTML = navItems().filter(function (n) { return !(S.session.user.isManager && (n[0] === 'gate' || n[0] === 'sim' || n[0] === 'report' || n[0] === 'passport' || n[0] === 'trace' || n[0] === 'map' || n[0] === 'insights' || n[0] === 'users' || ['birds', 'inspect', 'disposal', 'companies', 'academy'].indexOf(n[0]) >= 0)); }).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + (n[0] === 'dash' ? 'القيادة' : n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
+    $('bottomNav').innerHTML = navItems().filter(function (n) { return !(S.session.user.isManager && (n[0] === 'gate' || n[0] === 'sim' || n[0] === 'report' || n[0] === 'passport' || n[0] === 'trace' || n[0] === 'map' || n[0] === 'insights' || n[0] === 'users' || ['birds', 'wx', 'inspect', 'disposal', 'companies', 'academy'].indexOf(n[0]) >= 0)); }).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + (n[0] === 'dash' ? 'القيادة' : n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     document.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
     $('netChip').onclick = function () { sync(); go('more'); };
     $('bellBtn').onclick = function () { go('notices'); };
@@ -423,10 +423,11 @@
     if (base !== 'gate') stopCam();
     if (base !== 'tv') tvStop();
     if (base !== 'birds') birdLiveStop();
+    if (base !== 'wx' && S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; }
     clearInterval(S.poll);
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || base === 'users' && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -1110,7 +1111,7 @@
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
       '<button class="btn" id="syncBtn">' + icon('refresh') + ' مزامنة الآن</button></div>' +
       (me.user.isManager && (can('analytics') || isAdmin()) ? '<div class="card"><h2>' + icon('network') + ' أدوات الإدارة</h2><div class="tool-links">' + (isAdmin() ? [['users', 'user', 'المستخدمون والصلاحيات']] : []).concat(can('analytics') ? [['map', 'map', 'الخريطة الحية'], ['trace', 'trace', 'تتبع العدوى'], ['plan', 'calendar', 'مخطط الزيارات الذكي'], ['network', 'network', 'شبكة المخالطة'], ['audit', 'shield', 'ملف اعتماد المنشأة المعزولة']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '') +
-      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['birds', 'bird', 'رادار الطيور المهاجرة'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
+      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
       '<a class="card" href="#ref" style="text-decoration:none;color:inherit"><h2>' + icon('book') + ' مرجع قواعد الأمن الحيوي</h2><p class="small muted">فترات العزل المعتمدة وإجراءات هابرد إفيشنسي بلس.</p></a>' +
       '</div></section>';
     $('logoutBtn').onclick = function () { logout(); };
@@ -2686,6 +2687,281 @@
 
   /* ============================ رادار الطيور المهاجرة ============================ */
   var BIRD_SPECIES = ['بط بري (خضاري أو شرشير)', 'بلشون أو أبو قردان', 'نوارس', 'لقلق أبيض', 'صقور وجوارح', 'حمام', 'غربان', 'عصافير', 'سمان', 'طيور غير معروفة'];
+  /* ============================ الأرصاد الجوية والآفات الناقلة للأمراض ============================
+     الطقس الحي وتوقعات 7 أيام من Open-Meteo (مجاناً بدون مفتاح) لكل قطاع، ومؤشر «طقس الأمن الحيوي»
+     لكل يوم، والمحطات الواقعة في اتجاه الريح، ونموذج نشاط الآفات حسب الحرارة والرطوبة (تقويم سنوي + الآن) */
+  // المناخ الشهري لمنطقة الواحات/غرب الجيزة (عظمى، صغرى، رطوبة %، مطر مم): بديل عند غياب البيانات الحية
+  var WX_CLIMO = [[20, 8, 60, 5], [22, 9, 55, 4], [25, 11, 50, 3], [30, 14, 42, 1], [34, 18, 38, 0], [36, 20, 42, 0], [36, 22, 50, 0], [36, 22, 55, 0], [34, 20, 55, 0], [31, 17, 57, 1], [26, 13, 60, 3], [21, 9, 62, 5]];
+  // t = [أدنى حرارة للنشاط، بداية المثالي، نهاية المثالي، أقصى حرارة]، h = تفضيل الرطوبة، cold = يزيد الضغط مع البرد
+  var PESTS = [
+    { id: 'fly', name: 'الذباب المنزلي', sci: 'Musca domestica', ico: 'M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 13v6M9 9 4 5M15 9l5-4M9 12H3M15 12h6M9 15l-4 4M15 15l4 4', t: [12, 25, 32, 42], h: 'mid',
+      dz: 'السالمونيلا، الإشريكية القولونية، الكامبيلوباكتر، ونقل نيوكاسل وإنفلونزا الطيور ميكانيكياً',
+      act: ['رش يرقات الذباب في السبلة وحول العنابر', 'إخراج السبلة الرطبة وعدم تكديسها قرب العنابر', 'مصائد لاصقة وبطاقات عدّ أسبوعية لكل عنبر'] },
+    { id: 'mosq', name: 'البعوض', sci: 'Culex spp.', ico: 'M12 6v12M12 9l-6-4M12 9l6-4M12 13l-7 2M12 13l7 2M12 17l-4 4M12 17l4 4', t: [15, 24, 30, 37], h: 'high', rain: 1,
+      dz: 'جدري الطيور، فيروس غرب النيل، ملاريا الطيور',
+      act: ['تجفيف أي مياه راكدة خلال 48 ساعة', 'شبك ناعم على فتحات التهوية', 'رش بعد الغروب حول العنابر ومصادر المياه'] },
+    { id: 'rod', name: 'القوارض (الفئران والجرذان)', sci: 'Rattus / Mus musculus', ico: 'M5 14a7 5 0 0 0 14 0 7 5 0 0 0-14 0zM17 11l3-3M19 15h3M6 18l-3 2M9 10a2 2 0 1 1-3-2', cold: 1, h: 'mid',
+      dz: 'السالمونيلا، الباستيريلا (كوليرا الطيور)، نقل الفيروسات بين العنابر والمواقع',
+      act: ['مراجعة محطات الطُعم أسبوعياً وتسجيل الاستهلاك', 'سد الفتحات حول الأبواب والمواسير', 'تخزين العلف في مخازن مغلقة وتنظيف المنسكب'] },
+    { id: 'beetle', name: 'خنفساء الفرشة', sci: 'Alphitobius diaperinus', ico: 'M12 5a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V9a4 4 0 0 0-4-4zM12 5v14M8 10H4M16 10h4M8 15H4M16 15h4M10 4 8 2M14 4l2-2', t: [17, 26, 34, 40], h: 'mid', indoor: 1,
+      dz: 'السالمونيلا، مارك، الجمبورو، الكوكسيديا (تبقى حاملة للعدوى بين الدورات)',
+      act: ['رش مبيد للحشرات الزاحفة فور خروج القطيع وقبل التبريد', 'معالجة التربة والجدران حتى ارتفاع متر', 'فترة راحة كاملة قبل الدورة التالية'] },
+    { id: 'mite', name: 'الحلم الأحمر', sci: 'Dermanyssus gallinae', ico: 'M12 8a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM8 9 5 6M16 9l3-3M7 13H3M17 13h4M8 17l-3 3M16 17l3 3', t: [10, 20, 30, 40], h: 'high', indoor: 1,
+      dz: 'السالمونيلا، الحمرة الخنزيرية، فقر الدم وهبوط الإنتاج في الأمهات',
+      act: ['فحص الشقوق والمجاثم ليلاً بمصابيح', 'معالجة الشقوق والفواصل بالمبيد المعتمد', 'منع نقل الأقفاص والمعدات بين العنابر دون تطهير'] },
+    { id: 'tick', name: 'قراد الدواجن', sci: 'Argas persicus', ico: 'M12 7a5 6 0 1 0 0 12 5 6 0 0 0 0-12zM9 8 6 4M15 8l3-4M7 12H3M17 12h4M7 16l-3 3M17 16l3 3', t: [18, 27, 36, 42], h: 'low',
+      dz: 'البوريليا (الإسبيروكيتات) وشلل القراد',
+      act: ['فحص الأخشاب والشقوق في العنابر القديمة', 'معالجة الجدران والأسقف بالمبيد', 'منع دخول الطيور البرية والحمام للعنابر'] },
+    { id: 'roach', name: 'الصراصير', sci: 'Periplaneta / Blattella', ico: 'M12 6a4 6 0 0 0-4 6v3a4 4 0 0 0 8 0v-3a4 6 0 0 0-4-6zM10 5 7 2M14 5l3-3M8 11H4M16 11h4M8 15l-4 2M16 15l4 2', t: [16, 25, 33, 40], h: 'mid', indoor: 1,
+      dz: 'السالمونيلا، الكوكسيديا، ونقل بعض الفيروسات',
+      act: ['نظافة المخازن وغرف الخدمة وتصريف الصرف', 'طُعم جل في الشقوق', 'إغلاق مصارف المياه ليلاً'] }
+  ];
+  var MONTHS3 = function (i) { return MONTHS[i].slice(0, 3); };
+  function pestScore(p, tmean, rh, rain7) {
+    var v;
+    if (p.cold) v = tmean <= 12 ? 1 : tmean >= 30 ? 0.35 : 1 - (tmean - 12) / 18 * 0.65; // القوارض تدخل العنابر مع البرد
+    else {
+      var t = p.t; v = tmean <= t[0] || tmean >= t[3] ? 0 : tmean < t[1] ? (tmean - t[0]) / (t[1] - t[0]) : tmean <= t[2] ? 1 - 0.15 * Math.pow((tmean - (t[1] + t[2]) / 2) / Math.max(1, (t[2] - t[1]) / 2), 2) : (t[3] - tmean) / (t[3] - t[2]);
+      if (p.indoor) v = 0.25 + v * 0.75; // داخل العنابر الحرارة أكثر ثباتاً
+    }
+    var c = function (x) { return Math.max(0, Math.min(1, x)); };
+    if (p.h === 'high') v *= 0.6 + 0.4 * c((rh - 35) / 40); else if (p.h === 'low') v *= 1 - 0.35 * c((rh - 35) / 45); else v *= 0.8 + 0.2 * c((rh - 30) / 30);
+    if (p.rain) v = Math.min(1, v * (1 + Math.min(0.35, (rain7 || 0) / 25)));
+    return Math.round(v * 92);
+  }
+  function pestLvl(v) { return v >= 80 ? { k: 'crit', label: 'حرج' } : v >= 60 ? { k: 'high', label: 'مرتفع' } : v >= 40 ? { k: 'mid', label: 'متوسط' } : { k: 'low', label: 'منخفض' }; }
+  function pestYear(p) { return WX_CLIMO.map(function (c) { return pestScore(p, (c[0] + c[1]) / 2, c[2], c[3]); }); }
+  var WX_CODE = function (c) { return c >= 95 ? ['عواصف رعدية', '⛈'] : c >= 80 ? ['زخات مطر', '🌦'] : c >= 61 ? ['مطر', '🌧'] : c >= 51 ? ['رذاذ', '🌦'] : c >= 45 ? ['ضباب', '🌫'] : c >= 3 ? ['غائم', '☁'] : c >= 1 ? ['غائم جزئياً', '⛅'] : ['صافٍ', '☀']; };
+  var DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  function wxSectors(d) {
+    var g = {}; d.sites.forEach(function (x) { if (x.lat == null || x.lng == null) return; (g[x.sector] = g[x.sector] || []).push(x); });
+    return Object.keys(g).map(function (k) { var L0 = g[k]; return { name: k, sites: L0, lat: L0.reduce(function (a, x) { return a + +x.lat; }, 0) / L0.length, lng: L0.reduce(function (a, x) { return a + +x.lng; }, 0) / L0.length }; });
+  }
+  /** طقس محاكى من المناخ الشهري (نسخة العرض أو تعذر الاتصال) */
+  function wxSim(secs) {
+    var now = new Date(), m = now.getMonth(), seed = now.getDate();
+    return secs.map(function (s, si) {
+      var days = []; for (var i = 0; i < 7; i++) {
+        var dt = new Date(now.getTime() + i * 864e5), c = WX_CLIMO[dt.getMonth()], j = Math.sin((seed + i) * 1.7 + si) * 2.2, w = 12 + Math.abs(Math.sin((seed + i) * 2.3)) * 22;
+        var tx = c[0] + j, tn = c[1] + j * 0.6, rr = c[2] + j * 3, thiH = []; for (var h = 0; h < 24; h++) { var f = (1 - Math.cos((h - 4) / 24 * 2 * Math.PI)) / 2, tt = tn + (tx - tn) * (h >= 4 && h <= 15 ? (1 - Math.cos((h - 4) / 11 * Math.PI)) / 2 : h > 15 ? 1 - (h - 15) / 13 : 0.05); thiH.push(Math.round(wxTHI(tt, Math.max(15, rr + 25 - (tt - tn) * 2.2)))); }
+        days.push({ thiH: thiH, date: dt.toISOString().slice(0, 10), tmax: Math.round(c[0] + j), tmin: Math.round(c[1] + j * 0.6), rh: Math.round(c[2] + j * 3), rain: i === 4 && c[3] > 0 ? 3.2 : 0, rainP: i === 4 && c[3] > 0 ? 60 : 5, wind: Math.round(w), gust: Math.round(w * 1.6), dir: Math.round((330 + i * 12 + si * 7) % 360), dust: i === 2 ? 210 : Math.round(30 + Math.abs(j) * 15), code: i === 4 && c[3] > 0 ? 61 : i === 2 ? 3 : 0 });
+      }
+      var c0 = WX_CLIMO[m];
+      return { sector: s.name, live: false, cur: { t: Math.round((c0[0] + c0[1]) / 2 + 3), rh: c0[2], wind: days[0].wind, gust: days[0].gust, dir: days[0].dir, rain: 0, code: 1, dust: days[0].dust }, days: days };
+    });
+  }
+  function wxFetch(secs) {
+    if (MODE === 'demo' || !window.fetch) return Promise.resolve(wxSim(secs));
+    var la = secs.map(function (s) { return s.lat.toFixed(4); }).join(','), lo = secs.map(function (s) { return s.lng.toFixed(4); }).join(',');
+    var f1 = fetch('https://api.open-meteo.com/v1/forecast?latitude=' + la + '&longitude=' + lo + '&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=relative_humidity_2m,temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&timezone=Africa%2FCairo&forecast_days=7').then(function (r) { if (!r.ok) throw new Error('wx'); return r.json(); });
+    var f2 = fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + la + '&longitude=' + lo + '&hourly=dust,pm10&timezone=Africa%2FCairo&forecast_days=5').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return Promise.all([f1, f2]).then(function (r) {
+      var A = [].concat(r[0]), Q = r[1] ? [].concat(r[1]) : [];
+      return secs.map(function (s, i) {
+        var a = A[i], q = Q[i], dy = a.daily, days = dy.time.map(function (t, k) {
+          var hs = a.hourly.relative_humidity_2m.slice(k * 24, k * 24 + 24).filter(function (v) { return v != null; });
+          var dz = q && q.hourly ? q.hourly.time.reduce(function (mx, ht, hi) { return ht.slice(0, 10) === t ? Math.max(mx, q.hourly.dust[hi] || 0, (q.hourly.pm10[hi] || 0) * 0.6) : mx; }, 0) : null;
+          var ts = a.hourly.temperature_2m.slice(k * 24, k * 24 + 24), hr = a.hourly.relative_humidity_2m.slice(k * 24, k * 24 + 24), thi = ts.map(function (tv, h) { return { h: h, v: tv == null || hr[h] == null ? 0 : wxTHI(tv, hr[h]) }; });
+          return { thiH: thi.map(function (o) { return Math.round(o.v); }), date: t, tmax: Math.round(dy.temperature_2m_max[k]), tmin: Math.round(dy.temperature_2m_min[k]), rh: hs.length ? Math.round(hs.reduce(function (x, y) { return x + y; }, 0) / hs.length) : null, rain: dy.precipitation_sum[k] || 0, rainP: dy.precipitation_probability_max[k] || 0, wind: Math.round(dy.wind_speed_10m_max[k]), gust: Math.round(dy.wind_gusts_10m_max[k]), dir: dy.wind_direction_10m_dominant[k], dust: dz, code: dy.weather_code[k] };
+        });
+        var c = a.current; return { sector: s.name, live: true, cur: { t: Math.round(c.temperature_2m), rh: c.relative_humidity_2m, wind: Math.round(c.wind_speed_10m), gust: Math.round(c.wind_gusts_10m), dir: c.wind_direction_10m, rain: c.precipitation, code: c.weather_code, dust: days[0].dust }, days: days };
+      });
+    });
+  }
+  /** تأثير طقس اليوم على الأمن الحيوي: درجة (سلبي/إيجابي) + الأسباب + الإجراءات */
+  function wxImpact(x) {
+    var neg = [], pos = [], acts = [], tm = (x.tmax + x.tmin) / 2;
+    if (x.gust >= 45 || x.wind >= 32) { neg.push([3, 'رياح قوية تنقل العدوى والغبار والريش لمسافات أبعد']); acts.push('إغلاق فتحات التهوية المواجهة للريح', 'تأجيل نقل السبلة والفرشة وتغطية سياراتها', 'متابعة المحطات الواقعة في اتجاه الريح'); }
+    else if (x.wind >= 22) { neg.push([1, 'رياح نشطة قد تنقل الغبار من الطرق والمزارع المجاورة']); acts.push('تغطية سيارات السبلة والنافق أثناء النقل'); }
+    if (x.dust != null && x.dust >= 150) { neg.push([3, 'غبار أو موجة خماسين: جسيمات تحمل الميكروبات وتُتلف الفلاتر']); acts.push('تنظيف وتغيير فلاتر التهوية بعد الموجة', 'تشغيل الستائر المبللة إن وجدت', 'تطهير الأسطح الخارجية بعد هدوء الغبار'); }
+    if (x.rain >= 2 || x.rainP >= 70) { neg.push([2, 'أمطار: طين على عجلات المركبات وتخفيف محلول أحواض الأقدام والعجلات']); acts.push('تغيير محلول أحواض الأقدام والعجلات بعد المطر مباشرة', 'تجفيف المياه الراكدة خلال 48 ساعة (بعوض)', 'فرد جير حول مداخل العنابر'); }
+    if (x.tmin <= 10) { neg.push([2, 'برودة: فاعلية المطهرات تضعف تحت 10°م والقوارض تتجه للعنابر']); acts.push('زيادة زمن التلامس للمطهر أو استخدام مطهر مناسب للبرد', 'مراجعة محطات طُعم القوارض'); }
+    if (x.tmax >= 38) { neg.push([2, 'حرارة شديدة: تبخر سريع للمطهرات وإجهاد حراري ونشاط عالٍ للذباب']); acts.push('تجديد محاليل التطهير مرتين يومياً', 'تشغيل التبريد مبكراً وتوفير مياه باردة', 'رش يرقات الذباب في السبلة'); }
+    if (x.rh != null && x.rh >= 75) { neg.push([1, 'رطوبة عالية: فرشة رطبة وأمونيا ونشاط الحلم والفطريات']); acts.push('زيادة التهوية الدنيا وتقليب الفرشة'); }
+    if (x.wind < 15 && x.rain < 0.5 && x.rainP < 40 && tm >= 15 && tm <= 30 && (x.dust == null || x.dust < 80)) { pos.push('هدوء ومناخ معتدل: يوم مثالي للرش والتطهير الخارجي وتجديد الجير'); acts.unshift('جدولة التطهير الخارجي والرش اليوم'); }
+    var sc = neg.reduce(function (a, n) { return a + n[0]; }, 0);
+    var k = sc >= 4 ? ['crit', 'خطر', 'var(--r-crit)'] : sc >= 2 ? ['high', 'سلبي', 'var(--r-high)'] : sc >= 1 ? ['mid', 'انتبه', 'var(--r-mid)'] : pos.length ? ['good', 'إيجابي', 'var(--r-low)'] : ['ok', 'عادي', 'var(--muted)'];
+    return { k: k[0], label: k[1], color: k[2], neg: neg.map(function (n) { return n[1]; }), pos: pos, acts: acts.filter(function (v, i, a) { return a.indexOf(v) === i; }) };
+  }
+  function wxBearing(a, b) { var y = (b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180), xx = b.lat - a.lat, t = Math.atan2(y, xx) * 180 / Math.PI; return (t + 360) % 360; }
+  /** المحطات الواقعة في اتجاه الريح من كل محطة (ضمن 10 كم وزاوية ±30°) */
+  function wxDownwind(sites, windFrom) {
+    var to = (windFrom + 180) % 360, out = [];
+    sites.forEach(function (a) {
+      var hit = sites.filter(function (b) { if (b === a) return false; var km = BIO_kmLL(+a.lat, +a.lng, +b.lat, +b.lng); if (km > 10) return false; var df = Math.abs(((wxBearing({ lat: +a.lat, lng: +a.lng }, { lat: +b.lat, lng: +b.lng }) - to) + 540) % 360 - 180); return df <= 30; })
+        .map(function (b) { return { s: b, km: BIO_kmLL(+a.lat, +a.lng, +b.lat, +b.lng) }; }).sort(function (p, q) { return p.km - q.km; });
+      if (hit.length) out.push({ s: a, hit: hit });
+    });
+    return out.sort(function (p, q) { return q.hit.length - p.hit.length; });
+  }
+  function compassAr(deg) { return ['الشمال', 'الشمال الشرقي', 'الشرق', 'الجنوب الشرقي', 'الجنوب', 'الجنوب الغربي', 'الغرب', 'الشمال الغربي'][Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+
+  /** مؤشر الحرارة والرطوبة للدواجن THI = 0.8T + RH(T-14.4) + 46.4 */
+  function wxTHI(t, rh) { return 0.8 * t + (rh / 100) * (t - 14.4) + 46.4; }
+  function thiLvl(v) { return v >= 84 ? { k: 'crit', label: 'طوارئ' } : v >= 79 ? { k: 'high', label: 'خطر' } : v >= 75 ? { k: 'mid', label: 'تنبيه' } : { k: 'low', label: 'آمن' }; }
+  var THI_ACT = {
+    low: ['التهوية الدنيا المعتادة وفحص المساقي'],
+    mid: ['تشغيل مراوح التهوية النفقية مبكراً قبل ساعات الذروة', 'التأكد من تدفق المياه وتبريد خزانات الشرب', 'تقليل الكثافة في العنابر المزدحمة إن أمكن'],
+    high: ['تشغيل خلايا التبريد (الكولينج) من بداية ساعات الذروة', 'رفع العلف 4 إلى 6 ساعات قبل الذروة وإعادته مساءً', 'إضافة الأملاح والفيتامين C إلى مياه الشرب', 'منع أي حركة أو وزن أو تحميل للطيور وقت الذروة'],
+    crit: ['طوارئ: كل وسائل التبريد والتهوية القصوى ومراقبة كل عنبر كل ساعة', 'رش ضبابي للأسطح والممرات إن توفر', 'منع النقل والتحميل نهائياً حتى المساء', 'إبلاغ المدير فوراً بأي نفوق أعلى من المعتاد']
+  };
+  /** التقويم الموسمي لمهام الأمن الحيوي: [الأشهر، المهمة، المسؤول، السبب] */
+  var SEASON_TASKS = [
+    [[9], 'برنامج مكافحة القوارض الموسع قبل الشتاء: مراجعة وزيادة محطات الطُعم حول كل موقع', 'المكافحة', 'القوارض تتجه للعنابر مع انخفاض الحرارة'],
+    [[9, 10], 'فحص وإصلاح شبك الشبابيك وفتحات التهوية قبل موسم الطيور المهاجرة', 'الصيانة', 'ذروة الهجرة الخريفية من سبتمبر إلى نوفمبر'],
+    [[10], 'مراجعة الدفايات وعزل الأسقف وأبواب العنابر', 'الصيانة', 'استعداد للشتاء وتقليل فتح الأبواب'],
+    [[10, 11], 'رفع درجة الاستعداد لإنفلونزا الطيور: تشديد زيارات المزارع وتطهير المركبات', 'مدير الأمن الحيوي', 'تجمع البط الشتوي في البحيرات القريبة'],
+    [[11, 12, 1], 'تفعيل بروتوكول التطهير في البرد: زيادة زمن التلامس واستخدام مطهر مناسب للحرارة المنخفضة', 'أمن البوابات', 'المطهرات تضعف تحت 10°م'],
+    [[12, 1, 2], 'تجديد محلول أحواض الأقدام والعجلات بعد كل مطر وفرد الجير حول المداخل', 'أمن البوابات', 'موسم الأمطار القليلة والطين على المركبات'],
+    [[1, 2], 'جرد المطهرات والمبيدات وطلب احتياجات موسم الصيف', 'المشتريات', 'تجنب نقص المواد في ذروة الذباب والحرارة'],
+    [[2, 3], 'بدء برنامج مكافحة الذباب: رش اليرقات وبطاقات العدّ الأسبوعية', 'المكافحة', 'بداية ارتفاع نشاط الذباب مع الدفء'],
+    [[3], 'تنظيف وتطهير خطوط المياه والخزانات قبل الصيف', 'الصيانة', 'نمو البكتيريا في المياه مع ارتفاع الحرارة'],
+    [[3, 4, 5], 'خطة الخماسين: فلاتر احتياطية وتنظيف الفتحات بعد كل موجة غبار', 'الصيانة', 'موسم رياح الخماسين المحملة بالغبار'],
+    [[3, 4], 'تشديد الشبك ومراقبة الطيور البرية مع الهجرة الربيعية', 'أمن البوابات', 'ذروة الهجرة الربيعية مارس وأبريل'],
+    [[4], 'صيانة خلايا التبريد والمراوح وأجهزة قياس الحرارة والرطوبة', 'الصيانة', 'استعداد للإجهاد الحراري'],
+    [[4, 5], 'برنامج مكافحة البعوض: تجفيف المياه الراكدة وشبك ناعم على الفتحات', 'المكافحة', 'ارتفاع نشاط البعوض وجدري الطيور'],
+    [[5, 6], 'متابعة القوارض حول المواقع بعد حصاد القمح', 'المكافحة', 'هجرة القوارض من الحقول بعد الحصاد'],
+    [[6, 7, 8], 'تفعيل خطة الإجهاد الحراري يومياً حسب مؤشر THI ومنع التحميل وقت الذروة', 'مدير الموقع', 'ذروة الحرارة صيفاً'],
+    [[6, 7, 8, 9], 'رش يرقات الذباب في السبلة أسبوعياً وإخراج السبلة الرطبة', 'المكافحة', 'ذروة نشاط الذباب'],
+    [[7, 8], 'مكافحة خنفساء الفرشة والحلم بين الدورات قبل تبريد العنابر', 'المكافحة', 'نشاطها الأعلى في الحرارة'],
+    [[8], 'تدريب تنشيطي لأمن البوابات والعاملين قبل موسم الخريف', 'مدير الأمن الحيوي', 'الاستعداد لموسم الهجرة والشتاء'],
+    [[10, 11], 'متابعة القوارض حول المواقع بعد حصاد الذرة والأرز', 'المكافحة', 'هجرة القوارض من الحقول بعد الحصاد'],
+    [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'مراجعة شهرية لسجلات البوابات وتقرير الالتزام لكل محطة', 'مدير الأمن الحيوي', 'متابعة دورية']
+  ];
+  function seasonTasks(m) { return SEASON_TASKS.map(function (t, i) { return { i: i, months: t[0], task: t[1], who: t[2], why: t[3] }; }).filter(function (t) { return t.months.indexOf(m + 1) >= 0; }); }
+  function viewWx() {
+    $('main').innerHTML = '<section class="view wx-view"><div id="wxOut">' + v5Spin() + '</div></section>';
+    var go2 = function (b) {
+      var secs = wxSectors(b); if (!secs.length) { $('wxOut').innerHTML = '<div class="card"><p class="empty">' + icon('pin') + 'أضف إحداثيات المواقع من رادار الطيور أولاً</p></div>'; return; }
+      var cached = S.wx && Date.now() - S.wx.at < 45 * 60e3 ? Promise.resolve(S.wx) : wxFetch(secs).then(function (r) { return { at: Date.now(), data: r }; }).catch(function () { return KV.get('wx').then(function (c) { return c && c.data ? Object.assign(c, { stale: true }) : { at: Date.now(), data: wxSim(secs), failed: true }; }); });
+      var kvd = S.wxDone ? Promise.resolve() : KV.get('wxDone').then(function (v) { S.wxDone = v || {}; }).catch(function () { S.wxDone = {}; });
+      Promise.all([cached, kvd]).then(function (r) { var w = r[0]; S.wx = w; if (!w.stale && !w.failed) KV.set('wx', w); if (S.route.split('/')[0] === 'wx') drawWx(b, w); });
+    };
+    if (S.birds) go2(S.birds);
+    else v5Load('birds', [], function (d) { S.birds = d; go2(d); }, 'الأرصاد والآفات', 'wxOut');
+  }
+  function drawWx(b, w) {
+    var out = $('wxOut'); if (!out) return;
+    var secs = wxSectors(b), names = secs.map(function (s) { return s.name; });
+    if (!S.wxSec || names.indexOf(S.wxSec) < 0) S.wxSec = names.indexOf('الواحات') >= 0 ? 'الواحات' : names[0];
+    var sec = secs.filter(function (s) { return s.name === S.wxSec; })[0], W = w.data.filter(function (x) { return x.sector === S.wxSec; })[0] || w.data[0], cur = W.cur, today = W.days[0];
+    var mNow = new Date().getMonth(), rain7 = W.days.reduce(function (a, x) { return a + (x.rain || 0); }, 0);
+    var tAvg = W.days.reduce(function (a, x) { return a + (x.tmax + x.tmin) / 2; }, 0) / W.days.length, rhAvg = W.days.reduce(function (a, x) { return a + (x.rh == null ? WX_CLIMO[mNow][2] : x.rh); }, 0) / W.days.length;
+    var pests = PESTS.map(function (p) { var yr = pestYear(p), now = pestScore(p, tAvg, rhAvg, rain7), daily = W.days.map(function (x) { return pestScore(p, (x.tmax + x.tmin) / 2, x.rh == null ? WX_CLIMO[mNow][2] : x.rh, rain7); }); return { p: p, yr: yr, now: now, lvl: pestLvl(now), daily: daily, peak: yr.map(function (v, i) { return [v, i]; }).filter(function (a) { return a[0] >= 60; }).map(function (a) { return a[1]; }) }; }).sort(function (a, c) { return c.now - a.now; });
+    var imp = W.days.map(wxImpact), bad = imp.filter(function (x) { return x.k === 'crit' || x.k === 'high'; }).length;
+    var src = W.live ? 'بيانات حية: Open-Meteo' + (w.stale ? ' (آخر نسخة محفوظة)' : '') : MODE === 'demo' ? 'طقس محاكى (نسخة العرض)' : 'تعذر الاتصال: تقدير من المناخ الشهري';
+    var dwn = wxDownwind(sec.sites, cur.dir);
+    var html = '<div class="bd-hero wx-hero"><div class="bd-ht"><span class="cc-kick">' + icon('wind') + ' الأرصاد الجوية والآفات الناقلة للأمراض · أداة إدارة الأمن الحيوي</span><h1>الطقس والآفات وتأثيرهما على مواقع الشركة</h1>' +
+      '<div class="cc-meta"><span class="live"><i></i> ' + esc(src) + '</span><span>قطاع ' + esc(S.wxSec) + '</span><span>تحديث ' + esc(fmt(w.at)) + '</span></div></div>' +
+      '<div class="bd-hs"><div class="bd-big" style="--c:' + LVL_C[pests[0].lvl.k] + '"><b class="mono">' + pests[0].now + '</b><span>أعلى نشاط آفة الآن</span><small>' + esc(pests[0].p.name) + '</small></div>' +
+      '<div class="bd-big" style="--c:' + (bad ? 'var(--r-high)' : 'var(--r-low)') + '"><b class="mono">' + bad + '</b><span>أيام سلبية خلال 7 أيام</span><small>حسب تأثير الطقس</small></div></div>' +
+      '<div class="cc-acts"><div class="bd-seg" role="group">' + names.map(function (n) { return '<button type="button" data-wxsec="' + esc(n) + '" class="' + (n === S.wxSec ? 'on' : '') + '">قطاع ' + esc(n) + '</button>'; }).join('') + '</div><button class="btn cc-btn" type="button" id="wxRef">' + icon('refresh') + ' تحديث الطقس</button></div></div>';
+    var tabs = [['wx', 'الطقس والرياح'], ['pest', 'الآفات الناقلة'], ['thi', 'الإجهاد الحراري'], ['cal', 'التقويم الموسمي']];
+    if (!S.wxTab) S.wxTab = 'wx';
+    html += '<div class="wx-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-wxtab="' + t[0] + '" class="' + (S.wxTab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
+    var secW = '', secP = '', secT = '', secC = '';
+    // الطقس الآن
+    var cw = WX_CODE(cur.code), ti = wxImpact(today);
+    secW += '<div class="wx-now"><div class="card wx-cur"><div class="wx-big"><span class="wx-emo">' + cw[1] + '</span><div><b class="mono">' + cur.t + '°</b><span>' + esc(cw[0]) + ' · العظمى ' + today.tmax + '° والصغرى ' + today.tmin + '°</span></div></div><div class="wx-facts">' +
+      '<div><span>الرطوبة</span><b class="mono">' + cur.rh + '%</b></div><div><span>الرياح</span><b><span class="wx-arr" style="transform:rotate(' + (cur.dir + 90) + 'deg)">' + icon('arrow') + '</span> <span class="mono">' + cur.wind + '</span> كم/س</b><small>من ' + esc(compassAr(cur.dir)) + ' · هبّات ' + cur.gust + '</small></div>' +
+      '<div><span>الأمطار اليوم</span><b class="mono">' + (today.rain || 0).toFixed(1) + ' مم</b><small>احتمال ' + today.rainP + '%</small></div><div><span>الغبار</span><b class="mono">' + (cur.dust == null ? '—' : Math.round(cur.dust)) + '</b><small>ميكروجرام/م³</small></div></div></div>' +
+      '<div class="card wx-today" style="--c:' + ti.color + '"><span class="kick">طقس الأمن الحيوي اليوم</span><h2><span class="wx-badge">' + esc(ti.label) + '</span></h2>' +
+      (ti.neg.length ? '<ul class="wx-why">' + ti.neg.map(function (n) { return '<li class="neg">' + icon('alert') + esc(n) + '</li>'; }).join('') + '</ul>' : '') + (ti.pos.length ? '<ul class="wx-why">' + ti.pos.map(function (n) { return '<li class="pos">' + icon('check') + esc(n) + '</li>'; }).join('') + '</ul>' : '') +
+      (ti.acts.length ? '<div class="wx-acts"><b>المطلوب اليوم</b><ol>' + ti.acts.slice(0, 5).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div>' : '<p class="small muted">لا توجد إجراءات خاصة بالطقس اليوم. استمر في البرنامج المعتاد.</p>') + '</div></div>';
+    // توقعات 7 أيام
+    secW += '<div class="card"><div class="card-head"><div><span class="kick">توقعات 7 أيام · قطاع ' + esc(S.wxSec) + '</span><h2>' + icon('calendar') + ' تأثير الطقس على الأمن الحيوي يوماً بيوم</h2></div><div class="rlegend"><span><i style="background:var(--r-low)"></i>إيجابي</span><span><i style="background:var(--r-mid)"></i>انتبه</span><span><i style="background:var(--r-high)"></i>سلبي</span><span><i style="background:var(--r-crit)"></i>خطر</span></div></div><div class="wx-days">' +
+      W.days.map(function (x, i) {
+        var c = WX_CODE(x.code), m = imp[i], dt = new Date(x.date + 'T12:00:00');
+        return '<button type="button" class="wx-day" data-wxday="' + i + '" style="--c:' + m.color + '"><b>' + (i === 0 ? 'اليوم' : i === 1 ? 'غداً' : DAYS_AR[dt.getDay()]) + '</b><small>' + dt.getDate() + ' ' + MONTHS3(dt.getMonth()) + '</small><span class="wx-emo">' + c[1] + '</span><span class="mono wx-t">' + x.tmax + '° <i>' + x.tmin + '°</i></span>' +
+          '<span class="wx-l"><span class="wx-arr sm" style="transform:rotate(' + (x.dir + 90) + 'deg)">' + icon('arrow') + '</span><span class="mono">' + x.wind + '</span></span><span class="wx-l">💧 <span class="mono">' + (x.rain >= 0.1 ? x.rain.toFixed(1) + ' مم' : x.rainP + '%') + '</span></span>' + (x.dust != null ? '<span class="wx-l">🌫 <span class="mono">' + Math.round(x.dust) + '</span></span>' : '') + '<span class="wx-badge">' + esc(m.label) + '</span></button>';
+      }).join('') + '</div><div id="wxDayBox" class="wx-daybox"></div></div>';
+    // اتجاه الريح والمحطات المعرضة
+    secW += '<div class="card"><div class="card-head"><div><span class="kick">الرياح الآن من ' + esc(compassAr(cur.dir)) + ' بسرعة ' + cur.wind + ' كم/س · نطاق 10 كم وزاوية 60°</span><h2>' + icon('wind') + ' المحطات الواقعة في اتجاه الريح</h2></div><span class="sub">عند الاشتباه في مرض بمحطة، هذه المحطات أول من يتأثر بالهواء القادم منها</span></div>' +
+      '<div class="wx-dw"><div class="wx-dwmap" id="wxMap" dir="ltr"></div><div class="list">' + (dwn.length ? dwn.slice(0, 10).map(function (r) { return '<button type="button" class="li wx-dwrow" data-wxsite="' + esc(r.s.id) + '"><span class="av">' + icon('wind') + '</span><div class="t"><b>' + esc(shortSite(r.s.name)) + '</b><span>الهواء منها يتجه إلى: ' + esc(r.hit.map(function (h) { return shortSite(h.s.name) + ' (' + kmTxt(h.km) + ' كم)'; }).join('، ')) + '</span></div><div class="meta"><b class="mono">' + r.hit.length + '</b><span>محطة</span></div></button>'; }).join('') : '<p class="empty">' + icon('check') + 'لا توجد محطات متقاربة في اتجاه الريح الحالي</p>') + '</div></div></div>';
+    // الآفات: بطاقات الآن
+    secP += '<div class="card"><div class="card-head"><div><span class="kick">من متوسط حرارة ورطوبة الأيام السبعة القادمة · 0 إلى 100</span><h2>' + icon('alert') + ' نشاط الآفات الناقلة للأمراض الآن</h2></div><div class="rlegend"><span><i class="rt-low"></i>منخفض</span><span><i class="rt-mid"></i>متوسط</span><span><i class="rt-high"></i>مرتفع</span><span><i class="rt-crit"></i>حرج</span></div></div><div class="ps-grid">' +
+      pests.map(function (o) {
+        var p = o.p, c = LVL_C[o.lvl.k], mx = Math.max.apply(null, o.daily.concat([1]));
+        return '<div class="ps-card" style="--c:' + c + '"><div class="ps-h"><span class="ps-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + p.ico + '"/></svg></span><div><b>' + esc(p.name) + '</b><small dir="ltr">' + esc(p.sci) + '</small></div><span class="tr-sc" style="--c:' + c + '"><b class="mono">' + o.now + '</b>' + esc(o.lvl.label) + '</span></div>' +
+          '<div class="ps-spark">' + o.daily.map(function (v, i) { return '<i style="height:' + Math.max(6, v / 100 * 100) + '%;background:' + LVL_C[pestLvl(v).k] + '" title="' + (i === 0 ? 'اليوم' : 'بعد ' + i + ' يوم') + ': ' + v + '"></i>'; }).join('') + '</div>' +
+          '<p class="ps-dz"><b>ينقل:</b> ' + esc(p.dz) + '</p><p class="ps-pk"><b>ذروة النشاط:</b> ' + (o.peak.length ? esc(o.peak.map(MONTHS3).join('، ')) : 'لا ذروة واضحة') + '</p>' +
+          (o.now >= 40 ? '<ul class="ps-act">' + p.act.slice(0, o.now >= 60 ? 3 : 2).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>' : '<p class="small muted">المتابعة الروتينية كافية حالياً</p>') + '</div>';
+      }).join('') + '</div></div>';
+    // التقويم السنوي
+    secP += '<div class="card"><div class="card-head"><div><span class="kick">من المناخ الشهري لمنطقة القطاع · الشهر الحالي محدد</span><h2>' + icon('calendar') + ' تقويم نشاط الآفات خلال العام</h2></div><span class="sub">الأشهر الداكنة = أعلى احتمال خطورة، فخطط برامج المكافحة قبلها بشهر</span></div><div class="tbl bd-cal ps-cal"><table><thead><tr><th>الآفة</th>' + MONTHS.map(function (m, i) { return '<th class="' + (i === mNow ? 'now' : '') + '">' + m.slice(0, 3) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      PESTS.map(function (p) { var yr = pestYear(p); return '<tr><th>' + esc(p.name) + '</th>' + yr.map(function (v, i) { var l = pestLvl(v); return '<td class="' + (i === mNow ? 'now' : '') + '" style="background:color-mix(in srgb,' + LVL_C[l.k] + ' ' + Math.round(15 + v * 0.7) + '%,transparent)" title="' + MONTHS[i] + ': ' + v + ' (' + l.label + ')"><span class="mono">' + v + '</span></td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="ps-sum"><th>مؤشر الخطر العام</th>' + WX_CLIMO.map(function (c, i) { var v = Math.round(PESTS.reduce(function (a, p) { return a + pestYear(p)[i]; }, 0) / PESTS.length), l = pestLvl(v); return '<td class="' + (i === mNow ? 'now' : '') + '" style="background:color-mix(in srgb,' + LVL_C[l.k] + ' ' + Math.round(20 + v * 0.75) + '%,transparent)"><b class="mono">' + v + '</b></td>'; }).join('') + '</tr></tbody></table></div>' +
+      '<p class="small muted">النموذج: لكل آفة مدى حرارة للنشاط ومدى مثالي وتفضيل للرطوبة من المراجع البيطرية، والقوارض يزيد ضغطها على العنابر مع البرد، والبعوض يزيد مع الأمطار. «الآن» يُحسب من توقعات الطقس الفعلية للأيام السبعة القادمة. يُفضَّل تأكيده ببطاقات عدّ الذباب ومحطات طُعم القوارض.</p></div>';
+    // الإجهاد الحراري
+    var thiD = W.days.map(function (x) { var hs = x.thiH || [], mx = hs.length ? Math.max.apply(null, hs) : wxTHI(x.tmax, Math.max(20, (x.rh || 40) - 15)), peak = hs.filter(function (v) { return v >= 79; }).length, from = hs.indexOf(Math.max.apply(null, hs.length ? hs : [0])); return { x: x, mx: Math.round(mx), lvl: thiLvl(mx), hrs: hs.filter(function (v) { return v >= 75; }).length, peak: peak, hs: hs }; });
+    var t0 = thiD[0];
+    secT += '<div class="wx-now"><div class="card wx-today" style="--c:' + LVL_C[t0.lvl.k] + '"><span class="kick">مؤشر الحرارة والرطوبة للدواجن (THI) · اليوم · قطاع ' + esc(S.wxSec) + '</span><h2><b class="mono thi-big">' + t0.mx + '</b> <span class="wx-badge">' + esc(t0.lvl.label) + '</span></h2><p class="small muted">' + (t0.hrs ? 'عدد الساعات فوق حد التنبيه (75): <b class="mono">' + t0.hrs + '</b> ساعة' + (t0.hs.length ? ' · من الساعة ' + t0.hs.indexOf(t0.hs.filter(function (v) { return v >= 75; })[0]) + ' إلى ' + (t0.hs.length - 1 - t0.hs.slice().reverse().indexOf(t0.hs.filter(function (v) { return v >= 75; }).pop())) : '') : 'لا ساعات فوق حد التنبيه اليوم') + '</p>' +
+      '<div class="wx-acts"><b>الإجراءات للعنابر</b><ol>' + THI_ACT[t0.lvl.k].map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div></div>' +
+      '<div class="card thi-calc"><span class="kick">قراءة داخل العنبر</span><h2>' + icon('clip') + ' احسب المؤشر لعنبر محدد</h2><p class="small muted">أدخل قراءة الترمومتر والهيجروميتر داخل العنبر لمعرفة حالته الآن.</p><div class="row" style="gap:10px"><div class="field grow"><label for="thiT">الحرارة °م</label><input id="thiT" type="number" inputmode="decimal" step="0.1" placeholder="32"></div><div class="field grow"><label for="thiH">الرطوبة %</label><input id="thiH" type="number" inputmode="decimal" placeholder="60"></div></div><div id="thiOut" class="thi-out"></div></div></div>' +
+      '<div class="card"><div class="card-head"><div><span class="kick">أعلى قيمة متوقعة في اليوم من الحرارة والرطوبة كل ساعة</span><h2>' + icon('calendar') + ' الإجهاد الحراري خلال 7 أيام</h2></div><div class="rlegend"><span><i class="rt-low"></i>آمن أقل من 75</span><span><i class="rt-mid"></i>تنبيه 75 إلى 78</span><span><i class="rt-high"></i>خطر 79 إلى 83</span><span><i class="rt-crit"></i>طوارئ 84 فأكثر</span></div></div><div class="thi-days">' +
+      thiD.map(function (o, i) { var dt = new Date(o.x.date + 'T12:00:00'); return '<div class="thi-day" style="--c:' + LVL_C[o.lvl.k] + '"><b>' + (i === 0 ? 'اليوم' : i === 1 ? 'غداً' : DAYS_AR[dt.getDay()]) + '</b><span class="mono thi-v">' + o.mx + '</span><span class="wx-badge">' + esc(o.lvl.label) + '</span><div class="thi-hrs">' + (o.hs.length ? o.hs.map(function (v, h) { return '<i title="الساعة ' + h + ': ' + v + '" style="background:' + LVL_C[thiLvl(v).k] + ';opacity:' + (v >= 75 ? 1 : 0.35) + '"></i>'; }).join('') : '') + '</div><small>' + (o.hrs ? o.hrs + ' ساعة فوق 75' : 'بلا ساعات خطر') + '</small></div>'; }).join('') + '</div><p class="small muted">الشريط تحت كل يوم يمثل 24 ساعة من منتصف الليل. المؤشر محسوب من حرارة ورطوبة الهواء الخارجي، وداخل العنبر يختلف حسب التهوية والتبريد، لذلك استخدم الحاسبة أعلاه لقراءات العنابر الفعلية.</p></div>';
+    // التقويم الموسمي
+    var mm = new Date().getMonth(), done = S.wxDone || {}, tNow = seasonTasks(mm), tNext = seasonTasks((mm + 1) % 12);
+    var tRow = function (t, m) { var key = new Date().getFullYear() + '-' + (m + 1) + '-' + t.i, ok = !!done[key]; return '<label class="st-row' + (ok ? ' done' : '') + '"><input type="checkbox" data-stk="' + key + '"' + (ok ? ' checked' : '') + '><div><b>' + esc(t.task) + '</b><small>' + esc(t.why) + '</small></div><span class="pill p-n">' + esc(t.who) + '</span></label>'; };
+    var nDone = tNow.filter(function (t) { return done[new Date().getFullYear() + '-' + (mm + 1) + '-' + t.i]; }).length;
+    secC += '<div class="card"><div class="card-head"><div><span class="kick">' + esc(MONTHS[mm]) + ' · أُنجز ' + nDone + ' من ' + tNow.length + '</span><h2>' + icon('check') + ' مهام الأمن الحيوي هذا الشهر</h2></div><div class="row" style="gap:6px">' + (can('notices') || isAdmin() ? '<button class="btn sm primary" type="button" id="stSend">' + icon('mega') + ' إرسالها كقرار للبوابات</button>' : '') + '<a class="btn sm wa" target="_blank" rel="noopener" id="stWa">' + icon('wa') + ' واتساب</a></div></div>' +
+      '<div class="st-bar"><i style="width:' + (tNow.length ? Math.round(nDone / tNow.length * 100) : 0) + '%"></i></div><div class="st-list">' + tNow.map(function (t) { return tRow(t, mm); }).join('') + '</div></div>' +
+      '<div class="card"><div class="card-head"><div><span class="kick">استعد مبكراً</span><h2>' + icon('calendar') + ' مهام الشهر القادم · ' + esc(MONTHS[(mm + 1) % 12]) + '</h2></div></div><div class="st-list">' + tNext.map(function (t) { return '<div class="st-row next"><div><b>' + esc(t.task) + '</b><small>' + esc(t.why) + '</small></div><span class="pill p-n">' + esc(t.who) + '</span></div>'; }).join('') + '</div></div>' +
+      '<div class="card"><div class="card-head"><div><span class="kick">نظرة على العام</span><h2>' + icon('calendar') + ' التقويم الموسمي الكامل</h2></div></div><div class="st-year">' + MONTHS.map(function (m, i) { var L1 = seasonTasks(i); return '<div class="st-m' + (i === mm ? ' now' : '') + '"><b>' + m + '</b><span class="mono">' + L1.length + ' مهام</span><ul>' + L1.filter(function (t) { return t.months.length < 12; }).map(function (t) { return '<li>' + esc(t.task.split(':')[0]) + '</li>'; }).join('') + '</ul></div>'; }).join('') + '</div></div>';
+    html += '<div id="wxTabBody">' + ({ wx: secW, pest: secP, thi: secT, cal: secC })[S.wxTab] + '</div>';
+    out.innerHTML = html;
+    out.querySelectorAll('[data-wxsec]').forEach(function (x) { x.onclick = function () { S.wxSec = x.dataset.wxsec; drawWx(b, w); }; });
+    $('wxRef').onclick = function () { S.wx = null; viewWx(); };
+    out.querySelectorAll('[data-wxtab]').forEach(function (x) { x.onclick = function () { S.wxTab = x.dataset.wxtab; drawWx(b, w); }; });
+    if (S.wxTab === 'thi') {
+      var calc = function () { var t = parseFloat($('thiT').value), h = parseFloat($('thiH').value), o = $('thiOut'); if (isNaN(t) || isNaN(h)) { o.innerHTML = ''; return; } var v = Math.round(wxTHI(t, h)), l = thiLvl(v); o.innerHTML = '<div class="thi-res" style="--c:' + LVL_C[l.k] + '"><b class="mono">' + v + '</b><span class="wx-badge">' + esc(l.label) + '</span></div><ol>' + THI_ACT[l.k].map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol>'; };
+      $('thiT').oninput = $('thiH').oninput = calc;
+    }
+    if (S.wxTab === 'cal') {
+      var txt = '📋 مهام الأمن الحيوي لشهر ' + MONTHS[mm] + ' · قطاع ' + S.wxSec + '\n' + tNow.map(function (t, i) { return (i + 1) + '. ' + t.task + ' (' + t.who + ')'; }).join('\n');
+      $('stWa').href = waLink(txt);
+      out.querySelectorAll('[data-stk]').forEach(function (c) { c.onchange = function () { S.wxDone = S.wxDone || {}; if (c.checked) S.wxDone[c.dataset.stk] = Date.now(); else delete S.wxDone[c.dataset.stk]; KV.set('wxDone', S.wxDone); drawWx(b, w); }; });
+      if ($('stSend')) $('stSend').onclick = function () { var btn = this; btn.disabled = true; remote('sendNotice', [S.session.pin, { target: 'SECTOR:' + S.wxSec, level: 'عادي', title: 'مهام الأمن الحيوي لشهر ' + MONTHS[mm], body: tNow.map(function (t, i) { return (i + 1) + '. ' + t.task + ' (' + t.who + ')'; }).join('\n') }]).then(function () { toast('أُرسلت المهام كقرار لبوابات قطاع ' + S.wxSec + '، ويظهر لك من استلمها في القرارات'); btn.disabled = false; }).catch(function (e) { btn.disabled = false; toast(errText(e)); }); };
+    }
+    if (S.wxTab !== 'wx') { if (S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; } return; }
+    var showDay = function (i) {
+      var m = imp[i], x = W.days[i], box = $('wxDayBox'); out.querySelectorAll('[data-wxday]').forEach(function (e) { e.classList.toggle('on', +e.dataset.wxday === i); });
+      box.innerHTML = '<div class="wx-today" style="--c:' + m.color + '"><h3>' + (i === 0 ? 'اليوم' : DAYS_AR[new Date(x.date + 'T12:00:00').getDay()]) + ': <span class="wx-badge">' + esc(m.label) + '</span> <small class="muted">الرياح من ' + esc(compassAr(x.dir)) + ' حتى ' + x.gust + ' كم/س' + (x.rh != null ? ' · رطوبة ' + x.rh + '%' : '') + '</small></h3>' +
+        (m.neg.length || m.pos.length ? '<ul class="wx-why">' + m.neg.map(function (n) { return '<li class="neg">' + icon('alert') + esc(n) + '</li>'; }).join('') + m.pos.map(function (n) { return '<li class="pos">' + icon('check') + esc(n) + '</li>'; }).join('') + '</ul>' : '<p class="small muted">طقس عادي بلا تأثير خاص</p>') +
+        (m.acts.length ? '<div class="wx-acts"><b>الإجراءات</b><ol>' + m.acts.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div>' : '') + '</div>';
+    };
+    out.querySelectorAll('[data-wxday]').forEach(function (e) { e.onclick = function () { showDay(+e.dataset.wxday); }; });
+    showDay(0);
+    wxMapInit(sec, cur, dwn);
+  }
+  function wxMapInit(sec, cur, dwn) {
+    if (S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; }
+    var box = $('wxMap'); if (!box) return;
+    birdLeaflet().then(function () {
+      box = $('wxMap'); if (!box) return;
+      var map = L.map(box, { zoomSnap: 0.25, scrollWheelZoom: false }); S.wxMap = map;
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'صور: Esri' }).addTo(map);
+      var to = (cur.dir + 180) % 360, sel = null, cone = L.layerGroup().addTo(map), mk = {};
+      var draw = function (id) {
+        cone.clearLayers(); var a = sec.sites.filter(function (x) { return x.id === id; })[0]; if (!a) return; sel = id;
+        var pts = [[+a.lat, +a.lng]]; for (var g = -30; g <= 30; g += 5) { var r = (to + g) * Math.PI / 180; pts.push([+a.lat + Math.cos(r) * 10 / 110.57, +a.lng + Math.sin(r) * 10 / (111.32 * Math.cos(a.lat * Math.PI / 180))]); }
+        L.polygon(pts, { color: '#38a3f1', weight: 1.5, fillColor: '#38a3f1', fillOpacity: 0.22, interactive: false }).addTo(cone);
+        var hit = (dwn.filter(function (r) { return r.s.id === id; })[0] || { hit: [] }).hit;
+        hit.forEach(function (h) { L.polyline([[+a.lat, +a.lng], [+h.s.lat, +h.s.lng]], { color: '#ff8a3d', weight: 2.5, dashArray: '3 7', interactive: false }).addTo(cone); });
+        Object.keys(mk).forEach(function (k) { var el = mk[k].getElement(); if (el) { el.classList.toggle('cur', k === id); el.classList.toggle('hit', hit.some(function (h) { return h.s.id === k; })); } });
+      };
+      sec.sites.forEach(function (x) {
+        var m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'bm-site wx-site', html: '<span class="bm-dot" style="--c:#2b7bd6"><b>' + esc(String(shortSite(x.name)).replace(/[^\d]/g, '') || '•') + '</b></span><span class="bm-lbl">' + esc(shortSite(x.name)) + '</span>', iconSize: [0, 0] }) }).addTo(map);
+        m.on('click', function () { draw(x.id); }); mk[x.id] = m;
+      });
+      var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (cur.dir + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح الآن</b><span>من ' + esc(compassAr(cur.dir)) + ' · ' + cur.wind + ' كم/س</span></div>'; return el; }; wc.addTo(map);
+      map.fitBounds(L.latLngBounds(sec.sites.map(function (x) { return [x.lat, x.lng]; })).pad(0.25), { maxZoom: 14 });
+      box.classList.toggle('bm-far', map.getZoom() < 12); map.on('zoomend', function () { box.classList.toggle('bm-far', map.getZoom() < 12); });
+      draw((dwn[0] && dwn[0].s.id) || sec.sites[0].id);
+      document.querySelectorAll('[data-wxsite]').forEach(function (e) { e.onclick = function () { draw(e.dataset.wxsite); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+      setTimeout(function () { if (S.wxMap === map) map.invalidateSize(); }, 250);
+    }).catch(function () { box.innerHTML = '<p class="empty">' + icon('wifioff') + 'الخريطة تحتاج إنترنت</p>'; });
+  }
   function viewBirds() {
     $('main').innerHTML = '<section class="view bird-view"><div id="v5Out">' + (S.birds ? '' : v5Spin()) + '</div></section>';
     if (S.birds) drawBirds(S.birds);
