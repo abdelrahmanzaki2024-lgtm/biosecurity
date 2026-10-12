@@ -31,6 +31,7 @@
   function errText(e) { return (e && e.message) || String(e); }
 
   var ICONS = {
+    pause: 'M7 4h3v16H7zM14 4h3v16h-3z', layers: 'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
     gate: 'M3 21V8l9-5 9 5v13M9 21v-6h6v6', scan: 'M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 8h4v4H7zM13 13h4v4h-4zM13 8h4M8 15h2',
     lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4', radar: 'M12 12 19 5M21 12a9 9 0 1 1-9-9M17 12a5 5 0 1 1-5-5', file: 'M14 3H6v18h12V7zM14 3v4h4M9 13h6M9 17h6',
     dash: 'M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z', bell: 'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0',
@@ -241,9 +242,10 @@
     }
     window.addEventListener('online', function () { setOnline(true); });
     window.addEventListener('offline', function () { setOnline(false); });
-    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); S.installEvt = e; instOffer(); });
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); S.installEvt = e; if (S.instShown) { S.instHelp = false; instDraw(); } else instOffer(); });
     window.addEventListener('appinstalled', function () { S.installEvt = null; instClose(); toast('تم تثبيت التطبيق. افتحه من أيقونته مباشرة'); });
-    if (instIOS() || (instAndroid() && !instRealChrome())) setTimeout(instOffer, 2500);
+    if (instCan() && /(^|[?&])install=1\b/.test(location.search)) setTimeout(function () { S.instShown = true; S.instHelp = !S.installEvt; instDraw(); }, 1200);
+    else if (instIOS() || (instAndroid() && !instRealChrome())) setTimeout(instOffer, 2500);
     if (window.matchMedia) matchMedia('(display-mode: standalone)').addEventListener && matchMedia('(display-mode: standalone)').addEventListener('change', refreshInstBtns);
     if (window.MutationObserver) new MutationObserver(function () { if (S.instShown && !$('instBar')) instDraw(); }).observe(document.body, { childList: true });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
@@ -315,7 +317,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + '</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 9</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -420,6 +422,7 @@
     var r = currentRoute(), base = r.split('/')[0];
     if (base !== 'gate') stopCam();
     if (base !== 'tv') tvStop();
+    if (base !== 'birds') birdLiveStop();
     clearInterval(S.poll);
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || base === 'users' && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
@@ -2692,7 +2695,7 @@
   /** خريطة مصر/منطقة المواقع: الحدود، النيل، البحيرات، مسارات الهجرة باتجاهها الحالي، المواقع بمستوى الخطر، والأسراب المتوقعة */
   function birdMap(d, mode, opt) {
     opt = opt || {};
-    var B = mode === 'egypt' ? { s: 21.7, n: 31.95, w: 24.6, e: 37.0 } : mode === 'region' ? { s: 28.95, n: 31.72, w: 29.05, e: 32.65 } : { s: 29.38, n: 30.72, w: 29.95, e: 31.42 };
+    var B = mode === 'egypt' ? { s: 21.7, n: 31.95, w: 24.6, e: 37.0 } : mode === 'region' ? { s: 28.95, n: 31.72, w: 29.05, e: 32.65 } : birdFit(d.sites, opt.site);
     var k = Math.cos((B.s + B.n) / 2 * Math.PI / 180), W = 1000, H = Math.round(W * (B.n - B.s) / ((B.e - B.w) * k));
     var P = function (lat, lng) { return [(lng - B.w) / (B.e - B.w) * W, (B.n - lat) / (B.n - B.s) * H]; };
     var path = function (pts, close) { return pts.map(function (p, i) { var q = P(p[0], p[1]); return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join('') + (close ? 'Z' : ''); };
@@ -2757,14 +2760,221 @@
     var tw = sites[0] && sites[0].wind;
     if (tw) { var rad = tw.toward * Math.PI / 180, cx0 = W - 214, cy0 = 70; o += '<g class="bd-wind"><rect x="' + (W - 264) + '" y="16" width="250" height="108" rx="12" class="bd-tag"/><circle cx="' + cx0 + '" cy="' + cy0 + '" r="38" fill="none" stroke="var(--map-border)" stroke-dasharray="3 4"/><line x1="' + (cx0 - Math.sin(rad) * 30).toFixed(1) + '" y1="' + (cy0 + Math.cos(rad) * 30).toFixed(1) + '" x2="' + (cx0 + Math.sin(rad) * 30).toFixed(1) + '" y2="' + (cy0 - Math.cos(rad) * 30).toFixed(1) + '" stroke="var(--map-water)" stroke-width="5" stroke-linecap="round" marker-end="url(#mkFl)"/><text x="' + (W - 164) + '" y="56" class="bd-lbl sec" text-anchor="end">الرياح على 1500 م</text><text x="' + (W - 164) + '" y="82" class="bd-lbl" text-anchor="end">' + esc(tw.label) + '</text><text x="' + (W - 164) + '" y="106" class="bd-lbl wind" text-anchor="end">' + tw.spd + ' كم/س · ' + (tw.live ? 'حية' : 'تقدير') + '</text></g>'; }
     // مقياس المسافة واتجاه الشمال
-    var km = big ? 200 : near ? 20 : 50, px = km / ((B.e - B.w) * k * 111.32) * W;
+    var spanKm = (B.e - B.w) * k * 111.32, km = big ? 200 : !near ? 50 : [2, 5, 10, 20, 50].filter(function (v) { return v <= spanKm / 4; }).pop() || 1, px = km / ((B.e - B.w) * k * 111.32) * W;
     o += '<g class="bd-scale"><rect x="18" y="' + (H - 46) + '" width="' + (px + 24).toFixed(1) + '" height="34" rx="8" class="bd-tag"/><line x1="30" x2="' + (30 + px).toFixed(1) + '" y1="' + (H - 22) + '" y2="' + (H - 22) + '" stroke="var(--map-ink)" stroke-width="3"/><text x="' + (30 + px / 2).toFixed(1) + '" y="' + (H - 28) + '" text-anchor="middle" class="bd-lbl">' + km + ' كم</text></g>';
     o += '<g transform="translate(40,44)"><circle r="22" class="bd-tag"/><path d="M0 -15 L7 6 L0 2 L-7 6Z" fill="var(--red)"/><text y="16" text-anchor="middle" class="bd-lbl" style="font-size:12px">ش</text></g>';
     return '<svg class="bd-svg" viewBox="0 0 ' + W + ' ' + H + '" dir="ltr" role="img" aria-label="خريطة مسارات الطيور المهاجرة ومواقع الشركة">' + o + '</svg>';
   }
+  /** حدود الخريطة القريبة من الإحداثيات الفعلية للمواقع (أو قطاع الموقع المختار) */
+  function birdFit(sites, selId) {
+    var L0 = (sites || []).filter(function (x) { return x.lat != null && x.lng != null && isFinite(x.lat) && isFinite(x.lng); }), sel = selId && L0.filter(function (x) { return x.id === selId; })[0];
+    if (sel) L0 = L0.filter(function (x) { return x.sector === sel.sector; });
+    if (!L0.length) return { s: 29.38, n: 30.72, w: 29.95, e: 31.42 };
+    var la = L0.map(function (x) { return +x.lat; }), lo = L0.map(function (x) { return +x.lng; });
+    var s = Math.min.apply(null, la), n = Math.max.apply(null, la), w = Math.min.apply(null, lo), e = Math.max.apply(null, lo);
+    var py = Math.max((n - s) * 0.22, 0.05), px = Math.max((e - w) * 0.22, 0.06), cy = (s + n) / 2, cx = (w + e) / 2;
+    s -= py; n += py; w -= px; e += px;
+    var k = Math.cos(cy * Math.PI / 180), hy = (n - s) / 2, hx = (e - w) / 2;
+    // نسبة عرض إلى ارتفاع مريحة للعرض (بين 1.1 و 1.9)
+    if (hx * k / hy < 1.1) hx = hy * 1.1 / k; else if (hx * k / hy > 1.9) hy = hx * k / 1.9;
+    return { s: cy - hy, n: cy + hy, w: cx - hx, e: cx + hx };
+  }
+  /* ---------- الخريطة التفاعلية لرادار الطيور (Leaflet + صور الأقمار الصناعية) ---------- */
+  function birdLeaflet() {
+    if (window.L && L.map) return Promise.resolve();
+    if (!document.querySelector('link[data-leaflet]')) { var c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; c.setAttribute('data-leaflet', '1'); document.head.appendChild(c); }
+    return loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+  }
+  /* ---------- أنواع الطيور المتوقعة على كل مسار + بُعد المحطات عن المسارات ---------- */
+  // m = أشهر المرور (1-12)، r = خطر نقل إنفلونزا الطيور (3 عالٍ، 2 متوسط، 1 منخفض)
+  var BIRD_SP = {
+    NILE: [['البط البري (الخضاري)', 'Anas platyrhynchos', [10, 11, 12, 1, 2, 3], 3], ['الشرشير الشتوي', 'Anas crecca', [10, 11, 12, 1, 2, 3], 3], ['دجاجة الماء والغرة', 'Fulica atra', [10, 11, 12, 1, 2, 3], 2], ['البلشون الرمادي', 'Ardea cinerea', [9, 10, 11, 12, 1, 2, 3], 2], ['أبو قردان (البلشون الأبيض)', 'Bubulcus ibis', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 2], ['الطيور الخواضة (الطيطوي والدريجة)', 'Calidris / Tringa', [3, 4, 5, 8, 9, 10], 2], ['القمري (اليمام المهاجر)', 'Streptopelia turtur', [4, 5, 8, 9], 2], ['السنونو والعصفوريات', 'Hirundo rustica', [3, 4, 5, 9, 10], 1]],
+    OASIS: [['السمان', 'Coturnix coturnix', [3, 4, 9, 10], 2], ['القمري (اليمام المهاجر)', 'Streptopelia turtur', [4, 5, 8, 9], 2], ['الشرشير الصيفي (متجه لقارون والريان)', 'Spatula querquedula', [2, 3, 4, 8, 9, 10], 3], ['البط أبو مجرفة', 'Spatula clypeata', [10, 11, 12, 1, 2, 3], 3], ['الحدأة السوداء', 'Milvus migrans', [3, 4, 9, 10], 2], ['البلشون الليلي', 'Nycticorax nycticorax', [4, 5, 8, 9, 10], 2], ['الهدهد', 'Upupa epops', [3, 4, 9, 10], 1], ['الذعرة الصفراء والعصفوريات', 'Motacilla flava', [3, 4, 9, 10], 1]],
+    REDSEA: [['اللقلق الأبيض', 'Ciconia ciconia', [3, 4, 8, 9], 2], ['البجع الأبيض', 'Pelecanus onocrotalus', [3, 4, 9, 10], 2], ['عقاب السهوب', 'Aquila nipalensis', [2, 3, 10, 11], 1], ['صقر العسل', 'Pernis apivorus', [5, 9], 1], ['الحدأة السوداء', 'Milvus migrans', [3, 4, 9, 10], 2]],
+    MED: [['البط البري (الخضاري)', 'Anas platyrhynchos', [10, 11, 12, 1, 2, 3], 3], ['الشرشير الشتوي', 'Anas crecca', [10, 11, 12, 1, 2, 3], 3], ['البط أبو مجرفة', 'Spatula clypeata', [10, 11, 12, 1, 2, 3], 3], ['البط الحمراوي (أبو فروة)', 'Aythya ferina', [11, 12, 1, 2], 3], ['النوارس', 'Larus / Chroicocephalus', [10, 11, 12, 1, 2, 3], 3], ['الغرة', 'Fulica atra', [10, 11, 12, 1, 2, 3], 2]]
+  };
+  var SP_RISK = { 3: ['عالٍ', 'p-bad'], 2: ['متوسط', 'p-warn'], 1: ['منخفض', 'p-ok'] };
+  function birdSpecies(fid, mNow) { return (BIRD_SP[fid] || []).map(function (a) { return { name: a[0], sci: a[1], months: a[2], risk: a[3], now: a[2].indexOf(mNow + 1) >= 0 }; }).sort(function (a, b) { return (b.now - a.now) || (b.risk - a.risk); }); }
+  /** أقرب نقطة على المسار للمحطة والمسافة بالكيلومتر */
+  function birdNear(lat, lng, path) {
+    var k = Math.cos(lat * Math.PI / 180), X = function (p) { return [(p[1] - lng) * k * 111.32, (p[0] - lat) * 110.57]; }, best = null;
+    for (var i = 0; i < path.length - 1; i++) {
+      var a = X(path[i]), b = X(path[i + 1]), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, -(a[0] * dx + a[1] * dy) / L2)) : 0;
+      var px = a[0] + t * dx, py = a[1] + t * dy, dd = Math.sqrt(px * px + py * py);
+      if (!best || dd < best.km) best = { km: dd, lat: lat + py / 110.57, lng: lng + px / (k * 111.32) };
+    }
+    return best;
+  }
+  function BIO_kmLL(a1, o1, a2, o2) { var k = Math.cos((a1 + a2) / 2 * Math.PI / 180), dx = (o2 - o1) * k * 111.32, dy = (a2 - a1) * 110.57; return Math.sqrt(dx * dx + dy * dy); }
+  function birdDists(d, x) { return d.flyways.map(function (f) { var n = birdNear(+x.lat, +x.lng, f.path); return { f: f, km: n.km, lat: n.lat, lng: n.lng }; }).sort(function (a, b) { return a.km - b.km; }); }
+  function kmTxt(v) { return v < 10 ? v.toFixed(1) : Math.round(v).toString(); }
+  function kmCls(v) { return v < 10 ? 'kd-1' : v < 25 ? 'kd-2' : v < 50 ? 'kd-3' : 'kd-4'; }
+  function kmLbl(v) { return v < 10 ? 'على خط السير' : v < 25 ? 'قريبة جداً' : v < 50 ? 'قريبة' : 'بعيدة'; }
+  function birdSpeciesCards(d) {
+    var mNow = new Date(d.now).getMonth(), sec = S.bSector && S.bSector !== '*' ? S.bSector : null, ss = d.sites.filter(function (x) { return x.lat != null && (!sec || x.sector === sec); });
+    var fl = d.flyways.map(function (f) { var ds = ss.map(function (x) { return birdNear(+x.lat, +x.lng, f.path).km; }); return { f: f, min: ds.length ? Math.min.apply(null, ds) : 9999 }; }).sort(function (a, b) { return a.min - b.min; });
+    return '<div class="card"><div class="card-head"><div><span class="kick">' + esc(d.season.label) + ' · مرتبة من الأقرب ' + (sec ? 'لقطاع ' + esc(sec) : 'للمواقع') + '</span><h2>' + icon('bird') + ' أنواع الطيور المتوقعة على كل مسار</h2></div><span class="sub">«الآن» = يمر هذا الشهر · الخطر = احتمال نقل إنفلونزا الطيور</span></div><div class="sp-grid">' +
+      fl.map(function (o) {
+        var f = o.f, sp = birdSpecies(f.id, mNow);
+        return '<div class="sp-card" style="--c:' + f.color + '"><div class="sp-h"><i></i><div><b>' + esc(f.name) + '</b><span>شدة الهجرة الآن <b class="mono">' + f.intensity + '%</b> · أقرب محطة على بُعد <b class="mono">' + kmTxt(o.min) + ' كم</b></span></div></div><ul>' +
+          sp.map(function (b) { return '<li class="' + (b.now ? 'now' : '') + '"><div><b>' + esc(b.name) + '</b><small dir="ltr">' + esc(b.sci) + '</small></div><div class="sp-tags">' + (b.now ? '<span class="pill p-info">الآن</span>' : '<span class="sp-m">' + esc(b.months.map(function (m) { return MONTHS[m - 1].slice(0, 3); }).filter(function (v, i, a) { return a.length < 5 || i === 0 || i === a.length - 1; }).join(' – ')) + '</span>') + '<span class="pill ' + SP_RISK[b.risk][1] + '">' + SP_RISK[b.risk][0] + '</span></div></li>'; }).join('') + '</ul></div>';
+      }).join('') + '</div></div>';
+  }
+  function birdDistTable(d) {
+    var sec = S.bSector && S.bSector !== '*' ? S.bSector : null, ss = d.sites.filter(function (x) { return x.lat != null && (!sec || x.sector === sec); });
+    var fw = d.flyways.slice().sort(function (a, b) { var O = { NILE: 1, OASIS: 2, MED: 3, REDSEA: 4 }; return (O[a.id] || 9) - (O[b.id] || 9); });
+    var rows = ss.map(function (x) { var m = {}; birdDists(d, x).forEach(function (q) { m[q.f.id] = q.km; }); var near = birdDists(d, x)[0]; return { x: x, m: m, near: near }; }).sort(function (a, b) { return a.near.km - b.near.km; });
+    return '<div class="card" id="bdDist"><div class="card-head"><div><span class="kick">المسافة المباشرة من إحداثيات المحطة إلى أقرب نقطة على خط سير كل مسار</span><h2>' + icon('map') + ' بُعد المحطات عن مسارات الطيور المهاجرة' + (sec ? ' · قطاع ' + esc(sec) : '') + '</h2></div><div class="rlegend"><span><i class="kd-1"></i>أقل من 10 كم</span><span><i class="kd-2"></i>10 إلى 25</span><span><i class="kd-3"></i>25 إلى 50</span><span><i class="kd-4"></i>أكثر من 50</span></div></div>' +
+      '<div class="tbl"><table class="kd-tbl"><thead><tr><th>المحطة</th>' + fw.map(function (f) { return '<th><i class="kd-dot" style="background:' + f.color + '"></i>' + esc(f.name.replace('ممر ', '').replace(' وبحيرات الدلتا', '').replace(' والوادي المتصدع', '')) + '</th>'; }).join('') + '<th>الأقرب</th></tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><td><button type="button" class="kd-site" data-bfocus="' + esc(r.x.id) + '"><b>' + esc(shortSite(r.x.name)) + '</b><small>' + esc(r.x.sector) + '</small></button></td>' + fw.map(function (f) { var v = r.m[f.id]; return '<td><span class="kd ' + kmCls(v) + '">' + kmTxt(v) + ' كم</span></td>'; }).join('') + '<td><b style="color:' + r.near.f.color + '">' + esc(r.near.f.name.replace('ممر ', '')) + '</b><small class="muted"> · ' + kmLbl(r.near.km) + '</small></td></tr>'; }).join('') +
+      '</tbody></table></div><p class="small muted">المسارات نموذج علمي يمثل منتصف جبهة الهجرة وعرضها الفعلي عشرات الكيلومترات، لذلك المحطة الأقل من 25 كم تعتبر داخل نطاق المرور. اضغط اسم أي محطة لعرض خطوط المسافة على الخريطة.</p></div>';
+  }
+  /** خطوط المسافة من المحطة المختارة إلى كل المسارات على الخريطة */
+  function birdFocus(d, id, fly) {
+    var map = S.bmap; if (!map) return;
+    if (S.bFocusL) { map.removeLayer(S.bFocusL); S.bFocusL = null; }
+    var x = d.sites.filter(function (s) { return s.id === id; })[0]; if (!x || x.lat == null) return;
+    var g = L.layerGroup(); S.bFocus = id;
+    birdDists(d, x).forEach(function (q, i) {
+      if (i > 1 && q.km > 80) return;
+      L.polyline([[x.lat, x.lng], [q.lat, q.lng]], { color: q.f.color, weight: i ? 2.5 : 4, dashArray: '2 7', lineCap: 'round', interactive: false }).addTo(g);
+      L.circleMarker([q.lat, q.lng], { radius: 5, color: '#fff', weight: 2, fillColor: q.f.color, fillOpacity: 1, interactive: false }).addTo(g);
+      L.marker([q.lat, q.lng], { interactive: false, icon: L.divIcon({ className: 'bm-km', html: '<span style="--c:' + q.f.color + '">' + kmTxt(q.km) + ' كم<small>' + esc(q.f.name.replace('ممر ', '')) + '</small></span>', iconSize: [0, 0] }) }).addTo(g);
+    });
+    g.addTo(map); S.bFocusL = g;
+    Object.keys(S.bMarks || {}).forEach(function (k) { var el = S.bMarks[k].getElement(); if (el) el.classList.toggle('cur', k === id); });
+    if (fly) { var pts = [[x.lat, x.lng]].concat(birdDists(d, x).slice(0, 2).map(function (q) { return [q.lat, q.lng]; })); map.flyToBounds(L.latLngBounds(pts), { maxZoom: 13, duration: 1.4, paddingTopLeft: [40, 120], paddingBottomRight: [40, 60] }); }
+    var n = $('bmNow');
+    if (n) { var ds = birdDists(d, x); n.hidden = false; n.innerHTML = '<span class="bm-dot lv-' + x.lvl.k + '" style="--c:' + LVL_C[x.lvl.k] + '"><b>' + x.score + '</b></span><div><b>' + esc(shortSite(x.name)) + '</b><span>' + ds.slice(0, 2).map(function (q) { return '<i style="color:' + q.f.color + '">●</i> ' + esc(q.f.name.replace('ممر ', '')) + ' ' + kmTxt(q.km) + ' كم'; }).join('<br>') + '</span></div><button type="button" class="btn sm" data-bsheet="' + esc(x.id) + '">التفاصيل</button>'; var b = n.querySelector('[data-bsheet]'); if (b) b.onclick = function () { birdSiteSheet(x.id); }; L.DomEvent.disableClickPropagation(n); }
+  }
+  function birdLiveStop() { clearInterval(S.bTourT); S.bTourT = null; if (S.bmap) { try { S.bmap.remove(); } catch (e) {} S.bmap = null; } }
+  function birdHull(pts) {
+    var P0 = pts.slice().sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; }); if (P0.length < 3) return P0;
+    var cr = function (o, a, b) { return (a[1] - o[1]) * (b[0] - o[0]) - (a[0] - o[0]) * (b[1] - o[1]); }, lo = [], up = [];
+    P0.forEach(function (p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+    P0.slice().reverse().forEach(function (p) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); });
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  function birdLiveBar(d) {
+    var secs = []; d.sites.forEach(function (x) { if (x.sector && secs.indexOf(x.sector) < 0) secs.push(x.sector); });
+    if (!S.bSector || (S.bSector !== '*' && secs.indexOf(S.bSector) < 0)) S.bSector = secs.indexOf('الواحات') >= 0 ? 'الواحات' : secs[0] || '*';
+    return '<div class="bm-bar"><div class="bm-secs" role="group" aria-label="القطاع">' + secs.concat(['*']).map(function (s) { return '<button type="button" data-bsec="' + esc(s) + '" class="' + (S.bSector === s ? 'on' : '') + '">' + (s === '*' ? 'كل القطاعات' : 'قطاع ' + esc(s)) + '</button>'; }).join('') + '</div>' +
+      '<div class="bm-acts"><button type="button" data-bm="fit">' + icon('map') + ' عرض القطاع كاملاً</button><button type="button" data-bm="tour" class="' + (S.bTour ? 'on' : '') + '">' + icon(S.bTour ? 'pause' : 'play') + '<span>' + (S.bTour ? 'إيقاف الجولة' : 'جولة تلقائية') + '</span></button><button type="button" data-bm="layer">' + icon('layers') + ' ' + (S.bLayer === 'osm' ? 'قمر صناعي' : 'خريطة الطرق') + '</button></div></div>';
+  }
+  function birdLiveInit(d) {
+    var box = $('bdLive'); if (!box) return;
+    birdLiveStop();
+    birdLeaflet().then(function () {
+      box = $('bdLive'); if (!box) return;
+      box.innerHTML = '';
+      var map = L.map(box, { zoomControl: true, scrollWheelZoom: true, zoomSnap: 0.25, zoomDelta: 0.5 }); S.bmap = map;
+      var esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+      var sat = L.layerGroup([L.tileLayer(esri + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'صور: Esri' }), L.tileLayer(esri + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })]);
+      var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+      (S.bLayer === 'osm' ? osm : sat).addTo(map);
+      var flyLabs = [], spring = d.season.k === 'spring', mNow = new Date(d.now).getMonth(), sites = d.sites.filter(function (x) { return x.lat != null && x.lng != null; });
+      // مسارات الهجرة
+      d.flyways.forEach(function (f) {
+        var pts = (spring ? f.path.slice().reverse() : f.path).map(function (p) { return [p[0], p[1]]; }), a = Math.max(0.15, f.intensity / 100);
+        L.polyline(pts, { color: f.color, weight: 34, opacity: 0.08 + a * 0.14, lineCap: 'round', interactive: false }).addTo(map);
+        var spl = birdSpecies(f.id, mNow), spNow = spl.filter(function (b) { return b.now; }), spShow = (spNow.length ? spNow : spl).slice(0, 3);
+        L.polyline(pts, { color: f.color, weight: 3, opacity: 0.5 + a * 0.5, dashArray: '10 12', className: 'bm-flow' }).bindTooltip('<b>' + esc(f.name) + '</b> · شدة الهجرة ' + f.intensity + '%<br>' + spl.map(function (b) { return (b.now ? '● ' : '○ ') + esc(b.name); }).join('<br>'), { sticky: true, direction: 'top' }).addTo(map);
+        // بطاقة الأنواع على المسار: تُوضع على جزء ظاهر من المسار بعيداً عن المحطات وتتحرك مع الخريطة
+        var lab = L.marker(pts[0], { icon: L.divIcon({ className: 'bm-fly', html: '<span style="--c:' + f.color + '"><b>' + esc(f.name) + '</b><em>' + (spNow.length ? 'متوقع الآن: ' : 'أنواعه: ') + esc(spShow.map(function (b) { return b.name.replace(/\s*\(.*$/, ''); }).join('، ')) + '</em></span>', iconSize: [0, 0] }) }).on('click', function () { var t = $('bdSpecies'); if (t) t.scrollIntoView({ behavior: 'smooth' }); });
+        flyLabs.push({ m: lab, path: f.path });
+      });
+      // البحيرات وتجمعات الطيور المائية
+      d.wetlands.forEach(function (w) { L.circle([w.lat, w.lng], { radius: 2500 + w.intensity * 120, color: '#38a3f1', weight: 1.5, fillOpacity: 0.22 }).bindTooltip(esc(w.name) + ' · تجمع الطيور المائية ' + w.intensity + '%', { direction: 'top' }).addTo(map); });
+      // حدود كل قطاع
+      var bySec = {}; sites.forEach(function (x) { (bySec[x.sector] = bySec[x.sector] || []).push([+x.lat, +x.lng]); });
+      Object.keys(bySec).forEach(function (sec) {
+        var h = birdHull(bySec[sec]);
+        if (h.length >= 3) L.polygon(h, { color: '#ffffff', weight: 2, dashArray: '6 6', fillColor: '#c8182a', fillOpacity: 0.06, interactive: false }).addTo(map);
+        var top = bySec[sec].reduce(function (a, p) { return p[0] > a[0] ? p : a; });
+        L.marker(top, { interactive: false, icon: L.divIcon({ className: 'bm-sec', html: '<span>قطاع ' + esc(sec) + '</span>', iconSize: [0, 0] }) }).addTo(map);
+      });
+      // الأسراب المتوقعة باتجاه المواقع
+      var seen = {};
+      sites.filter(function (x) { return x.flocks.length && x.score >= 30; }).slice(0, 12).forEach(function (x) {
+        var f = x.flocks[0], key = f.from + '|' + x.sector; if (seen[key]) return; seen[key] = 1;
+        var fl = f.lat, fg = f.lng; if (f.d < 28) { var rr = f.track * Math.PI / 180; fl = x.lat - Math.cos(rr) * 28 / 111; fg = x.lng - Math.sin(rr) * 28 / (111 * Math.cos(x.lat * Math.PI / 180)); }
+        L.polyline([[fl, fg], [x.lat, x.lng]], { color: f.color, weight: 3, dashArray: '3 9', className: 'bm-flock', interactive: false }).addTo(map);
+        L.marker([fl, fg], { icon: L.divIcon({ className: 'bm-bird', html: '<span style="--c:' + f.color + '">' + icon('bird') + '<b>سرب ~' + BIO_eta(f.eta) + '</b></span>', iconSize: [0, 0] }) }).bindTooltip(esc(f.from + ' ← ' + x.name + ' · ' + f.d + ' كم · ' + f.species), { direction: 'top' }).addTo(map);
+      });
+      // المشاهدات
+      (d.sightings || []).forEach(function (s) { if (s.lat == null || s.lat === '') return; L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'bm-obs ' + (s.source === 'eBird' ? 'eb' : 'ob'), html: '<i></i>', iconSize: [0, 0] }) }).bindTooltip(esc(s.species + ' · ' + s.count + ' · ' + s.source + ' · ' + ago(s.time)), { direction: 'top' }).addTo(map); });
+      // المواقع بلون الخطر
+      S.bMarks = {};
+      sites.slice().reverse().forEach(function (x) {
+        var k = x.lvl.k, m = L.marker([x.lat, x.lng], { riseOnHover: true, icon: L.divIcon({ className: 'bm-site', html: '<span class="bm-dot lv-' + k + '" style="--c:' + LVL_C[k] + '"><b>' + x.score + '</b></span><span class="bm-lbl">' + esc(shortSite(x.name).replace(/\s*\(.*$/, '')) + '</span>', iconSize: [0, 0] }) }).addTo(map);
+        m.on('click', function () { if (S.bTour) birdTour(d, false); birdFocus(d, x.id, false); });
+        S.bMarks[x.id] = m;
+      });
+      var placeLabs = function () {
+        var vb = map.getBounds().pad(-0.04), cp = map.latLngToContainerPoint(map.getCenter()), sp = sites.map(function (x) { return map.latLngToContainerPoint([x.lat, x.lng]); }), used = [];
+        flyLabs.forEach(function (o) {
+          var best = null;
+          for (var i = 0; i < o.path.length - 1; i++) for (var t = 0; t <= 1; t += 0.02) {
+            var ll = L.latLng(o.path[i][0] + (o.path[i + 1][0] - o.path[i][0]) * t, o.path[i][1] + (o.path[i + 1][1] - o.path[i][1]) * t); if (!vb.contains(ll)) continue;
+            var pp = map.latLngToContainerPoint(ll), md = 999; sp.concat(used).forEach(function (q) { md = Math.min(md, pp.distanceTo(q)); });
+            var sc = Math.min(md, 170) - 0.12 * pp.distanceTo(cp); if (!best || sc > best.sc) best = { sc: sc, ll: ll, pp: pp };
+          }
+          if (best) {
+            o.m.setLatLng(best.ll); if (!map.hasLayer(o.m)) o.m.addTo(map); used.push(best.pp);
+            var el = o.m.getElement() && o.m.getElement().firstChild, sz = map.getSize();
+            if (el) el.style.transform = 'translate(' + (best.pp.x > sz.x / 2 ? 'calc(-100% - 14px)' : '14px') + ',' + (best.pp.y > sz.y * 0.75 ? 'calc(-100% + 8px)' : best.pp.y < sz.y * 0.25 ? '-8px' : '-50%') + ')';
+          } else if (map.hasLayer(o.m)) map.removeLayer(o.m);
+        });
+      };
+      map.on('moveend zoomend', placeLabs);
+      // خط رفيع من كل محطة إلى أقرب نقطة على أقرب مسار
+      S.bLinks = L.layerGroup(); birdSecSites(d).forEach(function (x) { var q = birdDists(d, x)[0]; L.polyline([[x.lat, x.lng], [q.lat, q.lng]], { color: q.f.color, weight: 1.6, opacity: 0.75, dashArray: '2 6', interactive: false }).addTo(S.bLinks); }); S.bLinks.addTo(map);
+      // الرياح على ارتفاع الطيران
+      var tw = sites[0] && sites[0].wind;
+      if (tw) { var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (tw.toward + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح على 1500 م</b><span>' + esc(tw.label) + ' · ' + tw.spd + ' كم/س</span></div>'; return el; }; wc.addTo(map); }
+      L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+      var now = L.control({ position: 'bottomright' }); now.onAdd = function () { var el = L.DomUtil.create('div', 'bm-now'); el.id = 'bmNow'; el.hidden = true; return el; }; now.addTo(map);
+      // اللمس أو السحب يوقف الجولة التلقائية (تحكم يدوي)
+      ['mousedown', 'touchstart', 'wheel'].forEach(function (ev) { box.addEventListener(ev, function () { if (S.bTour) birdTour(d, false); }, { passive: true }); });
+      var far = function () { box.classList.toggle('bm-far', map.getZoom() < 12); };
+      map.on('zoomend', far);
+      map.invalidateSize(); birdFitSector(d, true); far(); placeLabs();
+      setTimeout(function () { if (S.bmap !== map) return; map.invalidateSize(); if (!S.bTour) birdFitSector(d, true); }, 250);
+      if (S.bTour) birdTour(d, true);
+    }).catch(function () {
+      var b = $('bdLive'); if (b) { b.outerHTML = birdMap(d, 'near'); toast('تعذر تحميل الخريطة التفاعلية (تحتاج إنترنت). عُرضت الخريطة المبسطة'); }
+    });
+  }
+  function birdSecSites(d) { return d.sites.filter(function (x) { return x.lat != null && x.lng != null && (S.bSector === '*' || x.sector === S.bSector); }); }
+  function birdFitSector(d, instant) {
+    var map = S.bmap, L1 = birdSecSites(d); if (!map || !L1.length) return;
+    var b = L.latLngBounds(L1.map(function (x) { return [x.lat, x.lng]; })), c = b.getCenter();
+    d.flyways.map(function (f) { return birdNear(c.lat, c.lng, f.path); }).sort(function (p, q) { return p.km - q.km; }).slice(0, 2).forEach(function (q) { if (q.km < 90) b.extend([q.lat, q.lng]); });
+    var o = { maxZoom: L1.length > 1 ? 15 : 13, paddingTopLeft: [40, 120], paddingBottomRight: [40, 40] };
+    if (instant) map.fitBounds(b, o); else map.flyToBounds(b, Object.assign({ duration: 1.4 }, o));
+    Object.keys(S.bMarks || {}).forEach(function (id) { var el = S.bMarks[id].getElement(); if (el) el.classList.remove('cur'); });
+    if (S.bFocusL) { map.removeLayer(S.bFocusL); S.bFocusL = null; }
+    var n = $('bmNow'); if (n) n.hidden = true;
+  }
+  function birdTour(d, on) {
+    S.bTour = on; clearInterval(S.bTourT); S.bTourT = null;
+    var btn = document.querySelector('[data-bm="tour"]'); if (btn) { btn.classList.toggle('on', on); btn.innerHTML = icon(on ? 'pause' : 'play') + '<span>' + (on ? 'إيقاف الجولة' : 'جولة تلقائية') + '</span>'; }
+    if (!on || !S.bmap) { var n0 = $('bmNow'); if (n0 && !on) n0.hidden = true; return; }
+    var list = birdSecSites(d).slice().sort(function (a, b) { return b.score - a.score; }), i = -1;
+    var step = function () {
+      if (!S.bmap) return;
+      i = (i + 1) % (list.length + 1);
+      if (i === list.length) return birdFitSector(d);
+      var x = list[i], n = $('bmNow');
+      Object.keys(S.bMarks).forEach(function (id) { var el = S.bMarks[id].getElement(); if (el) el.classList.toggle('cur', id === x.id); });
+      S.bmap.flyTo([x.lat, x.lng], 13, { duration: 1.6 }); birdFocus(d, x.id, false);
+      if (false) { var f = x.flocks[0]; n.hidden = false; n.innerHTML = '<span class="bm-dot lv-' + x.lvl.k + '" style="--c:' + LVL_C[x.lvl.k] + '"><b>' + x.score + '</b></span><div><b>' + esc(shortSite(x.name)) + '</b><span>خطر ' + esc(x.lvl.label) + (f ? ' · سرب من ' + esc(f.from) + ' ~' + BIO_eta(f.eta) : '') + '</span></div><small>' + (i + 1) + '/' + list.length + '</small>'; }
+    };
+    step(); S.bTourT = setInterval(step, 5500);
+  }
   function drawBirds(d) {
     var out = $('v5Out'); if (!out) return;
-    var mode = S.birdMode || 'near', hi = d.sites.filter(function (x) { return x.score >= d.alertLevel; }), top = d.sites[0], live = birdLive(d);
+    var mode = S.birdMode || 'live', hi = d.sites.filter(function (x) { return x.score >= d.alertLevel; }), top = d.sites[0], live = birdLive(d);
     var dir = d.season.k === 'spring' ? 'الطيور تتجه شمالاً' : d.season.k === 'autumn' ? 'الطيور تتجه جنوباً' : d.season.dir;
     var html = '<div class="bd-hero"><div class="bd-ht"><span class="cc-kick">' + icon('bird') + ' رادار الطيور المهاجرة · الإنذار المبكر لإنفلونزا الطيور</span><h1>مسارات الهجرة وخطرها على مواقع الشركة</h1>' +
       '<div class="cc-meta"><span class="live"><i></i> ' + esc(d.season.label) + '</span><span>' + esc(dir) + '</span><span>آخر حساب ' + esc(fmt(d.now)) + '</span></div>' +
@@ -2772,10 +2982,10 @@
       '<div class="bd-hs"><div class="bd-big" style="--c:' + (top ? LVL_C[top.lvl.k] : 'var(--r-low)') + '"><b class="mono">' + (top ? top.score : 0) + '</b><span>أعلى خطر الآن</span><small>' + esc(top ? shortSite(top.name) : '—') + '</small></div>' +
       '<div class="bd-big" style="--c:' + (hi.length ? 'var(--r-crit)' : 'var(--r-low)') + '"><b class="mono">' + hi.length + '</b><span>فوق حد التنبيه</span><small>الحد ' + d.alertLevel + ' من 100</small></div></div>' +
       '<div class="cc-acts"><button class="btn cc-btn" type="button" id="bdSight">' + icon('plus') + ' إبلاغ عن مشاهدة</button><button class="btn cc-btn" type="button" id="bdRef">' + icon('refresh') + ' تحديث الرياح والمشاهدات</button>' +
-      '<div class="bd-seg" role="group"><button type="button" data-mode="near" class="' + (mode === 'near' ? 'on' : '') + '">المواقع عن قرب</button><button type="button" data-mode="region" class="' + (mode === 'region' ? 'on' : '') + '">الدلتا والبحيرات</button><button type="button" data-mode="egypt" class="' + (mode === 'egypt' ? 'on' : '') + '">مصر كاملة</button></div></div></div>';
+      '<div class="bd-seg" role="group"><button type="button" data-mode="live" class="' + (mode === 'live' ? 'on' : '') + '">خريطة تفاعلية</button><button type="button" data-mode="near" class="' + (mode === 'near' ? 'on' : '') + '">المواقع عن قرب</button><button type="button" data-mode="region" class="' + (mode === 'region' ? 'on' : '') + '">الدلتا والبحيرات</button><button type="button" data-mode="egypt" class="' + (mode === 'egypt' ? 'on' : '') + '">مصر كاملة</button></div></div></div>';
     if (hi.length) html += '<div class="cc-alert a-bad">' + icon('bird') + '<span><b>' + plural(hi.length, 'موقع', 'مواقع') + ' في خطر ' + esc(hi[0].lvl.label) + ' من الأسراب المهاجرة</b>: ' + esc(hi.slice(0, 4).map(function (x) { return shortSite(x.name) + ' (' + x.score + ')'; }).join('، ')) + (hi[0].flocks[0] ? '. أقرب سرب متوقع من «' + esc(hi[0].flocks[0].from) + '» خلال ~' + BIO_eta(hi[0].flocks[0].eta) + '' : '') + '. وصل تنبيه للمديرين.</span><button class="btn sm" type="button" data-bsite="' + esc(hi[0].id) + '">الإجراءات</button></div>';
     if (d.missing.length) html += '<div class="cc-alert a-warn">' + icon('pin') + '<span><b>' + plural(d.missing.length, 'موقع بلا إحداثيات', 'مواقع بلا إحداثيات') + '</b> لا يدخل في الحساب: ' + esc(d.missing.map(function (m) { return m.name; }).join('، ')) + '</span><a class="btn sm" href="#birds" data-scroll="bdGeo">إضافة</a></div>';
-    html += '<div class="bd-grid"><div class="card flush bd-map"><div class="bd-mapbox">' + birdMap(d, mode) + '</div><div class="bd-legend">' +
+    html += '<div class="bd-grid' + (mode === 'live' ? ' live' : '') + '"><div class="card flush bd-map">' + (mode === 'live' ? birdLiveBar(d) + '<div class="bd-live" id="bdLive" dir="ltr"><p class="empty"><span class="spin"></span>جارٍ تحميل الخريطة…</p></div>' : '<div class="bd-mapbox">' + birdMap(d, mode) + '</div>') + '<div class="bd-legend">' +
       d.flyways.map(function (f) { return '<span><i style="background:' + f.color + '"></i>' + esc(f.name) + ' <b class="mono">' + f.intensity + '%</b></span>'; }).join('') +
       '<span><i class="wl"></i>تجمع البط في البحيرات <b class="mono">' + (d.wetlands[0] ? Math.round(d.wetlands[0].intensity / d.wetlands[0].w) : 0) + '%</b></span><span><i class="ob"></i>مشاهدة ميدانية</span><span><i class="eb"></i>مشاهدة eBird</span><span><i class="fl"></i>سرب متوقع وزمن الوصول</span></div></div>';
     html += '<div class="card bd-list"><div class="card-head"><div><span class="kick">0 إلى 100 · يُحدَّث كل 3 ساعات</span><h2>خطر الأسراب على كل موقع</h2></div><div class="rlegend"><span><i class="rt-low"></i>منخفض</span><span><i class="rt-mid"></i>متوسط</span><span><i class="rt-high"></i>مرتفع</span><span><i class="rt-crit"></i>حرج</span></div></div><div class="bd-rows">' +
@@ -2784,6 +2994,7 @@
         return '<button type="button" class="bd-row" data-bsite="' + esc(x.id) + '"><span class="tr-rank mono">' + (i + 1) + '</span><div class="t"><b>' + esc(shortSite(x.name)) + ' <small>' + esc(x.sector) + '</small></b>' + bar(x.score, LVL_C[x.lvl.k]) +
           '<span>' + (f ? icon('bird') + ' سرب من ' + esc(f.from) + ' · ' + f.d + ' كم · ~' + BIO_eta(f.eta) : x.factors[0] ? esc(x.factors[0].label) + (x.factors[0].d ? ' · ' + x.factors[0].d + ' كم' : '') : 'بعيد عن مسارات الهجرة النشطة') + '</span></div><span class="tr-sc" style="--c:' + LVL_C[x.lvl.k] + '"><b class="mono">' + x.score + '</b>' + esc(x.lvl.label) + '</span></button>';
       }).join('') + '</div></div></div>';
+    html += '<div id="bdSpecies">' + birdSpeciesCards(d) + '</div><div id="bdDistBox">' + birdDistTable(d) + '</div>';
     // تقويم الهجرة
     var mNow = new Date(d.now).getMonth();
     html += '<div class="card"><div class="card-head"><div><span class="kick">' + esc(d.season.label) + '</span><h2>' + icon('calendar') + ' تقويم الهجرة فوق مصر</h2></div><span class="sub">' + esc(d.season.note) + '</span></div><div class="tbl bd-cal"><table><thead><tr><th>المسار</th>' + MONTHS.map(function (m, i) { return '<th class="' + (i === mNow ? 'now' : '') + '">' + m.slice(0, 3) + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -2810,6 +3021,11 @@
     out.querySelectorAll('[data-bsite]').forEach(function (b) { b.onclick = function () { birdSiteSheet(b.dataset.bsite); }; });
     out.querySelectorAll('.bd-site').forEach(function (c) { c.onclick = function () { birdSiteSheet(c.dataset.site); }; });
     out.querySelectorAll('[data-mode]').forEach(function (b) { b.onclick = function () { S.birdMode = b.dataset.mode; drawBirds(d); }; });
+    var bindFocus = function () { out.querySelectorAll('[data-bfocus]').forEach(function (b) { b.onclick = function () { if (S.birdMode && S.birdMode !== 'live') { birdSiteSheet(b.dataset.bfocus); return; } if (S.bTour) birdTour(d, false); var m = $('bdLive'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); birdFocus(d, b.dataset.bfocus, true); }; }); };
+    bindFocus();
+    out.querySelectorAll('[data-bsec]').forEach(function (b) { b.onclick = function () { S.bSector = b.dataset.bsec; out.querySelectorAll('[data-bsec]').forEach(function (c) { c.classList.toggle('on', c === b); }); $('bdSpecies').innerHTML = birdSpeciesCards(d); $('bdDistBox').innerHTML = birdDistTable(d); bindFocus(); if (S.bmap) birdLiveInit(d); }; });
+    out.querySelectorAll('[data-bm]').forEach(function (b) { b.onclick = function () { var a = b.dataset.bm; if (a === 'fit') { birdTour(d, false); birdFitSector(d); } else if (a === 'tour') birdTour(d, !S.bTour); else { S.bLayer = S.bLayer === 'osm' ? 'sat' : 'osm'; drawBirds(d); } }; });
+    if (mode === 'live') birdLiveInit(d); else birdLiveStop();
     out.querySelectorAll('[data-geo]').forEach(function (b) { b.onclick = function () { geoSheet(b.dataset.geo); }; });
     out.querySelectorAll('[data-scroll]').forEach(function (b) { b.onclick = function (e) { e.preventDefault(); var t = $(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth' }); }; });
     $('bdSight').onclick = $('bdSight2').onclick = function () { birdSightingSheet(); };
