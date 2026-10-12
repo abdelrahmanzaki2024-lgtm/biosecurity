@@ -171,7 +171,10 @@
       S.notices = r.notices || [];
       S.pendingCount = r.pendingCount || 0;
       if (r.comms) S.comms = r.comms;
+      var permsBefore = JSON.stringify(S.session.user.perms || null) + S.session.user.role;
       S.session = Object.assign({}, S.session, r.session, { pin: S.session.pin });
+      // تغيّرت الصلاحيات (مثلاً مُنح صلاحية التقارير أو ثُبّت تحديث جديد): أعد بناء القوائم فوراً
+      if (permsBefore !== JSON.stringify(S.session.user.perms || null) + S.session.user.role) setTimeout(function () { var hadPortal = !!$('portalChip'); startApp(); if (!hadPortal && hasVr() && !vrOnly()) go('portal'); }, 0);
       S.lastSync = r.serverTime;
       S.online = true;
       persist();
@@ -229,16 +232,30 @@
   function boot() {
     if (selfStart()) { if (selfTrainStart()) showSelfTrain(); else showSelfMission(); return; }
     Promise.all(['session', 'ref', 'moves', 'outbox', 'lastSync', 'notices', 'approvals', 'comms', 'chats', 'showers'].map(KV.get)).then(function (v) {
-      if (v[0] && v[1]) {
+      if (v[0] && (v[1] || (v[0].user && v[0].user.reportsOnly))) {
         S.session = v[0]; S.ref = v[1]; S.outbox = v[3] || []; S.lastSync = v[4] || 0; S.notices = v[5] || []; S.approvals = v[6] || {}; S.comms = v[7] || null; S.chats = v[8] || {}; S.showers = v[9] || [];
         (v[2] || []).forEach(function (m) { S.moves[m.id] = m; });
         S.notices.forEach(function (n) { S.seenNotices[n.id] = true; });
+        // عند فتح التطبيق: صاحب صلاحيات النظام والتقارير يختار من بوابة المنصة
+        if (!location.hash && hasVr() && !vrOnly()) { try { history.replaceState(null, '', location.pathname + location.search + '#portal'); } catch (e) {} }
         startApp();
         sync();
       } else showLogin();
     });
     if (MODE === 'web' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
+      // التحديث التلقائي: يتحقق من نسخة جديدة عند كل فتح أو رجوع للتطبيق وكل 30 دقيقة، ويعيد التحميل لما تتفعّل
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        var chk = function () { reg.update().catch(function () {}); };
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) chk(); });
+        setInterval(chk, 30 * 60000);
+      }).catch(function () {});
+      var hadCtl = !!navigator.serviceWorker.controller, reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadCtl) { hadCtl = true; return; }
+        if (reloading) return;
+        if (!S.outbox.length && !$('sheetWrap')) { reloading = true; location.reload(); }
+        else toast('وصل تحديث جديد للتطبيق، وهيتفعّل أول ما تقفله وتفتحه');
+      });
       navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.route) go(e.data.route.replace('#', '')); if (e.data && e.data.sync) sync(); });
     }
     window.addEventListener('online', function () { setOnline(true); });
@@ -321,7 +338,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 11</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 11.2</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };

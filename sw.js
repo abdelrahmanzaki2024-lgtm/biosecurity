@@ -1,5 +1,5 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v11';
+var CACHE = 'bio-v11-2';
 var SHELL = ['./', 'index.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
@@ -15,7 +15,9 @@ self.addEventListener('fetch', function (e) {
   // ملفات التطبيق: من الشبكة أولاً ثم المحفوظ. المكتبات والخطوط: المحفوظ أولاً
   var sameOrigin = url.origin === self.location.origin;
   if (sameOrigin) {
-    e.respondWith(fetch(req).then(function (res) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); return res; })
+    // يتأكد من الخادم كل مرة (no-cache) علشان أي تحديث مرفوع يوصل فوراً من غير انتظار ذاكرة المتصفح
+    var fresh = req.mode === 'navigate' ? req : new Request(req, { cache: 'no-cache' });
+    e.respondWith(fetch(fresh).then(function (res) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); return res; })
       .catch(function () { return caches.match(req, { ignoreSearch: true }).then(function (r) { return r || caches.match('index.html'); }); }));
   } else if (/unpkg\.com|cdnjs\.cloudflare\.com|fonts\.(googleapis|gstatic)\.com|gstatic\.com\/firebasejs/.test(url.href)) {
     e.respondWith(caches.match(req).then(function (hit) {
