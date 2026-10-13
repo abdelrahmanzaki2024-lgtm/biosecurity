@@ -1874,6 +1874,7 @@ function BIO_api(store, deps) {
   BIO_codes(api, H_);
   BIO_v13(api, H_);
   if (typeof BIO_v14 === 'function') BIO_v14(api, H_);
+  if (typeof BIO_v15 === 'function') BIO_v15(api, H_);
   return api;
 }
 
@@ -3524,20 +3525,44 @@ function BIO_v14(api, H) {
     var r = store.all('phases').filter(function (p) { return BIO_norm(p.siteId) === siteId; }).sort(function (a, b) { return BIO_ms(a.startAt || a.time) - BIO_ms(b.startAt || b.time); });
     var birds = 0, flockAt = 0, last = r[r.length - 1] || null;
     r.forEach(function (p) { if (num(p.birds, 0)) birds = num(p.birds, 0); if (BIO_ms(p.flockAt)) flockAt = BIO_ms(p.flockAt); if (/تحميل سبلة|تجهيز وتطهير|فترة راحة/.test(String(p.phase))) { birds = 0; flockAt = 0; } });
+    // v15: آخر يوم في ملف بيانات المزارع (خلال 3 أيام) أدق من التسجيل اليدوي للعدد والعمر
+    var dl = dailyLast(siteId);
+    if (dl && dl.t >= day0(deps.now()) - 3 * D) { if (dl.stock > 0) birds = dl.stock + dl.dead; if (dl.age > 0) flockAt = dl.t - (dl.age - 1) * D; }
     return { phase: last ? String(last.phase) : '', birds: birds, flockAt: flockAt };
+  }
+  /** v15: يوم البيانات «YYYY-MM-DD» (نص أو تاريخ من الشيت) → بداية اليوم بتوقيت القاهرة */
+  function dayT(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v == null ? '' : v));
+    if (m && typeof v === 'string') return Date.UTC(+m[1], +m[2] - 1, +m[3]) - 3 * BIO.HOUR;
+    var t = BIO_ms(v); return t ? day0(t + 3 * BIO.HOUR) : 0;
+  }
+  function dailyRows() { return has('daily') ? store.all('daily') : []; }
+  function dailyDead(x) { return num(x.dead, 0) + num(x.killed, 0) + num(x.inj, 0); }
+  function dailyLast(siteId) {
+    var best = null;
+    dailyRows().forEach(function (x) { if (BIO_norm(x.siteId) !== siteId) return; var t = dayT(x.day); if (t && (!best || t > best.t)) best = { t: t, stock: num(x.stock, 0), dead: dailyDead(x), age: num(x.age, 0), status: String(x.status || '') }; });
+    return best;
   }
   function series(siteIds, days, now) {
     var t0 = day0(now) - (days - 1) * D, out = {};
-    siteIds.forEach(function (id) { out[id] = { dead: new Array(days).fill(0), rec: new Array(days).fill(false) }; });
+    siteIds.forEach(function (id) { out[id] = { dead: new Array(days).fill(0), rec: new Array(days).fill(false), file: new Array(days).fill(false) }; });
+    // ملف البيانات اليومي هو المرجع لليوم الذي ورد فيه؛ سجل النافق اليدوي يُكمل الأيام التي لم ترد في الملف
+    dailyRows().forEach(function (x) {
+      var id = BIO_norm(x.siteId), i = Math.round((dayT(x.day) - t0) / D);
+      if (!out[id] || i < 0 || i >= days) return;
+      out[id].dead[i] = dailyDead(x); out[id].rec[i] = true; out[id].file[i] = true;
+    });
     store.all('disposal').forEach(function (x) {
       if (x.kind !== 'نافق') return;
       var id = BIO_norm(x.siteId), t = BIO_ms(x.time), i = Math.floor((t - t0) / D);
-      if (!out[id] || i < 0 || i >= days) return;
+      if (!out[id] || i < 0 || i >= days || out[id].file[i]) return;
       out[id].dead[i] += num(x.count, 0); out[id].rec[i] = true;
     });
     return out;
   }
-  function judge(dead, hist, birds, cfg) {
+  function judge(dead, hist, birds, cfg, age) {
+    // أول أسبوع من عمر الكتاكيت نفوقه الطبيعي أعلى: حدود نسبة القطيع تتضاعف حتى لا يصدر إنذار كاذب
+    if (age && age <= 7) cfg = Object.assign({}, cfg, { pW: cfg.pW * 2, pA: cfg.pA * 2, pC: cfg.pC * 2 });
     var past = hist.filter(function (v, i) { return v != null; });
     var base = past.length >= 3 ? past.reduce(function (a, b) { return a + b; }, 0) / past.length : null;
     var ratio = base != null ? dead / Math.max(base, 1) : null, pct = birds ? dead / birds * 100 : null, lv = 0, why = [];
@@ -3559,8 +3584,11 @@ function BIO_v14(api, H) {
   }
   function evalSite(siteId, now) {
     var cfg = ewsCfg(), s = series([siteId], 8, now)[siteId], ph = lastPhase(siteId) || {};
-    var hist = s.dead.slice(0, 7).map(function (v, i) { return s.rec[i] ? v : null; });
-    return Object.assign(judge(s.dead[7], hist, ph.birds, cfg), { dead: s.dead[7] });
+    // أيام ما قبل تسكين الدورة الحالية لا تدخل في المعدل (نافق نهاية الدورة السابقة لا يُقارن بكتاكيت عمر يوم)
+    var fl = ph.flockAt ? day0(ph.flockAt) : 0;
+    var hist = s.dead.slice(0, 7).map(function (v, i) { return s.rec[i] && day0(now) - (7 - i) * D >= fl ? v : null; });
+    var age = ph.flockAt ? Math.floor((day0(now) - day0(ph.flockAt)) / D) + 1 : 0;
+    return Object.assign(judge(s.dead[7], hist, ph.birds, cfg, age), { dead: s.dead[7] });
   }
   function ewsRows() { return has('ews') ? store.all('ews') : []; }
   function ewsOut(r) { return { id: r.id, time: BIO_ms(r.time), day: String(r.day), siteId: BIO_norm(r.siteId), siteName: r.siteName, dead: num(r.dead, 0), base: num(r.base, null), ratio: num(r.ratio, null), pct: num(r.pct, null), level: r.level, why: String(r.why || ''), status: r.status || 'جديد', action: r.action || '', by: r.by || '', at: BIO_ms(r.at) || null }; }
@@ -3591,14 +3619,18 @@ function BIO_v14(api, H) {
     if (!(e && e.n >= 2)) held.forEach(function (x) { notify0(x); });
     return res;
   };
+  api._ewsFire = ewsFire;
+  api._dayT = dayT;
   api.ews = function (pin) {
     var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(), cfg = ewsCfg(), N = 14;
     var list = H.sitesList(sites).filter(function (s) { return !s.external && H.inScope(u, s.id, sites) && (BIO_isCycleSite(s) || Number(s.level) <= 2); });
     var ser = series(list.map(function (s) { return s.id; }), N + 7, now);
     var rows = list.map(function (s) {
       var x = ser[s.id], ph = lastPhase(s.id) || {}, days = [];
-      for (var i = 7; i < N + 7; i++) { var hist = x.dead.slice(i - 7, i).map(function (v, k) { return x.rec[i - 7 + k] ? v : null; }); var j = judge(x.dead[i], hist, ph.birds, cfg); days.push({ dead: x.dead[i], rec: x.rec[i], n: x.rec[i] ? j.n : 0, base: j.base }); }
-      var today = days[N - 1], hist7 = x.dead.slice(N - 1, N + 6).map(function (v, k) { return x.rec[N - 1 + k] ? v : null; }), j = judge(today.dead, hist7, ph.birds, cfg);
+      var ageAt = function (i) { return ph.flockAt ? Math.floor((day0(now) - (N + 6 - i) * D - day0(ph.flockAt)) / D) + 1 : 0; };
+      var fl = ph.flockAt ? day0(ph.flockAt) : 0, inCyc = function (j) { return day0(now) - (N + 6 - j) * D >= fl; };
+      for (var i = 7; i < N + 7; i++) { var hist = x.dead.slice(i - 7, i).map(function (v, k) { return x.rec[i - 7 + k] && inCyc(i - 7 + k) ? v : null; }); var j = judge(x.dead[i], hist, ph.birds, cfg, ageAt(i)); days.push({ dead: x.dead[i], rec: x.rec[i], n: x.rec[i] ? j.n : 0, base: j.base }); }
+      var today = days[N - 1], hist7 = x.dead.slice(N - 1, N + 6).map(function (v, k) { return x.rec[N - 1 + k] && inCyc(N - 1 + k) ? v : null; }), j = judge(today.dead, hist7, ph.birds, cfg, ageAt(N + 6));
       var growing = /تربية|استقبال|بيع/.test(String(ph.phase || '')) || (!ph.phase && BIO_isCycleSite(s));
       return { id: s.id, name: s.name, sector: s.sector, level: Number(s.level), status: s.status, phase: ph.phase || '', birds: ph.birds || 0, age: ph.flockAt ? Math.max(1, Math.floor((now - ph.flockAt) / D) + 1) : null, days: days, today: today.dead, recToday: today.rec, base: j.base, ratio: j.ratio, pct: j.pct, n: j.n, levelName: j.level, why: j.why, missing: growing && !today.rec, week: x.dead.slice(N + 0, N + 7).reduce(function (a, b) { return a + b; }, 0) };
     }).sort(function (a, b) { return b.n - a.n || (b.ratio || 0) - (a.ratio || 0) || a.name.localeCompare(b.name); });
@@ -3686,3 +3718,127 @@ function BIO_seedV14(s, now) {
 }
 var BIO_seedV13_ = BIO_seed;
 BIO_seed = function (now) { return BIO_seedV14(BIO_seedV13_(now), now); };
+
+
+/* =====================================================================
+   الإصدار 15: ملف بيانات المزارع اليومي (إكسيل)
+   المدير يرفع الملف الذي يرسله مدخلو البيانات يومياً، فيقرأه التطبيق على الجهاز
+   (حتى الملفات الضخمة التي تحمل سنوات من البيانات)، ويحلل آخر الأيام، ثم يحفظ
+   ملخص كل محطة في كل يوم، ويحدّث مرحلة المحطة وعدد الطيور والإنذار المبكر.
+   ===================================================================== */
+TABLES.daily = { sheet: 'البيانات اليومية للمزارع', key: 'id', cols: { id: 'الرقم', day: 'اليوم', siteId: 'كود الموقع', siteName: 'الموقع', farm: 'اسم المزرعة في الملف', cycle: 'الدورة', status: 'الحالة', age: 'العمر (يوم)', houses: 'عدد العنابر', stock: 'الرصيد', placed: 'كتاكيت مسكنة', dead: 'النافق', killed: 'الفرز والذبح', inj: 'الحقن', lab: 'عينات المعمل', feed: 'العلف (كجم)', sold: 'المباع (طائر)', soldKg: 'المباع (كجم)', culls: 'كتاكيت مستبعدة', cum: 'النافق التراكمي للدورة', breed: 'السلالة', source: 'مصدر الكتاكيت', detail: 'تفاصيل العنابر', hash: 'بصمة البيانات', importId: 'رقم الاستيراد', time: 'آخر تحديث' } };
+TABLES.imports = { sheet: 'سجل استيراد ملفات البيانات', key: 'id', cols: { id: 'رقم الاستيراد', time: 'الوقت', file: 'اسم الملف', day: 'تاريخ البيانات', from: 'من يوم', rows: 'صفوف مقروءة', sites: 'المحطات', added: 'أيام جديدة', updated: 'أيام عُدلت', dead: 'نافق آخر يوم', alerts: 'ملاحظات مهمة', findings: 'نتيجة التحليل', by: 'رفعه', byId: 'كود من رفعه' } };
+var BIO_FARM_STATUS = { 'استلام': 'استقبال كتاكيت', 'تسكين': 'استقبال كتاكيت', 'تسمين': 'تربية', 'تربية': 'تربية', 'بيع': 'بيع', 'placement': 'استقبال كتاكيت', 'growing': 'تربية', 'sale': 'بيع', 'sales': 'بيع' };
+
+function BIO_v15(api, H) {
+  var store = H.store, deps = H.deps, D = 24 * BIO.HOUR, NUMS = ['cycle', 'age', 'houses', 'stock', 'placed', 'dead', 'killed', 'inj', 'lab', 'feed', 'sold', 'soldKg', 'culls', 'cum'];
+  function st() { return H.settings(); }
+  function num(v, d) { var n = Number(v); return isNaN(n) || v === '' || v == null ? d : n; }
+  function clean(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 80); }
+  function json(v, d) { try { return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function has(t) { try { store.all(t); return true; } catch (e) { return false; } }
+  function day0(t) { return t - ((t + 3 * BIO.HOUR) % D); }
+  function dayKey(t) { var d = new Date(t + 3 * BIO.HOUR); return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
+  function dayT(v) { return api._dayT ? api._dayT(v) : 0; }
+  function dk(v) { var t = dayT(v); return t ? dayKey(t + 12 * BIO.HOUR) : ''; }
+  function log(u, t, k, a, b, c) { if (api._log) api._log(u, t, k, a, b, c); }
+  function setSetting(key, value, note) { if (store.find('settings', key)) store.update('settings', key, { value: value }); else store.append('settings', { key: key, value: value, note: note || '' }); }
+  function canImport(u) { return !!u && u.isManager && (u.perms || []).indexOf('data') >= 0; }
+  function stationNo(name) { var m = /محطة\s*(\d+)/.exec(String(name)); return m ? Number(m[1]) : null; }
+  function farmSites(u, sites) {
+    return H.sitesList(sites).filter(function (s) { return !s.external && H.inScope(u, s.id, sites); })
+      .map(function (s) { return { id: s.id, name: s.name, sector: s.sector, level: Number(s.level), no: stationNo(s.name), cycle: BIO_isCycleSite(s) }; });
+  }
+  function rowsOut(x) {
+    var o = { day: dk(x.day), siteId: BIO_norm(x.siteId), status: String(x.status || ''), farm: String(x.farm || ''), breed: String(x.breed || ''), source: String(x.source || ''), detail: json(x.detail, []) };
+    NUMS.forEach(function (k) { o[k] = num(x[k], 0); });
+    o.mort = o.dead + o.killed + o.inj; o.pct = o.stock + o.mort > 0 ? Math.round(o.mort / (o.stock + o.mort) * 10000) / 100 : null;
+    o.gpb = o.stock > 0 && o.feed > 0 ? Math.round(o.feed * 1000 / o.stock) : null;
+    return o;
+  }
+  function importOut(r) { return { id: r.id, time: BIO_ms(r.time), file: String(r.file || ''), day: dk(r.day) || String(r.day || ''), from: dk(r.from) || String(r.from || ''), rows: num(r.rows, 0), sites: String(r.sites || ''), added: num(r.added, 0), updated: num(r.updated, 0), dead: num(r.dead, 0), alerts: num(r.alerts, 0), findings: json(r.findings, []), by: String(r.by || '') }; }
+
+  /** ما يحتاجه التطبيق قبل قراءة الملف: المحطات وربط الأعمدة والأسماء المحفوظ من المرات السابقة */
+  api.farmMeta = function (pin) {
+    var u = H.auth(pin, true), sites = H.sitesById();
+    var imp = has('imports') ? store.all('imports').map(importOut).sort(function (a, b) { return b.time - a.time; }) : [];
+    return { sites: farmSites(u, sites), map: json(st().IMPORT_MAP, {}), aliases: json(st().IMPORT_SITES, {}), last: imp[0] || null, canImport: canImport(u), window: num(st().IMPORT_DAYS, 14) };
+  };
+
+  /** حفظ ما قرأه التطبيق من الملف: ملخص كل محطة في كل يوم (يُحدَّث إن تغيّر)، ثم المرحلة والإنذار المبكر */
+  api.farmImport = function (pin, p) {
+    var u = H.auth(pin, true); if (!canImport(u)) throw new Error('رفع ملف البيانات للمدير فقط');
+    p = p || {};
+    if (p.id && has('imports') && store.find('imports', p.id)) return { ok: true, duplicate: true, id: p.id };
+    var sites = H.sitesById(), now = deps.now(), list = Array.isArray(p.days) ? p.days.slice(0, 3000) : [];
+    if (!list.length) throw new Error('لا توجد بيانات في الملف لحفظها');
+    var id = clean(p.id, 40) || deps.id('IM'), existing = {}, adds = [], upd = 0, same = 0, skipped = {}, touched = {}, last = '';
+    if (has('daily')) store.all('daily').forEach(function (x) { existing[String(x.id)] = x; });
+    list.forEach(function (r) {
+      var sid = BIO_norm(r.siteId), s = sites[sid], day = String(r.day || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+      if (!s || s.external || !H.inScope(u, sid, sites)) { skipped[clean(r.farm || sid, 40)] = 1; return; }
+      var o = { id: day + '|' + sid, day: day, siteId: sid, siteName: s.name, farm: clean(r.farm, 40), status: clean(r.status, 20), breed: clean(r.breed, 60), source: clean(r.source, 120), detail: JSON.stringify((Array.isArray(r.detail) ? r.detail : []).slice(0, 40)).slice(0, 4000) };
+      NUMS.forEach(function (k) { o[k] = Math.round(num(r[k], 0) * 100) / 100; });
+      o.hash = BIO_hash ? BIO_hash(JSON.stringify([o.status, o.breed, o.source, o.detail].concat(NUMS.map(function (k) { return o[k]; })))) : '';
+      o.importId = id; o.time = now;
+      touched[sid] = touched[sid] || {}; touched[sid][day] = o;
+      if (day > last) last = day;
+      var ex = existing[o.id];
+      if (!ex) { adds.push(o); existing[o.id] = o; return; }
+      if (String(ex.hash) === String(o.hash)) { same++; return; }
+      var patch = {}; Object.keys(o).forEach(function (k) { if (k !== 'id' && String(ex[k]) !== String(o[k])) patch[k] = o[k]; });
+      store.update('daily', o.id, patch); upd++;
+    });
+    if (adds.length) { if (store.appendMany) store.appendMany('daily', adds); else adds.forEach(function (o) { store.append('daily', o); }); }
+    if (p.map && typeof p.map === 'object') { var mj = JSON.stringify(p.map); if (mj.length < 8000) setSetting('IMPORT_MAP', mj, 'ربط أعمدة ملف بيانات المزارع (يُحفظ تلقائياً من شاشة رفع الملف)'); }
+    if (p.aliases && typeof p.aliases === 'object') { var aj = JSON.stringify(p.aliases); if (aj.length < 8000) setSetting('IMPORT_SITES', aj, 'ربط أسماء المزارع في الملف بمواقع التطبيق'); }
+
+    // مرحلة المحطة من حالة آخر يوم في الملف (استلام ← استقبال كتاكيت، تسمين ← تربية، بيع ← بيع)
+    var phases = [], ewsOut = [], dead = 0, lastT = dayT(last);
+    Object.keys(touched).forEach(function (sid) {
+      var o = touched[sid][last]; if (!o) return;
+      dead += o.dead + o.killed + o.inj;
+      var ph = BIO_FARM_STATUS[String(o.status).trim().toLowerCase()] || BIO_FARM_STATUS[String(o.status).trim()];
+      if (ph && has('phases') && lastT >= day0(now) - 2 * D) {
+        var cur = store.all('phases').filter(function (x) { return BIO_norm(x.siteId) === sid; }).sort(function (a, b) { return BIO_ms(a.startAt || a.time) - BIO_ms(b.startAt || b.time); }).pop();
+        var ORD = ['استقبال كتاكيت', 'تربية', 'بيع', 'تحميل سبلة', 'تجهيز وتطهير', 'فترة راحة'], ci = cur ? ORD.indexOf(String(cur.phase)) : -1, pi = ORD.indexOf(ph);
+        // لا يُرجِع المرحلة للخلف: بعد «بيع» يسجل المشرف «تحميل سبلة» يدوياً ولا يلغيه الملف، إلا إذا بدأت دورة جديدة
+        if (!cur || (String(cur.phase) !== ph && (ci < 0 || ci < pi || (ci >= 3 && pi <= 1)))) {
+          var days = Object.keys(touched[sid]).sort(), first = last;
+          for (var i = days.length - 1; i >= 0; i--) { var st0 = BIO_FARM_STATUS[String(touched[sid][days[i]].status).trim()]; if (st0 === ph) first = days[i]; else break; }
+          var row = { id: deps.id('PH'), time: now, siteId: sid, siteName: sites[sid].name, phase: ph, startAt: dayT(first) + 8 * BIO.HOUR, flockAt: o.age > 0 ? lastT - (o.age - 1) * D : '', birds: o.stock + o.dead + o.killed + o.inj || '', by: u.name, source: 'ملف البيانات اليومي', note: 'من ملف ' + clean(p.file, 60) };
+          store.append('phases', row); phases.push({ siteId: sid, name: sites[sid].name, phase: ph });
+        }
+      }
+      if (api._ewsFire && lastT >= day0(now) - 2 * D) {
+        var t = lastT === day0(now) ? now : lastT + 20 * BIO.HOUR, e = api._ewsFire(sid, t);
+        if (e && e.n >= 1) ewsOut.push({ siteId: sid, name: sites[sid].name, level: e.level, n: e.n, why: e.why, dead: e.dead, base: e.base, fired: !!e.fired });
+      }
+    });
+    var findings = (Array.isArray(p.findings) ? p.findings : []).slice(0, 80).map(function (f) { return { lv: clean(f.lv, 6), siteId: BIO_norm(f.siteId), site: clean(f.site, 40), text: clean(f.text, 220) }; });
+    var bad = findings.filter(function (f) { return f.lv === 'bad'; });
+    var rec = { id: id, time: now, file: clean(p.file, 120), day: last, from: clean(p.from, 10), rows: num(p.rows, 0), sites: Object.keys(touched).map(function (k) { return sites[k].name; }).join('، '), added: adds.length, updated: upd, dead: dead, alerts: bad.length + findings.filter(function (f) { return f.lv === 'warn'; }).length, findings: JSON.stringify(findings).slice(0, 45000), by: u.name, byId: u.id };
+    store.append('imports', rec);
+    log(u, 'daily', id, 'رفع ملف بيانات المزارع', null, { file: rec.file, day: last, added: adds.length, updated: upd });
+    var fired = ewsOut.filter(function (e) { return e.fired; }).map(function (e) { return e.siteId; });
+    var mail = bad.filter(function (f) { return fired.indexOf(f.siteId) < 0; });
+    if (mail.length) deps.notify({ kind: 'farm', title: '📊 ملف بيانات المزارع: ' + mail.length + ' ملاحظة مهمة', body: 'بيانات يوم ' + last + ' · رفعه ' + u.name + '\n\n' + mail.slice(0, 8).map(function (f) { return '• ' + (f.site ? f.site + ': ' : '') + f.text; }).join('\n') + H.appUrl('#farm') });
+    return { ok: true, id: id, day: last, added: adds.length, updated: upd, unchanged: same, skipped: Object.keys(skipped), phases: phases, ews: ewsOut, sites: Object.keys(touched).length };
+  };
+
+  /** شاشة بيانات المزارع: آخر 14 يوماً لكل محطة ونتيجة تحليل آخر ملف */
+  api.farmData = function (pin, n) {
+    var u = H.auth(pin, true), sites = H.sitesById(), N = Math.min(60, Math.max(7, num(n, 14)));
+    var all = has('daily') ? store.all('daily').filter(function (x) { return H.inScope(u, BIO_norm(x.siteId), sites); }).map(rowsOut) : [];
+    var latest = all.reduce(function (a, x) { return x.day > a ? x.day : a; }, '');
+    var t1 = latest ? dayT(latest) : day0(deps.now()), from = dayKey(t1 - (N - 1) * D + 12 * BIO.HOUR), by = {};
+    all.forEach(function (x) { if (x.day >= from && x.day <= latest) (by[x.siteId] = by[x.siteId] || []).push(x); });
+    var list = farmSites(u, sites).filter(function (s) { return s.cycle || by[s.id]; }).map(function (s) {
+      var rows = (by[s.id] || []).sort(function (a, b) { return a.day < b.day ? -1 : 1; }), lastRow = rows[rows.length - 1] || null;
+      return { id: s.id, name: s.name, sector: s.sector, no: s.no, rows: rows, last: lastRow, today: lastRow && lastRow.day === latest ? lastRow : null };
+    }).sort(function (a, b) { return (b.today ? 1 : 0) - (a.today ? 1 : 0) || (a.no || 99) - (b.no || 99) || a.name.localeCompare(b.name); });
+    var imp = has('imports') ? store.all('imports').map(importOut).sort(function (a, b) { return b.time - a.time; }) : [];
+    return { latest: latest, from: from, sites: list, imports: imp.slice(0, 10), findings: imp[0] ? imp[0].findings : [], canImport: canImport(u), now: deps.now() };
+  };
+}

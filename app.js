@@ -339,7 +339,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 14</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -401,7 +401,7 @@
   function navItems() {
     if (vrOnly()) return [['vr', 'تقارير الزيارات', 'clip'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -467,7 +467,7 @@
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -1266,7 +1266,7 @@
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
       '<button class="btn" id="syncBtn">' + icon('refresh') + ' مزامنة الآن</button></div>' +
       (me.user.isManager && (can('analytics') || isAdmin()) ? '<div class="card"><h2>' + icon('network') + ' أدوات الإدارة</h2><div class="tool-links">' + (isAdmin() ? [['users', 'user', 'المستخدمون والصلاحيات']] : []).concat(can('analytics') ? [['map', 'map', 'الخريطة الحية'], ['trace', 'trace', 'تتبع العدوى'], ['plan', 'calendar', 'مخطط الزيارات الذكي'], ['network', 'network', 'شبكة المخالطة'], ['audit', 'shield', 'ملف اعتماد المنشأة المعزولة']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '') +
-      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['ews', 'pulse', 'الإنذار المبكر للنافق'], ['cams', 'video', 'حائط الكاميرات'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['trips', 'route', 'رحلات المركبات وتتبع السائق'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
+      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['ews', 'pulse', 'الإنذار المبكر للنافق'], ['farm', 'sheet', 'بيانات المزارع اليومية (رفع ملف الإكسيل)'], ['cams', 'video', 'حائط الكاميرات'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['trips', 'route', 'رحلات المركبات وتتبع السائق'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
       '<a class="card" href="#ref" style="text-decoration:none;color:inherit"><h2>' + icon('book') + ' مرجع قواعد الأمن الحيوي</h2><p class="small muted">فترات العزل المعتمدة وإجراءات هابرد إفيشنسي بلس.</p></a>' +
       '</div></section>';
     $('logoutBtn').onclick = function () { logout(); };
@@ -4883,11 +4883,497 @@
       '<div class="tv-ewsg">' + top.map(function (r) { return '<div class="ews-site n' + r.n + '"><div class="spread"><b>' + esc(shortSite(r.name)) + '</b><span class="pill ' + EWS_P[r.n] + '">' + esc(r.levelName) + '</span></div>' + ewsBars(r.days) + '<div class="ews-nums"><div><span>اليوم</span><b class="mono">' + (r.recToday ? r.today : '—') + '</b></div><div><span>المعدل</span><b class="mono">' + (r.base == null ? '—' : r.base) + '</b></div></div></div>'; }).join('') + '</div></div>';
   }
 
+
+
+  /* =====================================================================
+     الإصدار 15: ملف بيانات المزارع اليومي
+     المدير يرفع ملف الإكسيل الذي يرسله مدخلو البيانات. التطبيق يقرأ الملف على
+     الجهاز نفسه (حتى الملفات الضخمة التي تحمل سنوات من البيانات)، ويتعرف على
+     الأعمدة والمحطات، ويحلل آخر يوم، ثم يحفظ ملخص آخر 14 يوماً فقط.
+     ===================================================================== */
+  ICONS.sheet = 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18';
+  ICONS.upload = 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12';
+
+  /* ---------- قارئ ملفات xlsx على الجهاز (بدون مكتبات) ---------- */
+  var XL = (function () {
+    function u16(b, o) { return b[o] | (b[o + 1] << 8); }
+    function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16)) + b[o + 3] * 16777216; }
+    function open(buf) {
+      var b = new Uint8Array(buf), n = b.length, e = -1, dec = new TextDecoder();
+      for (var i = n - 22; i >= Math.max(0, n - 65557); i--) if (u32(b, i) === 0x06054b50) { e = i; break; }
+      if (e < 0) throw appErr('الملف ليس ملف إكسيل بصيغة xlsx. افتحه في إكسيل واحفظه بصيغة «Excel Workbook (.xlsx)» ثم ارفعه مرة أخرى.');
+      var cnt = u16(b, e + 10), off = u32(b, e + 16), list = {};
+      for (var k = 0; k < cnt && u32(b, off) === 0x02014b50; k++) {
+        var nl = u16(b, off + 28), xl = u16(b, off + 30), cl = u16(b, off + 32);
+        list[dec.decode(b.subarray(off + 46, off + 46 + nl))] = { m: u16(b, off + 10), cs: u32(b, off + 20), us: u32(b, off + 24), lo: u32(b, off + 42) };
+        off += 46 + nl + xl + cl;
+      }
+      return { b: b, list: list };
+    }
+    function raw(z, name) {
+      var e = z.list[name]; if (!e) return null;
+      var s = e.lo + 30 + u16(z.b, e.lo + 26) + u16(z.b, e.lo + 28);
+      return { m: e.m, us: e.us, data: z.b.subarray(s, s + e.cs) };
+    }
+    function fflateLib() { return window.fflate ? Promise.resolve() : loadScript('https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js'); }
+    /** يفك ضغط ملف داخل الحزمة على دفعات ويمرر النص قطعة قطعة، فلا يحتاج الجهاز ذاكرة لملف كامل حجمه مئات الميجا */
+    function stream(z, name, onText, onProg) {
+      var r = raw(z, name); if (!r) return Promise.reject(appErr('جزء ناقص في ملف الإكسيل: ' + name));
+      if (r.m === 0) { onText(new TextDecoder().decode(r.data)); return Promise.resolve(); }
+      if (r.m !== 8) return Promise.reject(appErr('طريقة ضغط غير مدعومة في الملف'));
+      var got = 0, prog = function (n) { got += n; if (onProg && r.us) onProg(Math.min(1, got / r.us)); };
+      if (window.DecompressionStream && window.TextDecoderStream) {
+        var reader = new Blob([r.data]).stream().pipeThrough(new DecompressionStream('deflate-raw')).pipeThrough(new TextDecoderStream()).getReader();
+        var pump = function () { return reader.read().then(function (x) { if (x.done) return; prog(x.value.length); onText(x.value); return pump(); }); };
+        return pump();
+      }
+      return fflateLib().then(function () {
+        return new Promise(function (res, rej) {
+          var td = new TextDecoder(), inf = new fflate.Inflate(function (chunk, final) { prog(chunk.length); onText(td.decode(chunk, { stream: !final })); }), i = 0, step = 1 << 20;
+          var next = function () { try { var end = Math.min(r.data.length, i + step); inf.push(r.data.subarray(i, end), end >= r.data.length); i = end; if (i >= r.data.length) res(); else setTimeout(next, 0); } catch (e) { rej(appErr('تعذرت قراءة الملف: ' + errText(e))); } };
+          next();
+        });
+      });
+    }
+    function text(z, name) { if (!z.list[name]) return Promise.resolve(''); var s = ''; return stream(z, name, function (t) { s += t; }).then(function () { return s; }); }
+    function unx(s) { return s.indexOf('&') < 0 ? s : s.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-f]+);/gi, function (m, g) { return { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" }[g.toLowerCase()] || (g[1] === 'x' || g[1] === 'X' ? String.fromCharCode(parseInt(g.slice(2), 16)) : String.fromCharCode(+g.slice(1))); }); }
+    function sheets(z) {
+      return Promise.all([text(z, 'xl/workbook.xml'), text(z, 'xl/_rels/workbook.xml.rels'), text(z, 'xl/sharedStrings.xml')]).then(function (t) {
+        var rel = {}, out = [], ss = [];
+        t[1].replace(/<Relationship\b[^>]*>/g, function (m) { var id = /Id="([^"]+)"/.exec(m), tg = /Target="([^"]+)"/.exec(m); if (id && tg) rel[id[1]] = tg[1].replace(/^\/?(xl\/)?/, 'xl/'); return ''; });
+        t[0].replace(/<sheet\b[^>]*>/g, function (m) { var nm = /name="([^"]*)"/.exec(m), id = /r:id="([^"]+)"/.exec(m); if (nm && id && rel[id[1]] && z.list[rel[id[1]]]) out.push({ name: unx(nm[1]), path: rel[id[1]], size: z.list[rel[id[1]]].us, hidden: /state="(hidden|veryHidden)"/.test(m) }); return ''; });
+        t[2].replace(/<si>([\s\S]*?)<\/si>/g, function (m, g) { var v = ''; g.replace(/<t[^>]*>([\s\S]*?)<\/t>/g, function (a, x) { v += x; return ''; }); ss.push(unx(v)); return ''; });
+        return { sheets: out, ss: ss };
+      });
+    }
+    function colIdx(L) { var n = 0; for (var i = 0; i < L.length; i++) n = n * 26 + L.charCodeAt(i) - 64; return n - 1; }
+    function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+    function cellVal(attrs, inner, ss) {
+      var t = /\bt="(\w+)"/.exec(attrs), v = inner ? /<v>([\s\S]*?)<\/v>/.exec(inner) : null, ty = t ? t[1] : 'n';
+      if (ty === 'inlineStr') { var it = inner ? /<t[^>]*>([\s\S]*?)<\/t>/.exec(inner) : null; return it ? unx(it[1]) : ''; }
+      if (!v) return '';
+      if (ty === 's') return ss[+v[1]] == null ? '' : ss[+v[1]];
+      if (ty === 'str' || ty === 'e') return unx(v[1]);
+      if (ty === 'b') return v[1] === '1';
+      var n = Number(v[1]); return isNaN(n) ? unx(v[1]) : n;
+    }
+    function parseRow(xml, ss) {
+      var out = [], re = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, m, auto = 0;
+      while ((m = re.exec(xml))) { var r = /\br="([A-Z]+)\d+"/.exec(m[1]), i = r ? colIdx(r[1]) : auto; auto = i + 1; out[i] = cellVal(m[1], m[2], ss); }
+      return out;
+    }
+    /** يمر على صفوف الورقة: أول head صفاً كاملة، وبعدها لا يفك إلا الصفوف التي يقبلها keep (بقراءة خلية واحدة سريعة) */
+    function scan(z, sh, ss, head, keep, onProg, peekOnly) {
+      var buf = '', first = [], kept = [], total = 0, re = /<row\b([^>]*?)(\/>|>([\s\S]*?)<\/row>)/g, STOP = { stop: 1 };
+      function take(part) {
+        var m; re.lastIndex = 0;
+        while ((m = re.exec(part))) {
+          var rn = /\br="(\d+)"/.exec(m[1]), no = rn ? +rn[1] : total + 1; total = no;
+          if (!m[3]) continue;
+          if (no <= head) { first[no - 1] = parseRow(m[3], ss); continue; }
+          if (peekOnly) throw STOP;
+          var k = keep ? keep(m[3], no) : true;
+          if (k) kept.push({ no: no, cells: parseRow(m[3], ss) });
+        }
+      }
+      return stream(z, sh.path, function (t) {
+        buf += t; var cut = buf.lastIndexOf('<row');
+        if (cut > 0) { take(buf.slice(0, cut)); buf = buf.slice(cut); }
+      }, onProg).then(function () { take(buf); }).catch(function (e) { if (e !== STOP) throw e; }).then(function () { buf = ''; for (var i = 0; i < head; i++) first[i] = first[i] || []; return { first: first, rows: kept, total: total }; });
+    }
+    /** قيمة خلية واحدة من نص الصف دون تحليل باقي الخلايا (للتصفية السريعة بالتاريخ) */
+    function quickCell(xml, L, no, ss) {
+      var at = xml.indexOf('r="' + L + no + '"'); if (at < 0) return '';
+      var s = xml.lastIndexOf('<c', at), e1 = xml.indexOf('</c>', at), e2 = xml.indexOf('/>', at), tagEnd = xml.indexOf('>', at);
+      if (e2 >= 0 && e2 < tagEnd + 1) return '';
+      var seg = xml.slice(s, e1 + 4), m = /<c\b([^>]*?)>([\s\S]*?)<\/c>/.exec(seg);
+      return m ? cellVal(m[1], m[2], ss) : '';
+    }
+    return { open: open, sheets: sheets, scan: scan, quickCell: quickCell, colName: colName };
+  })();
+  function csvParse(t) {
+    var rows = [], row = [], f = '', q = false, sep = (t.split('\n')[0].match(/;/g) || []).length > (t.split('\n')[0].match(/,/g) || []).length ? ';' : t.indexOf('\t') >= 0 && t.indexOf(',') < 0 ? '\t' : ',';
+    for (var i = 0; i < t.length; i++) {
+      var c = t[i];
+      if (q) { if (c === '"' && t[i + 1] === '"') { f += '"'; i++; } else if (c === '"') q = false; else f += c; }
+      else if (c === '"') q = true; else if (c === sep) { row.push(f); f = ''; } else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; } else if (c !== '\r') f += c;
+    }
+    if (f !== '' || row.length) { row.push(f); rows.push(row); }
+    return rows.map(function (r) { return r.map(function (v) { var x = v.trim(), n = Number(x.replace(/,/g, '')); return x !== '' && !isNaN(n) && /^-?[\d,.]+$/.test(x) ? n : x; }); });
+  }
+
+  /* ---------- التعرف على الأعمدة ---------- */
+  function fNorm(s) { return String(s == null ? '' : s).toLowerCase().replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[^a-z0-9ء-ي]/g, ''); }
+  var FARM_FIELDS = [
+    { k: 'day', l: 'التاريخ', req: 1, t: function (h) { return ['date', 'التاريخ', 'تاريخ', 'اليوم', 'day'].indexOf(h) >= 0; } },
+    { k: 'farm', l: 'المحطة / المزرعة', req: 1, t: function (h, g) { return ['farm', 'farmname', 'station', 'المحطه', 'المزرعه', 'الموقع', 'اسمالمزرعه', 'اسمالمحطه', 'محطه', 'مزرعه'].indexOf(h) >= 0 || (h === 'name' && /farm|مزرع/.test(g)); } },
+    { k: 'house', l: 'العنبر', t: function (h) { return ['houseno', 'house', 'العنبر', 'عنبر', 'رقمالعنبر', 'housenumber'].indexOf(h) >= 0; } },
+    { k: 'cycle', l: 'رقم الدورة', t: function (h) { return ['cycleno', 'cycle', 'الدوره', 'رقمالدوره', 'cyclenumber'].indexOf(h) >= 0; } },
+    { k: 'status', l: 'الحالة (استلام/تسمين/بيع)', t: function (h) { return ['status', 'الحاله', 'المرحله'].indexOf(h) >= 0; } },
+    { k: 'age', l: 'العمر (يوم)', t: function (h) { return ['age', 'العمر', 'عمر', 'عمرالقطيع'].indexOf(h) >= 0; } },
+    { k: 'stock', l: 'الرصيد (عدد الطيور)', t: function (h, g) { return ['stock', 'الرصيد', 'رصيد', 'العددالحالي', 'عددالطيور', 'balance', 'livebirds'].indexOf(h) >= 0 || (!h && g === 'stock'); } },
+    { k: 'placed', l: 'كتاكيت مسكنة', t: function (h, g) { return h === 'actualchicksqty' || (/placement/.test(g) && /actual|qty/.test(h)) || ['كتاكيتمسكنه', 'التسكين', 'عددالتسكين'].indexOf(h) >= 0; } },
+    { k: 'dead', l: 'النافق', req: 1, t: function (h) { return ['mortality', 'mort', 'dead', 'نافق', 'النافق', 'نفوق', 'النفوق', 'نافقاليوم'].indexOf(h) >= 0; } },
+    { k: 'killed', l: 'الفرز والذبح', t: function (h) { return ['killed', 'culled', 'ذبح', 'الذبح', 'فرز', 'الفرز', 'مستبعد'].indexOf(h) >= 0; } },
+    { k: 'inj', l: 'نافق الحقن', t: function (h) { return ['injection', 'حقن', 'الحقن'].indexOf(h) >= 0; } },
+    { k: 'lab', l: 'عينات المعمل', t: function (h) { return ['labsample', 'labsamples', 'عينات', 'عيناتالمعمل', 'عينه'].indexOf(h) >= 0; } },
+    { k: 'feed', l: 'العلف المستهلك (كجم)', t: function (h, g) { return (/feed|علف/.test(g) && h === 'total') || ['totalfeed', 'feed', 'علف', 'العلف', 'استهلاكالعلف', 'العلفالمستهلك'].indexOf(h) >= 0; } },
+    { k: 'sold', l: 'المباع (طائر)', t: function (h, g) { return (/totalharvest|اجماليالبيع/.test(g) && /qty|عدد/.test(h)) || ['المباع', 'عددالمباع', 'soldqty'].indexOf(h) >= 0; } },
+    { k: 'soldKg', l: 'المباع (كجم)', t: function (h, g) { return (/totalharvest|اجماليالبيع/.test(g) && /meat|وزن|weight/.test(h) && !/avg/.test(h)); } },
+    { k: 'culls', l: 'كتاكيت مستبعدة', t: function (h) { return ['chicksculls', 'كتاكيتمستبعده'].indexOf(h) >= 0; } },
+    { k: 'breed', l: 'السلالة', t: function (h) { return ['breed', 'السلاله'].indexOf(h) >= 0; } },
+    { k: 'source', l: 'مصدر الكتاكيت (قطيع الأمهات)', t: function (h) { return ['source', 'المصدر', 'مصدرالكتاكيت'].indexOf(h) >= 0; } }
+  ];
+  /** يحدد صف العناوين (وصف المجموعات فوقه إن وُجد) ويبني قائمة الأعمدة */
+  function farmHeaders(first) {
+    var best = -1, score = 0;
+    first.forEach(function (row, r) {
+      var sc = 0; (row || []).forEach(function (c, i) { var h = fNorm(c); if (h && FARM_FIELDS.some(function (f) { return f.t(h, ''); })) sc++; });
+      if (sc > score) { score = sc; best = r; }
+    });
+    if (best < 0 || score < 2) return null;
+    var hdr = first[best] || [], grp = best > 0 ? first[best - 1] || [] : [], cols = [], g = '', n = Math.max(hdr.length, grp.length);
+    for (var i = 0; i < n; i++) {
+      if (grp[i] != null && String(grp[i]).trim() !== '' && typeof grp[i] === 'string') g = String(grp[i]).trim();
+      var h = hdr[i] == null ? '' : String(hdr[i]).trim();
+      if (!h && !g) continue;
+      // «Total» بعد أعمدة Starter/Grower/Finisher هو إجمالي العلف حتى لو كان عنوان المجموعة فوقه مختلفاً
+      if (/^total$/i.test(h) && hdr.slice(Math.max(0, i - 3), i).some(function (x) { return /finisher|grower|starter|نهائي|نامي|بادي/i.test(String(x || '')); })) g = 'Feed Consumed';
+      // عنوان في صف المجموعة فقط (مثل Date فوق خلية فارغة) يُعامل كعنوان العمود
+      if (!h && grp[i] != null && String(grp[i]).trim() !== '') { h = String(grp[i]).trim(); }
+      cols.push({ i: i, h: h, g: g, key: fNorm(g) + '|' + fNorm(h), label: (h || g) + (g && h ? ' · ' + g : '') + ' (' + XL.colName(i) + ')' });
+    }
+    return { row: best, cols: cols };
+  }
+  function farmAutoMap(cols, saved) {
+    var map = {}, used = {};
+    FARM_FIELDS.forEach(function (f) {
+      var c = saved && saved[f.k] ? cols.filter(function (x) { return x.key === saved[f.k] && !used[x.i]; })[0] : null;
+      if (!c) c = cols.filter(function (x) { return !used[x.i] && f.t(fNorm(x.h), fNorm(x.g)); })[0];
+      if (c) { map[f.k] = c.i; used[c.i] = 1; }
+    });
+    return map;
+  }
+  function xlDay(v) {
+    if (typeof v === 'number' && v > 20000 && v < 80000) { var d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+    var s = String(v == null ? '' : v).trim().replace(/[٠-٩]/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(c); }), m;
+    if ((m = /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/.exec(s))) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+    if ((m = /^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/.exec(s))) { var y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; return y + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2); }
+    return '';
+  }
+  function serialOf(day) { return Math.round(Date.parse(day + 'T00:00:00Z') / 864e5 + 25569); }
+  function dayShift(day, n) { return new Date(Date.parse(day + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10); }
+  function dayLabel(day) { if (!day) return ''; var p = day.split('-'), t = todayKey(); return (day === t ? 'اليوم ' : day === dayShift(t, -1) ? 'أمس ' : '') + (+p[2]) + '/' + (+p[1]) + '/' + p[0]; }
+  function todayKey() { var d = new Date(Date.now() + 3 * 36e5); return d.toISOString().slice(0, 10); }
+  function fNum(v) { if (typeof v === 'number') return isFinite(v) ? v : 0; var n = Number(String(v == null ? '' : v).replace(/[٠-٩]/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(c); }).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
+
+  /** ربط اسم المزرعة في الملف بموقع في التطبيق: المحفوظ سابقاً، ثم رقم المحطة والقطاع (Wahat 05 ← تسمين الواحات - محطة 5) */
+  var FARM_SECTORS = [[/wahat|واحات|الواحات/i, 'الواحات'], [/regwa|rigwa|reg?wa|ريجوا|رجوه|رجوا|ريجوه/i, 'ريجوا']];
+  function farmResolve(name, sites, aliases) {
+    var k = fNorm(name); if (!k) return '';
+    if (aliases && aliases[k] != null) return aliases[k];
+    var ex = sites.filter(function (s) { return fNorm(s.id) === k || fNorm(s.name) === k; })[0]; if (ex) return ex.id;
+    var sec = '', no = /(\d+)/.exec(String(name));
+    FARM_SECTORS.forEach(function (x) { if (!sec && x[0].test(String(name))) sec = x[1]; });
+    var pool = sites.filter(function (s) { return !sec || s.sector === sec; });
+    if (/امهات|breeder|parent/i.test(String(name))) { var b = pool.filter(function (s) { return s.level === 1; }); if (b.length === 1) return b[0].id; }
+    if (/مفرخ|تفريخ|hatch/i.test(String(name))) { var h = pool.filter(function (s) { return s.level === 2; }); if (h.length === 1) return h[0].id; }
+    if (no) { var m = pool.filter(function (s) { return s.no === +no[1]; }); if (m.length === 1) return m[0].id; }
+    return '';
+  }
+
+  /** من صفوف العنابر إلى ملخص كل محطة في كل يوم + تراكمي الدورة */
+  function farmBuild(X) {
+    var M = X.map, rows = X.rows, by = {}, cyc = {}, farms = {}, latest = '', bad = 0;
+    var g = function (r, k) { return M[k] == null ? '' : r[M[k]]; };
+    rows.forEach(function (r) {
+      var day = xlDay(g(r, 'day')), farm = String(g(r, 'farm') == null ? '' : g(r, 'farm')).trim();
+      if (!day || !farm || /^-+$/.test(farm)) { bad++; return; }
+      if (day > latest && day <= dayShift(todayKey(), 1)) latest = day;
+      farms[farm] = (farms[farm] || 0) + 1;
+      var o = { day: day, farm: farm, house: String(g(r, 'house') || '').trim(), cycle: fNum(g(r, 'cycle')), status: String(g(r, 'status') || '').trim(), age: fNum(g(r, 'age')), stock: fNum(g(r, 'stock')), placed: fNum(g(r, 'placed')), dead: Math.max(0, fNum(g(r, 'dead'))), killed: Math.max(0, fNum(g(r, 'killed'))), inj: Math.max(0, fNum(g(r, 'inj'))), lab: fNum(g(r, 'lab')), feed: Math.max(0, fNum(g(r, 'feed'))), sold: Math.max(0, fNum(g(r, 'sold'))), soldKg: Math.max(0, fNum(g(r, 'soldKg'))), culls: Math.max(0, fNum(g(r, 'culls'))), breed: String(g(r, 'breed') || '').trim(), source: String(g(r, 'source') || '').trim() };
+      var key = farm + '|' + day, a = by[key] = by[key] || { day: day, farm: farm, houses: 0, cycle: 0, status: {}, age: 0, stock: 0, placed: 0, dead: 0, killed: 0, inj: 0, lab: 0, feed: 0, sold: 0, soldKg: 0, culls: 0, breed: {}, source: {}, detail: [] };
+      a.houses++; a.cycle = Math.max(a.cycle, o.cycle); a.age = Math.max(a.age, o.age);
+      ['stock', 'placed', 'dead', 'killed', 'inj', 'lab', 'feed', 'sold', 'soldKg', 'culls'].forEach(function (k) { a[k] += o[k]; });
+      if (o.status) a.status[o.status] = (a.status[o.status] || 0) + 1;
+      if (o.breed) a.breed[o.breed] = 1; if (o.source) a.source[o.source.replace(/\s+/g, ' ')] = 1;
+      a.detail.push({ h: o.house || '#' + a.houses, d: o.dead + o.killed + o.inj, s: o.stock, f: o.feed, a: o.age, st: o.status, src: o.source, lab: o.lab, sold: o.sold });
+      var ck = farm + '|' + (o.cycle || 'x'); var c = cyc[ck] = cyc[ck] || { placed: 0, dead: [], first: day }; c.placed += o.placed; c.dead.push([day, o.dead + o.killed + o.inj]); if (day < c.first) c.first = day;
+    });
+    var days = Object.keys(by).map(function (k) {
+      var a = by[k], st = Object.keys(a.status).sort(function (x, y) { return a.status[y] - a.status[x]; })[0] || '';
+      var c = cyc[a.farm + '|' + (a.cycle || 'x')], cumDead = c ? c.dead.reduce(function (s, x) { return x[0] <= a.day ? s + x[1] : s; }, 0) : 0;
+      a.detail.sort(function (x, y) { return String(x.h).localeCompare(String(y.h), 'en', { numeric: true }); });
+      return { day: a.day, farm: a.farm, houses: a.houses, cycle: a.cycle, status: st, age: a.age, stock: a.stock, placed: a.placed, dead: a.dead, killed: a.killed, inj: a.inj, lab: a.lab, feed: a.feed, sold: a.sold, soldKg: a.soldKg, culls: a.culls, breed: Object.keys(a.breed).join('، '), source: Object.keys(a.source).join('، '), detail: a.detail, cum: cumDead, cycPlaced: c ? c.placed : 0, mort: a.dead + a.killed + a.inj };
+    });
+    return { days: days, latest: latest, farms: farms, bad: bad };
+  }
+
+  /** التحليل: يبحث في آخر يوم عن علامات المرض المبكرة ونقاط الأمن الحيوي */
+  function farmAnalyze(B, siteOf, siteName, latest) {
+    var F = [], per = {}, yday = dayShift(latest, -1);
+    B.days.forEach(function (d) { if (siteOf(d.farm)) (per[d.farm] = per[d.farm] || {})[d.day] = d; });
+    var pct = function (d) { return d && d.stock + d.mort > 0 ? d.mort / (d.stock + d.mort) * 100 : 0; };
+    var add = function (lv, farm, text) { F.push({ lv: lv, siteId: siteOf(farm), site: siteName(farm), text: text }); };
+    var r2 = function (x) { return Math.round(x * 100) / 100; };
+    Object.keys(per).forEach(function (farm) {
+      var h = per[farm], t = h[latest];
+      if (!t) {
+        var y = h[yday]; if (y && y.stock > 1000 && y.status !== 'بيع') add('warn', farm, 'لم ترد بياناتها في آخر يوم بالملف (' + dayLabel(latest) + ') رغم وجود ' + Math.round(y.stock / 1000) + ' ألف طائر أمس');
+        return;
+      }
+      var p = pct(t), prev = [1, 2, 3].map(function (i) { return h[dayShift(latest, -i)]; }).filter(Boolean), base = prev.length ? prev.reduce(function (a, d) { return a + d.mort; }, 0) / prev.length : null;
+      var week1 = t.age && t.age <= 7, lim = week1 ? [0.3, 0.5] : [0.15, 0.3];
+      if (p >= lim[1]) add('bad', farm, 'نفوق مرتفع: ' + t.mort + ' طائر (' + r2(p) + '% من القطيع في يوم واحد) عند عمر ' + t.age + ' يوم');
+      else if (p >= lim[0]) add('warn', farm, 'نفوق أعلى من المعتاد: ' + r2(p) + '% في يوم واحد (' + t.mort + ' طائر)');
+      if (base && base >= 20 && !(t.age && t.age <= 3) && t.mort >= base * 1.5 && t.mort >= 50) add(t.mort >= base * 2 ? 'bad' : 'warn', farm, 'النافق ' + t.mort + ' مقابل متوسط ' + Math.round(base) + ' في الأيام الثلاثة السابقة (×' + r2(t.mort / base) + ')');
+      // عنبر واحد أعلى بكثير من باقي العنابر: بداية مشكلة محلية قبل أن تنتشر
+      var hs = t.detail.filter(function (x) { return x.s > 0; }).map(function (x) { return { h: x.h, p: x.d / (x.s + x.d) * 100, d: x.d }; });
+      if (hs.length >= 3) {
+        var sorted = hs.map(function (x) { return x.p; }).sort(function (a, b) { return a - b; }), med = sorted[Math.floor(sorted.length / 2)];
+        hs.forEach(function (x) { if (med > 0 && x.p >= med * 2 && x.d >= 25) add(x.p >= med * 3 ? 'bad' : 'warn', farm, 'العنبر ' + x.h + ': نافق ' + x.d + ' (' + r2(x.p) + '%) أي ' + r2(x.p / med) + ' ضعف باقي العنابر. افحصه وافصل العمالة والأدوات عنه'); });
+      }
+      // ارتفاع متتالٍ 3 أيام في نفس العنبر
+      var y1 = h[yday], y2 = h[dayShift(latest, -2)];
+      if (y1 && y2) t.detail.forEach(function (x) {
+        var a1 = (y1.detail.filter(function (z) { return z.h === x.h; })[0] || {}).d, a2 = (y2.detail.filter(function (z) { return z.h === x.h; })[0] || {}).d;
+        if (a1 != null && a2 != null && a2 >= 10 && a1 > a2 * 1.15 && x.d > a1 * 1.15 && x.d >= 30 && !week1) add('warn', farm, 'العنبر ' + x.h + ': نافق يزيد 3 أيام متتالية (' + a2 + ' ← ' + a1 + ' ← ' + x.d + ')');
+      });
+      // انخفاض العلف علامة مبكرة على المرض
+      if (y1 && t.feed > 0 && y1.feed > 0 && t.stock > 0 && y1.stock > 0 && t.status !== 'بيع' && y1.status !== 'بيع' && t.age > 7) {
+        var gp = t.feed / t.stock, gy = y1.feed / y1.stock;
+        if (gp < gy * 0.85) add('warn', farm, 'استهلاك العلف انخفض ' + Math.round((1 - gp / gy) * 100) + '% عن أمس (' + Math.round(gp * 1000) + ' جم/طائر مقابل ' + Math.round(gy * 1000) + '). قلة الأكل من أولى علامات المرض');
+      }
+      if (t.cycPlaced > 0 && t.cum > 0) {
+        var cp = t.cum / t.cycPlaced * 100;
+        if (t.age <= 7 && cp > 1) add('warn', farm, 'نفوق الأسبوع الأول ' + r2(cp) + '% (المستهدف أقل من 1%). راجع جودة الكتاكيت ومصدرها: ' + (t.source || 'غير مذكور'));
+        else if (t.age > 7 && cp > 4) add('warn', farm, 'النافق التراكمي للدورة ' + r2(cp) + '% حتى عمر ' + t.age + ' يوم');
+      }
+      if (t.lab > 0) add('info', farm, 'أُخذت ' + t.lab + ' عينة للمعمل. تابع النتيجة في تقارير الزيارات');
+      if (t.sold > 0 || /بيع/.test(t.status)) add('info', farm, 'يوم بيع' + (t.sold ? ': خرج ' + t.sold.toLocaleString('en') + ' طائر' : '') + '. تأكد من تطهير سيارات النقل والأقفاص وعمالة التحميل عند البوابة');
+      if (/استلام|تسكين/.test(t.status) && (t.placed > 0 || t.age <= 2)) add('info', farm, 'استلام كتاكيت' + (t.placed ? ' (' + t.placed.toLocaleString('en') + ' كتكوت)' : '') + (t.source ? ' من قطعان: ' + t.source : '') + '. مصدر الكتاكيت مسجل لتتبع أي عدوى رأسية');
+      if (t.detail.some(function (x) { return x.s < 0; })) add('warn', farm, 'رصيد سالب في ' + t.detail.filter(function (x) { return x.s < 0; }).map(function (x) { return x.h; }).join('، ') + ': راجع إدخال البيانات');
+    });
+    var order = { bad: 0, warn: 1, info: 2 };
+    return F.sort(function (a, b) { return order[a.lv] - order[b.lv]; });
+  }
+
+  /* ---------- الشاشة ---------- */
+  var FL = { bad: ['p-bad', 'alert', 'مهم'], warn: ['p-warn', 'alert', 'تنبيه'], info: ['p-info', 'check', 'معلومة'] };
+  function viewFarm() {
+    S.farmX = null;
+    $('main').innerHTML = '<section class="view">' + v5Head('بيانات المزارع اليومية', 'sheet', 'ارفع ملف الإكسيل اليومي الذي يرسله مدخلو البيانات، فيقرأه التطبيق ويتعرف على المحطات والعنابر، ويحلل النافق والعلف والبيع والاستلام، ثم يضيف البيانات للإنذار المبكر وحالة المحطات.', '') +
+      '<div id="farmUp"></div><div id="v5Out">' + v5Spin() + '</div></section>';
+    remote('farmMeta', [S.session.pin]).then(function (m) { S.farmMeta = m; drawFarmUp(); }).catch(function () {});
+    v5Load('farmData', [14], drawFarm, 'بيانات المزارع');
+  }
+  function drawFarmUp() {
+    var box = $('farmUp'), m = S.farmMeta; if (!box || !m) return;
+    if (!m.canImport) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="card fx-up"><label class="fx-drop" for="fxFile" id="fxDrop"><span class="fx-ico">' + icon('upload') + '</span><b>اختر ملف بيانات المزارع أو اسحبه هنا</b><span class="small muted">ملف الإكسيل كما يصلك (xlsx أو csv). يُقرأ على جهازك حتى لو كان كبيراً، ولا يُحفظ منه إلا ملخص آخر ' + (m.window || 14) + ' يوماً.</span>' +
+      (m.last ? '<span class="xs fx-last">' + icon('history') + ' آخر ملف: ' + esc(m.last.file) + ' · بيانات ' + esc(dayLabel(m.last.day)) + ' · رفعه ' + esc(m.last.by) + ' ' + esc(ago(m.last.time)) + '</span>' : '') + '</label><input id="fxFile" type="file" accept=".xlsx,.xlsm,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>' +
+      (MODE === 'demo' ? '<button class="btn ghost sm fx-demo" type="button" id="fxDemo">' + icon('play') + ' جرّب بملف تجريبي (نسخة العرض)</button>' : '') + '</div>';
+    var inp = $('fxFile'), drop = $('fxDrop');
+    inp.onchange = function () { if (inp.files[0]) farmRead(inp.files[0]); inp.value = ''; };
+    ['dragover', 'dragenter'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('over'); if (e === 'drop' && ev.dataTransfer.files[0]) farmRead(ev.dataTransfer.files[0]); }); });
+    if ($('fxDemo')) $('fxDemo').onclick = function () { farmDemoFile(); };
+  }
+  function fxProgress(t, p) {
+    var box = $('farmUp'); if (!box) return;
+    box.innerHTML = '<div class="card fx-prog"><div class="spread"><b>' + icon('sheet') + ' ' + esc(t) + '</b><span class="mono">' + Math.round((p || 0) * 100) + '%</span></div><span class="v5bar fx-bar"><i style="width:' + Math.max(3, (p || 0) * 100) + '%;background:var(--brand)"></i></span><span class="xs muted">الملفات الكبيرة (سنوات من البيانات) تأخذ ثوانٍ. لا تغلق الصفحة.</span></div>';
+  }
+  function farmRead(file) {
+    var m = S.farmMeta || {}, X = { file: file.name, size: file.size, t0: Date.now() };
+    if (/\.xls$/i.test(file.name)) return toast('صيغة xls القديمة غير مدعومة. افتح الملف في إكسيل واحفظه بصيغة xlsx', 6000);
+    fxProgress('جارٍ فتح الملف…', 0.02);
+    var rd = file.arrayBuffer ? file.arrayBuffer() : new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsArrayBuffer(file); });
+    rd.then(function (buf) {
+      if (/\.csv$/i.test(file.name) || /text\/csv/.test(file.type)) {
+        var rows = csvParse(new TextDecoder().decode(buf)), first = rows.slice(0, 12);
+        X.sheet = 'CSV'; X.first = first; X.total = rows.length;
+        var hd = farmHeaders(first); if (!hd) throw appErr('لم أتعرف على صف العناوين في الملف');
+        X.hdr = hd; X.rows = rows.slice(hd.row + 1);
+        return X;
+      }
+      var z = XL.open(buf);
+      return XL.sheets(z).then(function (info) {
+        if (!info.sheets.length) throw appErr('لا توجد أوراق في الملف');
+        // نجرب أول 12 صفاً من كل ورقة (الأصغر أولاً) ونختار الورقة التي تحمل أعمدة التاريخ والمزرعة والنافق
+        var cand = info.sheets.filter(function (s) { return !s.hidden; });
+        var probe = function (i) {
+          if (i >= cand.length) return Promise.resolve(null);
+          var sh = cand[i];
+          return peek(z, sh, info.ss).then(function (first) {
+            var hd = farmHeaders(first), map = hd ? farmAutoMap(hd.cols, m.map) : {};
+            if (hd && map.day != null && map.farm != null && map.dead != null) return { sh: sh, first: first, hd: hd, map: map };
+            return probe(i + 1);
+          });
+        };
+        fxProgress('جارٍ التعرف على أوراق الملف…', 0.05);
+        var pref = cand.slice().sort(function (a, b) { return (/data|بيانات/i.test(b.name) ? 1 : 0) - (/data|بيانات/i.test(a.name) ? 1 : 0); });
+        cand = pref;
+        return probe(0).then(function (hit) {
+          if (!hit) throw appErr('لم أجد في الملف ورقة بها أعمدة التاريخ والمزرعة والنافق. أرسل الملف لفريق الدعم لضبط القراءة عليه.');
+          X.sheet = hit.sh.name; X.hdr = hit.hd; X.map0 = hit.map;
+          var L = XL.colName(hit.map.day), cutoff = serialOf(todayKey()) - 80, hr = hit.hd.row + 1;
+          // فلترة سريعة بالتاريخ: لا يُفك إلا صفوف آخر 80 يوماً (الدورة الحالية) من ملف قد يحمل سنوات
+          return XL.scan(z, hit.sh, info.ss, hr, function (xml, no) {
+            var v = XL.quickCell(xml, L, no, info.ss);
+            if (typeof v === 'number') return v >= cutoff;
+            var d = xlDay(v); return !!d && serialOf(d) >= cutoff;
+          }, function (p) { fxProgress('جارٍ قراءة ورقة «' + hit.sh.name + '»…', 0.08 + p * 0.9); }).then(function (res) {
+            X.first = res.first; X.total = res.total; X.rows = res.rows.map(function (r) { return r.cells; });
+            return X;
+          });
+        });
+      });
+    }).then(function (X) {
+      X.map = X.map0 || farmAutoMap(X.hdr.cols, (S.farmMeta || {}).map);
+      X.aliases = Object.assign({}, (S.farmMeta || {}).aliases || {});
+      X.ms = Date.now() - X.t0;
+      S.farmX = X; farmPrepare();
+    }).catch(function (e) { toast(errText(e), 7000); drawFarmUp(); });
+  }
+  /** أول 12 صفاً من الورقة فقط: يتوقف عن فك الضغط بعدها حتى في الأوراق الضخمة */
+  function peek(z, sh, ss) { return XL.scan(z, sh, ss, 12, null, null, true).then(function (r) { return r.first; }); }
+  function farmPrepare() {
+    var X = S.farmX, m = S.farmMeta || { sites: [] }; if (!X) return;
+    X.B = farmBuild(X);
+    if (!X.B.latest) { toast('لم أجد تواريخ حديثة في الملف (آخر 80 يوماً). تأكد أن عمود التاريخ صحيح', 6000); }
+    X.day = X.day && X.B.days.some(function (d) { return d.day === X.day; }) ? X.day : X.B.latest;
+    drawFarmImport();
+  }
+  function farmSiteOf(X) { var sites = (S.farmMeta || {}).sites || []; return function (farm) { var id = farmResolve(farm, sites, X.aliases); return id && id !== '-' ? id : ''; }; }
+  function drawFarmImport() {
+    var X = S.farmX, m = S.farmMeta || { sites: [] }, box = $('farmUp'); if (!X || !box) return;
+    var B = X.B, siteOf = farmSiteOf(X), sById = {}; m.sites.forEach(function (s) { sById[s.id] = s; });
+    var siteName = function (f) { var id = siteOf(f); return id && sById[id] ? shortSite(sById[id].name) : f; };
+    var W = m.window || 14, from = X.day ? dayShift(X.day, -(W - 1)) : '';
+    var win = B.days.filter(function (d) { return d.day >= from && d.day <= X.day; });
+    var farmsWin = {}; win.forEach(function (d) { farmsWin[d.farm] = 1; });
+    var today = win.filter(function (d) { return d.day === X.day && siteOf(d.farm); });
+    var F = X.day ? farmAnalyze({ days: win }, siteOf, siteName, X.day) : [];
+    X.F = F; X.win = win; X.from = from;
+    var birds = today.reduce(function (a, d) { return a + d.stock; }, 0), dead = today.reduce(function (a, d) { return a + d.mort; }, 0);
+    var nBad = F.filter(function (f) { return f.lv === 'bad'; }).length, nWarn = F.filter(function (f) { return f.lv === 'warn'; }).length;
+    var unknown = Object.keys(farmsWin).filter(function (f) { return !siteOf(f) && X.aliases[fNorm(f)] !== '-'; });
+    var h = '<div class="card fx-imp"><div class="card-head"><div><span class="kick">' + esc(X.file) + ' · ' + (X.size / 1048576).toFixed(1) + ' ميجا · ورقة «' + esc(X.sheet) + '» · ' + (X.total || 0).toLocaleString('en') + ' صف، قُرئت في ' + Math.max(1, Math.round(X.ms / 1000)) + ' ث</span><h2>' + icon('sheet') + ' مراجعة الملف قبل الحفظ</h2></div><button class="btn sm ghost" type="button" id="fxCancel">' + icon('x') + ' إلغاء</button></div>';
+    h += '<div class="fx-row"><div class="field"><label for="fxDay">تاريخ البيانات</label><select id="fxDay">' + Object.keys(B.days.reduce(function (a, d) { a[d.day] = 1; return a; }, {})).sort().reverse().slice(0, 21).map(function (d) { return '<option value="' + d + '"' + (d === X.day ? ' selected' : '') + '>' + esc(dayLabel(d)) + (d === B.latest ? ' (أحدث يوم في الملف)' : '') + '</option>'; }).join('') + '</select></div>' +
+      '<p class="xs muted fx-win">' + icon('history') + ' يُحفظ ملخص كل محطة من ' + esc(dayLabel(from)) + ' حتى ' + esc(dayLabel(X.day)) + ' (' + W + ' يوماً). الأيام المحفوظة سابقاً تُحدَّث فقط إن تغيرت أرقامها في الملف.</p></div>';
+    h += kpiRow([['k-brand', 'layers', today.length, 'محطة في هذا اليوم'], ['k-ok', 'shield', birds >= 1e6 ? (Math.round(birds / 1e4) / 100) + ' مليون' : birds >= 1000 ? Math.round(birds / 1000) + ' ألف' : birds, 'طائر في المحطات'], ['k-warn', 'box', dead.toLocaleString('en'), 'نافق اليوم'], ['k-bad', 'siren', nBad, 'ملاحظة مهمة'], ['k-warn', 'alert', nWarn, 'تنبيه'], ['k-brand', 'sheet', win.length, 'يوم-محطة سيُحفظ']]);
+    if (unknown.length) h += '<div class="cc-alert a-warn">' + icon('alert') + '<span><b>' + plural(unknown.length, 'اسم مزرعة', 'أسماء مزارع') + ' في الملف غير مربوط بموقع في التطبيق</b>. اختر الموقع المقابل في «ربط المزارع» بالأسفل أو اختر «تجاهل».</span></div>';
+    h += '<h3 class="fx-h">' + icon('pulse') + ' نتيجة التحليل · ' + esc(dayLabel(X.day)) + '</h3>' + (F.length ? '<div class="fx-finds">' + F.map(function (f) { var L = FL[f.lv] || FL.info; return '<div class="fx-f ' + f.lv + '"><span class="pill ' + L[0] + '">' + icon(L[1]) + ' ' + L[2] + '</span><div><b>' + esc(f.site) + '</b><span>' + esc(f.text) + '</span></div></div>'; }).join('') + '</div>' : '<p class="empty">' + icon('check') + '<b>لا توجد ملاحظات</b><span class="xs">النافق والعلف في حدودهما الطبيعية في كل المحطات</span></p>');
+    h += '<h3 class="fx-h">' + icon('layers') + ' المحطات في هذا اليوم</h3><div class="tbl"><table class="fx-tbl"><thead><tr><th>المحطة</th><th>الحالة</th><th>العمر</th><th>العنابر</th><th>الرصيد</th><th>النافق</th><th>%</th><th>علف جم/طائر</th><th>تراكمي الدورة</th></tr></thead><tbody>' +
+      today.sort(function (a, b) { return siteName(a.farm).localeCompare(siteName(b.farm), 'ar', { numeric: true }); }).map(function (d) { var p = d.stock + d.mort > 0 ? d.mort / (d.stock + d.mort) * 100 : 0; return '<tr><td><b>' + esc(siteName(d.farm)) + '</b><span class="xs muted d-block">' + esc(d.farm) + (d.cycle ? ' · دورة ' + d.cycle : '') + '</span></td><td>' + esc(d.status || '—') + '</td><td class="mono">' + (d.age || '—') + '</td><td class="mono">' + d.houses + '</td><td class="mono">' + d.stock.toLocaleString('en') + '</td><td class="mono"><b>' + d.mort + '</b></td><td class="mono ' + (p >= 0.3 ? 'bad-t' : p >= 0.15 ? 'warn-t' : '') + '">' + (Math.round(p * 100) / 100) + '</td><td class="mono">' + (d.stock > 0 && d.feed > 0 ? Math.round(d.feed * 1000 / d.stock) : '—') + '</td><td class="mono">' + (d.cycPlaced ? (Math.round(d.cum / d.cycPlaced * 10000) / 100) + '%' : d.cum) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    // ربط المزارع والأعمدة
+    h += '<details class="fx-det"' + (unknown.length ? ' open' : '') + '><summary>' + icon('link') + ' ربط المزارع في الملف بمواقع التطبيق <span class="badge">' + Object.keys(farmsWin).length + '</span></summary><div class="fx-map">' + Object.keys(farmsWin).sort(function (a, b) { return a.localeCompare(b, 'en', { numeric: true }); }).map(function (f) {
+      var cur = X.aliases[fNorm(f)] === '-' ? '-' : siteOf(f);
+      return '<div class="field fx-mf"><label>' + esc(f) + '</label><select data-alias="' + esc(fNorm(f)) + '"><option value="">— اختر الموقع —</option>' + siteOptions(m.sites, cur) + '<option value="-"' + (cur === '-' ? ' selected' : '') + '>تجاهل هذه المزرعة</option></select></div>';
+    }).join('') + '</div></details>';
+    h += '<details class="fx-det"><summary>' + icon('sheet') + ' الأعمدة التي تعرّف عليها التطبيق <span class="badge">' + Object.keys(X.map).length + '/' + FARM_FIELDS.length + '</span></summary><p class="xs muted">صف العناوين رقم ' + (X.hdr.row + 1) + '. غيّر أي عمود إن لزم، ويتذكر التطبيق اختيارك في المرات القادمة.</p><div class="fx-map">' + FARM_FIELDS.map(function (f) {
+      return '<div class="field fx-mf"><label>' + esc(f.l) + (f.req ? ' *' : '') + '</label><select data-col="' + f.k + '"><option value="">— غير موجود —</option>' + X.hdr.cols.map(function (c) { return '<option value="' + c.i + '"' + (X.map[f.k] === c.i ? ' selected' : '') + '>' + esc(c.label) + '</option>'; }).join('') + '</select></div>';
+    }).join('') + '</div></details>';
+    h += '<div class="row fx-acts"><button class="btn primary big grow" type="button" id="fxSave"' + (today.length ? '' : ' disabled') + '>' + icon('check') + ' حفظ وإضافة البيانات للتطبيق</button></div></div>';
+    box.innerHTML = h;
+    $('fxCancel').onclick = function () { S.farmX = null; drawFarmUp(); };
+    $('fxDay').onchange = function () { X.day = this.value; drawFarmImport(); };
+    box.querySelectorAll('[data-alias]').forEach(function (s) { s.onchange = function () { X.aliases[s.dataset.alias] = s.value; drawFarmImport(); }; });
+    box.querySelectorAll('[data-col]').forEach(function (s) { s.onchange = function () { if (s.value === '') delete X.map[s.dataset.col]; else X.map[s.dataset.col] = +s.value; farmPrepare(); }; });
+    $('fxSave').onclick = function () { farmSave(this); };
+  }
+  function farmSave(btn) {
+    var X = S.farmX, siteOf = farmSiteOf(X), mapKeys = {};
+    Object.keys(X.map).forEach(function (k) { var c = X.hdr.cols.filter(function (x) { return x.i === X.map[k]; })[0]; if (c) mapKeys[k] = c.key; });
+    var aliases = {}; Object.keys(X.aliases).forEach(function (k) { if (X.aliases[k]) aliases[k] = X.aliases[k]; });
+    var days = X.win.filter(function (d) { return siteOf(d.farm); }).map(function (d) {
+      return { day: d.day, siteId: siteOf(d.farm), farm: d.farm, cycle: d.cycle, status: d.status, age: d.age, houses: d.houses, stock: d.stock, placed: d.placed, dead: d.dead, killed: d.killed, inj: d.inj, lab: d.lab, feed: d.feed, sold: d.sold, soldKg: d.soldKg, culls: d.culls, cum: d.cum, breed: d.breed, source: d.source, detail: d.detail.map(function (x) { return { h: x.h, d: x.d, s: x.s, f: x.f, a: x.a, st: x.st, lab: x.lab, sold: x.sold }; }) };
+    });
+    if (!days.length) return toast('لا توجد محطات مربوطة لحفظها');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> جارٍ الحفظ وتحليل الإنذار المبكر…';
+    X.id = X.id || 'IM' + Date.now().toString(36).toUpperCase();
+    remote('farmImport', [S.session.pin, { id: X.id, file: X.file, from: X.from, rows: X.rows.length, days: days, map: mapKeys, aliases: aliases, findings: X.F }]).then(function (r) {
+      S.farmX = null; if (S.farmMeta) { S.farmMeta.map = mapKeys; S.farmMeta.aliases = aliases; }
+      farmResultSheet(r); remote('farmMeta', [S.session.pin]).then(function (m) { S.farmMeta = m; drawFarmUp(); }).catch(function () { drawFarmUp(); });
+      v5Load('farmData', [14], drawFarm, 'بيانات المزارع'); sync();
+    }).catch(function (e) { btn.disabled = false; btn.innerHTML = icon('check') + ' حفظ وإضافة البيانات للتطبيق'; toast(e.net ? 'لا يوجد اتصال. احفظ عند عودة الإنترنت' : errText(e), 6000); });
+  }
+  function farmResultSheet(r) {
+    var ews = r.ews || [], crit = ews.filter(function (e) { return e.n >= 2; });
+    openSheet('<div class="sheet-head ' + (crit.length ? 'sh-bad' : 'sh-ok') + '"><span class="permit">بيانات ' + esc(dayLabel(r.day)) + '</span><div class="big-ico">' + icon(crit.length ? 'siren' : 'check') + '</div><h2>' + (r.duplicate ? 'تم حفظ هذا الملف من قبل' : 'تمت إضافة البيانات') + '</h2><p>' + (r.duplicate ? '' : 'بيانات ' + plural(r.sites, 'محطة', 'محطات') + ' · ' + r.added + ' يوم جديد · ' + r.updated + ' يوم عُدِّل' + (r.unchanged ? ' · ' + r.unchanged + ' بلا تغيير' : '')) + '</p></div><div class="sheet-body">' +
+      (ews.length ? '<div class="fx-finds">' + ews.map(function (e) { return '<div class="fx-f ' + (e.n >= 2 ? 'bad' : 'warn') + '"><span class="pill ' + EWS_P[e.n] + '">' + icon('pulse') + ' ' + esc(e.level) + '</span><div><b>' + esc(shortSite(e.name)) + '</b><span>' + esc((e.why || []).join(' · ')) + (e.fired ? ' · وصل الإنذار للمدير والطبيب البيطري' : '') + '</span></div></div>'; }).join('') + '</div>' : '<div class="infobox">' + icon('check') + ' الإنذار المبكر: لا توجد زيادة غير معتادة في النافق.</div>') +
+      ((r.phases || []).length ? '<p class="small"><b>تحدثت مرحلة المحطات من الملف:</b> ' + r.phases.map(function (p) { return esc(shortSite(p.name)) + ' ← ' + esc(p.phase); }).join('، ') + '</p>' : '') +
+      ((r.skipped || []).length ? '<p class="xs muted">تم تجاهل: ' + esc(r.skipped.join('، ')) + ' (خارج نطاق صلاحيتك أو غير مربوطة)</p>' : '') +
+      (ews.length ? '<button class="btn bad big" data-a="ews">' + icon('pulse') + ' فتح الإنذار المبكر</button>' : '') + '<button class="btn big" data-a="close">تم</button></div>', function (a) { closeSheet(); if (a === 'ews') go('ews'); });
+  }
+
+  /* ---------- لوحة بيانات المزارع المحفوظة ---------- */
+  function farmBars(rows, from, to) {
+    var out = [], mx = 1, map = {}; rows.forEach(function (r) { map[r.day] = r; mx = Math.max(mx, r.mort); });
+    for (var d = from; d <= to; d = dayShift(d, 1)) { var r = map[d]; out.push('<i class="' + (r ? (r.pct >= 0.3 ? 'n3' : r.pct >= 0.15 ? 'n2' : 'n0') : 'none') + (d === to ? ' today' : '') + '" style="height:' + (r ? Math.max(6, r.mort / mx * 100) : 100) + '%" title="' + esc(dayLabel(d)) + (r ? ': ' + r.mort : '') + '"></i>'); }
+    return '<div class="ews-bars fx-bars" aria-hidden="true">' + out.join('') + '</div>';
+  }
+  function farmHouses(t) {
+    if (!t || !t.detail || !t.detail.length) return '';
+    var ps = t.detail.map(function (x) { return x.s + x.d > 0 ? x.d / (x.s + x.d) * 100 : 0; }), sorted = ps.slice().sort(function (a, b) { return a - b; }), med = sorted[Math.floor(sorted.length / 2)] || 0;
+    return '<div class="fx-houses">' + t.detail.map(function (x, i) { var r = med > 0 ? ps[i] / med : 1, c = x.s <= 0 && x.d === 0 ? 'e' : r >= 3 ? 'c' : r >= 2 ? 'h' : r >= 1.4 ? 'm' : 'l'; return '<span class="hc-' + c + '" title="' + esc(x.h) + ': نافق ' + x.d + (x.s ? ' من ' + x.s.toLocaleString('en') : '') + '"><b>' + esc(String(x.h).replace(/^H0?/, '')) + '</b><i>' + x.d + '</i></span>'; }).join('') + '</div>';
+  }
+  function drawFarm(d) {
+    var out = $('v5Out'); if (!out) return; S.farmData = d;
+    var withData = d.sites.filter(function (s) { return s.rows.length; }), today = d.sites.filter(function (s) { return s.today; });
+    if (!withData.length) { out.innerHTML = '<div class="card"><p class="empty">' + icon('sheet', 'ico-lg') + '<b>لم يُرفع ملف بيانات بعد</b><span class="xs">' + (d.canImport ? 'ارفع ملف اليوم من الأعلى لتظهر هنا بيانات كل محطة وعنبر' : 'سيظهر هنا ما يرفعه المدير من بيانات المزارع اليومية') + '</span></p></div>'; return; }
+    var birds = today.reduce(function (a, s) { return a + s.today.stock; }, 0), dead = today.reduce(function (a, s) { return a + s.today.mort; }, 0), F = d.findings || [];
+    var html = '<div class="spread fx-dayline"><span class="kick">آخر بيانات محفوظة: <b>' + esc(dayLabel(d.latest)) + '</b></span>' + (d.imports[0] ? '<span class="xs muted">' + icon('upload') + ' ' + esc(d.imports[0].file) + ' · ' + esc(d.imports[0].by) + ' ' + esc(ago(d.imports[0].time)) + '</span>' : '') + '</div>';
+    html += kpiRow([['k-brand', 'layers', today.length, 'محطة بها طيور'], ['k-ok', 'shield', birds >= 1e6 ? (Math.round(birds / 1e4) / 100) + ' مليون' : birds >= 1000 ? Math.round(birds / 1000) + ' ألف' : birds, 'طائر'], ['k-warn', 'box', dead.toLocaleString('en'), 'نافق آخر يوم'], ['k-brand', 'pulse', birds + dead > 0 ? (Math.round(dead / (birds + dead) * 10000) / 100) + '%' : '—', 'نسبة النفوق اليومية'], ['k-bad', 'siren', F.filter(function (f) { return f.lv === 'bad'; }).length, 'ملاحظة مهمة'], ['k-warn', 'alert', F.filter(function (f) { return f.lv === 'warn'; }).length, 'تنبيه']]);
+    if (F.length) html += '<div class="card"><div class="card-head"><div><span class="kick">تحليل آخر ملف</span><h2>' + icon('pulse') + ' ما يحتاج انتباهك</h2></div></div><div class="fx-finds">' + F.slice(0, 14).map(function (f) { var L = FL[f.lv] || FL.info; return '<div class="fx-f ' + f.lv + '"><span class="pill ' + L[0] + '">' + icon(L[1]) + ' ' + L[2] + '</span><div><b>' + esc(f.site) + '</b><span>' + esc(f.text) + '</span></div></div>'; }).join('') + '</div></div>';
+    html += '<div class="card"><div class="card-head"><div><span class="kick">آخر 14 يوماً · العمود الأخير ' + esc(dayLabel(d.latest)) + ' · المربعات = العنابر (اللون حسب نافق العنبر مقارنة بباقي العنابر)</span><h2>' + icon('layers') + ' المحطات</h2></div></div><div class="fx-grid">' + d.sites.map(function (s) {
+      var t = s.today, l = s.last;
+      return '<button type="button" class="fx-site' + (t ? '' : ' idle') + '" data-fx="' + esc(s.id) + '"><div class="spread"><div><b>' + esc(shortSite(s.name)) + '</b><span class="xs muted">' + (t ? esc(t.status || '') + (t.age ? ' · عمر ' + t.age + ' يوم' : '') + (t.cycle ? ' · دورة ' + t.cycle : '') : l ? 'آخر بيانات ' + esc(dayLabel(l.day)) + (l.status ? ' · ' + esc(l.status) : '') : 'لا توجد بيانات') + '</span></div>' + (t ? '<span class="pill ' + (t.pct >= 0.3 ? 'p-bad' : t.pct >= 0.15 ? 'p-warn' : 'p-ok') + ' mono">' + t.pct + '%</span>' : '<span class="pill p-n">بدون طيور</span>') + '</div>' +
+        farmBars(s.rows, d.from, d.latest) +
+        (t ? '<div class="ews-nums"><div><span>الرصيد</span><b class="mono">' + (t.stock >= 1000 ? Math.round(t.stock / 1000) + ' ألف' : t.stock) + '</b></div><div><span>النافق</span><b class="mono">' + t.mort + '</b></div><div><span>علف/طائر</span><b class="mono">' + (t.gpb == null ? '—' : t.gpb + ' جم') + '</b></div><div><span>تراكمي</span><b class="mono">' + t.cum.toLocaleString('en') + '</b></div></div>' + farmHouses(t) : '') + '</button>';
+    }).join('') + '</div></div>';
+    if (d.imports.length) html += '<div class="card"><div class="card-head"><h2>' + icon('history') + ' سجل الملفات المرفوعة</h2></div><div class="list">' + d.imports.map(function (m) { return '<div class="li"><span class="av">' + icon('sheet') + '</span><div class="t"><b>' + esc(m.file) + '</b><span>بيانات ' + esc(dayLabel(m.day)) + ' · ' + esc(m.by) + ' · ' + esc(fmt(m.time)) + '</span></div><div class="meta row" style="gap:6px"><span class="pill p-n">' + m.added + ' جديد · ' + m.updated + ' معدل</span>' + (m.alerts ? '<span class="pill p-warn">' + m.alerts + ' ملاحظة</span>' : '') + '</div></div>'; }).join('') + '</div></div>';
+    out.innerHTML = html;
+    out.querySelectorAll('[data-fx]').forEach(function (b) { b.onclick = function () { farmSiteSheet(b.dataset.fx); }; });
+  }
+  function farmSiteSheet(id) {
+    var d = S.farmData, s = d && d.sites.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+    var rows = s.rows.slice().reverse(), t = s.today || s.last;
+    openSheet('<div class="sheet-head sh-dark"><span class="permit">' + esc(s.sector) + (t && t.breed ? ' · ' + esc(t.breed) : '') + '</span><h2>' + esc(shortSite(s.name)) + '</h2><p>' + (t ? esc(t.status) + ' · عمر ' + t.age + ' يوم · ' + t.stock.toLocaleString('en') + ' طائر' : 'لا توجد بيانات') + '</p></div><div class="sheet-body">' +
+      (t && t.source ? '<div class="infobox">' + icon('trace') + ' مصدر الكتاكيت (قطعان الأمهات): ' + esc(t.source) + '</div>' : '') +
+      (t && t.detail.length ? '<h3 class="fx-h">العنابر · ' + esc(dayLabel(t.day)) + '</h3><div class="tbl"><table class="fx-tbl"><thead><tr><th>العنبر</th><th>العمر</th><th>الرصيد</th><th>النافق</th><th>%</th><th>علف كجم</th></tr></thead><tbody>' + t.detail.map(function (x) { var p = x.s + x.d > 0 ? Math.round(x.d / (x.s + x.d) * 10000) / 100 : 0; return '<tr><td><b>' + esc(x.h) + '</b></td><td class="mono">' + (x.a || '—') + '</td><td class="mono">' + (x.s || 0).toLocaleString('en') + '</td><td class="mono"><b>' + x.d + '</b></td><td class="mono">' + p + '</td><td class="mono">' + (x.f || '—') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+      '<h3 class="fx-h">آخر 14 يوماً</h3><div class="tbl"><table class="fx-tbl"><thead><tr><th>اليوم</th><th>الحالة</th><th>العمر</th><th>الرصيد</th><th>النافق</th><th>%</th><th>علف جم/طائر</th><th>المباع</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td>' + esc(dayLabel(r.day)) + '</td><td>' + esc(r.status) + '</td><td class="mono">' + (r.age || '—') + '</td><td class="mono">' + r.stock.toLocaleString('en') + '</td><td class="mono"><b>' + r.mort + '</b></td><td class="mono ' + (r.pct >= 0.3 ? 'bad-t' : r.pct >= 0.15 ? 'warn-t' : '') + '">' + (r.pct == null ? '—' : r.pct) + '</td><td class="mono">' + (r.gpb == null ? '—' : r.gpb) + '</td><td class="mono">' + (r.sold ? r.sold.toLocaleString('en') : '—') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<button class="btn big" data-a="close">إغلاق</button></div>', function () { closeSheet(); });
+  }
+
+  /** نسخة العرض: ملف تجريبي بنفس شكل ملف «Data collection» الحقيقي يمر بنفس خطوات القراءة والتحليل */
+  function farmDemoFile() {
+    var hdr2 = [null, 'Cod+H2e2', 'Month', 'Date', null, 'Farm Data', null, null, null, null, null, null, 'Stock', null, 'Placement', null, 'Depletion', null, null, null, null, null, 'Feed Consumed', null, null, null],
+      hdr3 = [null, null, null, null, 'Status', 'Name', 'Cycle No.', 'House No.', 'Breed', 'Source', 'Company', 'Age', null, 'Avg. Wt.', 'Actual Chicks Qty', 'Planned Chicks Qty.', 'Mortality', 'Killed', 'Injection', 'Return', 'T.mort', 'Lab Sample', 'Starter', 'Grower', 'Finisher', 'Total'];
+    var rows = [], t = todayKey(), srcs = ['Wahat 3', 'Wahat 5 ', 'Wahat 6', 'Wahat 8'], rnd = function (a, b) { return Math.round(a + Math.random() * (b - a)); };
+    // محطة 5: عمر 1-5 · محطة 10: استلام اليوم · محطة 12: عمر 24-29 مع عنبر يرتفع نافقه · محطة 21: بيع
+    var plan = [['Wahat 05', 36, 5, 'تسمين', 40, 52], ['Wahat 10', 37, 1, 'استلام', 24, 36], ['Wahat 12', 30, 29, 'تسمين', 6, 12], ['Wahat 21', 41, 41, 'بيع', 3, 9]];
+    plan.forEach(function (p) {
+      for (var back = Math.min(p[2] - 1, 9); back >= 0; back--) {
+        var day = dayShift(t, -back), age = p[2] - back, st = p[3] === 'استلام' ? 'استلام' : p[3] === 'بيع' && back > 1 ? 'تسمين' : age <= 2 && p[3] !== 'بيع' ? 'استلام' : p[3];
+        for (var h = 1; h <= 12; h++) {
+          var hn = 'H' + ('0' + h).slice(-2), dead = rnd(p[4], p[5]);
+          if (p[0] === 'Wahat 12' && h === 7) dead = [8, 9, 11, 10, 12, 14, 19, 31, 52, 88][9 - back] || dead;
+          if (age <= 0) continue;
+          rows.push(['', p[0] + '-' + p[1] + '-' + hn, +day.slice(5, 7), serialOf(day), st, p[0], p[1], hn, 'HUB', srcs[h % 4], 'Wahat', age, 28600 - age * 40 - h * 30, age === 1 ? 0.044 : '', age === 1 ? 28700 : '', '', dead, h % 5 === 0 ? 2 : 0, 0, '', dead, h === 7 && back === 0 && p[0] === 'Wahat 12' ? 5 : '', '', '', '', p[3] === 'بيع' && back === 0 ? 0 : Math.round((age < 10 ? 20 + age * 6 : 60 + age * 3) * 28.5) - (p[0] === 'Wahat 12' && h === 7 && back === 0 ? 500 : 0)]);
+        }
+      }
+    });
+    var X = { file: 'Data collection Wahat farms (تجريبي).xlsx', size: 24016418, t0: Date.now() - 4200, sheet: 'Data', total: 159970, first: [[], hdr2, hdr3] };
+    X.hdr = farmHeaders(X.first); X.map = farmAutoMap(X.hdr.cols, (S.farmMeta || {}).map); X.rows = rows; X.aliases = Object.assign({}, (S.farmMeta || {}).aliases || {}); X.ms = 4200;
+    S.farmX = X; fxProgress('جارٍ قراءة ورقة «Data»…', 0.6); setTimeout(farmPrepare, 500);
+  }
+
   /* ============================ نسخة العرض: الإشعارات ============================ */
   if (MODE === 'demo') {
     window.onDemoNotify = function (evt) {
       var me = S.session && S.session.user;
-      var toMgr = ['birds', 'mortality', 'litter', 'capa', 'company', 'company-report', 'academy', 'trip', 'ews'].indexOf(evt.kind) >= 0 || evt.kind === 'mission' || evt.kind === 'tamper' || evt.kind === 'deny' || evt.kind === 'card' || evt.kind === 'watch' || evt.kind === 'request' || evt.kind === 'violation' || evt.kind === 'report' || (evt.kind === 'message' && !evt.toGate);
+      var toMgr = ['birds', 'mortality', 'litter', 'capa', 'company', 'company-report', 'academy', 'trip', 'ews', 'farm'].indexOf(evt.kind) >= 0 || evt.kind === 'mission' || evt.kind === 'tamper' || evt.kind === 'deny' || evt.kind === 'card' || evt.kind === 'watch' || evt.kind === 'request' || evt.kind === 'violation' || evt.kind === 'report' || (evt.kind === 'message' && !evt.toGate);
       var app = evt.kind === 'escalation' ? (evt.level === 1 ? 'موبايل نائب المدير · تصعيد مستوى 1' : 'موبايل مدير القطاع · تصعيد مستوى 2') : toMgr ? 'موبايل مدير الأمن الحيوي' : (evt.toUserId || evt.toGate) ? 'موبايل أمن البوابة' : 'موبايلات البوابات';
       var mgrAct = function (act, msg) { return function (el) { try { window.DemoApi.reportAct('9999', evt.reportId, act, ''); el.remove(); toast(msg); sync().then(function () { if (/^(dash|comms|map)/.test(S.route)) render(); }); } catch (e) { toast(errText(e)); } }; };
       var actions = evt.kind === 'request' ? [
