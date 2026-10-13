@@ -338,7 +338,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 13</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 13.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -404,6 +404,14 @@
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
+  /** الشريط السفلي للموبايل: خمسة أزرار بحد أقصى بأسماء قصيرة، والباقي في «المزيد» */
+  var NAV_SHORT = { dash: 'القيادة', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير' };
+  function bottomItems() {
+    var all = navItems(), pick = vrOnly() ? ['vr', 'more'] : S.session.user.isManager ? ['dash', 'stations', 'comms', 'requests', 'missions', 'notices', 'more'] : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
+    var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
+    if (S.session.user.isManager && got.length > 5) got = got.slice(0, 4).concat(got.slice(-1));
+    return got.map(function (n) { return [n[0], n[1], n[2], S.session.user.isManager || n[0] === 'log' ? NAV_SHORT[n[0]] || n[1] : n[1]]; });
+  }
   function demoStrip() {
     if (MODE !== 'demo') return '';
     return '<div class="demo-strip"><div class="in"><span class="tag">نسخة عرض</span><span class="hide-sm">بيانات افتراضية للتجربة · إشعارات الموبايل وواتساب تظهر هنا كما ستصل للمدير</span>' +
@@ -427,7 +435,7 @@
     var nav = navItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     $('sideNav').innerHTML = '<span class="navlabel">' + (vrOnly() ? 'تقارير الزيارات' : S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
       '<div class="sidefoot"><b>' + esc(S.session.user.name) + '</b><span>' + esc(S.session.user.isManager ? (S.session.user.roleLabel || 'مدير') + (S.session.user.scope && !S.session.user.scope.all ? ' · ' + S.session.user.scope.label : '') : (S.session.gate.name || 'أمن بوابة')) + '</span></div>';
-    $('bottomNav').innerHTML = navItems().filter(function (n) { return !(S.session.user.isManager && (n[0] === 'gate' || n[0] === 'sim' || n[0] === 'report' || n[0] === 'passport' || n[0] === 'trace' || n[0] === 'map' || n[0] === 'insights' || n[0] === 'users' || ['birds', 'wx', 'inspect', 'disposal', 'companies', 'academy', 'vr'].indexOf(n[0]) >= 0)); }).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + (n[0] === 'dash' ? 'القيادة' : n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
+    $('bottomNav').innerHTML = bottomItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '" aria-label="' + esc(n[1]) + '">' + icon(n[2]) + '<span class="nl">' + esc(n[3] || n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     document.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
     $('netChip').onclick = function () { sync(); go('more'); };
     if ($('portalChip')) $('portalChip').onclick = function () { go('portal'); };
@@ -457,6 +465,7 @@
     clearInterval(S.poll);
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
+    var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
     var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
@@ -1241,7 +1250,11 @@
     else if (MODE === 'gas') pushTxt = 'الإشعارات الفورية تعمل عند فتح التطبيق من رابطه المستضاف وتثبيته على الشاشة الرئيسية.';
     else if (!CFG.FIREBASE) pushTxt = 'لم تُضبط إعدادات Firebase في config.js بعد.';
     else pushTxt = window.Notification && Notification.permission === 'granted' ? 'الإشعارات مفعلة على هذا الجهاز.' : 'فعّل الإشعارات ليصلك كل قرار وطلب فوراً حتى والتطبيق مغلق.';
-    $('main').innerHTML = '<section class="view"><div class="viewhead"><h1>المزيد</h1></div><div class="grid-2">' +
+    var inBar = bottomItems().map(function (n) { return n[0]; });
+    var rest = navItems().filter(function (n) { return inBar.indexOf(n[0]) < 0 && n[0] !== 'more'; });
+    $('main').innerHTML = '<section class="view"><div class="viewhead"><h1>المزيد</h1></div>' +
+      (rest.length ? '<div class="card more-all"><h2>' + icon('menu') + ' كل الأقسام</h2><div class="more-grid">' + rest.map(function (n) { return '<a class="more-tile" href="#' + n[0] + '"><span class="mt-ico">' + icon(n[2]) + '</span><span class="mt-l">' + esc(n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></a>'; }).join('') + '</div></div>' : '') +
+      '<div class="grid-2">' +
       '<div class="card"><div class="who"><div class="avatar">' + icon('user', 'ico-lg') + '</div><div><b>' + esc(me.user.name) + '</b><span class="small muted">' + esc(me.user.roleLabel || me.user.role) + (me.user.scope && !me.user.scope.all ? ' · ' + esc(me.user.scope.label) : '') + (me.gate.name && !me.user.isManager ? ' · ' + esc(me.gate.name) : '') + '</span>' + (me.user.isManager && me.user.perms ? '<span class="perm-mini">' + me.user.perms.map(function (k) { var d = (S.permDefs || PERM_SHORT)[k]; return '<i>' + esc(d || k) + '</i>'; }).join('') + '</span>' : '') + '</div></div>' +
       '<button class="btn" id="logoutBtn">' + icon('out') + ' تسجيل الخروج</button></div>' +
       '<div class="card"><h2>' + icon('bell') + ' الإشعارات الفورية</h2><p class="small muted">' + esc(pushTxt) + '</p>' +
@@ -1257,6 +1270,7 @@
     $('logoutBtn').onclick = function () { logout(); };
     $('syncBtn').onclick = function () { sync().then(render); };
     if ($('pushBtn')) $('pushBtn').onclick = function () { enablePush(false); };
+    renderBadges();
   }
 
   /* ---------- الإشعارات الفورية (Firebase) ---------- */

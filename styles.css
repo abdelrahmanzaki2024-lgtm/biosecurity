@@ -2099,3 +2099,38 @@ body.vr-on .main:empty { display: none; }
 .eb-steps .hn { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--red); color: #fff; font: 700 1rem var(--font-display); }
 .eb-steps > div > div { display: grid; gap: 4px; justify-items: start; }
 @media (max-width: 520px) { .st-grid, .fl-grid { grid-template-columns: 1fr; } .stn-m b { font-size: 1rem; } }
+
+/* ===== الإصدار 13.1: شريط سفلي منسق للموبايل + شبكة كل الأقسام ===== */
+.bottomnav { grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 6px; left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); overflow: hidden; }
+.bottomnav .navbtn { min-width: 0; min-height: 54px; padding: 7px 2px 6px; gap: 3px; align-content: center; font-size: .7rem; line-height: 1.15; }
+.bottomnav .navbtn .ico { width: 22px; height: 22px; flex: none; }
+.bottomnav .navbtn .nl { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.bottomnav .navbtn .badge { top: 2px; left: calc(50% - 28px); min-width: 18px; height: 18px; font-size: .64rem; line-height: 18px; padding: 0 5px; }
+.bottomnav .navbtn.on { border-radius: 14px; }
+@media (max-width: 359px) { .bottomnav { left: 6px; right: 6px; padding: 5px; } .bottomnav .navbtn { font-size: .64rem; padding-inline: 1px; } .bottomnav .navbtn .ico { width: 20px; height: 20px; } }
+.more-all h2 { margin-bottom: 12px; }
+.more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.more-tile { position: relative; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 14px 6px 12px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: .8rem; font-weight: 700; text-align: center; line-height: 1.3; transition: background .15s, border-color .15s, transform .15s; min-width: 0; }
+.more-tile:hover { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); transform: translateY(-1px); }
+.more-tile:active { transform: scale(.97); }
+.more-tile .mt-ico { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: var(--red-soft); color: var(--red); }
+.more-tile .mt-ico .ico { width: 22px; height: 22px; }
+.more-tile .mt-l { overflow-wrap: anywhere; }
+.more-tile .badge { position: absolute; top: 8px; left: 8px; }
+@media (min-width: 960px) { .more-all { display: none; } }
+@media (max-width: 380px) { .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .more-tile { font-size: .74rem; padding: 12px 4px 10px; } }
+/* منع أي عنصر من توسيع الصفحة على شاشات الموبايل */
+.main, .view, .maincol { min-width: 0; }
+.viewhead > div, .fe > div, .spread > b, .spread > span, .li .t, .stack { min-width: 0; }
+.viewhead h1 { flex-wrap: wrap; overflow-wrap: anywhere; }
+.main p, .main h1, .main h2, .main h3, .au-meta small { overflow-wrap: anywhere; }
+#main div, #main section, #main article, #main header, #main form, #main aside, #main nav, #main label, .sheet div { min-width: 0; }
+.view { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) { .bd-hero .cc-acts .bd-seg { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); } .bd-hero .cc-acts .bd-seg button { white-space: normal; line-height: 1.25; } }
+@media screen and (max-width: 640px) { .au-cols > div:has(> .au-matrix), .au-sector { overflow-x: auto; -webkit-overflow-scrolling: touch; } .au-matrix th, .au-matrix td { padding-inline: 6px; } }
+@media screen and (max-width: 640px) { .rep-2 > div:has(> .rep-t) { overflow-x: auto; -webkit-overflow-scrolling: touch; } .rep-t th, .rep-t td { padding-inline: 6px; } }
+.brandtxt { flex: 1 1 auto; }
+.brandtxt b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-actions { flex: none; }
+@media (max-width: 400px) { .topbar-in { gap: 8px; padding-inline: 10px; } .top-actions { gap: 6px; } .netchip { padding: 6px 9px; } .portal-chip span, .inst-chip span { display: none; } .brandtxt b { font-size: .96rem; } }
+@media (max-width: 340px) { #netChip { font-size: 0; gap: 0; padding: 9px; } #netChip .dot { margin: 0; } }
