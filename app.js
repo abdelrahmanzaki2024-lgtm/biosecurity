@@ -230,6 +230,7 @@
   function selfTrainStart() { return window.BIO_START === 'train' || /(^|[?&])p=train\b/.test(location.search) || location.hash === '#train'; }
   function selfStart() { if (selfTrainStart()) return true; return window.BIO_START === 'mission' || /(^|[?&])p=mission\b/.test(location.search) || location.hash === '#mission'; }
   function boot() {
+    var trip = tripStartParam(); if (trip != null) { tripDriver(trip, false); return; }
     if (selfStart()) { if (selfTrainStart()) showSelfTrain(); else showSelfMission(); return; }
     Promise.all(['session', 'ref', 'moves', 'outbox', 'lastSync', 'notices', 'approvals', 'comms', 'chats', 'showers'].map(KV.get)).then(function (v) {
       if (v[0] && (v[1] || (v[0].user && v[0].user.reportsOnly))) {
@@ -338,7 +339,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 13.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 14</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -400,7 +401,7 @@
   function navItems() {
     if (vrOnly()) return [['vr', 'تقارير الزيارات', 'clip'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -466,7 +467,7 @@
     S.route = r;
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -934,7 +935,6 @@
     }
     function formStep(d) {
       var t0 = Date.now() + 26 * 36e5; t0 = Math.ceil(t0 / 18e5) * 18e5;
-      var contacts = ['لا توجد', 'مزرعة دواجن أخرى', 'مزرعة عملاء', 'سوق طيور حية', 'مجزر', 'معمل تفريخ خارجي'];
       var sectors = {}; d.sites.forEach(function (x) { (sectors[x.sector || 'أخرى'] = sectors[x.sector || 'أخرى'] || []).push(x); });
       $('selfCard').innerHTML = '<div class="self-me"><span class="avatar">' + icon('user') + '</span><div><b>' + esc(d.me.name) + '</b><span class="mono">' + esc(d.me.id) + (d.me.dept ? ' · ' + esc(d.me.dept) : '') + '</span></div><button type="button" class="btn sm ghost" id="sOut">تغيير</button></div>' +
         '<form id="sForm" class="stack"><div class="grid-2" style="gap:12px"><div class="field"><label for="mKind">نوع المأمورية</label><select id="mKind">' + d.kinds.map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('') + '</select></div>' +
@@ -942,10 +942,11 @@
         '<div class="grid-2" style="gap:12px"><div class="field"><label for="mAt">موعد الوصول</label><input id="mAt" type="datetime-local" value="' + localInput(t0) + '" required></div><div class="field"><label for="mEnd">موعد الانتهاء</label><input id="mEnd" type="datetime-local" value="' + localInput(t0 + 4 * 36e5) + '"></div></div>' +
         '<div id="mLead"></div>' +
         '<div class="field"><label for="mPurpose">الغرض من المأمورية</label><textarea id="mPurpose" rows="2" required placeholder="مثال: متابعة برنامج التحصين في المحطة"></textarea></div>' +
-        '<div class="grid-2" style="gap:12px"><div class="field"><label for="mContact">آخر مخالطة دواجن خارج الشركة</label><select id="mContact">' + contacts.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div><div class="field"><label for="mContactAt">تاريخها</label><input id="mContactAt" type="datetime-local"></div></div>' +
+        declHtml(d.sites) +
         '<div class="grid-2" style="gap:12px"><div class="field"><label for="mVehicle">المركبة (إن وجدت)</label><input id="mVehicle" type="text" placeholder="النوع ورقم اللوحة"></div><div class="field"><label for="mEmail">إيميلك لاستلام نسخة وقرار المدير</label><input id="mEmail" type="text" inputmode="email" dir="ltr" placeholder="name@company.com" value="' + esc(who && who.email || '') + '"></div></div>' +
         '<div class="login-err" id="sErr" role="alert"></div><button class="btn primary big" type="submit">' + icon('send') + ' إرسال المأمورية للمدير</button></form>' + mine(d);
       $('sOut').onclick = function () { try { localStorage.removeItem('bio-self'); } catch (x) {} who = null; idStep(); };
+      declBind();
       function lead() {
         var t = new Date($('mAt').value).getTime(), h = (t - Date.now()) / 36e5;
         $('mLead').innerHTML = !t ? '' : h < 0 ? '<div class="lk-warn">' + icon('alert') + '<span>الموعد في الماضي</span></div>' : h < d.lead ? '<div class="lk-warn">' + icon('alert') + '<span>الموعد بعد <b>' + Math.round(h * 10) / 10 + ' ساعة</b> فقط، أقل من ' + d.lead + ' ساعة المطلوبة. ستُرسل <b>متأخرة</b> ولن تُدخلك البوابة إلا بعد موافقة مدير الأمن الحيوي.</span></div>' : '<div class="cert-ok">' + icon('check') + '<div><b>في الموعد: قبل الزيارة بـ ' + Math.round(h) + ' ساعة</b><span>تُسجل مباشرة وتظهر للبوابة يوم الزيارة</span></div></div>';
@@ -954,17 +955,18 @@
       lead();
       $('sForm').onsubmit = function (e) {
         e.preventDefault();
+        var decl; try { decl = declRead(); } catch (x) { $('sErr').textContent = errText(x); return; }
         var b = $('sForm').querySelector('[type=submit]'); b.disabled = true; $('sErr').innerHTML = '<span class="spin"></span>';
         who.email = $('mEmail').value.trim(); try { localStorage.setItem('bio-self', JSON.stringify(who)); } catch (x) {}
         remote('selfMission', [who.code, who.phone, { id: 'MS-' + uid(), kind: $('mKind').value, siteId: $('mSite').value, visitAt: new Date($('mAt').value).getTime(), endAt: new Date($('mEnd').value).getTime() || null, purpose: $('mPurpose').value,
-          lastContact: $('mContact').value, lastContactAt: $('mContactAt').value ? new Date($('mContactAt').value).getTime() : null, vehicle: $('mVehicle').value, email: who.email }]).then(function (r) { doneStep(r); })
+          decl: decl, vehicle: $('mVehicle').value, email: who.email }]).then(function (r) { doneStep(r); })
           .catch(function (x) { b.disabled = false; $('sErr').textContent = x.net ? 'لا يوجد اتصال بالإنترنت. أعد المحاولة عند توفر الاتصال.' : errText(x); });
       };
     }
     function doneStep(r) {
       var m = r.mission;
       $('selfCard').innerHTML = '<div class="self-done ' + (r.late ? 'is-late' : 'is-ok') + '"><div class="big-ico">' + icon(r.late ? 'clock' : 'check') + '</div><h2>' + (r.late ? 'أُرسلت متأخرة: بانتظار موافقة المدير' : 'تم تسجيل المأمورية') + '</h2><span class="mono">' + esc(m.id) + '</span>' +
-        '<p>' + (r.late ? 'سُجلت قبل الموعد بـ ' + m.leadHours + ' ساعة فقط. لن تُدخلك البوابة إلا بعد موافقة مدير الأمن الحيوي، وسيصلك قراره' + (m.email ? ' على إيميلك' : '') + '.' : 'وصل إيميل وإشعار فوري لمدير الأمن الحيوي، وستظهر المأمورية لأمن بوابة الموقع يوم الزيارة.' + (m.email ? ' ووصلتك نسخة على إيميلك.' : '')) + '</p></div>' +
+        '<p>' + (r.late ? 'سُجلت قبل الموعد بـ ' + m.leadHours + ' ساعة فقط. لن تُدخلك البوابة إلا بعد موافقة مدير الأمن الحيوي، وسيصلك قراره' + (m.email ? ' على إيميلك' : '') + '.' : 'وصل إيميل وإشعار فوري لمدير الأمن الحيوي، وستظهر المأمورية لأمن بوابة الموقع يوم الزيارة.' + (m.email ? ' ووصلتك نسخة على إيميلك.' : '')) + '</p></div>' + declResult(r.decl) +
         '<div class="cert"><div class="cert-qr" id="sQr"></div><dl><dt>الاسم</dt><dd>' + esc(m.visitor) + '</dd><dt>كود الدخول</dt><dd><b class="mono">' + esc(m.itemId) + '</b></dd><dt>الموقع</dt><dd>' + esc(m.siteName) + '</dd><dt>الموعد</dt><dd>' + esc(dayLabel(m.visitAt) + ' ' + fmt(m.visitAt, false)) + ' حتى ' + esc(fmt(m.endAt, false)) + '</dd></dl></div>' +
         '<div class="self-rules"><b>' + icon('shield') + ' قبل الذهاب</b><span>لا تزر أي مزرعة دواجن أو سوق طيور قبل الزيارة بـ 72 ساعة</span><span>معك كارت الأمن الحيوي، واستحمام كامل وتغيير الملابس عند البوابة</span></div>' +
         '<a class="btn wa big" target="_blank" rel="noopener" href="' + esc(waLink(passText(m))) + '">' + icon('wa') + ' حفظ التصريح على واتساب</a><button class="btn primary big" type="button" id="sAgain">' + icon('plus') + ' مأمورية أخرى</button>';
@@ -981,10 +983,10 @@
   function missionCard(m, d) {
     var canAct = d.canDecide && m.status === 'متأخرة: تحتاج استثناء', canStop = d.canDecide && m.status === 'مسجلة في الموعد' && !m.arrivedAt && m.endAt > Date.now();
     return '<article class="ms ms-' + (m.late ? 'late' : 'ok') + '"><div class="ms-when"><b>' + esc(fmt(m.visitAt, false)) + '</b><span>' + esc(dayLabel(m.visitAt)) + '</span><small>حتى ' + esc(fmt(m.endAt, false)) + '</small></div>' +
-      '<div class="ms-main"><div class="ms-top"><span class="pill p-n">' + esc(m.kind) + '</span><span class="pill ' + (MS_CLS[m.status] || 'p-n') + '">' + esc(m.status) + '</span><span class="xs muted mono">' + esc(m.id) + '</span></div>' +
+      '<div class="ms-main"><div class="ms-top"><span class="pill p-n">' + esc(m.kind) + '</span><span class="pill ' + (MS_CLS[m.status] || 'p-n') + '">' + esc(m.status) + '</span>' + declPill(m) + '<span class="xs muted mono">' + esc(m.id) + '</span></div>' +
       '<b class="ms-name">' + esc(m.visitor) + (m.company ? ' <span class="muted small">· ' + esc(m.company) + '</span>' : '') + '</b>' +
       '<span class="small">' + icon('pin') + ' ' + esc(m.siteName) + ' · كود الدخول <b class="mono">' + esc(m.itemId) + '</b></span>' +
-      '<span class="small muted">' + esc(m.purpose) + '</span>' +
+      '<span class="small muted">' + esc(m.purpose) + '</span>' + (m.declFlag ? '<span class="xs bad-t">' + icon('alert') + ' ' + esc(m.declFlag) + '</span>' : '') +
       '<div class="ms-meta"><span class="' + (m.late ? 'lead-bad' : 'lead-ok') + '">' + icon('clock') + ' سُجلت قبل الموعد بـ ' + m.leadHours + ' ساعة</span>' + (m.lastContact && m.lastContact !== 'لا توجد' ? '<span class="lead-bad">' + icon('alert') + ' آخر مخالطة: ' + esc(m.lastContact) + (m.lastContactAt ? ' ' + esc(ago(m.lastContactAt)) : '') + '</span>' : '') + (m.vehicle ? '<span>' + icon('truck') + ' ' + esc(m.vehicle) + '</span>' : '') + '<span>' + icon('user') + ' ' + esc(m.requestedBy) + '</span>' + (m.arrivedAt ? '<span class="lead-ok">' + icon('check') + ' وصل ' + esc(fmt(m.arrivedAt, false)) + '</span>' : '') + '</div>' +
       (m.decidedBy ? '<span class="xs muted">القرار: ' + esc(m.decidedBy) + (m.note ? ' · ' + esc(m.note) : '') + '</span>' : '') +
       '<div class="ms-acts">' + (canStop ? '<button type="button" class="btn sm ghost" data-msd="0" data-id="' + esc(m.id) + '">' + icon('x') + ' رفض</button>' : '') + (canAct ? '<button type="button" class="btn sm ok" data-msd="1" data-id="' + esc(m.id) + '">' + icon('check') + ' اعتماد استثنائي</button><button type="button" class="btn sm bad" data-msd="0" data-id="' + esc(m.id) + '">' + icon('x') + ' رفض</button>' : '') +
@@ -1023,7 +1025,6 @@
   }
   function missionForm(d, done) {
     var t0 = Date.now() + 26 * 36e5; t0 = Math.ceil(t0 / 18e5) * 18e5;
-    var contacts = ['لا توجد', 'مزرعة دواجن أخرى', 'مزرعة عملاء', 'سوق طيور حية', 'مجزر', 'معمل تفريخ خارجي'];
     openSheet('<div class="sheet-head sh-dark"><span class="permit">تسجيل مسبق · قبل الموعد بـ ' + d.lead + ' ساعة على الأقل</span><div class="big-ico">' + icon('calendar') + '</div><h2>مأمورية أو زيارة جديدة</h2></div><div class="sheet-body"><form id="msForm" class="stack">' +
       '<div class="grid-2" style="gap:12px"><div class="field"><label for="mKind">النوع</label><select id="mKind">' + d.kinds.map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label for="mSite">الموقع</label><select id="mSite">' + d.sites.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>'; }).join('') + '</select></div></div>' +
@@ -1032,7 +1033,7 @@
       '<div class="grid-2" style="gap:12px"><div class="field"><label for="mAt">موعد الوصول</label><input id="mAt" type="datetime-local" value="' + localInput(t0) + '" required></div><div class="field"><label for="mEnd">نهاية الزيارة</label><input id="mEnd" type="datetime-local" value="' + localInput(t0 + 4 * 36e5) + '"></div></div>' +
       '<div id="mLead"></div>' +
       '<div class="field"><label for="mPurpose">الغرض من المأمورية</label><textarea id="mPurpose" rows="2" required placeholder="مثال: صيانة خطوط المعالف قبل التسكين"></textarea></div>' +
-      '<div class="grid-2" style="gap:12px"><div class="field"><label for="mContact">آخر مخالطة دواجن خارج الشركة</label><select id="mContact">' + contacts.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div><div class="field"><label for="mContactAt">تاريخها</label><input id="mContactAt" type="datetime-local"></div></div>' +
+      declHtml(d.sites) +
       '<div class="grid-2" style="gap:12px"><div class="field"><label for="mPhone">هاتف الزائر</label><input id="mPhone" type="tel" dir="ltr"></div><div class="field"><label for="mVehicle">المركبة (إن وجدت)</label><input id="mVehicle" type="text" placeholder="النوع ورقم اللوحة"></div></div>' +
       '<div class="field"><label for="mEmail">إيميلك لاستلام نسخة وقرار المدير</label><input id="mEmail" type="text" dir="ltr" placeholder="name@company.com"></div>' +
       '<button class="btn primary big" type="submit">' + icon('send') + ' إرسال المأمورية للمدير</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></form></div>', function (a) { if (a === 'close') closeSheet(); });
@@ -1041,16 +1042,17 @@
       $('mLead').innerHTML = !t ? '' : h < 0 ? '<div class="lk-warn">' + icon('alert') + '<span>الموعد في الماضي</span></div>' : h < d.lead ? '<div class="lk-warn">' + icon('alert') + '<span>الموعد بعد <b>' + Math.round(h * 10) / 10 + ' ساعة</b> فقط، أقل من ' + d.lead + ' ساعة المطلوبة. ستُسجل <b>متأخرة</b> ولن تُدخلها البوابة إلا باستثناء من مدير الأمن الحيوي.</span></div>' : '<div class="cert-ok">' + icon('check') + '<div><b>في الموعد: قبل الزيارة بـ ' + Math.round(h) + ' ساعة</b><span>ستظهر للبوابة تلقائياً يوم الزيارة</span></div></div>';
     }
     $('mAt').oninput = function () { var t = new Date($('mAt').value).getTime(); if (t) $('mEnd').value = localInput(t + 4 * 36e5); lead(); };
-    lead();
+    lead(); declBind();
     $('msForm').onsubmit = function (e) {
       e.preventDefault();
       var name = $('mVisitor').value.trim(), it = (S.ref ? S.ref.items : []).filter(function (i) { return i.name === name; })[0];
+      var decl; try { decl = declRead(); } catch (x) { return toast(errText(x)); }
       var b = $('msForm').querySelector('[type=submit]'); b.disabled = true;
       remote('createMission', [S.session.pin, { id: 'MS-' + uid(), kind: $('mKind').value, siteId: $('mSite').value, visitor: name, itemId: it ? it.id : '', company: $('mCompany').value, phone: $('mPhone').value, visitAt: new Date($('mAt').value).getTime(), endAt: new Date($('mEnd').value).getTime() || null,
-        purpose: $('mPurpose').value, lastContact: $('mContact').value, lastContactAt: $('mContactAt').value ? new Date($('mContactAt').value).getTime() : null, vehicle: $('mVehicle').value, email: $('mEmail').value }]).then(function (r) {
+        purpose: $('mPurpose').value, decl: decl, vehicle: $('mVehicle').value, email: $('mEmail').value }]).then(function (r) {
         var m = r.mission;
         openSheet('<div class="sheet-head ' + (r.late ? 'sh-warn' : 'sh-ok') + '"><span class="permit">' + esc(m.id) + '</span><div class="big-ico">' + icon(r.late ? 'clock' : 'check') + '</div><h2>' + (r.late ? 'سُجلت متأخرة' : 'تم تسجيل المأمورية') + '</h2><span class="small">' + (r.late ? 'بانتظار استثناء مدير الأمن الحيوي' : 'وصل إيميل وإشعار للمدير') + '</span></div><div class="sheet-body">' +
-          '<div class="cert"><div class="cert-qr" id="msQr"></div><dl><dt>الزائر</dt><dd>' + esc(m.visitor) + '</dd><dt>كود الدخول</dt><dd><b class="mono">' + esc(m.itemId) + '</b></dd><dt>الموقع</dt><dd>' + esc(m.siteName) + '</dd><dt>الموعد</dt><dd>' + esc(dayLabel(m.visitAt) + ' ' + fmt(m.visitAt, false)) + '</dd></dl></div>' +
+          '<div class="cert"><div class="cert-qr" id="msQr"></div><dl><dt>الزائر</dt><dd>' + esc(m.visitor) + '</dd><dt>كود الدخول</dt><dd><b class="mono">' + esc(m.itemId) + '</b></dd><dt>الموقع</dt><dd>' + esc(m.siteName) + '</dd><dt>الموعد</dt><dd>' + esc(dayLabel(m.visitAt) + ' ' + fmt(m.visitAt, false)) + '</dd></dl></div>' + declResult(r.decl) +
           '<a class="btn wa big" target="_blank" rel="noopener" href="' + esc(waLink(passText(m))) + '">' + icon('wa') + ' إرسال التصريح للزائر على واتساب</a><button class="btn primary big" data-a="close">تم</button></div>', function (a) { if (a === 'close') { closeSheet(); done(); } });
         if (window.QRCode && $('msQr')) new QRCode($('msQr'), { text: m.itemId, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.M });
         sync();
@@ -1264,7 +1266,7 @@
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
       '<button class="btn" id="syncBtn">' + icon('refresh') + ' مزامنة الآن</button></div>' +
       (me.user.isManager && (can('analytics') || isAdmin()) ? '<div class="card"><h2>' + icon('network') + ' أدوات الإدارة</h2><div class="tool-links">' + (isAdmin() ? [['users', 'user', 'المستخدمون والصلاحيات']] : []).concat(can('analytics') ? [['map', 'map', 'الخريطة الحية'], ['trace', 'trace', 'تتبع العدوى'], ['plan', 'calendar', 'مخطط الزيارات الذكي'], ['network', 'network', 'شبكة المخالطة'], ['audit', 'shield', 'ملف اعتماد المنشأة المعزولة']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '') +
-      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
+      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['ews', 'pulse', 'الإنذار المبكر للنافق'], ['cams', 'video', 'حائط الكاميرات'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['trips', 'route', 'رحلات المركبات وتتبع السائق'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['academy', 'grad', 'أكاديمية الأمن الحيوي'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات']] : []).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links"><a class="btn" href="#disposal">' + icon('box') + ' النافق والسبلة</a></div></div>') +
       '<a class="card" href="#ref" style="text-decoration:none;color:inherit"><h2>' + icon('book') + ' مرجع قواعد الأمن الحيوي</h2><p class="small muted">فترات العزل المعتمدة وإجراءات هابرد إفيشنسي بلس.</p></a>' +
       '</div></section>';
     $('logoutBtn').onclick = function () { logout(); };
@@ -1713,19 +1715,20 @@
     });
   }
   function reportSheet() {
-    var sites = gateSites(), type = '', photo = '';
+    var sites = gateSites(), type = '', photo = '', voice = '';
     openSheet('<div class="sheet-head sh-bad"><span class="permit">بلاغ عاجل · يصل المدير فوراً</span><span class="big-ico">' + icon('siren') + '</span><h2>ما الحالة؟</h2></div><div class="sheet-body">' +
       '<div class="rtypes">' + reportTypes().map(function (t) { return '<button type="button" class="rtype" data-a="type" data-t="' + esc(t) + '">' + icon(R_ICONS[t] || 'chat') + '<span>' + esc(t) + '</span></button>'; }).join('') + '</div>' +
       (sites.length ? '<div class="field"><label for="rSite">الموقع</label><select id="rSite"><option value="">بدون موقع محدد</option>' + sites.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === S.siteId ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></div>' : '') +
       '<div class="field"><label for="rNote">التفاصيل (اختياري)</label><textarea id="rNote" rows="2" placeholder="مثال: نفوق مرتفع في عنبر 3 منذ الصباح"></textarea></div>' +
       '<div class="row"><label class="btn grow" for="rPhoto">' + icon('camera') + ' إرفاق صورة</label><input id="rPhoto" type="file" accept="image/*" capture="environment" hidden></div><div id="rPrev"></div>' +
+      '<div class="row vr-row" id="rVoice"></div>' +
       '<button class="btn bad big" data-a="send" id="rSend" disabled>' + icon('send') + ' أرسل البلاغ الآن</button>' +
       '<p class="xs muted">يصل للمدير إشعار فوري وواتساب وإيميل عالي الأهمية. إن لم يفتحه خلال ' + esc((S.ref && S.ref.settings.ESCALATE_MINUTES) || 5) + ' دقائق يُصعَّد تلقائياً لنائبه ثم مدير القطاع.</p>' +
       '<button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, b) {
       if (a === 'close') return closeSheet();
       if (a === 'type') { type = b.dataset.t; document.querySelectorAll('.rtype').forEach(function (x) { x.classList.toggle('on', x === b); }); $('rSend').disabled = false; return; }
       if (a === 'send' && type) {
-        var r = { id: 'B' + uid(), time: Date.now(), type: type, siteId: $('rSite') ? $('rSite').value : '', note: $('rNote').value.trim(), photo: photo };
+        var r = { id: 'B' + uid(), time: Date.now(), type: type, siteId: $('rSite') ? $('rSite').value : '', note: $('rNote').value.trim(), photo: photo, voice: voice };
         b.disabled = true;
         act('report', [r]).then(function (res) {
           closeSheet();
@@ -1738,6 +1741,7 @@
         }).catch(function (e) { b.disabled = false; toast(errText(e)); });
       }
     });
+    voiceRecorder('rVoice', function (u) { voice = u || ''; }, { label: 'بلاغ صوتي: سجّل ما تراه بصوتك' });
     $('rPhoto').onchange = function () {
       var f = this.files && this.files[0]; if (!f) return;
       shrinkPhoto(f).then(function (d) { photo = d; $('rPrev').innerHTML = '<div class="rprev"><img src="' + d + '" alt="صورة البلاغ"><button type="button" class="btn sm" id="rDrop">' + icon('x') + ' إزالة</button></div>'; $('rDrop').onclick = function () { photo = ''; $('rPrev').innerHTML = ''; }; }).catch(function () { toast('تعذر قراءة الصورة'); });
@@ -1770,19 +1774,19 @@
   function chatShell(asMgr) {
     return '<div class="chat" id="chatBox"><p class="empty"><span class="spin"></span></p></div>' +
       '<div class="quick" id="quick">' + (asMgr ? QUICK_MGR : QUICK).map(function (q) { return '<button type="button" class="qchip" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
-      '<form class="chat-in" id="chatForm"><input id="chatText" type="text" autocomplete="off" placeholder="اكتب رسالة…" maxlength="1000"><button class="btn primary" type="submit" aria-label="إرسال">' + icon('send') + '</button></form>';
+      '<form class="chat-in" id="chatForm"><input id="chatText" type="text" autocomplete="off" placeholder="اكتب رسالة…" maxlength="1000"><span id="chatMic" class="chat-mic"></span><button class="btn primary" type="submit" aria-label="إرسال">' + icon('send') + '</button></form>';
   }
   function bindChat(gate, asMgr, onDraft) {
     var key = gate || 'me';
     function draw(list) {
       var box = $('chatBox'); if (!box) return;
-      var pend = S.outbox.filter(function (o) { return o.fn === 'sendMessage' && (asMgr ? o.args[0].gate === gate : true); }).map(function (o) { return { id: o.args[0].id, time: o.args[0].time, text: o.args[0].text, fromMgr: asMgr, fromName: S.session.user.name, queued: true }; });
+      var pend = S.outbox.filter(function (o) { return o.fn === 'sendMessage' && (asMgr ? o.args[0].gate === gate : true); }).map(function (o) { return { id: o.args[0].id, time: o.args[0].time, text: o.args[0].text, voice: o.args[0].voice, fromMgr: asMgr, fromName: S.session.user.name, queued: true }; });
       var all = (list || []).concat(pend.filter(function (p) { return !(list || []).some(function (m) { return m.id === p.id; }); }));
       var last = '';
       box.innerHTML = all.length ? all.map(function (m) {
         var mine = m.fromMgr === asMgr, day = new Date(m.time).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Africa/Cairo' }), sep = day !== last ? '<div class="cday"><span>' + esc(day) + '</span></div>' : '';
         last = day;
-        return sep + '<div class="msg ' + (mine ? 'me' : 'them') + '"><div class="bub">' + (!mine ? '<b class="xs">' + esc(m.fromName) + '</b>' : '') + '<span>' + esc(m.text) + '</span><small>' + esc(fmt(m.time, false)) + (mine ? ' · ' + (m.queued ? 'محفوظة' : m.readAt ? 'قُرئت ✓✓' : 'وصلت ✓') : '') + '</small></div></div>';
+        return sep + '<div class="msg ' + (mine ? 'me' : 'them') + '"><div class="bub">' + (!mine ? '<b class="xs">' + esc(m.fromName) + '</b>' : '') + (m.voice ? voicePlayer(m.voice) : '') + (m.voice && /^🎤/.test(m.text) ? '' : '<span>' + esc(m.text) + '</span>') + '<small>' + esc(fmt(m.time, false)) + (mine ? ' · ' + (m.queued ? 'محفوظة' : m.readAt ? 'قُرئت ✓✓' : 'وصلت ✓') : '') + '</small></div></div>';
       }).join('') : '<p class="empty">' + icon('chat') + '<b>لا توجد رسائل بعد</b><span class="xs">اكتب رسالة أو اختر رداً جاهزاً</span></p>';
       box.scrollTop = box.scrollHeight;
     }
@@ -1790,9 +1794,10 @@
       remote('chat', [S.session.pin].concat(asMgr ? [gate] : [])).then(function (c) { S.chats[key] = c.messages; draw(c.messages); if (S.comms) { if (!asMgr) S.comms.unread = 0; } renderBadges(); })
         .catch(function (e) { draw(S.chats[key] || []); if (!e.net) toast(errText(e)); });
     }
-    function send(text) {
-      text = String(text || '').trim(); if (!text) return;
-      var m = { id: 'G' + uid(), time: Date.now(), text: text };
+    function send(text, voice) {
+      text = String(text || '').trim(); if (!text && !voice) return;
+      var m = { id: 'G' + uid(), time: Date.now(), text: text || '🎤 رسالة صوتية' };
+      if (voice) m.voice = voice;
       if (asMgr) m.gate = gate;
       act('sendMessage', [m]).then(function (res) { if (res.queued) draw(S.chats[key] || []); else load(); }).catch(function (e) { toast(errText(e)); });
       draw(S.chats[key] || []);
@@ -1801,6 +1806,7 @@
     $('chatForm').onsubmit = function (e) { e.preventDefault(); var t = $('chatText').value; $('chatText').value = ''; send(t); };
     $('chatText').oninput = function () { if (onDraft) onDraft(this.value); };
     $('quick').onclick = function (e) { var b = e.target.closest('[data-q]'); if (b) send(b.dataset.q); };
+    voiceRecorder('chatMic', function (u) { if (u) send('', u); }, { instant: true, label: '' });
     S.poll = setInterval(function () { if (!document.hidden && S.route.indexOf('comms') === 0 && !$('sheetWrap')) load(); }, MODE === 'demo' ? 4000 : 12000);
     S.commsRefresh = load;
   }
@@ -1838,7 +1844,7 @@
     return '<button type="button" class="rcard ' + (waiting ? 'wait' : '') + (r.status === 'مغلق' ? ' closed' : '') + '" data-rep="' + esc(r.id) + '"><span class="rico">' + icon(R_ICONS[r.type] || 'siren') + '</span><div class="rbody"><div class="spread"><b>' + esc(r.type) + '</b>' + rStatusPill(r) + '</div>' +
       '<span class="small">' + (r.siteName ? icon('pin') + ' ' + esc(r.siteName) + ' · ' : '') + esc(r.fromName) + '</span>' +
       (r.note ? '<span class="small muted rnote">' + esc(r.note) + '</span>' : '') +
-      '<div class="rmeta"><span class="xs muted">' + esc(fmt(r.time)) + '</span>' + (r.hasPhoto ? '<span class="pill p-info">' + icon('image') + ' صورة</span>' : '') + (r.escLevel ? '<span class="pill p-bad">' + icon('up') + ' تصعيد ' + r.escLevel + '</span>' : '') +
+      '<div class="rmeta"><span class="xs muted">' + esc(fmt(r.time)) + '</span>' + (r.hasPhoto ? '<span class="pill p-info">' + icon('image') + ' صورة</span>' : '') + (r.hasVoice ? '<span class="pill p-info">' + icon('mic') + ' صوت</span>' : '') + (r.escLevel ? '<span class="pill p-bad">' + icon('up') + ' تصعيد ' + r.escLevel + '</span>' : '') +
       (waiting ? '<span class="pill p-bad wait-pill">بدون فتح منذ ' + mins + ' د</span>' : r.ackAt ? '<span class="pill p-ok">استجابة خلال ' + Math.max(1, Math.round((r.ackAt - r.time) / 6e4)) + ' د</span>' : '') + '</div></div></button>';
   }
   function managerReportSheet(id, after) {
@@ -1849,6 +1855,7 @@
         rTracker(r) +
         (r.note ? '<div class="infobox">' + esc(r.note) + '</div>' : '') +
         (r.photo ? '<a href="' + esc(r.photo) + '" target="_blank" rel="noopener" class="rphoto"><img src="' + esc(r.photo) + '" alt="صورة البلاغ"></a>' : '') +
+        (r.voice ? '<div class="field"><label>' + icon('mic') + ' البلاغ الصوتي</label>' + voicePlayer(r.voice) + '</div>' : '') +
         (r.action ? '<div class="rlog"><b class="small">الإجراءات المتخذة</b>' + r.action.split('\n').map(function (l) { return '<span class="small">' + icon('check') + ' ' + esc(l) + '</span>'; }).join('') + '</div>' : '') +
         (done ? '' : '<div class="field"><label for="raNote">ملاحظة تصل لفرد الأمن (اختياري)</label><input id="raNote" type="text" placeholder="مثال: أرسلنا الطبيب البيطري، امنع الدخول حتى وصوله"></div>' +
         '<button class="btn ok big" data-a="استلام">' + icon('check') + ' تم الاستلام: أتعامل معه الآن</button>' +
@@ -3743,7 +3750,8 @@
       var b = this.querySelector('[type=submit]'); b.disabled = true;
       act('disposalAdd', [r]).then(function (x) {
         var res = x.data || {};
-        if (res.spike) openSheet('<div class="sheet-head sh-bad"><span class="permit">وصل تنبيه فوري للمدير والطبيب البيطري</span><div class="big-ico">' + icon('alert') + '</div><h2>نفوق مرتفع</h2><p>' + res.spike.today + ' طائر اليوم مقابل متوسط ' + res.spike.avg + '</p></div><div class="sheet-body"><ul class="bd-acts">' + ['أبلغ الطبيب البيطري فوراً لسحب عينات', 'لا يخرج أي فرد أو معدة من الموقع إلى موقع آخر حتى التشخيص', 'افصل العنبر المصاب وراقب الأكل والمياه والأعراض التنفسية', 'تخلص من النافق داخل الموقع بالمحرقة أو حفرة التحلل المغلقة'].map(function (t) { return '<li>' + icon('check') + t + '</li>'; }).join('') + '</ul><button class="btn primary big" data-a="close">فهمت</button></div>', function () { closeSheet(); });
+        if (res.ews && res.ews.n >= 2) ewsResultSheet(res.ews);
+        else if (res.spike) openSheet('<div class="sheet-head sh-bad"><span class="permit">وصل تنبيه فوري للمدير والطبيب البيطري</span><div class="big-ico">' + icon('alert') + '</div><h2>نفوق مرتفع</h2><p>' + res.spike.today + ' طائر اليوم مقابل متوسط ' + res.spike.avg + '</p></div><div class="sheet-body"><ul class="bd-acts">' + ['أبلغ الطبيب البيطري فوراً لسحب عينات', 'لا يخرج أي فرد أو معدة من الموقع إلى موقع آخر حتى التشخيص', 'افصل العنبر المصاب وراقب الأكل والمياه والأعراض التنفسية', 'تخلص من النافق داخل الموقع بالمحرقة أو حفرة التحلل المغلقة'].map(function (t) { return '<li>' + icon('check') + t + '</li>'; }).join('') + '</ul><button class="btn primary big" data-a="close">فهمت</button></div>', function () { closeSheet(); });
         else toast(x.queued ? 'حُفظ التسجيل ويُرسل عند عودة الاتصال' : res.vehicleId ? 'سُجل، والعربية والسائق ممنوعان من المناطق النظيفة ' + d.blockHours + ' ساعة' + (res.created && res.created.length ? ' · سُجل تلقائياً: ' + res.created.join('، ') : '') : 'تم التسجيل', 6000);
         return sync();
       }).then(function () { if (S.route === 'disposal') viewDisposal(); }).catch(function (x) { b.disabled = false; toast(errText(x)); });
@@ -4015,7 +4023,7 @@
   }
 
   /* ============================ شاشة غرفة العمليات (تلفزيون) ============================ */
-  var TV_PANELS = [['state', 'الموقف العام'], ['birds', 'رادار الطيور المهاجرة'], ['risk', 'خريطة الخطر للمواقع'], ['field', 'النافق والإجراءات والشركات'], ['reports', 'البلاغات والطلبات']];
+  var TV_PANELS = [['state', 'الموقف العام'], ['cams', 'حائط الكاميرات'], ['ews', 'الإنذار المبكر للنافق'], ['birds', 'رادار الطيور المهاجرة'], ['risk', 'خريطة الخطر للمواقع'], ['field', 'النافق والإجراءات والشركات'], ['reports', 'البلاغات والطلبات']];
   function tvStop() {
     var T = S.tv; if (!T) return;
     clearInterval(T.rot); clearInterval(T.poll); clearInterval(T.clock); clearInterval(T.beep);
@@ -4045,8 +4053,8 @@
     var tick = function () { var c = $('tvClock'); if (c) c.innerHTML = esc(fmt(Date.now(), false)) + '<small>' + esc(new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Africa/Cairo' })) + '</small>'; };
     tick(); T.clock = setInterval(tick, 1000);
     var load = function () {
-      Promise.all([remote('dashboard', [S.session.pin]), remote('birds', [S.session.pin]).catch(function () { return null; }), remote('disposals', [S.session.pin, 7]).catch(function () { return null; })]).then(function (r) {
-        if (!S.tv) return; T.d = r[0]; T.b = r[1]; T.dp = r[2]; if (!T.shown) { T.shown = 1; tvShow(); } tvAlarm();
+      Promise.all([remote('dashboard', [S.session.pin]), remote('birds', [S.session.pin]).catch(function () { return null; }), remote('disposals', [S.session.pin, 7]).catch(function () { return null; }), remote('cams', [S.session.pin]).catch(function () { return null; }), remote('ews', [S.session.pin]).catch(function () { return null; })]).then(function (r) {
+        if (!S.tv) return; T.d = r[0]; T.b = r[1]; T.dp = r[2]; T.cams = r[3]; T.ews = r[4]; if (!T.shown) { T.shown = 1; tvShow(); } tvAlarm();
       }).catch(function () {});
     };
     load(); T.poll = setInterval(load, MODE === 'demo' ? 8000 : 30000);
@@ -4075,6 +4083,8 @@
         '<div class="tv-big' + (x.capa && x.capa.late ? ' warn' : '') + '"><span>إجراءات تصحيحية مفتوحة</span><b class="mono">' + (x.capa ? x.capa.open : 0) + '</b><small>' + (x.capa && x.capa.late ? x.capa.late + ' متأخرة عن موعدها' : 'كلها في الموعد') + '</small></div>' +
         '<div class="tv-big' + (x.companies && x.companies.suspended.length ? ' bad' : '') + '"><span>شركات موقوفة من البوابات</span><b class="mono">' + (x.companies ? x.companies.suspended.length : 0) + '</b><small>' + esc(x.companies ? x.companies.suspended.join('، ') : '') + '</small></div>' +
         '<div class="tv-big"><span>مركبات سبلة ممنوعة الآن</span><b class="mono">' + (dp ? dp.blocked.length : 0) + '</b><small>' + esc(dp ? dp.blocked.map(function (v) { return v.vehicleName; }).join('، ') : '') + '</small></div></div>';
+    } else if (p === 'cams') { h = tvCams(T);
+    } else if (p === 'ews') { h = tvEws(T);
     } else {
       var open = d.reports ? d.reports.open : [];
       h = '<div class="tv-rep"><div><h3>' + icon('siren') + ' البلاغات العاجلة المفتوحة</h3>' + (open.length ? open.slice(0, 5).map(function (r) { return '<div class="tv-ri' + (!r.readAt ? ' new' : '') + '"><b>' + esc(r.type) + '</b><span>' + esc(r.siteName) + ' · ' + esc(ago(r.time)) + (!r.readAt ? ' · لم يُفتح' : '') + '</span></div>'; }).join('') : '<p class="empty">' + icon('check') + 'لا توجد بلاغات مفتوحة</p>') + '</div>' +
@@ -4098,6 +4108,7 @@
   /* ============================ إضافات لوحة القيادة والجواز والبوابة ============================ */
   function v5DashAlerts(d) {
     var x = d.extra || {}, h = '';
+    (d.ews || []).slice(0, 3).forEach(function (a) { h += '<div class="cc-alert a-bad">' + icon('pulse') + '<span><b>إنذار مبكر ' + esc(a.level) + ': نفوق مرتفع في «' + esc(a.siteName) + '»</b> · ' + a.dead + ' اليوم' + (a.base != null ? ' مقابل معدل ' + a.base : '') + ' · ' + esc(a.status) + '</span><button class="btn sm" type="button" data-goto="ews">الإنذار المبكر</button></div>'; });
     if (x.birds && x.birds.high) h += '<div class="cc-alert a-bad">' + icon('bird') + '<span><b>' + plural(x.birds.high, 'موقع', 'مواقع') + ' في خطر مرتفع من الطيور المهاجرة</b>' + (x.birds.top ? ': الأعلى «' + esc(x.birds.top.name) + '» (' + x.birds.top.score + ')' + (x.birds.top.flock ? '، سرب متوقع من ' + esc(x.birds.top.flock.from) + ' خلال ~' + BIO_eta(x.birds.top.flock.eta) : '') : '') + '</span><button class="btn sm" type="button" data-goto="birds">الرادار</button></div>';
     if (x.capa && x.capa.late) h += '<div class="cc-alert a-warn">' + icon('clip') + '<span><b>' + plural(x.capa.late, 'إجراء تصحيحي متأخر', 'إجراءات تصحيحية متأخرة') + '</b> من زيارات التدقيق الداخلي</span><button class="btn sm" type="button" data-goto="inspect">متابعة</button></div>';
     return h;
@@ -4225,6 +4236,7 @@
       var list = d.list.filter(function (v) { return (!t || v.vtype === t) && (!qn || (v.name + v.id + String(v.plate).replace(/\s+/g, '') + v.companyName).indexOf(qn) >= 0 || (v.name + ' ' + v.plate).indexOf(qq) >= 0); });
       $('flList').innerHTML = list.map(flCard).join('') || '<div class="card"><p class="empty">لا توجد مركبات مطابقة. سجّل مركبة جديدة من الزر أعلاه.</p></div>';
       bindGoto($('flList'));
+      $('flList').querySelectorAll('[data-trsend]').forEach(function (b) { b.onclick = function () { tripSendSheet({ itemId: b.dataset.trsend }); }; });
     };
     $('flQ').oninput = draw;
     out.querySelectorAll('[data-flt]').forEach(function (b) { b.onclick = function () { S.flT = b.dataset.flt; drawFleet(d); }; });
@@ -4237,11 +4249,11 @@
   function flCard(v) {
     var tr = v.track;
     return '<div class="fl-card' + (v.blockedUntil ? ' blocked' : '') + '"><div class="fl-top"><span class="av">' + icon(v.kind === 'معدة' ? 'tool' : 'truck') + '</span><div class="t"><b>' + esc(v.name) + '</b><span><span class="mono">' + esc(v.id) + '</span>' + (v.companyName ? ' · ' + esc(v.companyName) : '') + '</span></div>' + plateTag(v.plate) + '</div>' +
-      '<div class="row fl-tags"><span class="pill p-n">' + esc(v.vtype) + '</span>' + riskTag(v.risk) + (v.blockedUntil ? '<span class="pill p-bad">' + icon('lock') + ' ممنوعة ' + esc(left(v.blockedUntil)) + '</span>' : '') + (v.companyStopped ? '<span class="pill p-bad">الشركة موقوفة</span>' : '') + (!v.active ? '<span class="pill p-bad">موقوف</span>' : '') + '</div>' +
+      '<div class="row fl-tags"><span class="pill p-n">' + esc(v.vtype) + '</span>' + riskTag(v.risk) + (v.blockedUntil ? '<span class="pill p-bad">' + icon('lock') + ' ممنوعة ' + esc(left(v.blockedUntil)) + '</span>' : '') + (v.companyStopped ? '<span class="pill p-bad">الشركة موقوفة</span>' : '') + (!v.active ? '<span class="pill p-bad">موقوف</span>' : '') + (v.trackReq ? '<span class="pill p-warn">' + icon('route') + ' تتبع إلزامي</span>' : '') + (v.trip ? '<a class="pill p-info" href="#trips/' + esc(v.trip.id) + '"><i class="live-dot"></i>رحلة ' + esc(v.trip.status) + ' إلى ' + esc(shortSite(v.trip.toName)) + (v.trip.stops ? ' · ' + v.trip.stops + ' توقف' : '') + '</a>' : '') + '</div>' +
       '<div class="fl-now">' + (tr.inside ? '<span class="pill p-ok">' + icon('pin') + ' داخل ' + esc(shortSite(tr.inside.site)) + '</span><span class="xs muted">منذ ' + esc(ago(tr.inside.since).replace('منذ ', '')) + '</span>' : tr.last ? '<span class="xs muted">' + icon('clock') + ' آخر ظهور: ' + esc(tr.last.dir) + ' ' + esc(shortSite(tr.last.site)) + ' · ' + esc(ago(tr.last.time)) + '</span>' : '<span class="xs muted">لم تتحرك بعد</span>') + '</div>' +
       pathChain(tr.today) +
       (tr.cross.length ? '<div class="fl-cross">' + tr.cross.slice(-2).map(function (x) { return '<span class="' + (x.flag || x.override ? 'bad' : '') + '">' + icon('trace') + ' ' + esc(x.fromSector) + ' ← ' + esc(x.toSector) + ': ' + esc(shortSite(x.from)) + ' ثم ' + esc(shortSite(x.to)) + ' بعد ' + x.gapH + ' ساعة' + (x.flag ? ' · مخالفة' : x.override ? ' · استثناء' : '') + '</span>'; }).join('') + '</div>' : '') +
-      '<div class="fl-foot xs muted"><span>' + tr.visits + ' دخول · ' + tr.sectors.length + ' قطاع' + (tr.denied ? ' · <b class="bad-t">' + tr.denied + ' رفض</b>' : '') + (tr.flags ? ' · <b class="bad-t">' + tr.flags + ' مخالفة</b>' : '') + '</span><button type="button" class="btn sm" data-goto="history/' + esc(v.id) + '">' + icon('history') + ' كل الحركات</button></div></div>';
+      '<div class="fl-foot xs muted"><span>' + tr.visits + ' دخول · ' + tr.sectors.length + ' قطاع' + (tr.denied ? ' · <b class="bad-t">' + tr.denied + ' رفض</b>' : '') + (tr.flags ? ' · <b class="bad-t">' + tr.flags + ' مخالفة</b>' : '') + '</span><span class="row" style="gap:6px">' + (v.kind !== 'معدة' && S.flData && S.flData.canTrip ? '<button type="button" class="btn sm" data-trsend="' + esc(v.id) + '">' + icon('route') + ' رابط تتبع</button>' : '') + '<button type="button" class="btn sm" data-goto="history/' + esc(v.id) + '">' + icon('history') + ' كل الحركات</button></span></div></div>';
   }
   function vehicleSheet(o) {
     o = o || {};
@@ -4350,11 +4362,532 @@
     if (isAdmin()) remote('ebirdStatus', [S.session.pin]).then(function (s) { var x = $('ebState'); if (x) x.innerHTML = s.active ? '<span class="pill p-ok">مفعل</span> المفتاح الحالي ' + esc(s.masked) + ' · ' + s.observations + ' مشاهدة مسجلة. اترك الخانة فارغة واحفظ لإيقافه.' : '<span class="pill p-n">غير مفعل</span>'; }).catch(function () {});
   }
 
+
+  /* =====================================================================
+     الإصدار 14: حائط الكاميرات، رحلات المركبات وتتبع السائق، إقرار الأمن الحيوي،
+     البلاغ والرسالة الصوتية، الإنذار المبكر للنافق
+     ===================================================================== */
+  ICONS.video = 'M23 7l-7 5 7 5zM1 5h15v14H1z';
+  ICONS.route = 'M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 15V9a4 4 0 0 1 4-4h4M18 9v6a4 4 0 0 1-4 4h-4';
+  ICONS.mic = 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8';
+  ICONS.pulse = 'M22 12h-4l-3 9L9 3l-3 9H2';
+  ICONS.grid = 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z';
+  ICONS.stop = 'M6 6h12v12H6z';
+  ICONS.nav = 'M3 11l19-9-9 19-2-8z';
+  ICONS.unlock = 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 7.5-2';
+
+  /* ---------- 1) حائط الكاميرات ---------- */
+  var CAM_LAYOUTS = [[2, '2×2'], [3, '3×3'], [4, '4×4']];
+  /** محرك العرض التجريبي: يرسم مشهد كاميرا مراقبة على كل لوحة canvas[data-sim] في الصفحة، ويتوقف وحده لما تختفي */
+  function camSimKick() {
+    if (S.camRaf) return;
+    var last = 0;
+    var loop = function (t) {
+      var list = document.querySelectorAll('canvas[data-sim]');
+      if (!list.length) { S.camRaf = null; return; }
+      S.camRaf = requestAnimationFrame(loop);
+      if (t - last < 160) return; last = t;
+      Array.prototype.forEach.call(list, function (c) { camSimDraw(c, t / 1000); });
+    };
+    S.camRaf = requestAnimationFrame(loop);
+  }
+  function camSeed(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function camSimDraw(c, t) {
+    var w = c.width, h = c.height, g = c.getContext('2d'), sd = +c.dataset.seed || 1, scene = sd % 4;
+    var night = c.dataset.night === '1';
+    // سماء وأرض بتدرج رمادي مخضر مثل كاميرات المراقبة
+    var sky = g.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, night ? '#1d2422' : '#7d8b86'); sky.addColorStop(.45, night ? '#2a312e' : '#a7b0a8'); sky.addColorStop(.46, night ? '#232825' : '#8e8a7c'); sky.addColorStop(1, night ? '#161a18' : '#6f6b60');
+    g.fillStyle = sky; g.fillRect(0, 0, w, h);
+    var hz = h * .46;
+    // مبنى العنبر أو البوابة
+    g.fillStyle = night ? '#3a403c' : '#c9c6bb';
+    if (scene === 0 || scene === 2) { g.fillRect(w * .08, hz - h * .2, w * .55, h * .2); g.fillStyle = night ? '#2c312e' : '#9a968a'; g.beginPath(); g.moveTo(w * .06, hz - h * .2); g.lineTo(w * .355, hz - h * .32); g.lineTo(w * .65, hz - h * .2); g.fill(); }
+    else { g.fillRect(w * .62, hz - h * .26, w * .3, h * .26); g.fillStyle = night ? '#2c312e' : '#8f8b80'; g.fillRect(w * .62, hz - h * .29, w * .3, h * .04); }
+    // خطوط الطريق بالمنظور
+    g.strokeStyle = night ? 'rgba(220,220,200,.25)' : 'rgba(255,255,240,.55)'; g.lineWidth = Math.max(1, w / 220);
+    g.beginPath(); g.moveTo(w * .42, hz); g.lineTo(w * .12, h); g.moveTo(w * .58, hz); g.lineTo(w * .9, h); g.stroke();
+    // حاجز البوابة
+    if (scene !== 2) {
+      var open = (Math.sin(t / 3 + sd) + 1) / 2 > .7;
+      g.save(); g.translate(w * .3, h * .7); g.rotate(open ? -1.1 : 0);
+      for (var i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#d22' : '#f2f2f2'; g.fillRect(i * w * .05, -h * .015, w * .05, h * .03); }
+      g.restore(); g.fillStyle = '#555'; g.fillRect(w * .29, h * .66, w * .02, h * .12);
+    }
+    // جسم متحرك: شخص أو مركبة
+    var k = ((t * (6 + sd % 5)) % 140) / 140, x = w * (scene % 2 ? 1.1 - k * 1.3 : -0.2 + k * 1.3), y = h * (.62 + (sd % 3) * .07);
+    if (scene === 1 || scene === 3) { g.fillStyle = night ? '#596' : '#e8e4da'; g.fillRect(x, y - h * .1, w * .2, h * .1); g.fillStyle = '#222'; g.beginPath(); g.arc(x + w * .04, y, h * .025, 0, 7); g.arc(x + w * .16, y, h * .025, 0, 7); g.fill(); if (night) { g.fillStyle = 'rgba(255,250,200,.6)'; g.beginPath(); g.arc(x + (scene % 2 ? 0 : w * .2), y - h * .05, h * .03, 0, 7); g.fill(); } }
+    else { g.fillStyle = night ? '#8a9' : '#2f3b46'; g.fillRect(x, y - h * .12, w * .025, h * .1); g.beginPath(); g.arc(x + w * .012, y - h * .14, h * .02, 0, 7); g.fill(); }
+    // تشويش الصورة وخطوط المسح
+    var n = Math.round(w * h / 900);
+    for (var j = 0; j < n; j++) { var v = Math.random() * 255 | 0; g.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',.08)'; g.fillRect(Math.random() * w, Math.random() * h, 2, 1); }
+    g.fillStyle = 'rgba(0,0,0,.06)'; for (var r = 0; r < h; r += 3) g.fillRect(0, r, w, 1);
+    // ختم الوقت بأسلوب أجهزة التسجيل
+    var d = new Date(), z = function (x) { return ('0' + x).slice(-2); };
+    g.font = '600 ' + Math.max(9, Math.round(h / 17)) + 'px ' + 'IBM Plex Mono, monospace'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.88)';
+    g.fillText((c.dataset.code ? c.dataset.code + '  ' : '') + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds()), w / 2, h * .25);
+  }
+  /** لوحة كاميرا واحدة: صورة حقيقية بعد الاعتماد والضبط، أو عرض تجريبي واضح قبلها */
+  function camTile(c, enabled, big) {
+    var real = enabled && c.url && c.active, kind = c.kind || '';
+    var sd = camSeed(c.id), night = (new Date().getHours() < 6 || new Date().getHours() >= 18) ? '1' : '';
+    var media;
+    if (real && /صفحة/.test(kind)) media = '<iframe class="cam-media" src="' + esc(c.url) + '" title="' + esc(c.name) + '" allow="autoplay; fullscreen" referrerpolicy="no-referrer"></iframe>';
+    else if (real && /MJPEG/.test(kind)) media = '<img class="cam-media" alt="' + esc(c.name) + '" src="' + esc(c.url) + '" onerror="this.closest(\'.cam\').classList.add(\'off\')">';
+    else if (real && !/رابط تطبيق/.test(kind)) media = '<img class="cam-media" alt="' + esc(c.name) + '" data-snap="' + esc(c.url) + '" src="' + esc(c.url + (c.url.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now()) + '" onerror="this.closest(\'.cam\').classList.add(\'off\')" onload="this.closest(\'.cam\').classList.remove(\'off\')">';
+    else if (real) media = '<div class="cam-app">' + icon('video', 'ico-lg') + '<span>هذه الكاميرا تُفتح من تطبيق الكاميرات</span></div>';
+    else if (enabled && !c.url) media = '<div class="cam-app">' + icon('link', 'ico-lg') + '<span>لم يُضبط رابط البث بعد</span></div>';
+    else media = '<canvas class="cam-media" data-sim="1" data-seed="' + sd + '" data-night="' + night + '" data-code="' + esc(c.id) + '" width="' + (big ? 960 : 400) + '" height="' + (big ? 540 : 225) + '"></canvas>';
+    var state = !c.active ? '<span class="cam-st st-off">موقوفة</span>' : real ? '<span class="cam-st st-live"><i></i>مباشر</span>' : enabled ? '<span class="cam-st st-off">غير مضبوطة</span>' : '<span class="cam-st st-sim">عرض تجريبي</span>';
+    return '<div class="cam' + (big ? ' cam-big' : '') + (!real ? ' sim' : '') + '" data-cam="' + esc(c.id) + '"><div class="cam-frame">' + media + '<div class="cam-off">' + icon('wifioff', 'ico-lg') + '<span>الكاميرا غير متصلة</span></div>' +
+      '<div class="cam-ov"><span class="cam-rec"><i></i>REC</span>' + state + '</div>' +
+      '<div class="cam-cap"><b>' + esc(c.name) + '</b><span>' + esc(shortSite(c.siteName) || '—') + (c.sector ? ' · ' + esc(c.sector) : '') + '</span></div></div></div>';
+  }
+  /** تحديث اللقطات المتجددة (JPEG) كل عدة ثوانٍ، ويتوقف وحده لما تختفي اللوحات */
+  function camSnapKick(sec) {
+    clearInterval(S.camSnap);
+    S.camSnap = setInterval(function () {
+      var imgs = document.querySelectorAll('img[data-snap]');
+      if (!imgs.length) { clearInterval(S.camSnap); S.camSnap = null; return; }
+      if (document.hidden) return;
+      Array.prototype.forEach.call(imgs, function (im) { var u = im.dataset.snap; var n = new Image(); n.onload = function () { im.src = n.src; im.closest('.cam').classList.remove('off'); }; n.onerror = function () { im.closest('.cam').classList.add('off'); }; n.src = u + (u.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now(); });
+    }, Math.max(2, sec || 3) * 1000);
+  }
+  function viewCams() {
+    S.camCols = S.camCols || 3; S.camSec = S.camSec || '';
+    $('main').innerHTML = '<section class="view cams-view" id="camsView">' + v5Head('حائط الكاميرات', 'video', 'كاميرات المراقبة في بوابات التطهير والمواقع على شاشة واحدة، حسب صلاحية كل مستخدم. اضغط أي كاميرا لعرضها كبيرة.',
+      '<div class="bd-seg light" id="camCols">' + CAM_LAYOUTS.map(function (x) { return '<button type="button" data-c="' + x[0] + '" class="' + (S.camCols === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div><button class="btn" type="button" id="camFull">' + icon('expand') + ' شاشة كاملة</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('camCols').onclick = function (e) { var b = e.target.closest('[data-c]'); if (b) { S.camCols = +b.dataset.c; $('camCols').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); var gr = $('camGrid'); if (gr) gr.style.setProperty('--cols', S.camCols); } };
+    $('camFull').onclick = function () { var el = $('camsView'); try { (document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen()).catch(function () { toast('الشاشة الكاملة غير متاحة في هذا المتصفح'); }); } catch (e) { toast('الشاشة الكاملة غير متاحة في هذا المتصفح'); } };
+    v5Load('cams', [], drawCams, 'حائط الكاميرات');
+  }
+  function drawCams(d) {
+    var out = $('v5Out'); if (!out) return;
+    S.camData = d;
+    var secs = {}; d.cameras.forEach(function (c) { if (c.sector) secs[c.sector] = (secs[c.sector] || 0) + 1; });
+    var list = d.cameras.filter(function (c) { return !S.camSec || c.sector === S.camSec; });
+    var html = '';
+    if (!d.enabled) {
+      html += '<div class="cam-lock"><div class="cl-ico">' + icon('lock', 'ico-lg') + '</div><div class="cl-t"><span class="kick">جاهز للتشغيل</span><h2>ربط الكاميرات بانتظار اعتماد الإدارة</h2>' +
+        '<p>الحائط والصلاحيات والشاشة الكبيرة جاهزة بالكامل. اللوحات الظاهرة الآن <b>عرض تجريبي</b> لشكل الحائط وليست بثاً حقيقياً. بعد موافقة الإدارة يضغط المدير العام زر التفعيل ويكتب رقم الموافقة، فتظهر الكاميرات الحقيقية مكان العرض التجريبي دون أي تعديل في التطبيق.</p>' +
+        '<div class="cl-acts">' + (d.canAdmin ? '<button class="btn primary" type="button" id="camEnable">' + icon('unlock') + ' تفعيل الربط بعد الاعتماد</button>' : '<span class="pill p-warn">التفعيل من حساب المدير العام فقط</span>') + '<button class="btn" type="button" id="camHow">' + icon('book') + ' خطوات الربط</button></div></div></div>';
+    } else {
+      html += '<div class="cam-on"><span class="cam-st st-live"><i></i>مفعّل</span><span>ربط الكاميرات معتمد' + (d.approvedBy ? ' · ' + esc(d.approvedBy) : '') + (d.approvedAt ? ' · ' + esc(d.approvedAt) : '') + '</span>' + (d.canAdmin ? '<button class="btn sm ghost" type="button" id="camDisable">' + icon('pause') + ' إيقاف الربط</button>' : '') + '<button class="btn sm ghost" type="button" id="camHow">' + icon('book') + ' خطوات الربط</button></div>';
+    }
+    html += '<div class="card cam-bar"><div class="chips">' + [['', 'كل القطاعات', d.cameras.length]].concat(Object.keys(secs).map(function (k) { return [k, 'قطاع ' + k, secs[k]]; })).map(function (c) { return '<button type="button" class="chip st-chip' + (S.camSec === c[0] ? ' on' : '') + '" data-sec="' + esc(c[0]) + '">' + esc(c[1]) + ' <b>' + c[2] + '</b></button>'; }).join('') + '</div>' +
+      (d.canAdmin ? '<button class="btn sm primary" type="button" id="camAdd">' + icon('plus') + ' إضافة كاميرا</button>' : '') + '</div>';
+    html += list.length ? '<div class="cam-grid" id="camGrid" style="--cols:' + S.camCols + '">' + list.map(function (c) { return camTile(c, d.enabled); }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('video', 'ico-lg') + '<b>لا توجد كاميرات</b><span class="xs">' + (d.canAdmin ? 'أضف الكاميرات من زر «إضافة كاميرا» واربط كل كاميرا ببوابتها أو موقعها' : 'لا توجد كاميرات في نطاق صلاحيتك') + '</span></p></div>';
+    out.innerHTML = html;
+    out.querySelectorAll('[data-sec]').forEach(function (b) { b.onclick = function () { S.camSec = b.dataset.sec; drawCams(d); }; });
+    out.querySelectorAll('[data-cam]').forEach(function (b) { b.onclick = function () { camSheet(d, b.dataset.cam); }; });
+    if ($('camAdd')) $('camAdd').onclick = function () { camEditSheet(d, null); };
+    if ($('camEnable')) $('camEnable').onclick = function () { camEnableSheet(true); };
+    if ($('camDisable')) $('camDisable').onclick = function () { camEnableSheet(false); };
+    if ($('camHow')) $('camHow').onclick = camHowSheet;
+    camSimKick(); if (d.enabled) camSnapKick(d.refresh);
+  }
+  function camSheet(d, id) {
+    var c = d.cameras.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    var site = (S.ref ? S.ref.sites : []).filter(function (s) { return s.id === c.siteId; })[0];
+    openSheet('<div class="sheet-body cam-sheet">' + camTile(c, d.enabled, true) +
+      '<div class="spread"><div><b>' + esc(c.name) + '</b><div class="xs muted"><span class="mono">' + esc(c.id) + '</span> · ' + esc(c.siteName || '—') + ' · ' + esc(c.kind) + '</div></div>' + (site ? '<span class="pill ' + (site.status === 'نشط' ? 'p-ok' : 'p-bad') + '">' + esc(site.status) + '</span>' : '') + '</div>' +
+      (!d.enabled ? '<div class="infobox">' + icon('lock') + ' عرض تجريبي حتى اعتماد الإدارة لربط الكاميرات.</div>' : '') +
+      '<div class="row">' + (d.enabled && c.appUrl ? '<a class="btn grow" target="_blank" rel="noopener" href="' + esc(c.appUrl) + '">' + icon('video') + ' فتح في تطبيق الكاميرات</a>' : '') + (d.enabled && c.url ? '<a class="btn grow" target="_blank" rel="noopener" href="' + esc(c.url) + '">' + icon('expand') + ' فتح البث في نافذة</a>' : '') +
+      (c.siteId && site ? '<button class="btn grow" data-a="site">' + icon('pin') + ' حالة الموقع</button>' : '') + (d.canAdmin ? '<button class="btn grow" data-a="edit">' + icon('edit') + ' تعديل</button>' : '') + '</div>' +
+      '<button class="btn ghost" data-a="close">إغلاق</button></div>', function (a) {
+      if (a === 'close') return closeSheet();
+      if (a === 'edit') return camEditSheet(d, c);
+      if (a === 'site') { closeSheet(); go('stations'); }
+    });
+    camSimKick(); if (d.enabled) camSnapKick(d.refresh);
+  }
+  function camEditSheet(d, c) {
+    c = c || { active: true, kind: d.kinds[0] };
+    var g = {}; d.places.forEach(function (p) { (g[p.sector || ''] = g[p.sector || ''] || []).push(p); });
+    openSheet('<div class="sheet-head sh-dark"><div class="big-ico">' + icon('video') + '</div><h2>' + (c.id ? 'تعديل كاميرا' : 'إضافة كاميرا') + '</h2><span class="small">تُربط الكاميرا ببوابتها أو موقعها فتظهر لمن له صلاحية عليه فقط</span></div><div class="sheet-body"><form id="camF" class="stack">' +
+      '<div class="grid-2" style="gap:12px"><div class="field"><label for="cfName">اسم الكاميرا</label><input id="cfName" required maxlength="60" value="' + esc(c.name || '') + '" placeholder="مثال: بوابة الدخول - حمام الأفراد"></div>' +
+      '<div class="field"><label for="cfSite">المكان</label><select id="cfSite"><option value="">بدون مكان</option>' + Object.keys(g).map(function (k) { return '<optgroup label="قطاع ' + esc(k) + '">' + g[k].map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === c.siteId ? ' selected' : '') + '>' + esc((p.gate ? '🚧 ' : '') + p.name) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></div></div>' +
+      '<div class="field"><label for="cfKind">طريقة الربط</label><select id="cfKind">' + d.kinds.map(function (k) { return '<option' + (k === c.kind ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label for="cfUrl">رابط البث أو اللقطة (https)</label><input id="cfUrl" dir="ltr" value="' + esc(c.url || '') + '" placeholder="https://cams.example.com/api/frame.jpeg?src=gate1"><span class="hint">من جهاز البث في المقر (go2rtc) عبر Cloudflare Tunnel. يمكن تركه فارغاً لحين الاعتماد</span></div>' +
+      '<div class="field"><label for="cfApp">رابط تطبيق الكاميرات (اختياري)</label><input id="cfApp" dir="ltr" value="' + esc(c.appUrl || '') + '" placeholder="رابط Hik-Connect أو DMSS"></div>' +
+      '<div class="grid-2" style="gap:12px"><div class="field"><label for="cfOrder">الترتيب في الحائط</label><input id="cfOrder" type="number" min="1" value="' + esc(c.order === 99 || c.order == null ? '' : c.order) + '"></div><label class="switch" style="align-self:end"><input type="checkbox" id="cfAct"' + (c.active !== false ? ' checked' : '') + '> الكاميرا مفعلة</label></div>' +
+      '<button class="btn primary big" type="submit">' + icon('check') + ' حفظ</button>' + (c.id ? '<button class="btn bad" type="button" data-a="del">' + icon('trash') + ' حذف الكاميرا</button>' : '') + '<button class="btn ghost" type="button" data-a="close">إلغاء</button></form></div>', function (a, el) {
+      if (a === 'close') return closeSheet();
+      if (a === 'del') {
+        if (!el.dataset.sure) { el.dataset.sure = 1; el.innerHTML = icon('alert') + ' اضغط مرة أخرى لتأكيد الحذف'; return; }
+        el.disabled = true; remote('camDelete', [S.session.pin, c.id]).then(function () { closeSheet(); toast('حُذفت الكاميرا'); viewCams(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+      }
+    });
+    $('camF').onsubmit = function (e) {
+      e.preventDefault(); var b = this.querySelector('[type=submit]'); b.disabled = true;
+      remote('camSave', [S.session.pin, { id: c.id || '', name: $('cfName').value, siteId: $('cfSite').value, kind: $('cfKind').value, url: $('cfUrl').value.trim(), appUrl: $('cfApp').value.trim(), order: $('cfOrder').value, active: $('cfAct').checked }, c.id || '']).then(function (r) { closeSheet(); toast('حُفظت الكاميرا ' + r.id); viewCams(); }).catch(function (x) { b.disabled = false; toast(errText(x)); });
+    };
+  }
+  function camEnableSheet(on) {
+    openSheet('<div class="sheet-head ' + (on ? 'sh-ok' : 'sh-warn') + '"><span class="permit">' + (on ? 'بعد موافقة الإدارة فقط' : 'إيقاف مؤقت') + '</span><div class="big-ico">' + icon(on ? 'unlock' : 'lock') + '</div><h2>' + (on ? 'تفعيل ربط الكاميرات' : 'إيقاف ربط الكاميرات') + '</h2></div><div class="sheet-body">' +
+      (on ? '<p class="small">بالتفعيل تظهر البثوث الحقيقية في الحائط وشاشة غرفة العمليات لكل مستخدم حسب نطاقه. يُسجل اسمك ورقم الموافقة ووقت التفعيل في الإعدادات وسجل التعديلات.</p><div class="field"><label for="ceRef">رقم أو مرجع موافقة الإدارة</label><input id="ceRef" maxlength="80" placeholder="مثال: خطاب رقم 15 بتاريخ 20/10/2026" autofocus></div>' : '<p class="small">يعود الحائط للعرض التجريبي، ولا تُعرض أي بثوث حتى يُعاد التفعيل.</p>') +
+      '<button class="btn ' + (on ? 'ok' : 'bad') + ' big" data-a="go">' + icon('check') + ' تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, el) {
+      if (a !== 'go') return closeSheet();
+      el.disabled = true;
+      remote('camEnable', [S.session.pin, on, on ? $('ceRef').value : '']).then(function () { closeSheet(); toast(on ? 'تم تفعيل ربط الكاميرات' : 'أُوقف ربط الكاميرات'); viewCams(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+  }
+  function camHowSheet() {
+    openSheet('<div class="sheet-head sh-dark"><div class="big-ico">' + icon('video') + '</div><h2>خطوات ربط الكاميرات</h2><span class="small">مجاناً وبدون فتح أي منفذ على الراوتر</span></div><div class="sheet-body"><ol class="cam-steps">' +
+      '<li><b>جهاز بث في كل مقر</b><span>كمبيوتر يعمل دائماً على نفس شبكة جهاز التسجيل (NVR)، ويُثبت عليه برنامج go2rtc المجاني. يقرأ الكاميرات بروابط RTSP من جهاز التسجيل.</span></li>' +
+      '<li><b>رابط آمن https</b><span>تثبيت Cloudflare Tunnel المجاني على نفس الجهاز، فيعطي رابطاً آمناً مثل https://cams.company.com دون فتح منافذ ودون IP ثابت.</span></li>' +
+      '<li><b>إدخال الكاميرات</b><span>من «إضافة كاميرا»: الاسم، والبوابة أو الموقع، ورابط اللقطة مثل <span class="mono">/api/frame.jpeg?src=gate1</span>، وطريقة الربط «لقطة متجددة».</span></li>' +
+      '<li><b>حماية الوصول</b><span>تفعيل Cloudflare Access على الرابط ليفتح لحسابات الشركة فقط، والكاميرات تظهر في التطبيق لكل مستخدم حسب نطاقه.</span></li>' +
+      '<li><b>التفعيل بعد الاعتماد</b><span>المدير العام يضغط «تفعيل الربط بعد الاعتماد» ويكتب رقم الموافقة.</span></li></ol>' +
+      '<div class="infobox">' + icon('alert') + ' لماذا لا نضع رابط الكاميرا المباشر؟ روابط أجهزة التسجيل http أو بها اسم المستخدم وكلمة المرور، والمتصفح يمنع عرضها داخل تطبيق آمن https. جهاز البث يحل المشكلتين.</div>' +
+      '<button class="btn big" data-a="close">إغلاق</button></div>', function () { closeSheet(); });
+  }
+
+  /* ---------- 2) رحلات المركبات ورابط تتبع السائق ---------- */
+  var TRIP_CLS = { 'بانتظار السائق': 'p-warn', 'جارية': 'p-info', 'وصلت': 'p-ok' };
+  function tripPill(t) { return '<span class="pill ' + (TRIP_CLS[t.status] || (/وصلت/.test(t.status) ? 'p-ok' : 'p-n')) + '">' + (t.live && t.status === 'جارية' ? '<i class="live-dot"></i>' : '') + esc(t.status) + '</span>'; }
+  function viewTrips(args) {
+    if (args && args[0]) return viewTripDetail(args[0]);
+    $('main').innerHTML = '<section class="view">' + v5Head('رحلات المركبات', 'route', 'رابط تتبع يُرسل لسائق مركبة محددة على واتساب: يفتحه ويضغط «ابدأ الرحلة»، فيظهر مساره وأي توقف خارج مواقع الشركة أو مرور بموقع غير مخطط، وتُغلق الرحلة تلقائياً عند وصوله للبوابة.',
+      '<button class="btn" type="button" id="trPick">' + icon('truck') + ' المركبات المتتبعة</button><button class="btn primary" type="button" id="trNew">' + icon('send') + ' إرسال رابط تتبع</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    v5Load('trips', [14], drawTrips, 'رحلات المركبات');
+  }
+  function drawTrips(d) {
+    var out = $('v5Out'); if (!out) return;
+    S.trData = d;
+    var live = d.list.filter(function (t) { return t.live; }), done = d.list.filter(function (t) { return !t.live; });
+    var req = d.vehicles.filter(function (v) { return v.track; });
+    var html = kpiRow([['k-brand', 'route', d.totals.live, 'رحلة جارية الآن'], ['k-bad', 'alert', d.totals.flagged, 'رحلة بها توقف مخالف'], ['k-warn', 'truck', d.totals.required, 'مركبة تتبعها إلزامي'], ['k-ok', 'nav', d.totals.km, 'كم مسجلة']]);
+    html += '<div class="card"><div class="card-head"><div><span class="kick">يُطلب رابط تتبع لهذه المركبات عند كل خروج من البوابة</span><h2>' + icon('truck') + ' المركبات المحددة للتتبع</h2></div>' + (d.canTrip ? '<button class="btn sm" type="button" id="trPick2">' + icon('edit') + ' تعديل</button>' : '') + '</div>' +
+      (req.length ? '<div class="tr-req">' + req.map(function (v) { return '<button type="button" class="tr-v' + (v.live ? ' live' : '') + '" data-send="' + esc(v.id) + '"><span class="av">' + icon('truck') + '</span><span class="t"><b>' + esc(v.name) + '</b><small>' + (v.plate ? esc(v.plate) + ' · ' : '') + esc(v.vtype || '') + '</small></span>' + (v.live ? '<span class="pill p-info"><i class="live-dot"></i>رحلة جارية</span>' : d.canTrip ? '<span class="pill p-n">' + icon('send') + ' أرسل الرابط</span>' : '') + '</button>'; }).join('') + '</div>' : '<p class="empty small">لم تُحدد مركبات بعد. ' + (d.canTrip ? 'اختر من «المركبات المتتبعة» المركبات التي يلزم تتبع رحلاتها، مثل نقل الكتاكيت والطيور الحية والعلف.' : '') + '</p>') +
+      (!d.canTrip ? '<p class="xs muted">' + icon('lock') + ' إرسال روابط التتبع وتحديد المركبات متاح للمشرف والمسؤول والمدير فقط.</p>' : '') + '</div>';
+    var sec = function (title, kick, list, empty) { return '<div class="card"><div class="card-head"><div><span class="kick">' + kick + '</span><h2>' + title + '</h2></div><span class="badge">' + list.length + '</span></div>' + (list.length ? '<div class="tr-list">' + list.map(tripCard).join('') + '</div>' : '<p class="empty">' + esc(empty) + '</p>') + '</div>'; };
+    html += sec(icon('route') + ' الرحلات الجارية', 'تتحدث كل دقيقة من موبايل السائق', live, 'لا توجد رحلات جارية الآن');
+    if (done.length) html += sec(icon('history') + ' رحلات سابقة', 'آخر 14 يوماً', done.slice(0, 20), '');
+    out.innerHTML = html;
+    out.querySelectorAll('[data-trip]').forEach(function (b) { b.onclick = function () { go('trips/' + b.dataset.trip); }; });
+    out.querySelectorAll('[data-send]').forEach(function (b) { b.onclick = function () { if (d.canTrip) tripSendSheet({ itemId: b.dataset.send }); }; });
+    var pick = function () { if (!d.canTrip) return toast('تحديد المركبات متاح للمشرف والمسؤول والمدير فقط'); trackPickSheet(d); };
+    if ($('trPick')) $('trPick').onclick = pick; if ($('trPick2')) $('trPick2').onclick = pick;
+    if ($('trNew')) { $('trNew').disabled = !d.canTrip; $('trNew').onclick = function () { tripSendSheet({}); }; }
+    if (!document.hidden && live.length) { clearInterval(S.poll); S.poll = setInterval(function () { if (S.route === 'trips' && !$('sheetWrap')) remote('trips', [S.session.pin, 14]).then(drawTrips).catch(function () {}); }, MODE === 'demo' ? 8000 : 30000); }
+  }
+  function tripCard(t) {
+    var al = t.alerts || [];
+    return '<button type="button" class="tr-card' + (al.length ? ' flag' : '') + '" data-trip="' + esc(t.id) + '"><div class="tr-top"><span class="av">' + icon('truck') + '</span><div class="t"><b>' + esc(t.itemName) + '</b><span>' + (t.plate ? esc(t.plate) + ' · ' : '') + esc(t.driver || 'بدون اسم سائق') + '</span></div>' + tripPill(t) + '</div>' +
+      '<div class="tr-way"><span>' + esc(shortSite(t.fromName) || 'غير محدد') + '</span><i>' + icon('arrow') + '</i><span><b>' + esc(shortSite(t.toName)) + '</b></span></div>' +
+      '<div class="tr-meta"><span>' + icon('nav') + ' ' + t.km + ' كم</span><span>' + icon('pin') + ' ' + t.points + ' نقطة</span>' + (t.lastAt ? '<span>' + icon('clock') + ' آخر إشارة ' + esc(ago(t.lastAt)) + '</span>' : '<span>' + icon('clock') + ' أُرسل ' + esc(ago(t.time)) + '</span>') + (al.length ? '<span class="bad-t">' + icon('alert') + ' ' + al.length + ' توقف مخالف</span>' : '') + '</div></button>';
+  }
+  function trackPickSheet(d) {
+    openSheet('<div class="sheet-head sh-dark"><div class="big-ico">' + icon('truck') + '</div><h2>المركبات المتتبعة</h2><span class="small">اختر المركبات التي يلزم إرسال رابط تتبع لسائقها، وليس كل المركبات</span></div><div class="sheet-body"><div class="field"><input type="search" id="tpQ" placeholder="بحث بالاسم أو اللوحة"></div><div class="tp-list" id="tpList"></div><button class="btn primary big" data-a="close">تم</button></div>', function (a) { if (a === 'close') { closeSheet(); viewTrips(); } });
+    var draw = function () {
+      var q = ($('tpQ').value || '').trim();
+      $('tpList').innerHTML = d.vehicles.filter(function (v) { return !q || (v.name + ' ' + v.plate + ' ' + v.id).indexOf(q) >= 0; }).map(function (v) { return '<label class="tp-row"><input type="checkbox" data-tv="' + esc(v.id) + '"' + (v.track ? ' checked' : '') + '><span class="t"><b>' + esc(v.name) + '</b><small>' + (v.plate ? esc(v.plate) + ' · ' : '') + esc(v.vtype || '') + ' · <span class="mono">' + esc(v.id) + '</span></small></span></label>'; }).join('') || '<p class="empty small">لا توجد مركبات</p>';
+      $('tpList').querySelectorAll('[data-tv]').forEach(function (c) { c.onchange = function () { var v = d.vehicles.filter(function (x) { return x.id === c.dataset.tv; })[0]; c.disabled = true; remote('setTrack', [S.session.pin, c.dataset.tv, c.checked]).then(function () { if (v) v.track = c.checked; c.disabled = false; toast(c.checked ? 'أصبحت المركبة ضمن التتبع الإلزامي' : 'أُلغي تتبع المركبة'); }).catch(function (e) { c.checked = !c.checked; c.disabled = false; toast(errText(e)); }); }; });
+    };
+    $('tpQ').oninput = draw; draw();
+  }
+  function tripSendSheet(o) {
+    var d = S.trData;
+    var open = function (d) {
+      var veh = d.vehicles.slice().sort(function (a, b) { return (b.track ? 1 : 0) - (a.track ? 1 : 0); });
+      var g = {}; d.sites.forEach(function (s) { (g[s.sector || ''] = g[s.sector || ''] || []).push(s); });
+      var opts = function (sel) { return Object.keys(g).map(function (k) { return '<optgroup label="قطاع ' + esc(k) + '">' + g[k].map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === sel ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</optgroup>'; }).join(''); };
+      openSheet('<div class="sheet-head sh-brand"><span class="permit">يصل للسائق على واتساب</span><div class="big-ico">' + icon('route') + '</div><h2>رابط تتبع رحلة</h2></div><div class="sheet-body"><form id="tsF" class="stack">' +
+        '<div class="field"><label for="tsV">المركبة</label><select id="tsV">' + ['track', 'other'].map(function (k) { var l = veh.filter(function (v) { return k === 'track' ? v.track : !v.track; }); return l.length ? '<optgroup label="' + (k === 'track' ? 'مركبات التتبع الإلزامي' : 'مركبات أخرى') + '">' + l.map(function (v) { return '<option value="' + esc(v.id) + '"' + (v.id === o.itemId ? ' selected' : '') + '>' + esc(v.name + (v.plate ? ' · ' + v.plate : '')) + '</option>'; }).join('') + '</optgroup>' : ''; }).join('') + '</select></div>' +
+        '<div class="grid-2" style="gap:12px"><div class="field"><label for="tsFrom">من</label><select id="tsFrom"><option value="">خارج الشركة / غير محدد</option>' + opts(o.fromId) + '</select></div><div class="field"><label for="tsTo">إلى</label><select id="tsTo" required>' + opts(o.toId) + '</select></div></div>' +
+        '<div class="grid-2" style="gap:12px"><div class="field"><label for="tsDrv">اسم السائق</label><input id="tsDrv" maxlength="60"></div><div class="field"><label for="tsPh">موبايل السائق (واتساب)</label><input id="tsPh" type="tel" dir="ltr" inputmode="tel" placeholder="01xxxxxxxxx"></div></div>' +
+        '<div class="field"><label for="tsNote">ملاحظة (اختياري)</label><input id="tsNote" maxlength="200" placeholder="مثال: تحميل كتاكيت عمر يوم"></div>' +
+        '<button class="btn primary big" type="submit">' + icon('link') + ' إنشاء الرابط</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></form></div>', function (a) { if (a === 'close') closeSheet(); });
+      var fill = function () { var v = veh.filter(function (x) { return x.id === $('tsV').value; })[0]; if (v && v.phone && !$('tsPh').value) $('tsPh').value = v.phone; };
+      $('tsV').onchange = fill; fill();
+      $('tsF').onsubmit = function (e) {
+        e.preventDefault(); var b = this.querySelector('[type=submit]'); b.disabled = true;
+        remote('tripStart', [S.session.pin, { itemId: $('tsV').value, fromId: $('tsFrom').value, toId: $('tsTo').value, driver: $('tsDrv').value, phone: $('tsPh').value, note: $('tsNote').value }]).then(tripLinkSheet).catch(function (x) { b.disabled = false; toast(errText(x)); });
+      };
+    };
+    if (d) open(d); else remote('trips', [S.session.pin, 14]).then(function (x) { S.trData = x; open(x); }).catch(function (e) { toast(errText(e)); });
+  }
+  function tripLinkSheet(r) {
+    var t = r.trip;
+    openSheet('<div class="sheet-head sh-ok"><span class="permit">' + esc(t.id) + '</span><div class="big-ico">' + icon('check') + '</div><h2>الرابط جاهز</h2><span class="small">' + esc(t.itemName) + ' · إلى ' + esc(t.toName) + '</span></div><div class="sheet-body">' +
+      '<div class="tr-link mono" dir="ltr">' + esc(r.link) + '</div>' +
+      '<a class="btn wa big" target="_blank" rel="noopener" href="' + esc(waTo(r.phone, r.message)) + '">' + icon('wa') + ' إرسال للسائق على واتساب</a>' +
+      '<div class="row"><button class="btn grow" data-a="copy">' + icon('copy') + ' نسخ الرابط</button><button class="btn grow" data-a="open">' + icon('route') + ' متابعة الرحلة</button></div>' +
+      (MODE === 'demo' ? '<button class="btn" data-a="drv">' + icon('nav') + ' افتح صفحة السائق (تجربة)</button>' : '') +
+      '<p class="xs muted">يفتح السائق الرابط من موبايله ويضغط «ابدأ الرحلة» ويسمح بالموقع. ينتهي الرابط تلقائياً عند مسح المركبة على بوابة الوصول أو بعد 3 أيام.</p></div>', function (a) {
+      if (a === 'copy') return copyText(r.link);
+      if (a === 'open') { closeSheet(); return go('trips/' + t.id); }
+      if (a === 'drv') { closeSheet(); return tripDriver(r.link.split('t=')[1], true); }
+    });
+    if (S.trData) remote('trips', [S.session.pin, 14]).then(function (x) { S.trData = x; if (S.route === 'trips' && !$('sheetWrap')) drawTrips(x); }).catch(function () {});
+  }
+  /** رسم المسار: إسقاط بسيط للإحداثيات على مساحة الرسم مع المواقع والتوقفات */
+  function tripSvg(o) {
+    var pts = o.pts || [], st = (o.sites || []), W = 640, H = 380, pad = 34;
+    var all = pts.map(function (p) { return [p[1], p[2]]; }).concat(st.filter(function (s) { return s.on; }).map(function (s) { return [s.lat, s.lng]; }));
+    if (!all.length) return '<div class="tr-nomap">' + icon('route', 'ico-lg') + '<span>لم تصل نقاط من موبايل السائق بعد</span></div>';
+    var la = all.map(function (x) { return x[0]; }), ln = all.map(function (x) { return x[1]; });
+    var a0 = Math.min.apply(null, la), a1 = Math.max.apply(null, la), b0 = Math.min.apply(null, ln), b1 = Math.max.apply(null, ln);
+    var m = Math.max(a1 - a0, (b1 - b0) * .87, .01) * .18; a0 -= m; a1 += m; b0 -= m; b1 += m;
+    var sx = (W - 2 * pad) / Math.max(1e-6, b1 - b0), sy = (H - 2 * pad) / Math.max(1e-6, a1 - a0), s = Math.min(sx, sy / .87 * .87);
+    var cx = (W - (b1 - b0) * s) / 2, cy = (H - (a1 - a0) * s) / 2;
+    var P = function (lat, lng) { return [(cx + (lng - b0) * s).toFixed(1), (H - cy - (lat - a0) * s).toFixed(1)]; };
+    var vis = st.filter(function (x) { return x.lat >= a0 && x.lat <= a1 && x.lng >= b0 && x.lng <= b1; });
+    var h = '<svg class="tr-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="مسار الرحلة"><defs><pattern id="trg" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="currentColor" stroke-opacity=".07"/></pattern></defs><rect width="' + W + '" height="' + H + '" fill="url(#trg)"/>';
+    vis.forEach(function (x) { var p = P(x.lat, x.lng); h += '<g class="tr-site' + (x.on ? ' on' : '') + '"><circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (x.on ? 9 : 5) + '"/><text x="' + p[0] + '" y="' + (p[1] - 13) + '" text-anchor="middle">' + esc(shortSite(x.name)) + '</text></g>'; });
+    if (pts.length > 1) h += '<polyline class="tr-path" points="' + pts.map(function (p) { return P(p[1], p[2]).join(','); }).join(' ') + '"/>';
+    if (pts.length) { var p0 = P(pts[0][1], pts[0][2]), pl = P(pts[pts.length - 1][1], pts[pts.length - 1][2]); h += '<circle class="tr-start" cx="' + p0[0] + '" cy="' + p0[1] + '" r="6"/><g class="tr-now' + (o.live ? ' live' : '') + '"><circle cx="' + pl[0] + '" cy="' + pl[1] + '" r="14"/><circle cx="' + pl[0] + '" cy="' + pl[1] + '" r="7"/></g>'; }
+    (o.alerts || []).forEach(function (e, i) { var p = P(e.lat, e.lng); h += '<g class="tr-stop"><circle cx="' + p[0] + '" cy="' + p[1] + '" r="12"/><text x="' + p[0] + '" y="' + (+p[1] + 4.5) + '" text-anchor="middle">' + (i + 1) + '</text></g>'; });
+    return h + '</svg>';
+  }
+  function viewTripDetail(id) {
+    $('main').innerHTML = '<section class="view">' + v5Head('تفاصيل الرحلة', 'route', 'المسار المسجل من موبايل السائق، والتوقفات خارج مواقع الشركة مع مكانها على الخريطة.', '', ['trips', 'رحلات المركبات']) + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    var load = function () { v5Load('tripDetail', [id], drawTripDetail, 'تفاصيل الرحلة'); };
+    load();
+    S.poll = setInterval(function () { if (!document.hidden && S.route === 'trips/' + id && !$('sheetWrap') && S.trD && S.trD.live) load(); }, MODE === 'demo' ? 8000 : 30000);
+  }
+  function drawTripDetail(o) {
+    var out = $('v5Out'); if (!out) return;
+    S.trD = o;
+    var al = o.alerts || [], dur = o.startedAt ? Math.round(((o.endedAt || o.lastAt || Date.now()) - o.startedAt) / 60000) : 0;
+    var html = '<div class="tr-head card"><div class="tr-top"><span class="av">' + icon('truck') + '</span><div class="t"><b>' + esc(o.itemName) + '</b><span>' + (o.plate ? esc(o.plate) + ' · ' : '') + esc(o.driver || 'بدون اسم سائق') + ' · أرسله ' + esc(o.by) + '</span></div>' + tripPill(o) + '</div>' +
+      '<div class="tr-way big"><span>' + esc(o.fromName || 'غير محدد') + '</span><i>' + icon('arrow') + '</i><span><b>' + esc(o.toName) + '</b></span></div>' +
+      '<div class="tr-stats">' + [['المسافة', o.km + ' كم'], ['المدة', dur ? (dur >= 60 ? Math.floor(dur / 60) + ' س ' + (dur % 60) + ' د' : dur + ' د') : '—'], ['النقاط', o.points], ['توقفات مخالفة', al.length]].map(function (k, i) { return '<div class="' + (i === 3 && al.length ? 'bad' : '') + '"><span>' + k[0] + '</span><b class="mono">' + k[1] + '</b></div>'; }).join('') + '</div></div>';
+    html += '<div class="tr-grid"><div class="card tr-map">' + tripSvg(o) + '<div class="tr-legend xs"><span><i class="lg-start"></i>البداية</span><span><i class="lg-now"></i>آخر موقع</span><span><i class="lg-site"></i>موقع الرحلة</span><span><i class="lg-stop"></i>توقف مخالف</span></div></div>' +
+      '<div class="stack"><div class="card"><div class="card-head"><h2>' + icon('alert') + ' التوقفات والمخالفات</h2></div>' + (al.length ? '<div class="tr-evs">' + al.map(function (e, i) { return '<div class="tr-ev"><span class="n">' + (i + 1) + '</span><div><b>' + esc(e.title) + '</b><span class="xs muted">' + esc(fmt(e.at, false)) + ' حتى ' + esc(fmt(e.until, false)) + (e.open ? ' · ما زال متوقفاً' : '') + '</span></div><a class="btn sm" target="_blank" rel="noopener" href="https://maps.google.com/?q=' + e.lat + ',' + e.lng + '">' + icon('map') + ' الخريطة</a></div>'; }).join('') + '</div>' : '<p class="empty small">' + icon('check') + ' لا توجد توقفات خارج مواقع الشركة' + (o.points ? '' : ' (لم تبدأ الرحلة بعد)') + '</p>') + '</div>' +
+      '<div class="card"><h2>' + icon('tool') + ' إجراءات</h2><div class="stack">' +
+      (o.lastLat != null ? '<a class="btn" target="_blank" rel="noopener" href="https://maps.google.com/?q=' + o.lastLat + ',' + o.lastLng + '">' + icon('pin') + ' آخر موقع على خرائط جوجل</a>' : '') +
+      (o.link ? '<a class="btn wa" target="_blank" rel="noopener" href="' + esc(waTo(o.phone, '🚚 رابط تتبع رحلتك إلى ' + o.toName + ':\n' + o.link)) + '">' + icon('wa') + ' إعادة إرسال الرابط للسائق</a><button class="btn" type="button" id="trCopy">' + icon('copy') + ' نسخ الرابط</button>' : '') +
+      (o.link && MODE === 'demo' ? '<button class="btn" type="button" id="trDrv">' + icon('nav') + ' صفحة السائق (تجربة)</button>' : '') +
+      (o.live && o.canTrip ? '<button class="btn bad" type="button" id="trStop">' + icon('stop') + ' إيقاف التتبع</button>' : '') + '</div>' + (o.note ? '<p class="small muted">' + esc(o.note) + '</p>' : '') + '</div></div></div>';
+    out.innerHTML = html;
+    if ($('trCopy')) $('trCopy').onclick = function () { copyText(o.link); };
+    if ($('trDrv')) $('trDrv').onclick = function () { tripDriver(o.link.split('t=')[1], true); };
+    if ($('trStop')) $('trStop').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.innerHTML = icon('alert') + ' اضغط مرة أخرى للتأكيد'; return; } b.disabled = true; remote('tripStop', [S.session.pin, o.id]).then(function () { toast('أُوقف تتبع الرحلة'); viewTripDetail(o.id); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
+  }
+  /** صفحة السائق: تُفتح من الرابط بدون دخول. overlay = داخل نسخة العرض فوق التطبيق */
+  function tripStartParam() { var m = /[?&]t=([a-z0-9]+)/i.exec(location.search); return window.BIO_START === 'trip' || /(^|[?&])p=trip\b/.test(location.search) ? (window.BIO_TRIP || (m && m[1]) || '') : null; }
+  function tripDriver(token, overlay) {
+    var host;
+    if (overlay) { host = document.createElement('div'); host.className = 'drv-over'; host.id = 'drvOver'; document.body.appendChild(host); }
+    else { document.body.innerHTML = '<div class="drv-page" id="drvHost"></div><div class="toasts" id="toasts"></div>'; host = $('drvHost'); }
+    var K = 'bio-trip-' + token, T = { buf: [], sent: 0, on: false, watch: null, timer: null, lock: null, info: null, sim: null };
+    try { var sv = JSON.parse(localStorage.getItem(K) || 'null'); if (sv) { T.buf = sv.buf || []; T.sent = sv.sent || 0; T.was = sv.on; } } catch (e) {}
+    var save = function () { try { localStorage.setItem(K, JSON.stringify({ buf: T.buf.slice(-600), sent: T.sent, on: T.on })); } catch (e) {} };
+    var close = function () { stop(); if (overlay) { host.remove(); if (S.route.indexOf('trips') === 0) render(); } };
+    var frame = function (inner) {
+      host.innerHTML = '<div class="drv"><header class="drv-h"><div class="logo">' + logoImg() + '</div><div><b>تتبع رحلة · الأمن الحيوي</b><span>' + esc((T.info && T.info.company) || CFG.COMPANY || 'كايرو ثري إيه') + '</span></div>' + (overlay ? '<button class="btn sm ghost" type="button" id="drvX">' + icon('x') + ' رجوع للتطبيق</button>' : '') + '</header><div class="drv-b">' + inner + '</div></div>';
+      if ($('drvX')) $('drvX').onclick = close;
+    };
+    var send = function (ended) {
+      var pts = T.buf.slice(0, 400);
+      if (!pts.length && !ended) return Promise.resolve();
+      return remote('tripPing', [token, pts, !!ended]).then(function (r) {
+        T.buf = T.buf.slice(pts.length); T.sent += pts.length; T.last = Date.now(); T.km = r.km; T.status = r.status; save(); paint();
+        if (r.ended && !ended) { stop(); T.done = r.status; paint(); }
+        return r;
+      }, function (e) { T.err = e.net ? 'لا يوجد إنترنت: النقاط محفوظة على الموبايل وتُرسل تلقائياً' : errText(e); paint(); });
+    };
+    var add = function (lat, lng, acc, t) { T.buf.push([t || Date.now(), Math.round(lat * 1e6) / 1e6, Math.round(lng * 1e6) / 1e6, Math.round(acc || 0)]); T.pos = [lat, lng, acc]; save(); paint(); };
+    function stop() {
+      T.on = false; if (T.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(T.watch); T.watch = null; clearInterval(T.timer); clearInterval(T.sim); T.sim = null;
+      try { if (T.lock) T.lock.release(); } catch (e) {} T.lock = null; save();
+    }
+    var keepAwake = function () { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { T.lock = l; }).catch(function () {}); } catch (e) {} };
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && T.on) { keepAwake(); send(); } });
+    var start = function () {
+      if (!navigator.geolocation) { T.err = 'هذا الموبايل لا يدعم تحديد الموقع'; return paint(); }
+      T.on = true; T.err = ''; save(); keepAwake(); paint();
+      T.watch = navigator.geolocation.watchPosition(function (p) { var c = p.coords; var l = T.buf[T.buf.length - 1]; if (!l || Date.now() - l[0] > 15000) add(c.latitude, c.longitude, c.accuracy); }, function (e) {
+        T.err = e.code === 1 ? 'لم يُسمح بالموقع. افتح إعدادات المتصفح واسمح للموقع بتحديد الموقع، ثم اضغط «ابدأ الرحلة» مرة أخرى' : 'تعذر تحديد الموقع: تأكد أن GPS مفعّل'; if (e.code === 1) stop(); paint();
+      }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+      T.timer = setInterval(function () { send(); }, ((T.info && T.info.every) || 60) * 1000);
+    };
+    var simulate = function () {
+      // نسخة العرض: مسار محاكى من نقطة البداية للوجهة مع توقف 12 دقيقة في المنتصف
+      var a = T.info.from && T.info.from.lat != null ? [T.info.from.lat, T.info.from.lng] : [30.0, 30.9], b = T.info.to && T.info.to.lat != null ? [T.info.to.lat, T.info.to.lng] : [a[0] + .1, a[1] + .1];
+      var mid = [a[0] + (b[0] - a[0]) * .5 + .015, a[1] + (b[1] - a[1]) * .5 - .02], t0 = Date.now() - 50 * 60000, k = 0, path = [];
+      for (var i = 0; i <= 14; i++) path.push([t0 + i * 90000, a[0] + (mid[0] - a[0]) * i / 14, a[1] + (mid[1] - a[1]) * i / 14]);
+      for (var j = 1; j <= 12; j++) path.push([t0 + 14 * 90000 + j * 60000, mid[0] + (j % 2) * .0001, mid[1]]);
+      for (var m2 = 1; m2 <= 14; m2++) path.push([t0 + 14 * 90000 + 12 * 60000 + m2 * 90000, mid[0] + (b[0] - mid[0]) * m2 / 15, mid[1] + (b[1] - mid[1]) * m2 / 15]);
+      T.on = true; T.simOn = true; paint();
+      T.sim = setInterval(function () { for (var q = 0; q < 4 && k < path.length; q++, k++) add(path[k][1], path[k][2], 10, path[k][0]); send(); if (k >= path.length) { clearInterval(T.sim); T.sim = null; } }, 900);
+    };
+    var paint = function () {
+      var i = T.info; if (!i) return;
+      var tr = i.trip, el = $('drvState');
+      if (!el) {
+        frame('<div class="drv-card"><span class="kick">رحلة رقم ' + esc(tr.id) + '</span><h1>' + esc(tr.itemName) + '</h1>' + (tr.plate ? '<span class="plate" dir="rtl"><i>مصر</i>' + esc(tr.plate) + '</span>' : '') +
+          '<div class="tr-way big"><span>' + esc(tr.fromName || 'نقطة البداية') + '</span><i>' + icon('arrow') + '</i><span><b>' + esc(tr.toName) + '</b></span></div>' + (tr.driver ? '<span class="small muted">السائق: ' + esc(tr.driver) + '</span>' : '') + '</div>' +
+          '<div id="drvState"></div>' +
+          '<div class="drv-rules"><b>' + icon('shield') + ' تعليمات الأمن الحيوي أثناء الرحلة</b><span>ممنوع التوقف عند أي مزرعة دواجن أو سوق طيور أو مجزر</span><span>أي توقف أكثر من ' + i.stopMin + ' دقائق خارج مواقع الشركة يُسجل ويصل للمشرف</span><span>اترك هذه الصفحة مفتوحة والموبايل على الشاحن حتى تصل للبوابة</span></div>');
+        el = $('drvState');
+      }
+      var st;
+      if (T.done || (!tr.live && !T.on)) st = '<div class="drv-big done">' + icon('check', 'ico-lg') + '<b>انتهت الرحلة</b><span>' + esc(T.done || tr.status) + '</span></div>';
+      else if (!T.on) st = '<button class="drv-go" type="button" id="drvGo">' + icon('play', 'ico-lg') + '<b>ابدأ الرحلة</b><span>سيطلب الموبايل السماح بالموقع: اضغط «سماح»</span></button>' + (MODE === 'demo' ? '<button class="btn" type="button" id="drvSim">' + icon('nav') + ' محاكاة الرحلة (نسخة العرض)</button>' : '');
+      else st = '<div class="drv-big live"><span class="pulse"><i></i>' + icon('nav', 'ico-lg') + '</span><b>جاري تتبع الرحلة</b><span>' + (T.simOn ? 'محاكاة' : 'الموقع يُرسل تلقائياً كل ' + (i.every >= 60 ? Math.round(i.every / 60) + ' دقيقة' : i.every + ' ثانية')) + '</span></div>' +
+        '<div class="drv-stats"><div><span>نقاط مرسلة</span><b class="mono">' + T.sent + '</b></div><div><span>بانتظار الإرسال</span><b class="mono">' + T.buf.length + '</b></div><div><span>المسافة</span><b class="mono">' + (T.km || 0) + ' كم</b></div><div><span>آخر إرسال</span><b>' + (T.last ? esc(fmt(T.last, false)) : '—') + '</b></div></div>' +
+        '<button class="btn ok big" type="button" id="drvEnd">' + icon('check') + ' وصلت: إنهاء الرحلة</button>';
+      el.innerHTML = (T.err ? '<div class="lk-warn">' + icon('alert') + '<span>' + esc(T.err) + '</span></div>' : '') + st;
+      if ($('drvGo')) $('drvGo').onclick = start;
+      if ($('drvSim')) $('drvSim').onclick = simulate;
+      if ($('drvEnd')) $('drvEnd').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.innerHTML = icon('alert') + ' اضغط مرة أخرى عند الوصول فعلاً'; return; } b.disabled = true; stop(); send(true).then(function () { T.done = 'انتهت (أنهاها السائق)'; T.buf = []; save(); paint(); }); };
+    };
+    frame('<div class="drv-card"><p class="empty"><span class="spin"></span></p></div>');
+    remote('tripInfo', [token]).then(function (i) { T.info = i; paint(); if (T.was && i.trip.live && MODE !== 'demo') start(); })
+      .catch(function (e) { frame('<div class="drv-card"><div class="drv-big done bad">' + icon('alert', 'ico-lg') + '<b>' + esc(e.net ? 'لا يوجد اتصال بالإنترنت' : errText(e)) + '</b><span>تواصل مع مشرف الأمن الحيوي</span></div></div>'); });
+  }
+
+  /* ---------- 3) إقرار الأمن الحيوي مع المأمورية أو الزيارة ---------- */
+  function declHtml(sites) {
+    var farms = (B && B.DECL_FARMS) || ['لا توجد', 'مزرعة دواجن أخرى', 'مزرعة عملاء', 'سوق طيور حية', 'مجزر', 'معمل تفريخ خارجي', 'تربية منزلية'];
+    var yn = function (k, q) { return '<div class="dq"><span>' + q + '</span><div class="dq-yn" data-dq="' + k + '"><button type="button" data-v="0" class="on">لا</button><button type="button" data-v="1">نعم</button></div></div>'; };
+    return '<fieldset class="decl" id="declBox"><legend>' + icon('shield') + ' إقرار الأمن الحيوي</legend><p class="xs muted">إجابتك تُقارن تلقائياً بسجل حركتك الفعلي على البوابات، وأي اختلاف يصل للمدير ويظهر للبوابة.</p>' +
+      '<div class="grid-2" style="gap:12px"><div class="field"><label for="dFarm">آخر مكان به دواجن خارج الشركة زرته</label><select id="dFarm">' + farms.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('') + '</select></div><div class="field" id="dFarmAtW" hidden><label for="dFarmAt">متى؟</label><input id="dFarmAt" type="datetime-local"></div></div>' +
+      yn('birds72', 'تعاملت مع طيور حية أو نافقة خارج الشركة خلال آخر 72 ساعة') + yn('home', 'أربي طيوراً (دواجن أو حمام أو بط) في منزلي') + yn('sick', 'لاحظت نفوقاً أو أعراضاً غير طبيعية في أي مكان زرته مؤخراً') +
+      '<div class="grid-2" style="gap:12px"><div class="field"><label for="dSite">آخر موقع للشركة دخلته خلال 14 يوماً</label><select id="dSite"><option value="">لم أدخل أي موقع</option>' + siteOptions(sites || []) + '</select></div><div class="field" id="dSiteAtW" hidden><label for="dSiteAt">تاريخ الدخول</label><input id="dSiteAt" type="date"></div></div>' +
+      '<label class="decl-ok"><input type="checkbox" id="dAgree"><span>أقر بأن البيانات السابقة صحيحة، وأعلم أن الإقرار غير الصحيح مخالفة للائحة الأمن الحيوي.</span></label></fieldset>';
+  }
+  function declBind() {
+    var box = $('declBox'); if (!box) return;
+    box.querySelectorAll('.dq-yn').forEach(function (g) { g.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); g.dataset.val = b.dataset.v; g.closest('.dq').classList.toggle('yes', b.dataset.v === '1'); }; });
+    $('dFarm').onchange = function () { $('dFarmAtW').hidden = this.value === 'لا توجد'; };
+    $('dSite').onchange = function () { $('dSiteAtW').hidden = !this.value; };
+  }
+  function declRead() {
+    var v = function (k) { var g = document.querySelector('[data-dq="' + k + '"]'); return !!(g && g.dataset.val === '1'); };
+    if (!$('dAgree').checked) { $('dAgree').closest('.decl-ok').classList.add('need'); $('dAgree').focus(); throw appErr('وافق على صحة إقرار الأمن الحيوي قبل الإرسال'); }
+    var fa = $('dFarm').value !== 'لا توجد' && $('dFarmAt').value ? new Date($('dFarmAt').value).getTime() : null;
+    return { lastFarm: $('dFarm').value, lastFarmAt: fa, birds72: v('birds72'), home: v('home'), sick: v('sick'), lastSite: $('dSite').value, lastSiteAt: $('dSite').value && $('dSiteAt').value ? new Date($('dSiteAt').value + 'T12:00').getTime() : null, agree: true };
+  }
+  var DECL_CLS = { 'منخفض': 'p-ok', 'متوسط': 'p-warn', 'عالي': 'p-bad' }, DECL_TXT = { 'منخفض': 'منخفضة', 'متوسط': 'متوسطة', 'عالي': 'عالية' };
+  function declResult(dc) {
+    if (!dc) return '';
+    var issues = (dc.flags || []).concat(dc.why || []);
+    return '<div class="decl-res r-' + (dc.risk === 'عالي' ? 'bad' : dc.risk === 'متوسط' ? 'warn' : 'ok') + '"><div class="spread"><b>' + icon('shield') + ' تقييم الإقرار</b><span class="pill ' + (DECL_CLS[dc.risk] || 'p-n') + '">خطورة ' + esc(DECL_TXT[dc.risk] || dc.risk) + '</span></div>' +
+      (issues.length ? issues.map(function (x) { return '<span class="small">• ' + esc(x) + '</span>'; }).join('') + ((dc.flags || []).length ? '<span class="xs">وصل تنبيه للمدير بعدم المطابقة.</span>' : '') : '<span class="small">لا توجد مخالطة خطرة، والإقرار مطابق لسجل الحركة.</span>') + '</div>';
+  }
+  function declPill(m) {
+    if (!m.declRisk) return '';
+    return '<span class="pill ' + (m.declFlag ? 'p-bad' : DECL_CLS[m.declRisk] || 'p-n') + '" title="' + esc(m.declFlag || '') + '">' + icon('shield') + ' ' + (m.declFlag ? 'إقرار غير مطابق' : 'إقرار: خطورة ' + esc(DECL_TXT[m.declRisk] || m.declRisk)) + '</span>';
+  }
+
+  /* ---------- 4) البلاغ والرسالة الصوتية ---------- */
+  function voiceOk() { return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+  /** مسجل صوتي: حد أقصى 60 ثانية وبجودة صوت مضغوطة (حوالي 180KB للدقيقة) */
+  function voiceRecorder(boxId, onDone, opts) {
+    opts = opts || {};
+    var box = $(boxId); if (!box) return;
+    var R = { rec: null, chunks: [], t0: 0, tick: null, url: '' };
+    var idle = function () {
+      box.innerHTML = voiceOk() ? '<button type="button" class="btn vr-btn' + (opts.label === '' ? ' icon-only' : ' grow') + '" id="' + boxId + 'Go" aria-label="تسجيل رسالة صوتية">' + icon('mic') + (opts.label === '' ? '' : ' ' + (opts.label || 'تسجيل رسالة صوتية')) + '</button>' : '<span class="xs muted">' + icon('mic') + ' التسجيل الصوتي غير مدعوم في هذا المتصفح</span>';
+      if ($(boxId + 'Go')) $(boxId + 'Go').onclick = rec;
+    };
+    var stopTracks = function () { try { R.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} };
+    var rec = function () {
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
+        R.stream = stream; R.chunks = [];
+        var type = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'].filter(function (t) { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } })[0];
+        try { R.rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 }); } catch (e) { R.rec = new MediaRecorder(stream); }
+        R.rec.ondataavailable = function (e) { if (e.data && e.data.size) R.chunks.push(e.data); };
+        R.rec.onstop = function () {
+          clearInterval(R.tick); stopTracks();
+          var blob = new Blob(R.chunks, { type: (R.rec.mimeType || type || 'audio/webm').split(';')[0] });
+          if (!blob.size) { toast('لم يُسجل صوت'); return idle(); }
+          var fr = new FileReader(); fr.onload = function () { R.url = fr.result; done(Math.round((Date.now() - R.t0) / 1000)); }; fr.readAsDataURL(blob);
+        };
+        R.rec.start(); R.t0 = Date.now();
+        box.innerHTML = '<div class="vr-live"><span class="vr-dot"></span><b class="mono" id="' + boxId + 'T">0:00</b><span class="vr-wave"><i></i><i></i><i></i><i></i><i></i></span><span class="xs muted">حتى 60 ثانية</span><button type="button" class="btn sm bad" id="' + boxId + 'S">' + icon('stop') + ' إيقاف</button></div>';
+        $(boxId + 'S').onclick = function () { if (R.rec.state !== 'inactive') R.rec.stop(); };
+        R.tick = setInterval(function () { var s = Math.round((Date.now() - R.t0) / 1000), el = $(boxId + 'T'); if (el) el.textContent = Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); if (s >= 60 && R.rec.state !== 'inactive') R.rec.stop(); if (!el && R.rec.state !== 'inactive') R.rec.stop(); }, 250);
+      }).catch(function () { toast('لم يُسمح بالميكروفون. اسمح للتطبيق باستخدام الميكروفون من إعدادات المتصفح', 6000); });
+    };
+    var done = function (sec) {
+      if (opts.instant) { onDone(R.url, sec); return idle(); }
+      box.innerHTML = '<div class="vr-done"><span class="vr-ico">' + icon('mic') + '</span><audio controls src="' + R.url + '"></audio><span class="xs muted">' + sec + ' ث</span><button type="button" class="btn sm ghost" id="' + boxId + 'X" aria-label="حذف التسجيل">' + icon('trash') + '</button></div>';
+      $(boxId + 'X').onclick = function () { R.url = ''; onDone(''); idle(); };
+      onDone(R.url, sec);
+    };
+    idle();
+  }
+  function voicePlayer(url) { return url ? '<div class="vr-play"><span class="vr-ico">' + icon('mic') + '</span><audio controls preload="none" src="' + esc(url) + '"></audio>' + (/^https?:/.test(url) ? '<a class="btn sm ghost" target="_blank" rel="noopener" href="' + esc(url) + '" aria-label="فتح التسجيل">' + icon('download') + '</a>' : '') + '</div>' : ''; }
+
+  /* ---------- 5) الإنذار المبكر من النافق اليومي ---------- */
+  var EWS_C = ['var(--r-low)', 'var(--info)', 'var(--r-high)', 'var(--r-crit)'], EWS_P = ['p-ok', 'p-info', 'p-warn', 'p-bad'];
+  function ewsLevelN(k) { return { 'طبيعي': 0, 'مراقبة': 1, 'إنذار': 2, 'حرج': 3 }[k] || 0; }
+  function ewsBars(days) {
+    var mx = Math.max.apply(null, days.map(function (x) { return x.dead; }).concat([1]));
+    return '<div class="ews-bars" aria-hidden="true">' + days.map(function (x, i) { return '<i class="' + (x.rec ? 'n' + x.n : 'none') + (i === days.length - 1 ? ' today' : '') + '" style="height:' + (x.rec ? Math.max(6, x.dead / mx * 100) : 100) + '%" title="' + x.dead + '"></i>'; }).join('') + '</div>';
+  }
+  function viewEws() {
+    $('main').innerHTML = '<section class="view">' + v5Head('الإنذار المبكر للنافق', 'pulse', 'يقارن النافق اليومي لكل موقع بمعدله في آخر 7 أيام وبنسبته من القطيع، ويطلق الإنذار فور التسجيل قبل أن تتحول الزيادة لتفشٍّ. يصل الإنذار فوراً للمدير والطبيب البيطري.',
+      '<button class="btn primary" type="button" data-goto="disposal">' + icon('plus') + ' تسجيل النافق</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    bindGoto($('main'));
+    v5Load('ews', [], drawEws, 'الإنذار المبكر');
+  }
+  function drawEws(d) {
+    var out = $('v5Out'); if (!out) return;
+    var c = d.counts, open = d.alerts.filter(function (a) { return a.status === 'جديد' || a.status === 'قيد المتابعة'; }), shut = d.alerts.filter(function (a) { return open.indexOf(a) < 0; });
+    var html = kpiRow([['k-bad', 'siren', c.crit, 'موقع في حالة حرجة'], ['k-warn', 'alert', c.alert, 'موقع في حالة إنذار'], ['k-brand', 'pulse', c.watch, 'تحت المراقبة'], ['k-ok', 'box', d.deadToday, 'نافق اليوم']]);
+    if (c.missing) html += '<div class="cc-alert a-warn">' + icon('clock') + '<span><b>' + plural(c.missing, 'موقع في التربية', 'مواقع في التربية') + ' لم يُسجل له نافق اليوم</b>: ' + esc(d.rows.filter(function (r) { return r.missing; }).map(function (r) { return shortSite(r.name); }).join('، ')) + '. الإنذار المبكر يعتمد على التسجيل اليومي.</span></div>';
+    html += '<div class="card"><div class="card-head"><div><span class="kick">آخر 7 أيام</span><h2>' + icon('siren') + ' الإنذارات المفتوحة</h2></div><span class="badge">' + open.length + '</span></div>' + (open.length ? '<div class="ews-al">' + open.map(ewsCard).join('') + '</div>' : '<p class="empty">' + icon('check') + '<b>لا توجد إنذارات مفتوحة</b><span class="xs">أي زيادة غير معتادة في النافق تظهر هنا فور تسجيلها</span></p>') + '</div>';
+    html += '<div class="card"><div class="card-head"><div><span class="kick">آخر 14 يوماً · العمود الأخير اليوم · اللون حسب مستوى الإنذار</span><h2>' + icon('layers') + ' المواقع</h2></div></div><div class="ews-grid">' + d.rows.map(function (r) {
+      return '<div class="ews-site n' + r.n + (r.missing ? ' miss' : '') + '"><div class="spread"><div><b>' + esc(shortSite(r.name)) + '</b><span class="xs muted">' + esc(r.phase || r.sector) + (r.age ? ' · عمر ' + r.age + ' يوم' : '') + (r.birds ? ' · ' + (r.birds >= 1000 ? Math.round(r.birds / 100) / 10 + ' ألف' : r.birds) + ' طائر' : '') + '</span></div><span class="pill ' + EWS_P[r.n] + '">' + esc(r.levelName) + '</span></div>' +
+        ewsBars(r.days) +
+        '<div class="ews-nums"><div><span>اليوم</span><b class="mono">' + (r.recToday ? r.today : '—') + '</b></div><div><span>المعدل</span><b class="mono">' + (r.base == null ? '—' : r.base) + '</b></div><div><span>النسبة</span><b class="mono">' + (r.ratio == null ? '—' : '×' + r.ratio) + '</b></div><div><span>% القطيع</span><b class="mono">' + (r.pct == null ? '—' : r.pct + '%') + '</b></div></div>' +
+        (r.why.length ? '<span class="xs ews-why">' + esc(r.why.join(' · ')) + '</span>' : r.missing ? '<span class="xs warn-t">' + icon('clock') + ' لم يُسجل نافق اليوم</span>' : '') + '</div>';
+    }).join('') + '</div><p class="xs muted">الحدود الحالية: مراقبة عند ×' + d.cfg.watch + '، إنذار عند ×' + d.cfg.alert + '، حرج عند ×' + d.cfg.crit + ' من المعدل (بحد أدنى ' + d.cfg.min + ' طائراً)، أو نسبة نفوق يومية ' + d.cfg.pW + '% / ' + d.cfg.pA + '% / ' + d.cfg.pC + '% من القطيع. تُعدل من شيت الإعدادات.</p></div>';
+    if (shut.length) html += '<div class="card"><div class="card-head"><h2>' + icon('check') + ' إنذارات أُغلقت</h2></div><div class="ews-al">' + shut.slice(0, 10).map(ewsCard).join('') + '</div></div>';
+    out.innerHTML = html;
+    out.querySelectorAll('[data-ews]').forEach(function (b) { b.onclick = function () { ewsActSheet(d, b.dataset.ews, b.dataset.act); }; });
+  }
+  function ewsCard(a) {
+    var n = ewsLevelN(a.level), open = a.status === 'جديد' || a.status === 'قيد المتابعة';
+    return '<div class="ews-card n' + n + (open ? '' : ' shut') + '"><div class="ews-lv" style="--c:' + EWS_C[n] + '">' + icon(n >= 3 ? 'siren' : 'alert') + '<b>' + esc(a.level) + '</b></div><div class="ews-b"><div class="spread"><b>' + esc(a.siteName) + '</b><span class="pill ' + (a.status === 'جديد' ? 'p-bad' : open ? 'p-warn' : 'p-n') + '">' + esc(a.status) + '</span></div>' +
+      '<span class="small">نافق اليوم <b class="mono">' + a.dead + '</b>' + (a.base != null ? ' · المعدل <b class="mono">' + a.base + '</b>' : '') + (a.ratio != null ? ' · <b class="mono">×' + a.ratio + '</b>' : '') + '</span><span class="xs muted">' + esc(a.why) + ' · ' + esc(ago(a.time)) + '</span>' +
+      (a.action ? '<div class="ews-log">' + a.action.split('\n').map(function (l) { return '<span class="xs">' + icon('check') + ' ' + esc(l) + '</span>'; }).join('') + '</div>' : '') +
+      (open ? '<div class="row ews-acts"><button type="button" class="btn sm" data-ews="' + esc(a.id) + '" data-act="متابعة">' + icon('clock') + ' متابعة</button><button type="button" class="btn sm" data-ews="' + esc(a.id) + '" data-act="رفع إنذار على الموقع" style="color:var(--warn)">' + icon('alert') + ' إنذار على الموقع</button><button type="button" class="btn sm bad" data-ews="' + esc(a.id) + '" data-act="إغلاق الموقع">' + icon('lock') + ' إغلاق الموقع</button><button type="button" class="btn sm ok" data-ews="' + esc(a.id) + '" data-act="تم الاحتواء">' + icon('check') + ' تم الاحتواء</button><button type="button" class="btn sm ghost" data-ews="' + esc(a.id) + '" data-act="إنذار غير صحيح">إنذار غير صحيح</button></div>' : '') + '</div></div>';
+  }
+  function ewsActSheet(d, id, act) {
+    var a = d.alerts.filter(function (x) { return x.id === id; })[0]; if (!a) return;
+    if ((act === 'رفع إنذار على الموقع' || act === 'إغلاق الموقع') && !d.canSites) return toast('تغيير حالة الموقع يحتاج صلاحية إدارة المواقع');
+    var bad = act === 'إغلاق الموقع' || act === 'رفع إنذار على الموقع';
+    openSheet('<div class="sheet-head ' + (bad ? 'sh-bad' : act === 'تم الاحتواء' ? 'sh-ok' : 'sh-dark') + '"><span class="permit">' + esc(a.siteName) + ' · ' + esc(a.level) + '</span><div class="big-ico">' + icon(bad ? 'alert' : 'check') + '</div><h2>' + esc(act) + '</h2></div><div class="sheet-body">' +
+      (bad ? '<p class="small">' + (act === 'إغلاق الموقع' ? 'يُغلق الموقع فوراً وتمنع كل البوابات الدخول إليه، ويصل القرار لأمن البوابات.' : 'تُرفع حالة الموقع إلى «إنذار» فتظهر للبوابات وتتشدد إجراءات الدخول.') + '</p>' : '') +
+      '<div class="field"><label for="ewN">ملاحظة (اختياري)</label><input id="ewN" maxlength="200" placeholder="مثال: الطبيب البيطري في الطريق، أُخذت عينات للمعمل"></div><button class="btn ' + (bad ? 'bad' : 'primary') + ' big" data-a="go">' + icon('check') + ' تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div>', function (x, el) {
+      if (x !== 'go') return closeSheet();
+      el.disabled = true;
+      remote('ewsAct', [S.session.pin, id, act, $('ewN').value]).then(function (r) { closeSheet(); toast('تم: ' + act + ' · ' + r.status); sync(); viewEws(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+    });
+  }
+  function ewsResultSheet(e) {
+    var crit = e.n >= 3;
+    openSheet('<div class="sheet-head sh-bad"><span class="permit">إنذار مبكر · وصل فوراً للمدير والطبيب البيطري</span><div class="big-ico">' + icon(crit ? 'siren' : 'alert') + '</div><h2>' + (crit ? 'نفوق مرتفع جداً: حالة حرجة' : 'نفوق أعلى من المعتاد') + '</h2><p>نافق اليوم ' + e.dead + (e.base != null ? ' مقابل معدل ' + e.base + ' يومياً' : '') + '</p></div><div class="sheet-body">' +
+      (e.why && e.why.length ? '<div class="infobox">' + e.why.map(esc).join('<br>') + '</div>' : '') +
+      '<ul class="bd-acts">' + ['أبلغ الطبيب البيطري فوراً لسحب عينات للمعمل', 'لا يخرج أي فرد أو معدة من الموقع إلى موقع آخر حتى التشخيص', 'افصل العنبر المصاب وراقب الأكل والمياه والأعراض التنفسية', 'راجع كل من دخل الموقع آخر 72 ساعة', 'سجّل النافق كل يوم في موعده ليكتمل التحليل'].map(function (x) { return '<li>' + icon('check') + ' ' + x + '</li>'; }).join('') + '</ul>' +
+      (S.session.user.isManager ? '<button class="btn bad big" data-a="ews">' + icon('pulse') + ' فتح الإنذار المبكر</button>' : '') + '<button class="btn big" data-a="close">تم</button></div>', function (a) { closeSheet(); if (a === 'ews') go('ews'); });
+  }
+  /** لوحات شاشة غرفة العمليات الجديدة */
+  function tvCams(T) {
+    var d = T.cams; if (!d || !d.cameras.length) return '<p class="empty">' + icon('video', 'ico-lg') + 'لا توجد كاميرات</p>';
+    var list = d.cameras.filter(function (c) { return c.active; }).slice(0, 6);
+    setTimeout(function () { camSimKick(); if (d.enabled) camSnapKick(d.refresh); }, 30);
+    return '<div class="tv-cams">' + list.map(function (c) { return camTile(c, d.enabled); }).join('') + '</div>' + (!d.enabled ? '<div class="tv-camnote">' + icon('lock') + ' عرض تجريبي · ربط الكاميرات بانتظار اعتماد الإدارة</div>' : '');
+  }
+  function tvEws(T) {
+    var d = T.ews; if (!d) return '<p class="empty">الإنذار المبكر غير متاح</p>';
+    var top = d.rows.slice(0, 8);
+    return '<div class="tv-ews"><div class="tv-kpis">' + [['حرج', d.counts.crit], ['إنذار', d.counts.alert], ['مراقبة', d.counts.watch], ['نافق اليوم', d.deadToday], ['إنذارات مفتوحة', d.counts.open], ['لم يُسجل اليوم', d.counts.missing]].map(function (k) { return '<div><span>' + k[0] + '</span><b class="mono">' + k[1] + '</b></div>'; }).join('') + '</div>' +
+      '<div class="tv-ewsg">' + top.map(function (r) { return '<div class="ews-site n' + r.n + '"><div class="spread"><b>' + esc(shortSite(r.name)) + '</b><span class="pill ' + EWS_P[r.n] + '">' + esc(r.levelName) + '</span></div>' + ewsBars(r.days) + '<div class="ews-nums"><div><span>اليوم</span><b class="mono">' + (r.recToday ? r.today : '—') + '</b></div><div><span>المعدل</span><b class="mono">' + (r.base == null ? '—' : r.base) + '</b></div></div></div>'; }).join('') + '</div></div>';
+  }
+
   /* ============================ نسخة العرض: الإشعارات ============================ */
   if (MODE === 'demo') {
     window.onDemoNotify = function (evt) {
       var me = S.session && S.session.user;
-      var toMgr = ['birds', 'mortality', 'litter', 'capa', 'company', 'company-report', 'academy'].indexOf(evt.kind) >= 0 || evt.kind === 'mission' || evt.kind === 'tamper' || evt.kind === 'deny' || evt.kind === 'card' || evt.kind === 'watch' || evt.kind === 'request' || evt.kind === 'violation' || evt.kind === 'report' || (evt.kind === 'message' && !evt.toGate);
+      var toMgr = ['birds', 'mortality', 'litter', 'capa', 'company', 'company-report', 'academy', 'trip', 'ews'].indexOf(evt.kind) >= 0 || evt.kind === 'mission' || evt.kind === 'tamper' || evt.kind === 'deny' || evt.kind === 'card' || evt.kind === 'watch' || evt.kind === 'request' || evt.kind === 'violation' || evt.kind === 'report' || (evt.kind === 'message' && !evt.toGate);
       var app = evt.kind === 'escalation' ? (evt.level === 1 ? 'موبايل نائب المدير · تصعيد مستوى 1' : 'موبايل مدير القطاع · تصعيد مستوى 2') : toMgr ? 'موبايل مدير الأمن الحيوي' : (evt.toUserId || evt.toGate) ? 'موبايل أمن البوابة' : 'موبايلات البوابات';
       var mgrAct = function (act, msg) { return function (el) { try { window.DemoApi.reportAct('9999', evt.reportId, act, ''); el.remove(); toast(msg); sync().then(function () { if (/^(dash|comms|map)/.test(S.route)) render(); }); } catch (e) { toast(errText(e)); } }; };
       var actions = evt.kind === 'request' ? [
@@ -4364,7 +4897,7 @@
         { label: 'تم الاستلام', cls: 'ok', run: mgrAct('استلام', 'تم الاستلام من الإشعار، ووصل لفرد الأمن') },
         { label: 'رفع إنذار', cls: 'bad', run: mgrAct('إنذار', 'رُفع الإنذار على الموقع من الإشعار') }] : null;
       var mine = me && ((me.isManager && (evt.kind === 'notice' || (evt.kind === 'message' && evt.toGate))) || (!me.isManager && evt.kind === 'message' && !evt.toGate));
-      var critical = ['report', 'escalation', 'violation', 'request'].indexOf(evt.kind) >= 0;
+      var critical = ['report', 'escalation', 'violation', 'request'].indexOf(evt.kind) >= 0 || (evt.kind === 'ews' && /حرج/.test(evt.title));
       setTimeout(function () {
         if (!mine) pushCard({ app: 'الأمن الحيوي · ' + app, title: evt.title, body: evt.body, actions: actions, sticky: !!actions, compact: evt.kind === 'message' || evt.kind === 'report-update' });
         if (critical || evt.kind === 'notice') setTimeout(function () { pushCard({ wa: true, compact: true, app: 'واتساب · نسخة لأرقام الإدارة المسجلة', title: evt.title, body: evt.body, ms: 5000 }); }, 900);

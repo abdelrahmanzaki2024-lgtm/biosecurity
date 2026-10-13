@@ -623,7 +623,7 @@ function BIO_api(store, deps) {
   function movesOf(itemId, before) {
     return allMoves().filter(function (m) { return m.itemId === itemId && (before == null || m.time < before); });
   }
-  function itemInfo(it) { return it ? { id: BIO_norm(it.id), name: it.name, kind: it.kind || '', dept: it.dept || '', phone: it.phone ? String(it.phone) : '', active: it.active === true || BIO_isYes(it.active), card: Number(it.card) || 1, watch: it.watch ? String(it.watch) : '', company: it.company ? BIO_norm(it.company) : '', plate: it.plate ? String(it.plate) : '', vtype: it.vtype ? String(it.vtype) : '', added: it.added ? BIO_ms(it.added) : 0 } : null; }
+  function itemInfo(it) { return it ? { id: BIO_norm(it.id), name: it.name, kind: it.kind || '', dept: it.dept || '', phone: it.phone ? String(it.phone) : '', active: it.active === true || BIO_isYes(it.active), card: Number(it.card) || 1, watch: it.watch ? String(it.watch) : '', company: it.company ? BIO_norm(it.company) : '', plate: it.plate ? String(it.plate) : '', vtype: it.vtype ? String(it.vtype) : '', track: BIO_isYes(it.track), added: it.added ? BIO_ms(it.added) : 0 } : null; }
   function checksFor(item, st) {
     if (!item) return [];
     var k = String(item.kind);
@@ -686,7 +686,7 @@ function BIO_api(store, deps) {
     return it;
   }
   function missionOut(m) {
-    return { id: m.id, time: BIO_ms(m.time), kind: m.kind, visitor: m.visitor, itemId: BIO_norm(m.itemId), company: m.company || '', phone: String(m.phone || ''), siteId: BIO_norm(m.siteId), siteName: m.siteName, visitAt: BIO_ms(m.visitAt), endAt: BIO_ms(m.endAt) || (BIO_ms(m.visitAt) + 10 * BIO.HOUR), purpose: m.purpose || '', lastContact: m.lastContact || '', lastContactAt: BIO_ms(m.lastContactAt) || null, vehicle: m.vehicle || '', requestedBy: m.requestedBy || '', requestedById: BIO_norm(m.requestedById), email: m.email || '', leadHours: Number(m.leadHours) || 0, late: BIO_isYes(m.late), status: String(m.status || ''), decidedBy: m.decidedBy || '', decidedAt: BIO_ms(m.decidedAt) || null, note: m.note || '', arrivedAt: BIO_ms(m.arrivedAt) || null };
+    return { id: m.id, time: BIO_ms(m.time), kind: m.kind, visitor: m.visitor, itemId: BIO_norm(m.itemId), company: m.company || '', phone: String(m.phone || ''), siteId: BIO_norm(m.siteId), siteName: m.siteName, visitAt: BIO_ms(m.visitAt), endAt: BIO_ms(m.endAt) || (BIO_ms(m.visitAt) + 10 * BIO.HOUR), purpose: m.purpose || '', lastContact: m.lastContact || '', lastContactAt: BIO_ms(m.lastContactAt) || null, vehicle: m.vehicle || '', requestedBy: m.requestedBy || '', requestedById: BIO_norm(m.requestedById), email: m.email || '', leadHours: Number(m.leadHours) || 0, late: BIO_isYes(m.late), status: String(m.status || ''), decidedBy: m.decidedBy || '', decidedAt: BIO_ms(m.decidedAt) || null, note: m.note || '', arrivedAt: BIO_ms(m.arrivedAt) || null, decl: m.decl ? String(m.decl) : '', declRisk: m.declRisk || '', declFlag: m.declFlag || '' };
   }
   function missionValid(m) { return m.status === BIO.MS_OK || m.status === BIO.MS_EXC || m.status === BIO.MS_DONE; }
   /** مأمورية صالحة لهذا الشخص على هذا الموقع الآن (من ساعتين قبل الموعد حتى نهاية الزيارة) */
@@ -707,7 +707,7 @@ function BIO_api(store, deps) {
       items: store.all('items').map(itemInfo).filter(function (i) { return i && i.id; }),
       settings: (function () { var s = settings(); var o = {}; ['COMPANY', 'APP_URL', 'MANAGER_PHONE', 'MANAGER_EMAIL', 'ALERT_HOURS', 'LOOKBACK_HOURS', 'DOWNTIME_DAYS', 'CHECKS_PERSON', 'CHECKS_VEHICLE', 'CHECKS_EQUIPMENT', 'SHOWER_MIN', 'VEH_CERT_HOURS', 'MISSION_LEAD_HOURS', 'VISITOR_NEEDS_MISSION', 'ACADEMY_REQUIRED', 'LITTER_BLOCK_HOURS', 'TV_SECONDS', 'BIRD_ALERT_LEVEL'].forEach(function (k) { o[k] = s[k]; }); return o; })(),
       companies: store.all('companies').map(function (c) { return { id: BIO_norm(c.id), name: c.name, type: c.type || '', status: String(c.status || 'نشط').trim(), reason: c.reason || '' }; }),
-      missions: store.all('missions').map(missionOut).filter(function (m) { return missionValid(m) && m.visitAt > deps.now() - 2 * 24 * BIO.HOUR && m.visitAt < deps.now() + 3 * 24 * BIO.HOUR; }).map(function (m) { return { id: m.id, kind: m.kind, visitor: m.visitor, itemId: m.itemId, company: m.company, siteId: m.siteId, siteName: m.siteName, visitAt: m.visitAt, endAt: m.endAt, purpose: m.purpose, status: m.status, requestedBy: m.requestedBy, arrivedAt: m.arrivedAt }; })
+      missions: store.all('missions').map(missionOut).filter(function (m) { return missionValid(m) && m.visitAt > deps.now() - 2 * 24 * BIO.HOUR && m.visitAt < deps.now() + 3 * 24 * BIO.HOUR; }).map(function (m) { return { id: m.id, kind: m.kind, visitor: m.visitor, itemId: m.itemId, company: m.company, siteId: m.siteId, siteName: m.siteName, visitAt: m.visitAt, endAt: m.endAt, purpose: m.purpose, status: m.status, requestedBy: m.requestedBy, arrivedAt: m.arrivedAt, declRisk: m.declRisk, declFlag: m.declFlag }; })
     };
     data.version = BIO_hash(JSON.stringify(data));
     return data;
@@ -735,13 +735,13 @@ function BIO_api(store, deps) {
   }
   /* ---------- البلاغات العاجلة والرسائل ---------- */
   function reportOut(r, full) {
-    var o = { id: r.id, time: BIO_ms(r.time), type: r.type, siteId: BIO_norm(r.siteId), siteName: r.siteName, gate: r.gate, fromId: BIO_norm(r.fromId), fromName: r.fromName, note: r.note || '', status: r.status, readAt: BIO_ms(r.readAt), ackAt: BIO_ms(r.ackAt), ackBy: r.ackBy || '', action: r.action || '', escLevel: Number(r.escLevel) || 0, escAt: BIO_ms(r.escAt), closedAt: BIO_ms(r.closedAt), updatedAt: BIO_ms(r.updatedAt), hasPhoto: !!r.photo };
-    if (full) o.photo = r.photo || '';
+    var o = { id: r.id, time: BIO_ms(r.time), type: r.type, siteId: BIO_norm(r.siteId), siteName: r.siteName, gate: r.gate, fromId: BIO_norm(r.fromId), fromName: r.fromName, note: r.note || '', status: r.status, readAt: BIO_ms(r.readAt), ackAt: BIO_ms(r.ackAt), ackBy: r.ackBy || '', action: r.action || '', escLevel: Number(r.escLevel) || 0, escAt: BIO_ms(r.escAt), closedAt: BIO_ms(r.closedAt), updatedAt: BIO_ms(r.updatedAt), hasPhoto: !!r.photo, hasVoice: !!r.voice };
+    if (full) { o.photo = r.photo || ''; o.voice = r.voice || ''; }
     return o;
   }
   function allReports() { return store.all('reports').map(function (r) { return reportOut(r); }).sort(function (a, b) { return b.time - a.time; }); }
   function gateKey(u) { return u.isManager ? '' : BIO_norm(u.gateId); }
-  function msgOut(m) { return { id: m.id, time: BIO_ms(m.time), gate: BIO_norm(m.gate), gateName: m.gateName, fromId: BIO_norm(m.fromId), fromName: m.fromName, fromMgr: BIO_isYes(m.fromMgr), text: m.text, readAt: BIO_ms(m.readAt) }; }
+  function msgOut(m) { return { id: m.id, time: BIO_ms(m.time), gate: BIO_norm(m.gate), gateName: m.gateName, fromId: BIO_norm(m.fromId), fromName: m.fromName, fromMgr: BIO_isYes(m.fromMgr), text: m.text, readAt: BIO_ms(m.readAt), voice: m.voice || '' }; }
   function allMessages() { return store.all('messages').map(msgOut).sort(function (a, b) { return a.time - b.time; }); }
   function commsSummary(u) {
     var msgs = allMessages(), g = gateKey(u);
@@ -1873,6 +1873,7 @@ function BIO_api(store, deps) {
   BIO_vrBridge(api, H_);
   BIO_codes(api, H_);
   BIO_v13(api, H_);
+  if (typeof BIO_v14 === 'function') BIO_v14(api, H_);
   return api;
 }
 
@@ -3169,3 +3170,519 @@ function BIO_demoReports(now) {
     r('محطة 3', 'OAS-03', 'أثناء التربية', 12, 86, 'جيد جداً', 0, 0, 3)
   ];
 }
+
+/* =====================================================================
+   الإصدار 14: حائط الكاميرات (جاهز وينتظر اعتماد الإدارة)، رابط تتبع رحلة السائق لمركبات محددة،
+   إقرار الأمن الحيوي مع تسجيل المأمورية أو الزيارة، البلاغ والرسالة الصوتية، الإنذار المبكر من النافق اليومي
+   ===================================================================== */
+TABLES.items.cols.track = 'تتبع الرحلات';
+TABLES.missions.cols.decl = 'إقرار الأمن الحيوي';
+TABLES.missions.cols.declRisk = 'تقييم الإقرار';
+TABLES.missions.cols.declFlag = 'عدم مطابقة الإقرار';
+TABLES.reports.cols.voice = 'رسالة صوتية';
+TABLES.messages.cols.voice = 'رسالة صوتية';
+TABLES.cameras = { sheet: 'الكاميرات', key: 'id', cols: { id: 'كود الكاميرا', name: 'اسم الكاميرا', siteId: 'كود الموقع أو البوابة', siteName: 'المكان', sector: 'القطاع', kind: 'نوع الربط', url: 'رابط البث أو اللقطة', appUrl: 'رابط تطبيق الكاميرات', active: 'مفعلة', order: 'الترتيب' } };
+TABLES.trips = { sheet: 'رحلات المركبات', key: 'id', cols: { id: 'رقم الرحلة', time: 'وقت الإنشاء', itemId: 'كود المركبة', itemName: 'المركبة', plate: 'رقم اللوحة', driver: 'السائق', phone: 'هاتف السائق', fromId: 'من (كود)', fromName: 'من', toId: 'إلى (كود)', toName: 'إلى', token: 'رمز الرابط', by: 'أرسله', byId: 'كود المرسل', status: 'الحالة', startedAt: 'بداية الرحلة', endedAt: 'نهاية الرحلة', lastAt: 'آخر إشارة', lastLat: 'آخر خط عرض', lastLng: 'آخر خط طول', points: 'عدد النقاط', km: 'المسافة (كم)', stops: 'توقفات خارج المواقع', alerts: 'التنبيهات', note: 'ملاحظات' } };
+TABLES.tripPings = { sheet: 'نقاط تتبع الرحلات', key: 'id', cols: { id: 'الرقم', tripId: 'رقم الرحلة', time: 'الوقت', pts: 'النقاط (الوقت، العرض، الطول، الدقة)' } };
+TABLES.ews = { sheet: 'الإنذار المبكر للنافق', key: 'id', cols: { id: 'الرقم', time: 'الوقت', day: 'اليوم', siteId: 'كود الموقع', siteName: 'الموقع', dead: 'نافق اليوم', base: 'المعدل المعتاد', ratio: 'نسبة الزيادة', pct: 'نسبة النفوق اليومية %', level: 'المستوى', why: 'الأسباب', status: 'الحالة', action: 'الإجراء', by: 'بواسطة', at: 'وقت الإجراء' } };
+ADMIN.cameras = { title: 'الكاميرات', fields: [
+  { k: 'id', req: 1, upper: 1, hint: 'كود قصير مثل CAM01' }, { k: 'name', req: 1 }, { k: 'siteId', hint: 'كود الموقع أو منطقة التطهير، مثل W-CP1 أو W-F05' },
+  { k: 'kind', type: 'select', opts: ['لقطة متجددة (JPEG)', 'بث مباشر (MJPEG)', 'صفحة بث', 'رابط تطبيق فقط'], def: 'لقطة متجددة (JPEG)' },
+  { k: 'url', hint: 'رابط https من جهاز البث في المقر (go2rtc) أو جهاز التسجيل' }, { k: 'appUrl', hint: 'اختياري: رابط فتح الكاميرا في تطبيق Hik-Connect أو DMSS' },
+  { k: 'active', type: 'yesno', def: 'نعم' }, { k: 'order', type: 'number' }] };
+BIO.ROLES_TRIP = ['مدير', 'مدير قطاع', 'مسؤول أمن حيوي', 'مشرف أمن حيوي'];
+BIO.TRIP_LIVE = ['بانتظار السائق', 'جارية'];
+BIO.DECL_FARMS = ['لا توجد', 'مزرعة دواجن أخرى', 'مزرعة عملاء', 'سوق طيور حية', 'مجزر', 'معمل تفريخ خارجي', 'تربية منزلية'];
+BIO.EWS_LEVELS = [{ k: 'طبيعي', c: 'ok', n: 0 }, { k: 'مراقبة', c: 'info', n: 1 }, { k: 'إنذار', c: 'warn', n: 2 }, { k: 'حرج', c: 'bad', n: 3 }];
+BIO.EWS_ACTS = ['متابعة', 'رفع إنذار على الموقع', 'إغلاق الموقع', 'تم الاحتواء', 'إنذار غير صحيح'];
+
+function BIO_v14(api, H) {
+  var store = H.store, deps = H.deps, D = 24 * BIO.HOUR;
+  function st() { return H.settings(); }
+  function num(v, d) { var n = Number(v); return isNaN(n) || v === '' || v == null ? d : n; }
+  function clean(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 80); }
+  function has(t) { try { store.all(t); return true; } catch (e) { return false; } }
+  function day0(t) { return t - ((t + 3 * BIO.HOUR) % D); }
+  function dayKey(t) { var d = new Date(t + 3 * BIO.HOUR); return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
+  function log(u, t, k, a, b, c) { if (api._log) api._log(u, t, k, a, b, c); }
+  function json(v, d) { try { return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function setSetting(key, value, note) { if (store.find('settings', key)) store.update('settings', key, { value: value }); else store.append('settings', { key: key, value: value, note: note || '' }); }
+  function mapLink(lat, lng) { return 'https://maps.google.com/?q=' + lat + ',' + lng; }
+  function siteCoords(sites) { return Object.keys(sites).map(function (k) { return sites[k]; }).filter(function (s) { return s.lat !== '' && s.lat != null && !isNaN(Number(s.lat)) && Number(s.lat) && !s.external; }); }
+
+  /* ---------- 1) حائط الكاميرات ---------- */
+  function camsOn() { return BIO_isYes(st().CAMERAS_ENABLED); }
+  function camOut(c, sites, cps) {
+    var id = BIO_norm(c.siteId), s = sites[id], cp = cps[id];
+    return { id: BIO_norm(c.id), name: c.name, siteId: id, siteName: c.siteName || (s ? s.name : cp ? cp.name : ''), sector: c.sector || (s ? s.sector : cp ? cp.sector : ''), gate: !!cp, kind: c.kind || 'لقطة متجددة (JPEG)', url: String(c.url || ''), appUrl: String(c.appUrl || ''), active: c.active === '' || c.active == null || BIO_isYes(c.active), order: num(c.order, 99) };
+  }
+  api.cams = function (pin) {
+    var u = H.auth(pin, true), sites = H.sitesById(), cps = {};
+    store.all('checkpoints').forEach(function (c) { cps[BIO_norm(c.id)] = c; });
+    var list = (has('cameras') ? store.all('cameras') : []).map(function (c) { return camOut(c, sites, cps); }).filter(function (c) {
+      if (!c.siteId || !u.scope || u.scope.all) return true;
+      if (sites[c.siteId]) return H.inScope(u, c.siteId, sites);
+      return u.scope.sectors.indexOf(c.sector) >= 0 || (cps[c.siteId] && BIO_list(cps[c.siteId].serves).some(function (x) { return H.inScope(u, x, sites); }));
+    }).sort(function (a, b) { return a.order - b.order || String(a.id).localeCompare(String(b.id)); });
+    var s = st();
+    return { enabled: camsOn(), refresh: Math.max(2, num(s.CAM_REFRESH_SEC, 3)), approvedBy: s.CAMERAS_APPROVED_BY || '', approvedAt: s.CAMERAS_APPROVED_AT || '', cameras: list, canAdmin: !!u.isAdmin,
+      places: Object.keys(cps).map(function (k) { return { id: k, name: cps[k].name, sector: cps[k].sector, gate: true }; }).concat(H.sitesList(sites).filter(function (x) { return !x.external; }).map(function (x) { return { id: x.id, name: x.name, sector: x.sector, gate: false }; })),
+      kinds: ADMIN.cameras.fields[3].opts };
+  };
+  api.camSave = function (pin, r, orig) {
+    var u = H.auth(pin, 'admin'); r = r || {};
+    var id = BIO_norm(r.id) || BIO_norm(orig); if (!id) { var n = 1; do { id = 'CAM' + ('0' + n).slice(-2); n++; } while (store.find('cameras', id)); }
+    var sites = H.sitesById(), cp = store.find('checkpoints', r.siteId), s = sites[BIO_norm(r.siteId)];
+    if (!clean(r.name)) throw new Error('اكتب اسم الكاميرا');
+    var url = clean(r.url, 500), app = clean(r.appUrl, 500);
+    if (url && !/^https?:\/\//i.test(url)) throw new Error('رابط البث يجب أن يبدأ بـ https://');
+    var row = { id: id, name: clean(r.name, 60), siteId: s ? s.id : cp ? BIO_norm(cp.id) : '', siteName: s ? s.name : cp ? cp.name : '', sector: s ? s.sector : cp ? cp.sector : '', kind: ADMIN.cameras.fields[3].opts.indexOf(r.kind) >= 0 ? r.kind : ADMIN.cameras.fields[3].opts[0], url: url, appUrl: app, active: r.active === false || r.active === BIO.NO ? BIO.NO : BIO.YES, order: num(r.order, 99) };
+    var old = orig ? store.find('cameras', orig) : store.find('cameras', id);
+    deps.lock(function () { if (old) store.update('cameras', old.id, row); else store.append('cameras', row); });
+    log(u, 'cameras', id, old ? 'تعديل كاميرا' : 'إضافة كاميرا', old ? Object.assign({}, old) : null, row);
+    return { ok: true, id: id };
+  };
+  api.camDelete = function (pin, id) {
+    var u = H.auth(pin, 'admin'), c = store.find('cameras', id); if (!c) throw new Error('الكاميرا غير موجودة');
+    deps.lock(function () { store.remove('cameras', id); }); log(u, 'cameras', id, 'حذف كاميرا', c, null);
+    return { ok: true };
+  };
+  /** تفعيل ربط الكاميرات بعد اعتماد الإدارة (المدير العام فقط) */
+  api.camEnable = function (pin, on, approval) {
+    var u = H.auth(pin, 'admin');
+    if (on && !clean(approval)) throw new Error('اكتب رقم أو مرجع موافقة الإدارة');
+    deps.lock(function () {
+      setSetting('CAMERAS_ENABLED', on ? BIO.YES : BIO.NO, 'ربط كاميرات المراقبة بالتطبيق. يُفعَّل بعد موافقة الإدارة');
+      setSetting('CAMERAS_APPROVED_BY', on ? u.name + ' · ' + clean(approval, 80) : '', 'من فعّل ربط الكاميرات ومرجع موافقة الإدارة');
+      setSetting('CAMERAS_APPROVED_AT', on ? BIO_fmtTime(deps.now()) : '', 'وقت تفعيل ربط الكاميرات');
+    });
+    log(u, 'settings', 'CAMERAS_ENABLED', on ? 'تفعيل ربط الكاميرات' : 'إيقاف ربط الكاميرات', null, { approval: approval });
+    return { ok: true, enabled: !!on };
+  };
+
+  /* ---------- 2) رابط تتبع رحلة السائق ---------- */
+  function canTrip(u) { return !!u && u.isManager && (u.isAdmin || BIO.ROLES_TRIP.indexOf(u.role) >= 0); }
+  function trackUrl() { var s = st(); return String(s.TRACK_URL || 'https://abdelrahmanzaki2024-lgtm.github.io/biosecurity/').trim(); }
+  function intlPhone(p) { var d = String(p || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(d)) d = '2' + d; else if (/^1\d{9}$/.test(d)) d = '20' + d; return d; }
+  function tripLink(token) { var b = trackUrl(); return b + (b.indexOf('?') >= 0 ? '&' : '?') + 'p=trip&t=' + token; }
+  function tripRows() { return has('trips') ? store.all('trips') : []; }
+  function byToken(token) { token = String(token || '').replace(/[^a-z0-9]/gi, ''); if (token.length < 16) return null; return tripRows().filter(function (t) { return String(t.token) === token; })[0] || null; }
+  function liveTrip(itemId) { var id = BIO_norm(itemId); return tripRows().filter(function (t) { return BIO_norm(t.itemId) === id && BIO.TRIP_LIVE.indexOf(t.status) >= 0; }).pop() || null; }
+  function tripPts(id) {
+    var pts = []; if (!has('tripPings')) return pts;
+    store.all('tripPings').forEach(function (p) { if (String(p.tripId) === String(id)) pts = pts.concat(json(p.pts, [])); });
+    pts.sort(function (a, b) { return a[0] - b[0]; });
+    return pts;
+  }
+  function tripOut(t) {
+    return { id: t.id, time: BIO_ms(t.time), itemId: BIO_norm(t.itemId), itemName: t.itemName, plate: String(t.plate || ''), driver: t.driver || '', phone: String(t.phone || ''), fromId: BIO_norm(t.fromId), fromName: t.fromName || '', toId: BIO_norm(t.toId), toName: t.toName || '',
+      by: t.by || '', status: t.status, startedAt: BIO_ms(t.startedAt) || null, endedAt: BIO_ms(t.endedAt) || null, lastAt: BIO_ms(t.lastAt) || null, lastLat: num(t.lastLat, null), lastLng: num(t.lastLng, null), points: num(t.points, 0), km: num(t.km, 0), stops: num(t.stops, 0), alerts: json(t.alerts, []), note: t.note || '', live: BIO.TRIP_LIVE.indexOf(t.status) >= 0 };
+  }
+  /** تحليل المسار: المسافة، والتوقفات خارج مواقع الشركة، والمرور بمواقع شركة غير مدرجة في الرحلة */
+  function analyse(t, pts, sites) {
+    var s = st(), stopMin = Math.max(3, num(s.TRIP_STOP_MIN, 10)) * 60000, rad = Math.max(80, num(s.TRIP_STOP_RADIUS_M, 300)) / 1000;
+    var known = siteCoords(sites), from = BIO_norm(t.fromId), to = BIO_norm(t.toId), km = 0, events = [];
+    for (var i = 1; i < pts.length; i++) { var d = BIO_km([pts[i - 1][1], pts[i - 1][2]], [pts[i][1], pts[i][2]]); if (d < 5) km += d; }
+    function nearSite(p, within) { var best = null; known.forEach(function (x) { var d = BIO_km([p[1], p[2]], [Number(x.lat), Number(x.lng)]); if (d <= within && (!best || d < best.d)) best = { s: x, d: d }; }); return best; }
+    var i0 = 0;
+    while (i0 < pts.length) {
+      var j = i0 + 1, c = [pts[i0][1], pts[i0][2]];
+      while (j < pts.length && BIO_km(c, [pts[j][1], pts[j][2]]) <= rad) j++;
+      var dur = pts[j - 1][0] - pts[i0][0];
+      if (dur >= stopMin) {
+        var lat = 0, lng = 0; for (var k = i0; k < j; k++) { lat += pts[k][1]; lng += pts[k][2]; } lat /= (j - i0); lng /= (j - i0);
+        var ns = nearSite([0, lat, lng], 1.2), open = j >= pts.length;
+        if (!ns) events.push({ kind: 'stop', at: pts[i0][0], until: pts[j - 1][0], min: Math.round(dur / 60000), lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5, open: open, title: 'توقف ' + Math.round(dur / 60000) + ' دقيقة خارج مواقع الشركة' });
+        else if (ns.s.id !== from && ns.s.id !== to) events.push({ kind: 'site', at: pts[i0][0], until: pts[j - 1][0], min: Math.round(dur / 60000), lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5, siteId: ns.s.id, open: open, title: 'توقف ' + Math.round(dur / 60000) + ' دقيقة عند «' + ns.s.name + '» وهو ليس ضمن خط سير الرحلة' });
+      }
+      i0 = j;
+    }
+    return { km: Math.round(km * 10) / 10, events: events };
+  }
+  api.tripStart = function (pin, r) {
+    var u = H.auth(pin, true); r = r || {};
+    if (!canTrip(u)) throw new Error('إرسال رابط التتبع متاح للمشرف والمسؤول والمدير فقط');
+    var it = H.itemInfo(store.find('items', BIO_norm(r.itemId)));
+    if (!it || it.kind !== 'مركبة') throw new Error('اختر المركبة');
+    var sites = H.sitesById(), from = sites[BIO_norm(r.fromId)] || null, to = sites[BIO_norm(r.toId)] || null;
+    if (!to) throw new Error('اختر وجهة الرحلة');
+    if (!H.inScope(u, to.id, sites) && !(from && H.inScope(u, from.id, sites))) throw new Error('الرحلة خارج نطاق إدارتك');
+    var phone = intlPhone(r.phone || it.phone), now = deps.now();
+    var old = liveTrip(it.id);
+    if (old) store.update('trips', old.id, { status: 'أُلغيت (رابط أحدث)', endedAt: now });
+    var token = 't' + (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + now.toString(36)).replace(/[^a-z0-9]/g, '').slice(0, 27);
+    var row = { id: deps.id('TR'), time: now, itemId: it.id, itemName: it.name, plate: it.plate || '', driver: clean(r.driver, 60), phone: phone, fromId: from ? from.id : '', fromName: from ? from.name : '', toId: to.id, toName: to.name, token: token, by: u.name, byId: u.id, status: 'بانتظار السائق', startedAt: '', endedAt: '', lastAt: '', lastLat: '', lastLng: '', points: 0, km: 0, stops: 0, alerts: '[]', note: clean(r.note, 200) };
+    deps.lock(function () { store.append('trips', row); });
+    log(u, 'trips', row.id, 'إرسال رابط تتبع رحلة', null, { itemId: it.id, to: to.name });
+    var link = tripLink(token);
+    var msg = '🚚 ' + (st().COMPANY || 'الأمن الحيوي') + ': رابط تتبع رحلتك\nالمركبة: ' + it.name + (it.plate ? ' (' + it.plate + ')' : '') + '\n' + (from ? 'من: ' + from.name + '\n' : '') + 'إلى: ' + to.name +
+      '\n\nافتح الرابط واضغط «ابدأ الرحلة» واترك الصفحة مفتوحة حتى تصل للبوابة:\n' + link + '\n\nممنوع التوقف عند أي مزرعة دواجن أو سوق طيور أو مجزر أثناء الرحلة.';
+    return { ok: true, trip: tripOut(row), link: link, phone: phone, message: msg };
+  };
+  api.tripInfo = function (token) {
+    var t = byToken(token); if (!t) throw new Error('رابط التتبع غير صحيح أو انتهت صلاحيته');
+    var o = tripOut(t), sites = H.sitesById(), s = st();
+    if (!o.live && o.endedAt && deps.now() - o.endedAt > 6 * BIO.HOUR) throw new Error('انتهت هذه الرحلة. اطلب رابطاً جديداً من المشرف');
+    var pick = function (id) { var x = sites[id]; return x ? { id: x.id, name: x.name, lat: num(x.lat, null), lng: num(x.lng, null) } : null; };
+    return { trip: { id: o.id, itemName: o.itemName, plate: o.plate, driver: o.driver, fromName: o.fromName, toName: o.toName, status: o.status, live: o.live, startedAt: o.startedAt, endedAt: o.endedAt, points: o.points, km: o.km, by: o.by }, from: pick(o.fromId), to: pick(o.toId), company: s.COMPANY || '', every: Math.max(30, num(s.TRIP_PING_SEC, 60)), stopMin: num(s.TRIP_STOP_MIN, 10) };
+  };
+  api.tripPing = function (token, pts, ended) {
+    var t = byToken(token); if (!t) throw new Error('رابط التتبع غير صحيح');
+    var now = deps.now(), created = BIO_ms(t.time);
+    if (BIO.TRIP_LIVE.indexOf(t.status) < 0) return { ok: true, ended: true, status: t.status };
+    if (now - created > 3 * D) { store.update('trips', t.id, { status: 'انتهت صلاحية الرابط', endedAt: now }); return { ok: true, ended: true, status: 'انتهت صلاحية الرابط' }; }
+    var clean_ = (Array.isArray(pts) ? pts : []).slice(0, 400).map(function (p) { return [Math.round(num(p[0], 0)), Math.round(num(p[1], 0) * 1e6) / 1e6, Math.round(num(p[2], 0) * 1e6) / 1e6, Math.round(num(p[3], 0))]; })
+      .filter(function (p) { return p[0] >= created - 10 * 60000 && p[0] <= now + 5 * 60000 && Math.abs(p[1]) <= 90 && Math.abs(p[2]) <= 180 && (p[1] || p[2]) && p[3] < 2000; });
+    var sites = H.sitesById();
+    return deps.lock(function () {
+      if (clean_.length) store.append('tripPings', { id: deps.id('TP'), tripId: t.id, time: now, pts: JSON.stringify(clean_) });
+      var all = tripPts(t.id), a = analyse(t, all, sites), prev = json(t.alerts, []), seen = {}, fresh = [];
+      prev.forEach(function (e) { seen[e.kind + ':' + e.at] = e; });
+      a.events.forEach(function (e) { var k = e.kind + ':' + e.at; if (!seen[k]) { fresh.push(e); prev.push(e); } else Object.assign(seen[k], { until: e.until, min: e.min, open: e.open, title: e.title }); });
+      var last = all[all.length - 1], patch = { status: ended ? 'انتهت (أنهاها السائق)' : all.length ? 'جارية' : t.status, points: all.length, km: a.km, stops: prev.length, alerts: JSON.stringify(prev.slice(-40)) };
+      if (all.length && !t.startedAt) patch.startedAt = all[0][0];
+      if (last) { patch.lastAt = last[0]; patch.lastLat = last[1]; patch.lastLng = last[2]; }
+      if (ended) patch.endedAt = now;
+      store.update('trips', t.id, patch);
+      fresh.forEach(function (e) {
+        deps.notify({ kind: 'trip', siteId: BIO_norm(t.toId), title: '🚚 ' + (e.kind === 'site' ? 'مرور غير مخطط: ' : 'توقف أثناء الرحلة: ') + t.itemName, body: e.title + '\nالرحلة: ' + (t.fromName ? t.fromName + ' ← ' : '') + t.toName + (t.driver ? '\nالسائق: ' + t.driver : '') + '\nالمكان على الخريطة: ' + mapLink(e.lat, e.lng) + H.appUrl('#trips/' + t.id) });
+      });
+      return { ok: true, status: patch.status, points: all.length, km: a.km, stops: prev.length, ended: !!ended };
+    });
+  };
+  /** الرحلة الجارية: يُعاد حساب المسافة والتوقفات من النقاط عند العرض */
+  function liveCalc(t, sites) {
+    if (BIO.TRIP_LIVE.indexOf(t.status) < 0 || !num(t.points, 0)) return t;
+    var a = analyse(t, tripPts(t.id), sites), prev = json(t.alerts, []), seen = {};
+    prev.forEach(function (e) { seen[e.kind + ':' + e.at] = 1; });
+    a.events.forEach(function (e) { if (!seen[e.kind + ':' + e.at]) prev.push(e); });
+    return Object.assign({}, t, { km: a.km, stops: prev.length, alerts: JSON.stringify(prev) });
+  }
+  api.trips = function (pin, days) {
+    var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(); days = Math.min(60, num(days, 7));
+    var list = tripRows().map(function (t) { return tripOut(liveCalc(t, sites)); }).filter(function (t) { return (t.live || t.time >= now - days * D) && (H.inScope(u, t.toId, sites) || (t.fromId && H.inScope(u, t.fromId, sites))); }).sort(function (a, b) { return (b.live ? 1 : 0) - (a.live ? 1 : 0) || b.time - a.time; });
+    var veh = store.all('items').map(H.itemInfo).filter(function (i) { return i && i.kind === 'مركبة' && i.active; }).map(function (i) { return { id: i.id, name: i.name, plate: i.plate, vtype: i.vtype, track: i.track, phone: i.phone, live: !!liveTrip(i.id) }; });
+    return { now: now, list: list, vehicles: veh, canTrip: canTrip(u), totals: { live: list.filter(function (t) { return t.live; }).length, flagged: list.filter(function (t) { return t.stops; }).length, required: veh.filter(function (v) { return v.track; }).length, km: Math.round(list.reduce(function (a, t) { return a + t.km; }, 0)) },
+      sites: H.sitesList(sites).filter(function (s) { return !s.external; }).map(function (s) { return { id: s.id, name: s.name, sector: s.sector }; }), stopMin: num(st().TRIP_STOP_MIN, 10) };
+  };
+  api.tripDetail = function (pin, id) {
+    var u = H.auth(pin, true), t = store.find('trips', id); if (!t) throw new Error('الرحلة غير موجودة');
+    var sites = H.sitesById(), o = tripOut(liveCalc(t, sites));
+    o.pts = tripPts(t.id).map(function (p) { return [p[0], p[1], p[2]]; });
+    o.sites = siteCoords(sites).map(function (s) { return { id: s.id, name: s.name, lat: Number(s.lat), lng: Number(s.lng), on: s.id === o.fromId || s.id === o.toId }; });
+    o.link = o.live ? tripLink(t.token) : '';
+    o.canTrip = canTrip(u);
+    return o;
+  };
+  api.tripStop = function (pin, id) {
+    var u = H.auth(pin, true); if (!canTrip(u)) throw new Error('غير مسموح');
+    var t = store.find('trips', id); if (!t) throw new Error('الرحلة غير موجودة');
+    store.update('trips', t.id, { status: 'أُوقفت بواسطة ' + u.name, endedAt: deps.now() });
+    return { ok: true };
+  };
+  api.setTrack = function (pin, itemId, on) {
+    var u = H.auth(pin, true); if (!canTrip(u)) throw new Error('تحديد المركبات المتتبعة متاح للمشرف والمسؤول والمدير فقط');
+    var it = store.find('items', BIO_norm(itemId)); if (!it || it.kind !== 'مركبة') throw new Error('المركبة غير موجودة');
+    store.update('items', it.id, { track: on ? BIO.YES : '' }); log(u, 'items', it.id, on ? 'تفعيل تتبع الرحلات' : 'إلغاء تتبع الرحلات', null, null);
+    return { ok: true, track: !!on };
+  };
+  var fleet13 = api.fleet;
+  api.fleet = function (pin, days) {
+    var d = fleet13(pin, days), u = H.auth(pin, true), tr = {};
+    d.canTrip = canTrip(u);
+    store.all('items').forEach(function (i) { if (BIO_isYes(i.track)) tr[BIO_norm(i.id)] = 1; });
+    d.list.forEach(function (v) { v.trackReq = !!tr[v.id]; var lt = liveTrip(v.id); v.trip = lt ? { id: lt.id, status: lt.status, toName: lt.toName, stops: num(lt.stops, 0) } : null; });
+    return d;
+  };
+
+  /* ---------- 3) إقرار الأمن الحيوي مع المأمورية أو الزيارة ---------- */
+  /** يقارن إقرار الشخص بسجل حركته الفعلي ويقيّم الخطورة */
+  function declCheck(itemId, d, visitAt, sites) {
+    var now = deps.now(), flags = [], risk = 0, why = [];
+    var farm = BIO.DECL_FARMS.indexOf(d.lastFarm) >= 0 ? d.lastFarm : 'لا توجد', farmAt = BIO_ms(d.lastFarmAt) || 0;
+    if (farm !== 'لا توجد') {
+      var hrs = farmAt ? (visitAt - farmAt) / BIO.HOUR : 0;
+      if (!farmAt || hrs < 72) { risk = Math.max(risk, 3); why.push('مخالطة «' + farm + '» ' + (farmAt ? 'قبل الزيارة بـ ' + Math.max(0, Math.round(hrs)) + ' ساعة' : 'دون تاريخ') + ' (أقل من 72 ساعة)'); }
+      else { risk = Math.max(risk, 1); why.push('مخالطة «' + farm + '» قبل الزيارة بـ ' + Math.round(hrs / 24) + ' يوم'); }
+    }
+    if (d.birds72) { risk = Math.max(risk, 3); why.push('تعامل مع طيور حية أو نافقة خارج الشركة خلال 72 ساعة'); }
+    if (d.sick) { risk = Math.max(risk, 3); why.push('لاحظ نفوقاً أو أعراضاً غير طبيعية في مكان زاره'); }
+    if (d.home) { risk = Math.max(risk, 2); why.push('يربي طيوراً في منزله'); }
+    var mv = itemId ? H.movesOf(itemId).filter(function (m) { return BIO_ms(m.time) <= now && BIO_ms(m.time) >= now - 14 * D; }) : [];
+    var lastIn = mv.filter(function (m) { return m.dir === BIO.IN && BIO_counted(m) && sites[BIO_norm(m.siteId)] && !sites[BIO_norm(m.siteId)].external; }).pop();
+    var decSite = BIO_norm(d.lastSite), decAt = BIO_ms(d.lastSiteAt) || 0;
+    if (lastIn) {
+      var real = sites[BIO_norm(lastIn.siteId)], ra = BIO_ms(lastIn.time);
+      if (!decSite) flags.push('أقر بعدم دخول أي موقع للشركة خلال 14 يوماً، بينما سجله يُظهر دخوله «' + real.name + '» يوم ' + BIO_fmtTime(ra));
+      else if (decSite !== real.id && sites[decSite] && Number(sites[decSite].level) !== Number(real.level)) flags.push('أقر أن آخر موقع دخله «' + sites[decSite].name + '» بينما السجل يُظهر «' + real.name + '» يوم ' + BIO_fmtTime(ra));
+      else if (decSite === real.id && decAt && Math.abs(decAt - ra) > 36 * BIO.HOUR) flags.push('تاريخ آخر دخول لـ«' + real.name + '» في الإقرار يختلف عن السجل (' + BIO_fmtTime(ra) + ')');
+    }
+    var ext = mv.filter(function (m) { return m.dir === BIO.EXT && BIO_ms(m.time) >= now - 3 * D; }).pop();
+    if (ext && farm === 'لا توجد' && !d.birds72) flags.push('سجل الخروج يُظهر توجهه إلى «' + ext.siteName + '» يوم ' + BIO_fmtTime(BIO_ms(ext.time)) + ' ولم يذكره في الإقرار');
+    if (flags.length) risk = Math.max(risk, 2);
+    var lv = risk >= 3 ? 'عالي' : risk >= 2 ? 'متوسط' : 'منخفض';
+    return { risk: lv, why: why, flags: flags, farm: farm, farmAt: farmAt };
+  }
+  function readDecl(m) {
+    var d = m && m.decl && typeof m.decl === 'object' ? m.decl : null;
+    if (!d) return null;
+    return { lastFarm: clean(d.lastFarm, 40), lastFarmAt: BIO_ms(d.lastFarmAt) || null, birds72: !!d.birds72, home: !!d.home, sick: !!d.sick, lastSite: BIO_norm(d.lastSite), lastSiteAt: BIO_ms(d.lastSiteAt) || null, agree: !!d.agree };
+  }
+  function withDecl(base, needAgree) {
+    return function () {
+      var args = Array.prototype.slice.call(arguments), m = args[args.length - 1] || {}, d = readDecl(m);
+      if (!d) throw new Error('أكمل إقرار الأمن الحيوي قبل الإرسال');
+      if (needAgree && !d.agree) throw new Error('يجب الموافقة على صحة الإقرار قبل الإرسال');
+      m.lastContact = d.lastFarm; m.lastContactAt = d.lastFarmAt;
+      var res = base.apply(null, args);
+      if (!res || res.duplicate || !res.mission) return res;
+      var ms = res.mission, sites = H.sitesById(), c = declCheck(ms.itemId, d, ms.visitAt, sites);
+      var patch = { decl: JSON.stringify(Object.assign({}, d, { at: deps.now() })), declRisk: c.risk, declFlag: c.flags.join(' | ') };
+      store.update('missions', ms.id, patch);
+      Object.assign(ms, patch);
+      if (c.flags.length || c.risk === 'عالي') {
+        deps.notify({ kind: 'mission', siteId: ms.siteId, title: (c.flags.length ? '🧾 إقرار غير مطابق للسجل: ' : '🧾 إقرار عالي الخطورة: ') + ms.visitor + ' ← ' + ms.siteName,
+          body: c.flags.concat(c.why).join('\n') + '\nالمأمورية: ' + ms.id + ' · موعدها ' + BIO_fmtTime(ms.visitAt) + H.appUrl('#missions') });
+      }
+      res.decl = { risk: c.risk, why: c.why, flags: c.flags };
+      return res;
+    };
+  }
+  api.createMission = withDecl(api.createMission, true);
+  api.selfMission = withDecl(api.selfMission, true);
+  api.declOptions = function () { return { farms: BIO.DECL_FARMS }; };
+  /** على البوابة: إقرار غير مطابق أو عالي الخطورة يظهر للحارس، ويمنع الدخول إن فُعّل DECL_BLOCK */
+  var gate13 = api._gateChecks;
+  api._gateChecks = function (item, site, t, s, res) {
+    if (gate13) gate13(item, site, t, s, res);
+    var ms = store.all('missions').filter(function (m) { return BIO_norm(m.itemId) === item.id && BIO_norm(m.siteId) === site.id && BIO_ms(m.visitAt) - 2 * BIO.HOUR <= t && (BIO_ms(m.endAt) || BIO_ms(m.visitAt) + 10 * BIO.HOUR) >= t; }).pop();
+    if (ms && (ms.declFlag || ms.declRisk === 'عالي')) {
+      var approved = ms.status === BIO.MS_EXC || /إقرار/.test(String(ms.note || ''));
+      if (ms.declFlag) res.warnings.unshift('🧾 إقرار غير مطابق للسجل: ' + ms.declFlag);
+      if (ms.declRisk === 'عالي') res.warnings.unshift('🧾 إقرار عالي الخطورة' + (approved ? ' (راجعه المدير)' : '') + ': تحقق من الاستحمام وتغيير الملابس بدقة');
+      if (BIO_isYes(s.DECL_BLOCK) && ms.declRisk === 'عالي' && !approved && res.decision === BIO.ALLOW) { res.decision = BIO.DENY; res.reasons.unshift('إقرار الأمن الحيوي عالي الخطورة ولم يعتمده المدير بعد'); }
+    }
+    // المركبة القادمة برابط تتبع: ملخص الرحلة للحارس وإنهاؤها عند الوصول
+    if (item.kind === 'مركبة') {
+      var lt = liveTrip(item.id);
+      if (lt) {
+        lt = liveCalc(lt, H.sitesById());
+        var al = json(lt.alerts, []);
+        res.warnings.unshift('🚚 رحلة متتبعة' + (lt.fromName ? ' من «' + lt.fromName + '»' : '') + ': ' + num(lt.km, 0) + ' كم' + (al.length ? ' · ' + al.length + ' توقف خارج خط السير: ' + al.map(function (e) { return e.title; }).join('، ') : ' دون توقفات خارج المواقع'));
+        if (lt.status === 'بانتظار السائق') res.warnings.unshift('🚚 أُرسل للسائق رابط تتبع ولم يفتحه: لا يوجد مسار مسجل لهذه الرحلة');
+        store.update('trips', lt.id, { status: 'وصلت' + (BIO_norm(lt.toId) === site.id ? '' : ' إلى موقع آخر: ' + site.name), endedAt: t });
+      }
+    }
+  };
+  var scan13 = api.scan;
+  api.scan = function (pin, p) {
+    var r = scan13(pin, p);
+    if (r && r.dir === 'OUT' && r.item && r.item.kind === 'مركبة' && r.item.track && !p.offline) {
+      var lt = liveTrip(r.item.id);
+      if (!lt) {
+        r.warnings = (r.warnings || []).concat(['🚚 هذه المركبة تتطلب رابط تتبع رحلة: تم إبلاغ المشرف لإرساله للسائق']);
+        r.tripNeeded = true;
+        deps.notify({ kind: 'trip', siteId: r.site.id, title: '🚚 مركبة خرجت وتحتاج رابط تتبع: ' + r.item.name, body: r.item.name + (r.item.plate ? ' (' + r.item.plate + ')' : '') + '\nخرجت من «' + r.site.name + '»' + (r.dest ? ' إلى ' + r.dest : '') + '\nأرسل رابط التتبع للسائق من شاشة رحلات المركبات' + H.appUrl('#trips') });
+      } else r.warnings = (r.warnings || []).concat(['🚚 رابط التتبع مُرسل للسائق: الرحلة ' + lt.status + ' إلى «' + lt.toName + '»']);
+    }
+    return r;
+  };
+
+  /* ---------- 4) البلاغ والرسالة الصوتية ---------- */
+  function keepVoice(v, name) {
+    if (!v || !/^data:audio\//i.test(v)) return '';
+    if (String(v).length > 2600000) throw new Error('الرسالة الصوتية أطول من المسموح (دقيقتان)');
+    return deps.saveVoice ? deps.saveVoice(v, name) : v;
+  }
+  var report13 = api.report;
+  api.report = function (pin, r) {
+    r = Object.assign({}, r || {});
+    var voice = r.voice; delete r.voice;
+    if (voice && r.id && store.find('reports', r.id)) return report13(pin, r);
+    var url = voice ? keepVoice(voice, 'بلاغ صوتي ' + (r.id || '')) : '';
+    if (url) r.note = (r.note ? r.note + '\n' : '') + '🎤 مرفق رسالة صوتية: افتح البلاغ لسماعها';
+    var res = report13(pin, r);
+    if (url && res && res.id && !res.duplicate) store.update('reports', res.id, { voice: url });
+    return res;
+  };
+  var send13 = api.sendMessage;
+  api.sendMessage = function (pin, m) {
+    m = Object.assign({}, m || {});
+    var voice = m.voice; delete m.voice;
+    if (m.id && store.find('messages', m.id)) return { id: m.id, duplicate: true };
+    var url = voice ? keepVoice(voice, 'رسالة صوتية ' + (m.id || '')) : '';
+    if (url && !String(m.text || '').trim()) m.text = '🎤 رسالة صوتية';
+    var res = send13(pin, m);
+    if (url && res && res.id) store.update('messages', res.id, { voice: url });
+    return res;
+  };
+
+  /* ---------- 5) الإنذار المبكر من النافق اليومي ---------- */
+  function ewsCfg() { var s = st(); return { watch: num(s.EWS_WATCH, 1.5), alert: num(s.EWS_ALERT, 2), crit: num(s.EWS_CRIT, 3), min: num(s.EWS_MIN_DEAD, 15), pW: num(s.EWS_PCT_WATCH, 0.1), pA: num(s.EWS_PCT_ALERT, 0.2), pC: num(s.EWS_PCT_CRIT, 0.4) }; }
+  function lastPhase(siteId) {
+    if (!has('phases')) return null;
+    var r = store.all('phases').filter(function (p) { return BIO_norm(p.siteId) === siteId; }).sort(function (a, b) { return BIO_ms(a.startAt || a.time) - BIO_ms(b.startAt || b.time); });
+    var birds = 0, flockAt = 0, last = r[r.length - 1] || null;
+    r.forEach(function (p) { if (num(p.birds, 0)) birds = num(p.birds, 0); if (BIO_ms(p.flockAt)) flockAt = BIO_ms(p.flockAt); if (/تحميل سبلة|تجهيز وتطهير|فترة راحة/.test(String(p.phase))) { birds = 0; flockAt = 0; } });
+    return { phase: last ? String(last.phase) : '', birds: birds, flockAt: flockAt };
+  }
+  function series(siteIds, days, now) {
+    var t0 = day0(now) - (days - 1) * D, out = {};
+    siteIds.forEach(function (id) { out[id] = { dead: new Array(days).fill(0), rec: new Array(days).fill(false) }; });
+    store.all('disposal').forEach(function (x) {
+      if (x.kind !== 'نافق') return;
+      var id = BIO_norm(x.siteId), t = BIO_ms(x.time), i = Math.floor((t - t0) / D);
+      if (!out[id] || i < 0 || i >= days) return;
+      out[id].dead[i] += num(x.count, 0); out[id].rec[i] = true;
+    });
+    return out;
+  }
+  function judge(dead, hist, birds, cfg) {
+    var past = hist.filter(function (v, i) { return v != null; });
+    var base = past.length >= 3 ? past.reduce(function (a, b) { return a + b; }, 0) / past.length : null;
+    var ratio = base != null ? dead / Math.max(base, 1) : null, pct = birds ? dead / birds * 100 : null, lv = 0, why = [];
+    var big = dead >= cfg.min;
+    if (big && ratio != null) {
+      if (ratio >= cfg.crit) { lv = 3; why.push('النافق ' + (Math.round(ratio * 10) / 10) + ' أضعاف المعدل المعتاد'); }
+      else if (ratio >= cfg.alert) { lv = 2; why.push('النافق ' + (Math.round(ratio * 10) / 10) + ' ضعف المعدل المعتاد'); }
+      else if (ratio >= cfg.watch) { lv = 1; why.push('النافق أعلى من المعتاد بـ ' + Math.round((ratio - 1) * 100) + '%'); }
+    }
+    if (pct != null) {
+      var p = Math.round(pct * 100) / 100;
+      if (pct >= cfg.pC) { lv = Math.max(lv, 3); why.push('نسبة نفوق يومية ' + p + '% من القطيع'); }
+      else if (pct >= cfg.pA) { lv = Math.max(lv, 2); why.push('نسبة نفوق يومية ' + p + '% من القطيع'); }
+      else if (pct >= cfg.pW) { lv = Math.max(lv, 1); why.push('نسبة نفوق يومية ' + p + '% من القطيع'); }
+    }
+    var h = past.slice(-2);
+    if (big && h.length === 2 && h[0] != null && h[1] != null && h[1] > h[0] * 1.1 && dead > h[1] * 1.1) { lv = Math.max(lv, 1); why.push('ارتفاع متتالٍ 3 أيام'); }
+    return { level: BIO.EWS_LEVELS[lv].k, n: lv, base: base == null ? null : Math.round(base * 10) / 10, ratio: ratio == null ? null : Math.round(ratio * 100) / 100, pct: pct == null ? null : Math.round(pct * 1000) / 1000, why: why };
+  }
+  function evalSite(siteId, now) {
+    var cfg = ewsCfg(), s = series([siteId], 8, now)[siteId], ph = lastPhase(siteId) || {};
+    var hist = s.dead.slice(0, 7).map(function (v, i) { return s.rec[i] ? v : null; });
+    return Object.assign(judge(s.dead[7], hist, ph.birds, cfg), { dead: s.dead[7] });
+  }
+  function ewsRows() { return has('ews') ? store.all('ews') : []; }
+  function ewsOut(r) { return { id: r.id, time: BIO_ms(r.time), day: String(r.day), siteId: BIO_norm(r.siteId), siteName: r.siteName, dead: num(r.dead, 0), base: num(r.base, null), ratio: num(r.ratio, null), pct: num(r.pct, null), level: r.level, why: String(r.why || ''), status: r.status || 'جديد', action: r.action || '', by: r.by || '', at: BIO_ms(r.at) || null }; }
+  /** يُستدعى بعد كل تسجيل نافق: يقارن بالمعدل ويرسل الإنذار مرة واحدة لكل مستوى في اليوم */
+  function ewsFire(siteId, now) {
+    var sites = H.sitesById(), site = sites[siteId]; if (!site) return null;
+    var j = evalSite(siteId, now); if (j.n < 2) return j;
+    var dk = dayKey(now), prev = ewsRows().filter(function (r) { return BIO_norm(r.siteId) === siteId && String(r.day) === dk; });
+    var top = prev.reduce(function (a, r) { var l = BIO.EWS_LEVELS.filter(function (x) { return x.k === r.level; })[0]; return Math.max(a, l ? l.n : 0); }, 0);
+    if (top >= j.n) { var cur = prev[prev.length - 1]; store.update('ews', cur.id, { dead: j.dead, ratio: j.ratio == null ? '' : j.ratio, pct: j.pct == null ? '' : j.pct }); return Object.assign(j, { id: cur.id }); }
+    var row = { id: deps.id('EW'), time: now, day: dk, siteId: siteId, siteName: site.name, dead: j.dead, base: j.base == null ? '' : j.base, ratio: j.ratio == null ? '' : j.ratio, pct: j.pct == null ? '' : j.pct, level: j.level, why: j.why.join(' · '), status: 'جديد', action: '', by: '', at: '' };
+    store.append('ews', row);
+    deps.notify({ kind: 'ews', siteId: siteId, title: (j.n >= 3 ? '🔴 إنذار مبكر حرج: ' : '🟠 إنذار مبكر: ') + 'نفوق مرتفع في ' + site.name,
+      body: 'نافق اليوم: ' + j.dead + (j.base != null ? ' · المعدل المعتاد ' + j.base : '') + '\n' + j.why.join('\n') + '\n\nالإجراءات المقترحة: زيارة الطبيب البيطري فوراً، أخذ عينات للمعمل، رفع الإنذار على الموقع ومنع الزيارات غير الضرورية، ومراجعة من دخل الموقع آخر 72 ساعة.' + H.appUrl('#ews') });
+    return Object.assign(j, { id: row.id, fired: true });
+  }
+  var disp13 = api.disposalAdd;
+  api.disposalAdd = function (pin, r) {
+    // تنبيه «نفوق مرتفع» القديم يُؤجَّل: إن أطلق الإنذار المبكر تنبيهه لا يُرسل الاثنان معاً
+    var held = [], notify0 = deps.notify, res;
+    deps.notify = function (e) { if (e && e.kind === 'mortality') held.push(e); else notify0(e); };
+    try { res = disp13(pin, r); } finally { deps.notify = notify0; }
+    var e = null;
+    if (res && res.ok && !res.duplicate && r && r.kind === 'نافق') {
+      e = ewsFire(BIO_norm(r.siteId), deps.now());
+      if (e && e.n >= 1) res.ews = { level: e.level, n: e.n, why: e.why, dead: e.dead, base: e.base, id: e.id || '' };
+    }
+    if (!(e && e.n >= 2)) held.forEach(function (x) { notify0(x); });
+    return res;
+  };
+  api.ews = function (pin) {
+    var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(), cfg = ewsCfg(), N = 14;
+    var list = H.sitesList(sites).filter(function (s) { return !s.external && H.inScope(u, s.id, sites) && (BIO_isCycleSite(s) || Number(s.level) <= 2); });
+    var ser = series(list.map(function (s) { return s.id; }), N + 7, now);
+    var rows = list.map(function (s) {
+      var x = ser[s.id], ph = lastPhase(s.id) || {}, days = [];
+      for (var i = 7; i < N + 7; i++) { var hist = x.dead.slice(i - 7, i).map(function (v, k) { return x.rec[i - 7 + k] ? v : null; }); var j = judge(x.dead[i], hist, ph.birds, cfg); days.push({ dead: x.dead[i], rec: x.rec[i], n: x.rec[i] ? j.n : 0, base: j.base }); }
+      var today = days[N - 1], hist7 = x.dead.slice(N - 1, N + 6).map(function (v, k) { return x.rec[N - 1 + k] ? v : null; }), j = judge(today.dead, hist7, ph.birds, cfg);
+      var growing = /تربية|استقبال|بيع/.test(String(ph.phase || '')) || (!ph.phase && BIO_isCycleSite(s));
+      return { id: s.id, name: s.name, sector: s.sector, level: Number(s.level), status: s.status, phase: ph.phase || '', birds: ph.birds || 0, age: ph.flockAt ? Math.max(1, Math.floor((now - ph.flockAt) / D) + 1) : null, days: days, today: today.dead, recToday: today.rec, base: j.base, ratio: j.ratio, pct: j.pct, n: j.n, levelName: j.level, why: j.why, missing: growing && !today.rec, week: x.dead.slice(N + 0, N + 7).reduce(function (a, b) { return a + b; }, 0) };
+    }).sort(function (a, b) { return b.n - a.n || (b.ratio || 0) - (a.ratio || 0) || a.name.localeCompare(b.name); });
+    var alerts = ewsRows().map(ewsOut).filter(function (a) { return a.time >= now - 7 * D && H.inScope(u, a.siteId, sites); }).sort(function (a, b) { return b.time - a.time; });
+    var counts = { watch: rows.filter(function (r) { return r.n === 1; }).length, alert: rows.filter(function (r) { return r.n === 2; }).length, crit: rows.filter(function (r) { return r.n >= 3; }).length, missing: rows.filter(function (r) { return r.missing; }).length, open: alerts.filter(function (a) { return a.status === 'جديد' || a.status === 'قيد المتابعة'; }).length };
+    return { now: now, rows: rows, alerts: alerts, counts: counts, cfg: cfg, acts: BIO.EWS_ACTS, canSites: u.perms.indexOf('sites') >= 0, deadToday: rows.reduce(function (a, r) { return a + r.today; }, 0) };
+  };
+  api.ewsAct = function (pin, id, act, note) {
+    var u = H.auth(pin, true), r = store.find('ews', id); if (!r) throw new Error('الإنذار غير موجود');
+    if (BIO.EWS_ACTS.indexOf(act) < 0) throw new Error('إجراء غير معروف');
+    if (act === 'رفع إنذار على الموقع') api.setSiteStatus(pin, r.siteId, BIO.ST_ALERT, 'إنذار مبكر: نفوق مرتفع' + (note ? ' · ' + note : ''));
+    if (act === 'إغلاق الموقع') api.setSiteStatus(pin, r.siteId, BIO.ST_CLOSED, 'إنذار مبكر: نفوق مرتفع' + (note ? ' · ' + note : ''));
+    var status = act === 'تم الاحتواء' ? 'مغلق: تم الاحتواء' : act === 'إنذار غير صحيح' ? 'مغلق: إنذار غير صحيح' : 'قيد المتابعة';
+    var line = act + (note ? ': ' + clean(note, 200) : '') + ' · ' + u.name;
+    store.update('ews', r.id, { status: status, action: (r.action ? r.action + '\n' : '') + line, by: u.name, at: deps.now() });
+    log(u, 'ews', r.id, act, null, { note: note });
+    return { ok: true, status: status };
+  };
+  /** لوحة القيادة: عدد الإنذارات المبكرة المفتوحة */
+  var dash13 = api.dashboard;
+  api.dashboard = function (pin) {
+    var d = dash13(pin);
+    try { var u = H.auth(pin, true), sites = H.sitesById(), now = deps.now(); d.ews = ewsRows().map(ewsOut).filter(function (a) { return a.time >= now - 2 * D && (a.status === 'جديد' || a.status === 'قيد المتابعة') && H.inScope(u, a.siteId, sites); }); } catch (e) {}
+    return d;
+  };
+}
+
+/** بيانات نسخة العرض للإصدار 14 */
+function BIO_seedV14(s, now) {
+  var H = BIO.HOUR, D = 24 * H, Y = BIO.YES;
+  s.settings.push(
+    { key: 'CAMERAS_ENABLED', value: 'لا', note: 'ربط كاميرات المراقبة بالتطبيق. يبقى «لا» حتى موافقة الإدارة، ويُفعَّل من شاشة حائط الكاميرات' },
+    { key: 'CAMERAS_APPROVED_BY', value: '', note: 'من فعّل ربط الكاميرات ومرجع موافقة الإدارة' },
+    { key: 'CAMERAS_APPROVED_AT', value: '', note: 'وقت تفعيل ربط الكاميرات' },
+    { key: 'CAM_REFRESH_SEC', value: 3, note: 'تحديث لقطات الكاميرات كل كم ثانية' },
+    { key: 'TRACK_URL', value: 'https://abdelrahmanzaki2024-lgtm.github.io/biosecurity/', note: 'رابط التطبيق المستضاف الذي يُرسل للسائق لتتبع الرحلة (يحتاج https وصلاحية الموقع)' },
+    { key: 'TRIP_STOP_MIN', value: 10, note: 'أقل مدة توقف بالدقائق خارج مواقع الشركة تُسجَّل مخالفة أثناء الرحلة' },
+    { key: 'TRIP_STOP_RADIUS_M', value: 300, note: 'نصف قطر التوقف بالمتر' },
+    { key: 'TRIP_PING_SEC', value: 60, note: 'إرسال موقع السائق كل كم ثانية' },
+    { key: 'DECL_BLOCK', value: 'لا', note: 'نعم = البوابة تمنع صاحب الإقرار عالي الخطورة حتى يعتمده المدير. لا = تحذير فقط' },
+    { key: 'EWS_WATCH', value: 1.5, note: 'الإنذار المبكر: مراقبة عند النافق 1.5 ضعف المعدل' },
+    { key: 'EWS_ALERT', value: 2, note: 'الإنذار المبكر: إنذار عند ضعف المعدل' },
+    { key: 'EWS_CRIT', value: 3, note: 'الإنذار المبكر: حرج عند 3 أضعاف المعدل' },
+    { key: 'EWS_MIN_DEAD', value: 15, note: 'أقل عدد نافق يومي تُحسب عنده النسبة للمعدل (لتجنب إنذارات الأعداد الصغيرة)' },
+    { key: 'EWS_PCT_WATCH', value: 0.1, note: 'نسبة النفوق اليومية % من القطيع للمراقبة' },
+    { key: 'EWS_PCT_ALERT', value: 0.2, note: 'نسبة النفوق اليومية % للإنذار' },
+    { key: 'EWS_PCT_CRIT', value: 0.4, note: 'نسبة النفوق اليومية % للحالة الحرجة' }
+  );
+  // كاميرات أمثلة (تُحذف من الشيت الحقيقي عند setup)
+  s.cameras = [
+    { id: 'CAM01', name: 'بوابة التطهير المركزية - الدخول', siteId: 'W-CP1', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 1 },
+    { id: 'CAM02', name: 'حمام البوابة المركزية', siteId: 'W-CP1', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 2 },
+    { id: 'CAM03', name: 'بوابة أمهات الواحات', siteId: 'W-BRD', kind: 'بث مباشر (MJPEG)', url: '', appUrl: '', active: Y, order: 3 },
+    { id: 'CAM04', name: 'رصيف معمل التفريخ', siteId: 'W-HAT', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 4 },
+    { id: 'CAM05', name: 'بوابة تسمين المحطة 5', siteId: 'W-F05', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 5 },
+    { id: 'CAM06', name: 'بوابة مصنع العلف', siteId: 'W-FEED', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 6 },
+    { id: 'CAM07', name: 'بوابة أمهات ريجوا', siteId: 'R-BRD', kind: 'بث مباشر (MJPEG)', url: '', appUrl: '', active: Y, order: 7 },
+    { id: 'CAM08', name: 'منطقة تطهير المبيعات', siteId: 'W-CP3', kind: 'لقطة متجددة (JPEG)', url: '', appUrl: '', active: Y, order: 8 }
+  ];
+  var ids = {}; s.sites.forEach(function (x) { ids[x.id] = x; }); (s.checkpoints || []).forEach(function (c) { ids[c.id] = c; });
+  s.cameras = s.cameras.filter(function (c) { return ids[c.siteId]; });
+  // مركبات تتطلب تتبع الرحلات + رحلة جارية فيها توقف قرب سوق طيور
+  s.items.forEach(function (i) { if (i.id === 'V003' || i.id === 'V006') i.track = Y; });
+  var f = ids['W-HAT'], t = ids['W-F05'] || ids['W-F10'];
+  if (f && t && f.lat != null && t.lat != null) {
+    var pts = [], t0 = now - 95 * 60000, a = [Number(f.lat), Number(f.lng)], b = [Number(t.lat), Number(t.lng)], mid = [a[0] + (b[0] - a[0]) * 0.45 + 0.02, a[1] + (b[1] - a[1]) * 0.45 - 0.03];
+    for (var i = 0; i <= 30; i++) { var k = i / 30; pts.push([t0 + i * 90000, a[0] + (mid[0] - a[0]) * k, a[1] + (mid[1] - a[1]) * k, 12]); }
+    for (var j = 1; j <= 16; j++) pts.push([t0 + 30 * 90000 + j * 60000, mid[0] + (j % 3) * 0.00012, mid[1] + (j % 2) * 0.0001, 9]);
+    for (var m = 1; m <= 24; m++) { var q = m / 30; pts.push([t0 + 30 * 90000 + 16 * 60000 + m * 90000, mid[0] + (b[0] - mid[0]) * q, mid[1] + (b[1] - mid[1]) * q, 11]); }
+    s.trips = [{ id: 'TR-DEMO-1', time: t0 - 5 * 60000, itemId: 'V003', itemName: 'سيارة نقل كتاكيت', plate: '', driver: 'محمود السائق (مثال)', phone: '201000000000', fromId: f.id, fromName: f.name, toId: t.id, toName: t.name, token: 'tdemo0trip0link0for0preview1', by: 'مدير الأمن الحيوي', byId: 'U09', status: 'جارية', startedAt: pts[0][0], endedAt: '', lastAt: pts[pts.length - 1][0], lastLat: pts[pts.length - 1][1], lastLng: pts[pts.length - 1][2], points: pts.length, km: 0, stops: 0, alerts: '[]', note: '' }];
+    s.tripPings = [{ id: 'TP-DEMO-1', tripId: 'TR-DEMO-1', time: now - 60000, pts: JSON.stringify(pts) }];
+    var it3 = s.items.filter(function (x) { return x.id === 'V003'; })[0]; if (it3) s.trips[0].itemName = it3.name, s.trips[0].plate = it3.plate || '';
+  }
+  // نافق اليوم مرتفع في محطة لعرض الإنذار المبكر
+  var hi = ids['W-F12'] ? 'W-F12' : null;
+  if (hi) {
+    var hist = [21, 19, 23, 20, 22, 24, 21, 29, 41];
+    hist.forEach(function (c, i) { s.disposal.push({ id: 'DP-EWS-H' + i, time: now - (hist.length - i) * D - 2 * H, siteId: hi, siteName: ids[hi].name, kind: 'نافق', count: c, weight: Math.round(c * 1.9), method: 'محرقة', vehicleId: '', vehicleName: '', driverId: '', by: 'أمن بوابة المحطة (مثال)', note: '' }); });
+    s.disposal.push({ id: 'DP-EWS-1', time: now - 40 * 60000, siteId: hi, siteName: ids[hi].name, kind: 'نافق', count: 96, weight: 180, method: 'محرقة', vehicleId: '', vehicleName: '', driverId: '', by: 'أمن بوابة المحطة (مثال)', note: 'عنبر 2 أعلى من المعتاد' });
+    if (s.phases) s.phases.push({ id: 'PH-EWS-1', time: now - 27 * D, siteId: hi, siteName: ids[hi].name, phase: 'تربية', startAt: now - 27 * D, flockAt: now - 27 * D, birds: 36000, by: 'مشرف الأمن الحيوي (مثال)', source: 'تسجيل يدوي', note: '' });
+    s.ews = [{ id: 'EW-DEMO-1', time: now - 39 * 60000, day: '', siteId: hi, siteName: ids[hi].name, dead: 96, base: 24.1, ratio: 3.98, pct: 0.267, level: 'حرج', why: 'النافق 4 أضعاف المعدل المعتاد · نسبة نفوق يومية 0.27% من القطيع · ارتفاع متتالٍ 3 أيام', status: 'جديد', action: '', by: '', at: '' }];
+    var dd = new Date(now + 3 * H); s.ews[0].day = dd.getUTCFullYear() + '-' + ('0' + (dd.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + dd.getUTCDate()).slice(-2);
+  }
+  return s;
+}
+var BIO_seedV13_ = BIO_seed;
+BIO_seed = function (now) { return BIO_seedV14(BIO_seedV13_(now), now); };
