@@ -339,7 +339,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15.2</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15.3</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -3546,16 +3546,34 @@
     html += '<div class="card" id="bdGeo"><div class="card-head"><div><span class="kick">أساس حساب الخطر</span><h2>' + icon('pin') + ' إحداثيات المواقع</h2></div><span class="sub">الإحداثيات التقريبية وُضعت للتجربة. استبدلها بالدقيقة: افتح خرائط جوجل، اضغط مطولاً على المزرعة، وانسخ الرقمين.</span></div><div class="tbl"><table><thead><tr><th>الموقع</th><th>خط العرض</th><th>خط الطول</th><th>الدقة</th><th></th></tr></thead><tbody>' +
       all.map(function (x) { return '<tr><td><b>' + esc(x.name) + '</b></td><td class="mono">' + (x.lat == null ? '—' : Number(x.lat).toFixed(4)) + '</td><td class="mono">' + (x.lng == null ? '—' : Number(x.lng).toFixed(4)) + '</td><td>' + (x.lat == null ? '<span class="pill p-bad">غير مضافة</span>' : x.geo === 'مؤكدة' ? '<span class="pill p-ok">مؤكدة</span>' : '<span class="pill p-warn">تقريبية</span>') + '</td><td class="row" style="gap:6px;justify-content:flex-end">' + (x.lat != null ? '<a class="btn sm ghost" target="_blank" rel="noopener" href="https://www.google.com/maps?q=' + x.lat + ',' + x.lng + '">' + icon('map') + ' الخريطة</a>' : '') + (d.canEdit ? '<button class="btn sm" type="button" data-geo="' + esc(x.id) + '">' + icon('edit') + ' تعديل</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
     // المصادر والمنهجية
+    var mgr = S.session && S.session.user && S.session.user.isManager;
+    html += '<div class="card bd-act-card" id="bdActivate"><div class="card-head"><div><span class="kick">مجاني بالكامل</span><h2>' + icon('pulse') + ' تفعيل البيانات الحية</h2></div></div><div class="bd-acts">' +
+      '<div class="bd-a ' + (live ? 'done' : '') + '"><span class="hn">1</span><div class="t"><b>الرياح الحية على ارتفاع الطيران</b><span>' + (live ? 'مفعّلة: تتحدث تلقائياً كل 3 ساعات' : 'ضغطة واحدة: يجلب الرياح الآن ويضبط التحديث التلقائي كل 3 ساعات') + '</span></div>' +
+        (mgr ? '<button type="button" class="btn ' + (live ? '' : 'primary') + '" data-wact="1">' + icon(live ? 'refresh' : 'check') + (live ? ' تحديث الآن' : ' تفعيل الآن') + '</button>' : '<span class="pill ' + (live ? 'p-ok' : 'p-warn') + '">' + (live ? 'حي' : 'للمدير') + '</span>') + '</div>' +
+      '<div class="bd-a ' + (d.ebird ? 'done' : '') + '"><span class="hn">2</span><div class="t"><b>مشاهدات eBird الحقيقية</b><span>' + (d.ebird ? 'مفعّلة: مشاهدات حول كل موقع كل 3 ساعات' : 'ثلاث خطوات: أنشئ الحساب، اطلب المفتاح، ثم الصقه هنا') + '</span>' +
+        (d.ebird ? '' : '<div class="bd-links"><a class="btn sm" target="_blank" rel="noopener" href="https://secure.birds.cornell.edu/identity/account/create">' + icon('user') + ' إنشاء الحساب</a><a class="btn sm" target="_blank" rel="noopener" href="https://ebird.org/api/keygen">' + icon('key') + ' طلب المفتاح</a></div>') + '</div>' +
+        '<button type="button" class="btn ' + (d.ebird ? '' : 'primary') + '" data-ebird="1">' + icon(d.ebird ? 'key' : 'check') + (d.ebird ? ' إدارة المفتاح' : ' لصق المفتاح') + '</button></div>' +
+      '</div></div>';
     html += '<div class="card bd-method"><div class="card-head"><h2>' + icon('book') + ' كيف يُحسب الخطر ومن أين البيانات</h2></div><div class="tbl"><table><thead><tr><th>المصدر</th><th>ما يقدمه</th><th>الحالة</th></tr></thead><tbody>' +
       [['مسارات الهجرة الأربعة فوق مصر', 'BirdLife International، ممر البحر الأحمر والوادي المتصدع، اتفاقية طيور الماء الأفريقية الأوراسية AEWA: مكان المسار وشدته لكل شهر', '<span class="pill p-n">نموذج علمي ثابت</span>'],
         ['تجمعات البط والطيور المائية', 'تعداد الطيور المائية الشتوي في بحيرات الدلتا وقارون ووادي الريان ووادي النطرون', '<span class="pill p-n">نموذج موسمي</span>'],
-        ['الرياح على ارتفاع الطيران (1500 م)', 'Open-Meteo مجاناً وبدون مفتاح، لكل موقع كل 3 ساعات: تحدد اتجاه انجراف الأسراب وسرعتها', live ? '<span class="pill p-ok">حي</span>' : /محاكاة/.test(d.wx.source || '') ? '<span class="pill p-warn">محاكاة في نسخة العرض · حي على الخادم</span>' : '<span class="pill p-warn">مناخي حتى أول تحديث</span>'],
-        ['مشاهدات eBird', 'مشاهدات حقيقية للطيور حول كل موقع (Cornell Lab) مجاناً بمفتاح يُكتب في الإعدادات EBIRD_KEY، مع تصفية الأنواع الناقلة لإنفلونزا الطيور', (d.ebird ? '<span class="pill p-ok">حي</span>' : '<span class="pill p-n">يحتاج مفتاحاً مجانياً</span>') + '<button type="button" class="btn sm" data-ebird="1">' + icon('key') + (d.ebird ? ' إدارة المفتاح' : ' طريقة التفعيل') + '</button>'],
+        ['الرياح على ارتفاع الطيران (1500 م)', 'Open-Meteo مجاناً وبدون مفتاح، لكل موقع كل 3 ساعات: تحدد اتجاه انجراف الأسراب وسرعتها', (live ? '<span class="pill p-ok">حي</span>' : /محاكاة/.test(d.wx.source || '') ? '<span class="pill p-warn">محاكاة في نسخة العرض · حي على الخادم</span>' : '<span class="pill p-warn">مناخي حتى أول تحديث</span>')],
+        ['مشاهدات eBird', 'مشاهدات حقيقية للطيور حول كل موقع (Cornell Lab) مجاناً بمفتاح يُكتب في الإعدادات EBIRD_KEY، مع تصفية الأنواع الناقلة لإنفلونزا الطيور', (d.ebird ? '<span class="pill p-ok">حي</span>' : '<span class="pill p-n">يحتاج مفتاحاً مجانياً</span>')],
         ['مشاهدات الأمن والعاملين', 'زر «مشاهدة طيور» في البوابة والتطبيق، وكل مشاهدة ترفع خطر المواقع القريبة فوراً وتنبه المدير', '<span class="pill p-ok">حي</span>']].map(function (r) { return '<tr><td><b>' + r[0] + '</b></td><td class="small">' + r[1] + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
       '<p class="small muted">لكل موقع: قُرب الموقع من كل مسار × شدة الهجرة هذا الشهر × مدى توافق اتجاه طيران الأسراب (سرعة الطيور 40 كم/س + متجه الرياح) مع اتجاه الموقع، ومثلها لتجمعات البط في البحيرات القريبة، ثم تُضاف المشاهدات القريبة الحديثة. عند تجاوز ' + d.alertLevel + ' يصل تنبيه فوري بالإجراءات لمديري القطاع ومدير الأمن الحيوي. لا توجد خدمة مجانية ترصد الأسراب لحظياً فوق مصر بالرادار، لذلك «السرب المتوقع» تقدير احتياطي من الموسم والمسار والرياح والمشاهدات.</p></div>';
     out.innerHTML = html;
     out.querySelectorAll('[data-bsite]').forEach(function (b) { b.onclick = function () { birdSiteSheet(b.dataset.bsite); }; });
     out.querySelectorAll('[data-ebird]').forEach(function (b) { b.onclick = ebirdSheet; });
+    out.querySelectorAll('[data-wact]').forEach(function (b) { b.onclick = function () {
+      b.disabled = true; b.innerHTML = '<span class="spin"></span> جارٍ التفعيل';
+      remote('birdsActivate', [S.session.pin]).then(function (x) {
+        var a = x.activation || {}, w = a.wind, ok = x.wx && x.wx.live;
+        S.birds = x; drawBirds(x);
+        if (a.windError) toast('تعذر جلب الرياح الآن: ' + a.windError + '. أعد المحاولة بعد دقائق', 7000);
+        else if (w && w.asked === 0) toast('أضف إحداثيات المواقع أولاً من جدول «إحداثيات المواقع» ثم اضغط «تفعيل الآن»', 7000);
+        else toast((ok ? 'تم التفعيل: الرياح حية الآن' + (w && w.sites ? ' لـ ' + w.sites + ' موقع' : '') : 'تم التحديث') + (a.triggers && a.triggers.added && a.triggers.added.length ? ' · والتحديث التلقائي كل 3 ساعات مفعّل' : ''), 6000);
+      }).catch(function (e) { b.disabled = false; b.textContent = 'تفعيل الآن'; toast(errText(e)); });
+    }; });
     out.querySelectorAll('.bd-site').forEach(function (c) { c.onclick = function () { birdSiteSheet(c.dataset.site); }; });
     out.querySelectorAll('[data-mode]').forEach(function (b) { b.onclick = function () { S.birdMode = b.dataset.mode; drawBirds(d); }; });
     var bindFocus = function () { out.querySelectorAll('[data-bfocus]').forEach(function (b) { b.onclick = function () { if (S.birdMode && S.birdMode !== 'live') { birdSiteSheet(b.dataset.bfocus); return; } if (S.bTour) birdTour(d, false); var m = $('bdLive'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); birdFocus(d, b.dataset.bfocus, true); }; }); };

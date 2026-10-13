@@ -2453,6 +2453,15 @@ function BIO_ext(api, H) {
     if (deps.birdRefresh) deps.birdRefresh();
     return api.birds(pin);
   };
+  /** v15.2: زر «تفعيل الآن» في شاشة رادار الطيور: يضبط التحديث التلقائي كل 3 ساعات ويجلب الرياح الحية فوراً */
+  api.birdsActivate = function (pin) {
+    var u = H.auth(pin, true);
+    if (!u.isManager) throw new Error('التفعيل لمدير الأمن الحيوي');
+    var res = { triggers: null, wind: null, windError: '' };
+    try { res.triggers = deps.ensureTriggers ? deps.ensureTriggers() : null; } catch (e) { res.triggersError = String(e && e.message || e); }
+    try { res.wind = deps.windNow ? deps.windNow() : (deps.birdRefresh ? (deps.birdRefresh(), true) : null); } catch (e) { res.windError = String(e && e.message || e); }
+    var b = api.birds(pin); b.activation = res; return b;
+  };
   api.birdSighting = function (pin, o) {
     var u = H.auth(pin), sites = H.sitesById(), now = deps.now(); o = o || {};
     var site = sites[BIO_norm(o.siteId)];

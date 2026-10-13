@@ -2432,3 +2432,13 @@ body.vr-on .main:empty { display: none; }
   .fx-f .pill { justify-self: start; }
   .fx-drop { padding: 20px 12px; }
 }
+
+/* v15.2: بطاقة تفعيل البيانات الحية في رادار الطيور */
+.bd-acts { display: grid; gap: 10px; }
+.bd-a { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2, transparent); }
+.bd-a .hn { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: var(--brand-soft, #fde8ea); color: var(--brand, #c8182a); }
+.bd-a.done .hn { background: var(--ok-soft, #e3f5ea); color: var(--ok, #1d7a4a); }
+.bd-a .t { display: grid; gap: 2px; min-width: 0; }
+.bd-a .t span { font-size: 13px; color: var(--muted); }
+.bd-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+@media (max-width: 560px) { .bd-a { grid-template-columns: auto minmax(0,1fr); } .bd-a > .btn, .bd-a > .pill { grid-column: 1 / -1; justify-self: stretch; justify-content: center; } }
