@@ -339,7 +339,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15.3</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15.4</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -3569,7 +3569,8 @@
       remote('birdsActivate', [S.session.pin]).then(function (x) {
         var a = x.activation || {}, w = a.wind, ok = x.wx && x.wx.live;
         S.birds = x; drawBirds(x);
-        if (a.windError) toast('تعذر جلب الرياح الآن: ' + a.windError + '. أعد المحاولة بعد دقائق', 7000);
+        if (a.needAuth) authSheet();
+        else if (a.windError) toast('تعذر جلب الرياح الآن: ' + a.windError + '. أعد المحاولة بعد دقائق', 7000);
         else if (w && w.asked === 0) toast('أضف إحداثيات المواقع أولاً من جدول «إحداثيات المواقع» ثم اضغط «تفعيل الآن»', 7000);
         else toast((ok ? 'تم التفعيل: الرياح حية الآن' + (w && w.sites ? ' لـ ' + w.sites + ' موقع' : '') : 'تم التحديث') + (a.triggers && a.triggers.added && a.triggers.added.length ? ' · والتحديث التلقائي كل 3 ساعات مفعّل' : ''), 6000);
       }).catch(function (e) { b.disabled = false; b.textContent = 'تفعيل الآن'; toast(errText(e)); });
@@ -4362,6 +4363,19 @@
   }
 
   /* ---------- eBird ---------- */
+  /** v15.3: الصلاحية الناقصة لصاحب مشروع Apps Script تُمنح مرة واحدة من المحرر */
+  function authSheet() {
+    var steps = [['افتح مشروع Apps Script', 'نفس المشروع الذي تلصق فيه ملفات التحديث.', 'https://script.google.com/home', 'فتح Apps Script'],
+      ['اختر الدالة grantPermissions', 'من القائمة المنسدلة أعلى المحرر (بجانب زر Run) اختر <b class="mono">grantPermissions</b> ثم اضغط <b>Run</b>.'],
+      ['وافق على الصلاحيات', 'تظهر نافذة Google: Review permissions ← اختر حسابك ← Advanced ← Go to (اسم المشروع) ← Allow. تُطلب مرة واحدة فقط.'],
+      ['ارجع واضغط «تفعيل الآن»', 'أو انتظر: الدالة نفسها تجلب الرياح فوراً وتشغّل التحديث التلقائي كل 3 ساعات.']];
+    openSheet('<div class="sheet-head sh-warn"><div class="big-ico">' + icon('key') + '</div><h2>خطوة واحدة: منح الصلاحية</h2><span class="small">Google يطلب موافقة صاحب المشروع قبل أول اتصال بخدمة الطقس</span></div><div class="sheet-body"><div class="eb-steps">' +
+      steps.map(function (x, i) { return '<div><span class="hn">' + (i + 1) + '</span><div><b>' + x[0] + '</b><span class="small">' + x[1] + '</span>' + (x[2] ? '<a class="btn sm" target="_blank" rel="noopener" href="' + x[2] + '">' + icon('link') + ' ' + x[3] + '</a>' : '') + '</div></div>'; }).join('') +
+      '</div><button class="btn" type="button" data-a="copyfn">' + icon('copy') + ' نسخ اسم الدالة</button><button class="btn primary big" type="button" data-a="close">تم</button></div>', function (a) {
+      if (a === 'close') return closeSheet();
+      if (a === 'copyfn') { try { navigator.clipboard.writeText('grantPermissions').then(function () { toast('نُسخ: grantPermissions'); }); } catch (e) { toast('grantPermissions'); } }
+    });
+  }
   function ebirdSheet() {
     var steps = [['1', 'أنشئ حساباً مجانياً في Cornell Lab', 'بالإيميل فقط، بدون أي دفع.', 'https://secure.birds.cornell.edu/identity/account/create', 'إنشاء الحساب'],
       ['2', 'اطلب مفتاح eBird API', 'سجّل الدخول بنفس الحساب، اكتب في سبب الاستخدام: Biosecurity monitoring of wild birds near poultry farms، وافق على الشروط، ثم اضغط Generate key. يظهر المفتاح فوراً.', 'https://ebird.org/api/keygen', 'صفحة طلب المفتاح'],

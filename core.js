@@ -2460,6 +2460,8 @@ function BIO_ext(api, H) {
     var res = { triggers: null, wind: null, windError: '' };
     try { res.triggers = deps.ensureTriggers ? deps.ensureTriggers() : null; } catch (e) { res.triggersError = String(e && e.message || e); }
     try { res.wind = deps.windNow ? deps.windNow() : (deps.birdRefresh ? (deps.birdRefresh(), true) : null); } catch (e) { res.windError = String(e && e.message || e); }
+    // صلاحية الاتصال الخارجي لم تُمنح بعد لصاحب المشروع: تُمنح مرة واحدة بتشغيل grantPermissions من المحرر
+    if (/external_request|script\.scriptapp|permission|إذن|صلاحي|authoriz/i.test(res.windError + ' ' + (res.triggersError || ''))) res.needAuth = true;
     var b = api.birds(pin); b.activation = res; return b;
   };
   api.birdSighting = function (pin, o) {
