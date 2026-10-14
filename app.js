@@ -339,7 +339,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 15.4</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 16</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -753,6 +753,7 @@
       head = '<div class="sheet-head sh-bad">' + permitTag(r) + '<div class="big-ico">' + icon('x') + '</div><h2>ممنوع الدخول</h2><span class="small">لا تُفتح البوابة</span></div>';
       body += '<div class="reason">' + r.reasons.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>';
       if (r.allowedAt) body += '<div class="until">' + icon('clock') + '<div><span class="small muted">يُسمح بالدخول</span><br><b>' + esc(fmt(r.allowedAt)) + '</b> <span class="small">(' + esc(left(r.allowedAt)) + ')</span></div></div>';
+      if (!r.item) acts = '<button class="btn ok big" data-a="newreg">' + icon('plus') + ' تسجيله الآن وإعطاؤه كوداً</button>';
       if (r.item) {
         body += '<div class="field"><label for="ovNote">طلب دخول استثنائي من مدير الأمن الحيوي</label><textarea id="ovNote" rows="2" placeholder="السبب، مثال: زيارة طارئة لنفوق، استحم وغيّر ملابسه بالكامل"></textarea></div>';
         acts = '<button class="btn big" data-a="override">' + icon('inbox') + ' إرسال طلب استثناء</button>';
@@ -765,6 +766,7 @@
     var ticks = {};
     openSheet(head + '<div class="sheet-body">' + body + acts + '</div>', function (a, b) {
       if (a === 'close') closeSheet();
+      else if (a === 'newreg') { closeSheet(); gateRegSheet({ siteId: r.site && r.site.id }); }
       else if (a === 'tick') {
         ticks[b.dataset.i] = !ticks[b.dataset.i]; b.classList.toggle('on', ticks[b.dataset.i]);
         $('confirmBtn').disabled = Object.keys(ticks).filter(function (k) { return ticks[k]; }).length < r.checks.length;
@@ -4149,12 +4151,12 @@
   function gateTools() {
     return '<div class="gate-tools"><button type="button" class="gtool" id="gtPlate">' + icon('truck') + '<span><b>قراءة لوحة مركبة</b><small>بالكاميرا بدلاً من الكارت</small></span></button>' +
       '<a class="gtool" href="#disposal">' + icon('box') + '<span><b>نافق أو سبلة</b><small>تسجيل وخروج سيارة السبلة</small></span></a>' +
-      '<button type="button" class="gtool" id="gtVeh">' + icon('plus') + '<span><b>مركبة جديدة</b><small>تسجيل سيارة أو معدة بلا كارت</small></span></button>' +
+      '<button type="button" class="gtool gt-new" id="gtVeh">' + icon('plus') + '<span><b>تسجيل جديد</b><small>زائر أو مركبة أو معدة بدون كود</small></span></button>' +
       '<button type="button" class="gtool" id="gtBird">' + icon('bird') + '<span><b>مشاهدة طيور</b><small>أسراب حول الموقع</small></span></button></div>';
   }
   function bindGateTools() {
     if ($('gtPlate')) $('gtPlate').onclick = plateSheet;
-    if ($('gtVeh')) $('gtVeh').onclick = function () { vehicleSheet({}); };
+    if ($('gtVeh')) $('gtVeh').onclick = function () { gateRegSheet({}); };
     if ($('gtBird')) $('gtBird').onclick = function () { birdSightingSheet(S.siteId); };
   }
 
@@ -4274,6 +4276,65 @@
       pathChain(tr.today) +
       (tr.cross.length ? '<div class="fl-cross">' + tr.cross.slice(-2).map(function (x) { return '<span class="' + (x.flag || x.override ? 'bad' : '') + '">' + icon('trace') + ' ' + esc(x.fromSector) + ' ← ' + esc(x.toSector) + ': ' + esc(shortSite(x.from)) + ' ثم ' + esc(shortSite(x.to)) + ' بعد ' + x.gapH + ' ساعة' + (x.flag ? ' · مخالفة' : x.override ? ' · استثناء' : '') + '</span>'; }).join('') + '</div>' : '') +
       '<div class="fl-foot xs muted"><span>' + tr.visits + ' دخول · ' + tr.sectors.length + ' قطاع' + (tr.denied ? ' · <b class="bad-t">' + tr.denied + ' رفض</b>' : '') + (tr.flags ? ' · <b class="bad-t">' + tr.flags + ' مخالفة</b>' : '') + '</span><span class="row" style="gap:6px">' + (v.kind !== 'معدة' && S.flData && S.flData.canTrip ? '<button type="button" class="btn sm" data-trsend="' + esc(v.id) + '">' + icon('route') + ' رابط تتبع</button>' : '') + '<button type="button" class="btn sm" data-goto="history/' + esc(v.id) + '">' + icon('history') + ' كل الحركات</button></span></div></div>';
+  }
+  /* ---------- v16: تسجيل جديد من البوابة (فرد أو مركبة أو معدة بدون كود) ثم إدخاله فوراً ---------- */
+  var GR_KINDS = [['زائر', 'user', 'زيارة عمل أو جهة خارجية'], ['مورد', 'box', 'توريد أو تسليم'], ['مقاول', 'tool', 'عامل أو فني مقاول'], ['جهة رسمية', 'shield', 'طب بيطري أو جهة حكومية']];
+  function gateRegSheet(o) {
+    o = o || {};
+    var st = { type: o.type || 'person', pk: 'زائر' };
+    var sites = gateSites(), site0 = o.siteId || S.siteId;
+    var body = function () {
+      var seg = '<div class="seg gr-seg" role="group">' + [['person', 'user', 'فرد'], ['vehicle', 'truck', 'مركبة'], ['equipment', 'tool', 'معدة']].map(function (x) { return '<button type="button" data-a="ty" data-k="' + x[0] + '" class="' + (st.type === x[0] ? 'on' : '') + '">' + icon(x[1]) + ' ' + x[2] + '</button>'; }).join('') + '</div>';
+      var head = '<div class="sheet-head sh-brand"><h2>' + icon('plus') + ' تسجيل جديد من البوابة</h2><span class="small">يأخذ كوداً فوراً، ثم يمر بفحص الدخول المعتاد</span></div>';
+      if (st.type !== 'person') return head + '<div class="sheet-body">' + seg + '<div class="infobox">' + icon('truck') + ' تسجيل ' + (st.type === 'vehicle' ? 'المركبة' : 'المعدة') + ' بنوعها' + (st.type === 'vehicle' ? ' ورقم لوحتها' : '') + '، ثم إدخالها مباشرة من شاشة النتيجة.</div><button class="btn primary big" type="button" data-a="veh">' + icon('arrow') + ' متابعة</button><button class="btn" type="button" data-a="close">إلغاء</button></div>';
+      return head + '<div class="sheet-body"><form id="grForm" class="stack">' + seg +
+        '<label class="xs muted">صفته</label><div class="xd-grid gr-kinds">' + GR_KINDS.map(function (k) { return '<button type="button" class="xd-chip' + (st.pk === k[0] ? ' on' : '') + '" data-a="pk" data-k="' + k[0] + '">' + icon(k[1]) + '<b>' + k[0] + '</b><small>' + k[2] + '</small></button>'; }).join('') + '</div>' +
+        '<div class="field"><label for="grName">الاسم الكامل كما في البطاقة</label><input id="grName" type="text" required maxlength="80" autocomplete="off"></div>' +
+        '<div class="grid-2" style="gap:12px"><div class="field"><label for="grId">رقم البطاقة الشخصية</label><input id="grId" type="text" inputmode="numeric" dir="ltr" maxlength="14" placeholder="14 رقماً"></div><div class="field"><label for="grPhone">الهاتف</label><input id="grPhone" type="tel" dir="ltr" maxlength="15"></div></div>' +
+        '<div class="field"><label for="grCo">الجهة أو الشركة</label><input id="grCo" type="text" maxlength="60" placeholder="مثال: شركة الأدوية، الطب البيطري"></div>' +
+        '<div class="grid-2" style="gap:12px"><div class="field"><label for="grSite">الموقع الذي سيدخله</label><select id="grSite">' + siteOptions(sites, site0) + '</select></div><div class="field"><label for="grHrs">مدة الزيارة</label><select id="grHrs"><option value="4">4 ساعات</option><option value="8" selected>8 ساعات</option><option value="12">12 ساعة</option><option value="24">يوم كامل</option></select></div></div>' +
+        '<div class="field"><label for="grPurpose">سبب الزيارة</label><input id="grPurpose" type="text" required maxlength="160" placeholder="مثال: تسليم أدوية لمخزن المحطة"></div>' +
+        declHtml(sites) +
+        '<div class="infobox xs">' + icon('shield') + ' إن كان الإقرار عالي الخطورة (مخالطة دواجن أو طيور خلال 72 ساعة) لا يُسمح بدخوله إلا بعد موافقة مدير الأمن الحيوي، ويصله إشعار فوري.</div>' +
+        '<button class="btn primary big" type="submit">' + icon('check') + ' تسجيل وإعطاء كود</button><button class="btn" type="button" data-a="close">إلغاء</button></form></div>';
+    };
+    var keepIds = ['grName', 'grId', 'grPhone', 'grCo', 'grSite', 'grHrs', 'grPurpose'];
+    var redraw = function () { var k = keepIds.map(function (i) { return $(i) ? $(i).value : null; }); $('sheetRoot').querySelector('.sheet').innerHTML = body(); keepIds.forEach(function (i, n) { if ($(i) && k[n] != null) $(i).value = k[n]; }); bind(); };
+    function bind() {
+      if (!$('grForm')) return;
+      declBind();
+      $('grForm').onsubmit = function (e) {
+        e.preventDefault();
+        var decl; try { decl = declRead(); } catch (x) { return toast(errText(x)); }
+        var idNo = $('grId').value.replace(/\D/g, '');
+        if (idNo && idNo.length !== 14) return toast('رقم البطاقة 14 رقماً');
+        var b = $('grForm').querySelector('[type=submit]'); b.disabled = true;
+        var siteId = $('grSite').value;
+        remote('gateRegister', [S.session.pin, { id: 'MS-' + uid(), type: 'person', personKind: st.pk, name: $('grName').value.trim(), idNo: idNo, phone: $('grPhone').value.trim(), company: $('grCo').value.trim(), siteId: siteId, hours: +$('grHrs').value, purpose: $('grPurpose').value.trim(), decl: decl }])
+          .then(function (r) { return sync().then(function () { gateRegDone(r, siteId); }); })
+          .catch(function (x) { b.disabled = false; toast(x.net ? 'التسجيل يحتاج اتصالاً بالإنترنت' : errText(x)); });
+      };
+    }
+    openSheet(body(), function (a, el) {
+      if (a === 'close') return closeSheet();
+      if (a === 'ty') { st.type = el.dataset.k; return redraw(); }
+      if (a === 'pk') { st.pk = el.dataset.k; $('sheetRoot').querySelectorAll('.gr-kinds .xd-chip').forEach(function (c) { c.classList.toggle('on', c === el); }); return; }
+      if (a === 'veh') { closeSheet(); return vehicleSheet({ kind: st.type === 'equipment' ? 'معدة' : 'مركبة', done: function (r) { gateRegDone({ type: st.type, id: r.id, item: r.item }, site0); } }); }
+    });
+    bind();
+  }
+  function gateRegDone(r, siteId) {
+    var m = r.mission, hold = !!r.hold, name = m ? m.visitor : (r.item ? r.item.name : r.id);
+    openSheet('<div class="sheet-head ' + (hold ? 'sh-warn' : 'sh-ok') + '"><span class="permit">كود جديد</span><div class="big-ico">' + icon(hold ? 'clock' : 'check') + '</div><h2>' + (hold ? 'سُجّل وينتظر موافقة المدير' : 'تم التسجيل') + '</h2><span class="small">' + esc(name) + '</span></div><div class="sheet-body">' +
+      '<div class="cert"><div class="cert-qr" id="grQr"></div><dl><dt>الكود</dt><dd><b class="mono gr-code">' + esc(r.id) + '</b></dd>' + (m ? '<dt>الموقع</dt><dd>' + esc(m.siteName) + '</dd><dt>التصريح</dt><dd>' + esc(fmt(m.visitAt, false)) + ' حتى ' + esc(fmt(m.endAt, false)) + '</dd>' : '') + '</dl></div>' +
+      (r.decl ? declResult(r.decl) : '') +
+      (hold ? '<div class="warnbox"><b>لا تسمح بالدخول الآن</b><span>الإقرار عالي الخطورة. وصل إشعار فوري لمدير الأمن الحيوي، وبعد موافقته امسح الكود مرة أخرى.</span></div>' : '<button class="btn ok big" data-a="in">' + icon('check') + ' إدخاله الآن (فحص الدخول)</button>') +
+      (m && m.phone ? '<a class="btn wa" target="_blank" rel="noopener" href="' + esc('https://wa.me/' + String(m.phone).replace(/\D/g, '').replace(/^0/, '20') + '?text=' + encodeURIComponent(passText(m))) + '">' + icon('wa') + ' إرسال الكود له على واتساب</a>' : '') +
+      '<button class="btn' + (hold ? ' primary big' : '') + '" data-a="close">' + (hold ? 'تم' : 'لاحقاً') + '</button></div>', function (a) {
+      if (a === 'close') return closeSheet();
+      if (a === 'in') { closeSheet(); if (siteId && $('siteSel')) { $('siteSel').value = siteId; } if (siteId) S.siteId = siteId; S.dir = 'IN'; if (S.route === 'gate') renderSub(); doScan(r.id); }
+    });
+    if (window.QRCode && $('grQr')) new QRCode($('grQr'), { text: r.id, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.M });
   }
   function vehicleSheet(o) {
     o = o || {};

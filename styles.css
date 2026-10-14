@@ -2442,3 +2442,13 @@ body.vr-on .main:empty { display: none; }
 .bd-a .t span { font-size: 13px; color: var(--muted); }
 .bd-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 @media (max-width: 560px) { .bd-a { grid-template-columns: auto minmax(0,1fr); } .bd-a > .btn, .bd-a > .pill { grid-column: 1 / -1; justify-self: stretch; justify-content: center; } }
+
+/* v16: تسجيل جديد من البوابة */
+.gr-seg { margin-bottom: 4px; }
+.gr-kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gr-kinds .xd-chip { display: grid; justify-items: start; gap: 2px; text-align: start; }
+.gr-kinds .xd-chip small { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.gr-kinds .xd-chip.on small { color: inherit; opacity: .85; }
+.gr-code { font-size: 1.35rem; letter-spacing: .04em; }
+.gtool.gt-new { border-color: var(--brand); }
+.gtool.gt-new .ico { color: var(--brand); }

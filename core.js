@@ -646,6 +646,9 @@ function BIO_api(store, deps) {
     if (u.isManager && !inScope(u, site.id, sites)) throw new Error('هذا الموقع خارج نطاق إدارتك');
     var visitor = String(m.visitor || '').trim(), kind = BIO.MISSION_KINDS.indexOf(m.kind) >= 0 ? m.kind : BIO.MISSION_KINDS[0];
     if (!visitor) throw new Error('اكتب اسم الزائر أو المأمور');
+    // v16: تسجيل فوري من البوابة لزائر وصل بدون تسجيل مسبق (يبدأ الآن ويُعتمد باسم من سجّله، ويصل للمدير فوراً)
+    var walkIn = !!(m.walkIn && u && !u.self);
+    if (walkIn) m.visitAt = now;
     var visitAt = BIO_ms(m.visitAt);
     if (!visitAt || visitAt < now - 5 * 60000) throw new Error('موعد الزيارة يجب أن يكون في المستقبل');
     var endAt = BIO_ms(m.endAt) || visitAt + 8 * BIO.HOUR;
@@ -664,13 +667,14 @@ function BIO_api(store, deps) {
     var row = { id: m.id || deps.id('MS'), time: now, kind: kind, visitor: item.name, itemId: itemId, company: m.company || item.dept || '', phone: m.phone || item.phone || '', siteId: site.id, siteName: site.name, visitAt: visitAt, endAt: endAt,
       purpose: String(m.purpose).trim(), lastContact: m.lastContact || '', lastContactAt: BIO_ms(m.lastContactAt) || '', vehicle: m.vehicle || '', requestedBy: u.name, requestedById: u.id, email: String(m.email || '').trim(),
       leadHours: hrs, late: late ? BIO.YES : BIO.NO, status: late ? BIO.MS_LATE : BIO.MS_OK, decidedBy: '', decidedAt: '', note: '', arrivedAt: '' };
+    if (walkIn) Object.assign(row, { status: BIO.MS_EXC, decidedBy: u.name + ' (تسجيل فوري من البوابة)', decidedAt: now, note: 'وصل بدون تسجيل مسبق' + (m.idNo ? ' · بطاقة رقم ' + String(m.idNo).replace(/[^\d]/g, '').slice(-14) : '') });
     deps.lock(function () { store.append('missions', row); });
     var when = BIO_fmtTime;
-    deps.notify({ kind: 'mission', siteId: site.id, emailTo: [row.email], title: (late ? '⚠️ مأمورية متأخرة تحتاج استثناء: ' : '📋 مأمورية مسجلة: ') + row.visitor + ' ← ' + site.name,
+    deps.notify({ kind: 'mission', siteId: site.id, emailTo: [row.email], title: (walkIn ? '🚪 زائر بدون تسجيل مسبق سُجّل من البوابة: ' : late ? '⚠️ مأمورية متأخرة تحتاج استثناء: ' : '📋 مأمورية مسجلة: ') + row.visitor + ' ← ' + site.name,
       body: 'النوع: ' + kind + '\nالزائر: ' + row.visitor + ' (' + itemId + ')' + (row.company ? ' · ' + row.company : '') + '\nالموقع: ' + site.name + '\nالموعد: ' + when(visitAt) + ' حتى ' + when(endAt) + '\nالغرض: ' + row.purpose +
         (row.lastContact ? '\nآخر مخالطة دواجن: ' + row.lastContact + (row.lastContactAt ? ' · ' + when(row.lastContactAt) : '') : '') + (row.vehicle ? '\nالمركبة: ' + row.vehicle : '') +
         '\nمقدم الطلب: ' + u.name + (u.self ? ' (الموظف نفسه من نموذج الطلب الذاتي، تم التحقق بالكود ورقم الهاتف' + (u.bound ? '، ورُبط هذا الرقم بكوده لأول مرة' : '') + ')' : '') + '\nسُجلت قبل الموعد بـ ' + hrs + ' ساعة' + (late ? ' (أقل من ' + lead + ' ساعة المطلوبة: لن تُدخلها البوابة إلا باستثناء المدير)' : ' · ستظهر للبوابة تلقائياً يوم الزيارة') });
-    return { mission: missionOut(row), late: late, lead: lead };
+    return { mission: missionOut(row), late: walkIn ? false : late, lead: lead, walkIn: walkIn };
   }
   var STAFF_KINDS = ['موظف', 'عامل', 'سائق'];
   function phoneKey(v) { var d = String(v || '').replace(/\D/g, ''); return d.length >= 9 ? d.slice(-9) : ''; }
@@ -958,7 +962,9 @@ function BIO_api(store, deps) {
       var mission = null;
       if (item && item.active && !revoked && BIO.VISITOR_KINDS.indexOf(item.kind) >= 0 && BIO_isYes(st.VISITOR_NEEDS_MISSION == null || st.VISITOR_NEEDS_MISSION === '' ? BIO.YES : st.VISITOR_NEEDS_MISSION)) {
         mission = missionFor(itemId, site.id, t);
-        if (!mission) { res.decision = BIO.DENY; res.reasons.unshift('لا توجد مأمورية أو زيارة مسجلة ومعتمدة لهذا الشخص على «' + site.name + '» اليوم (التسجيل قبل الموعد بـ ' + (Number(st.MISSION_LEAD_HOURS) || 24) + ' ساعة على الأقل)'); }
+        var pendMs = !mission && store.all('missions').map(missionOut).filter(function (m) { return m.itemId === itemId && m.siteId === site.id && m.status === BIO.MS_LATE && t <= m.endAt && t >= m.visitAt - 2 * BIO.HOUR; })[0];
+        if (pendMs) { res.decision = BIO.DENY; res.reasons.unshift('تسجيله ' + pendMs.id + ' ينتظر موافقة مدير الأمن الحيوي' + (pendMs.note ? ' (' + pendMs.note + ')' : '') + '. أعد المسح بعد الموافقة'); }
+        else if (!mission) { res.decision = BIO.DENY; res.reasons.unshift('لا توجد مأمورية أو زيارة مسجلة ومعتمدة لهذا الشخص على «' + site.name + '» اليوم (التسجيل قبل الموعد بـ ' + (Number(st.MISSION_LEAD_HOURS) || 24) + ' ساعة على الأقل)'); }
         else if (res.decision === BIO.ALLOW) res.warnings.unshift('مأمورية ' + mission.id + ' · ' + mission.kind + ': ' + mission.purpose + (mission.status === BIO.MS_EXC ? ' (معتمدة استثنائياً)' : ''));
       }
       if (item && item.active && !revoked && api._gateChecks) api._gateChecks(item, site, t, st, res);
@@ -1875,6 +1881,7 @@ function BIO_api(store, deps) {
   BIO_v13(api, H_);
   if (typeof BIO_v14 === 'function') BIO_v14(api, H_);
   if (typeof BIO_v15 === 'function') BIO_v15(api, H_);
+  if (typeof BIO_v16 === 'function') BIO_v16(api, H_);
   return api;
 }
 
@@ -3851,5 +3858,43 @@ function BIO_v15(api, H) {
     }).sort(function (a, b) { return (b.today ? 1 : 0) - (a.today ? 1 : 0) || (a.no || 99) - (b.no || 99) || a.name.localeCompare(b.name); });
     var imp = has('imports') ? store.all('imports').map(importOut).sort(function (a, b) { return b.time - a.time; }) : [];
     return { latest: latest, from: from, sites: list, imports: imp.slice(0, 10), findings: imp[0] ? imp[0].findings : [], canImport: canImport(u), now: deps.now() };
+  };
+}
+
+
+/* ============================ الإصدار 16: تسجيل جديد من البوابة ============================
+   زائر أو مورد أو فرد مقاول، أو مركبة أو معدة، يصل للبوابة بدون كود: يسجله أمن البوابة فوراً بكود جديد
+   ويدخل بعد الفحص المعتاد. الزائر يُنشأ له تصريح فوري لنفس الموقع اليوم مع إقرار الأمن الحيوي، ويصل إشعار للمدير. */
+var BIO_GATE_REG_KINDS = { 'زائر': 'زيارة', 'مورد': 'توريد', 'مقاول': 'صيانة', 'جهة رسمية': 'زيارة جهة رسمية' };
+function BIO_v16(api, H) {
+  function canReg(u) {
+    if (!u || u.reportsOnly) return false;
+    if (!u.isManager) return true; // أمن البوابات
+    return (u.perms || []).indexOf('data') >= 0 || (u.perms || []).indexOf('decide') >= 0;
+  }
+  api.gateRegister = function (pin, r) {
+    var u = H.auth(pin); r = r || {};
+    if (!canReg(u)) throw new Error('التسجيل من البوابة لأمن البوابات ومن لديه صلاحية البيانات');
+    var type = r.type === 'vehicle' ? 'مركبة' : r.type === 'equipment' ? 'معدة' : 'person';
+    if (type !== 'person') {
+      var v = api.vehicleAdd(pin, { kind: type, vtype: r.vtype, plate: r.plate, name: r.name, company: r.company, owner: r.owner, phone: r.phone });
+      return { ok: true, type: type, id: v.id, item: v.item };
+    }
+    var name = String(r.name || '').trim();
+    if (name.length < 3) throw new Error('اكتب الاسم الكامل كما في البطاقة');
+    var pk = String(r.personKind || 'زائر'), mk = BIO_GATE_REG_KINDS[pk] || 'زيارة';
+    if (!String(r.purpose || '').trim()) throw new Error('اكتب سبب الزيارة');
+    var res = api.createMission(pin, { id: r.id, walkIn: true, kind: mk, siteId: r.siteId, visitor: name, itemId: '', company: r.company || (pk === 'مقاول' ? 'مقاول' : ''), phone: r.phone || '', endAt: Date.now() + (Number(r.hours) > 0 ? Math.min(24, Number(r.hours)) : 8) * BIO.HOUR,
+      purpose: (pk !== 'زائر' ? pk + ': ' : '') + String(r.purpose).trim(), decl: r.decl, vehicle: r.vehicle || '', email: '', idNo: r.idNo });
+    if (res.duplicate) return { ok: true, duplicate: true };
+    // إقرار عالي الخطورة أو غير مطابق للسجل: لا دخول فوري، يحتاج موافقة مدير الأمن الحيوي من شاشة المأموريات
+    var hold = res.decl && (res.decl.risk === 'عالي' || (res.decl.flags || []).length);
+    if (hold) {
+      H.store.update('missions', res.mission.id, { status: BIO.MS_LATE, decidedBy: '', decidedAt: '', note: 'سُجّل من البوابة بإقرار ' + (res.decl.flags.length ? 'غير مطابق للسجل' : 'عالي الخطورة') + ': ينتظر موافقة المدير' });
+      res.mission.status = BIO.MS_LATE;
+      H.deps.notify({ kind: 'mission', siteId: res.mission.siteId, title: '⛔ زائر عند البوابة ينتظر موافقتك: ' + name + ' ← ' + res.mission.siteName,
+        body: 'سُجّل الآن من البوابة بواسطة ' + u.name + ' بدون تسجيل مسبق، وإقراره ' + (res.decl.flags.length ? 'غير مطابق للسجل' : 'عالي الخطورة') + ':\n' + res.decl.flags.concat(res.decl.why).join('\n') + '\nلن تسمح البوابة بدخوله إلا بعد اعتمادك من شاشة المأموريات.' + H.appUrl('#missions') });
+    }
+    return { ok: true, type: 'person', id: res.mission.itemId, mission: res.mission, decl: res.decl, hold: !!hold };
   };
 }
