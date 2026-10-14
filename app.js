@@ -230,7 +230,7 @@
   function selfTrainStart() { return window.BIO_START === 'train' || /(^|[?&])p=train\b/.test(location.search) || location.hash === '#train'; }
   function selfStart() { if (selfTrainStart()) return true; return window.BIO_START === 'mission' || /(^|[?&])p=mission\b/.test(location.search) || location.hash === '#mission'; }
   function boot() {
-    var cpp = cpStartParam(); if (cpp) { showSelfPoint(cpp, false); return; }
+    var cpp = cpStartParam(); if (cpp) { showGateHub(cpp, false); return; }
     var trip = tripStartParam(); if (trip != null) { tripDriver(trip, false); return; }
     if (selfStart()) { if (selfTrainStart()) showSelfTrain(); else showSelfMission(); return; }
     Promise.all(['session', 'ref', 'moves', 'outbox', 'lastSync', 'notices', 'approvals', 'comms', 'chats', 'showers'].map(KV.get)).then(function (v) {
@@ -340,7 +340,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 17</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 17.2</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -395,14 +395,14 @@
   /** صلاحيات المستخدم الحالي (الحسابات القديمة بدون صلاحيات = مدير كامل) */
   function can(p) { var u = S.session && S.session.user; if (!u || !u.isManager) return false; if (!u.perms) return true; return u.perms.indexOf(p) >= 0; }
   function isAdmin() { var u = S.session && S.session.user; return !!(u && u.isManager && (u.isAdmin || !u.perms)); }
-  /** تقارير الزيارات: صلاحيات المستخدم عليها، وهل حسابه للتقارير فقط */
+  /** تقارير الأمن الحيوي: صلاحيات المستخدم عليها، وهل حسابه للتقارير فقط */
   function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
   function hasVr() { return vrPerms().length > 0; }
   function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
   function navItems() {
-    if (vrOnly()) return [['vr', 'تقارير الزيارات', 'clip'], ['more', 'المزيد', 'menu']];
+    if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الزيارات', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'مركز القيادة', 'dash'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['academy', 'الأكاديمية', 'grad'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['more', 'المزيد', 'menu']];
   }
@@ -435,7 +435,7 @@
     bindDemoStrip();
     document.onkeydown = function (e) { if (e.key === 'Escape') closeSheet(); };
     var nav = navItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
-    $('sideNav').innerHTML = '<span class="navlabel">' + (vrOnly() ? 'تقارير الزيارات' : S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
+    $('sideNav').innerHTML = '<span class="navlabel">' + (vrOnly() ? 'تقارير الأمن الحيوي' : S.session.user.isManager ? 'إدارة الأمن الحيوي' : 'بوابة التطهير') + '</span>' + nav +
       '<div class="sidefoot"><b>' + esc(S.session.user.name) + '</b><span>' + esc(S.session.user.isManager ? (S.session.user.roleLabel || 'مدير') + (S.session.user.scope && !S.session.user.scope.all ? ' · ' + S.session.user.scope.label : '') : (S.session.gate.name || 'أمن بوابة')) + '</span></div>';
     $('bottomNav').innerHTML = bottomItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '" aria-label="' + esc(n[1]) + '">' + icon(n[2]) + '<span class="nl">' + esc(n[3] || n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     document.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
@@ -910,10 +910,10 @@
       '<div class="login self"><div class="login-hero"><div class="logo">' + logoImg() + '</div><h1>تسجيل مأمورية أو زيارة</h1><p>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · لكل موظف سيذهب لموقع من مواقع الشركة في مأمورية عمل أو زيارة أو صيانة أو توريد</p>' +
       '<ol class="self-steps"><li><b>1</b><span>ادخل بكودك ورقم هاتفك</span></li><li><b>2</b><span>اختر الموقع والموعد واكتب الغرض</span></li><li><b>3</b><span>يصل الطلب للمدير بالإيميل والإشعار وتظهر المأمورية للبوابة</span></li></ol>' +
       '<div class="login-feats"><span>' + icon('clock') + ' قبل الموعد بـ 24 ساعة على الأقل</span><span>' + icon('shield') + ' بدون رقم سري</span></div></div>' +
-      '<div class="login-side"><div class="login-card self-card" id="selfCard"></div><p class="login-foot"><a href="#" id="selfBack">' + icon('back') + ' دخول المديرين وأمن البوابات</a> · <a href="#" id="selfTrain">' + icon('grad') + ' التدريب والاختبار</a></p></div></div><div class="toasts" id="toasts"></div>';
+      '<div class="login-side"><div class="login-card self-card" id="selfCard"></div><p class="login-foot"><a href="#" id="selfBack">' + icon('back') + (window.BIO_HUB ? ' رجوع لقائمة البوابة' : ' دخول المديرين وأمن البوابات') + '</a> · <a href="#" id="selfTrain">' + icon('grad') + ' التدريب والاختبار</a></p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfTrain').onclick = function (e) { e.preventDefault(); showSelfTrain(); };
-    $('selfBack').onclick = function (e) { e.preventDefault(); window.BIO_START = ''; try { history.replaceState(null, '', location.pathname); } catch (x) { location.hash = ''; } if (S.session) location.reload(); else boot(); };
+    $('selfBack').onclick = function (e) { e.preventDefault(); if (hubBack()) return; window.BIO_START = ''; try { history.replaceState(null, '', location.pathname); } catch (x) { location.hash = ''; } if (S.session) location.reload(); else boot(); };
     function idStep(msg) {
       $('selfCard').innerHTML = '<div class="lc-title"><b>بياناتك</b><span class="small muted">الكود مكتوب على كارت الأمن الحيوي الخاص بك</span></div>' +
         '<form id="selfId" class="stack"><div class="field"><label for="sCode">كود الموظف</label><input id="sCode" type="text" dir="ltr" autocomplete="off" required placeholder="مثال: E001" value="' + esc(who ? who.code : '') + '"></div>' +
@@ -957,6 +957,7 @@
       }
       $('mAt').oninput = function () { var t = new Date($('mAt').value).getTime(); if (t) $('mEnd').value = localInput(t + 4 * 36e5); lead(); };
       lead();
+      if (window.BIO_MS_SITE && $('mSite') && $('mSite').querySelector('option[value="' + window.BIO_MS_SITE + '"]')) $('mSite').value = window.BIO_MS_SITE;
       $('sForm').onsubmit = function (e) {
         e.preventDefault();
         var decl; try { decl = declRead(); } catch (x) { $('sErr').textContent = errText(x); return; }
@@ -1169,7 +1170,7 @@
 
   /* ============================ المزيد ============================ */
 
-  /* ============================ المنصة: النظام أو تقارير الزيارات ============================ */
+  /* ============================ المنصة: النظام أو تقارير الأمن الحيوي ============================ */
   var VR_TYPES = [['clip', 'أثناء التربية', 'تقييم 36 بنداً في 8 محاور، والحالة الصحية، والدرجة والتقدير، والإجراءات التصحيحية'], ['shield', 'التجهيز والتطهير', 'برنامج التطهير 30 خطوة، وفحص الجاهزية، والمسحات، وقرار استلام القطيع'], ['box', 'مصنع العلف', 'برنامج المصنع 24 خطوة، والمطابقة، ومسحات المصنع وعينات العلف، وقرار التوريد']];
   var VR_ROLE_TXT = { mgr: 'الاعتماد النهائي (مدير إدارة الأمن الحيوي)', sup: 'المراجعة والتعديل (مسؤول الأمن الحيوي)', insp: 'تحرير التقارير (مفتش / معاون)', view: 'الاطلاع على التقارير' };
   function vrRoleOf(perms) { return perms.indexOf('vr_approve') >= 0 ? 'mgr' : perms.indexOf('vr_review') >= 0 ? 'sup' : perms.indexOf('vr_write') >= 0 ? 'insp' : 'view'; }
@@ -2090,7 +2091,7 @@
         return '<button class="tile" type="button" data-t="' + t + '"><span class="tico">' + icon(TABLE_ICONS[t]) + '</span><span><b>' + esc(ADMIN[t].title) + '</b><span>' + (counts[t] != null ? counts[t] + ' سجل' : 'عرض وتعديل') + '</span></span></button>';
       }).join('') +
       '<button class="tile" type="button" data-r="cards"><span class="tico">' + icon('printer') + '</span><span><b>كروت QR</b><span>طباعة وإرسال الكروت ودخول البوابات والفقد والتلف</span></span></button>' +
-      '<button class="tile" type="button" data-r="selfpoints"><span class="tico">' + icon('scan') + '</span><span><b>نقاط QR الاحتياطية</b><span>ملصق عند كل بوابة يعمل إذا توقف جهازها</span></span></button>' +
+      '<button class="tile" type="button" data-r="selfpoints"><span class="tico">' + icon('scan') + '</span><span><b>ملصقات QR للبوابات</b><span>ملصق على مدخل كل بوابة يفتح التطبيق مباشرة</span></span></button>' +
       '<button class="tile" type="button" data-r="history"><span class="tico">' + icon('search') + '</span><span><b>سجل فرد أو مركبة</b><span>كل الحركات والقيود الحالية</span></span></button>' +
       '<button class="tile" type="button" data-r="external"><span class="tico">' + icon('alert') + '</span><span><b>تسجيل زيارة خارجية</b><span>سوق أو مزرعة أو مجزر لم تُسجَّل على البوابة</span></span></button>' +
       '</div></section>';
@@ -2652,7 +2653,7 @@
       $('uScope').querySelectorAll('[data-sc]').forEach(function (x) { x.onclick = function () { var k = x.dataset.sc, i = st.scope.indexOf(k); if (i >= 0) st.scope.splice(i, 1); else st.scope.push(k); x.classList.toggle('on', i < 0); }; });
       var locked = r.k === 'مدير' || r.k === 'أمن بوابة';
       $('uPerms').innerHTML = r.k === 'أمن بوابة' ? '<div class="infobox small">' + icon('scan') + ' أمن البوابة يسجل الدخول والخروج، ويرسل البلاغات العاجلة والرسائل للمدير، ويطّلع على القرارات.</div>' :
-        '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div>' + [['', 'صلاحيات نظام الأمن الحيوي', 'shield'], ['vr', 'صلاحيات تقارير الزيارات', 'clip']].map(function (g) {
+        '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div>' + [['', 'صلاحيات نظام الأمن الحيوي', 'shield'], ['vr', 'صلاحيات تقارير الأمن الحيوي', 'clip']].map(function (g) {
           var ps = perms.filter(function (p) { return (p.group || '') === g[0]; });
           if (!ps.length || (g[0] === '' && r.reportsOnly)) return '';
           return '<div class="u-pgroup"><span class="u-pg-h">' + icon(g[2]) + ' ' + g[1] + '</span>' + (g[0] === 'vr' ? '<span class="xs muted">تحدد دور الموظف داخل تطبيق التقارير: الاعتماد ← مدير الإدارة، المراجعة والتعديل ← مسؤول الأمن الحيوي، التحرير ← مشرف أو معاون، الاطلاع ← متابعة.</span>' : '') + '<div class="u-perms">' + ps.map(function (p) {
@@ -3942,7 +3943,7 @@
       '<div class="login-side"><div class="login-card self-card" id="tCard"></div><p class="login-foot"><a href="#" id="tMission">' + icon('calendar') + ' تسجيل مأمورية</a> · <a href="#" id="tBack">دخول المديرين وأمن البوابات</a></p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('tMission').onclick = function (e) { e.preventDefault(); window.BIO_START = 'mission'; try { history.replaceState(null, '', location.pathname + location.search); } catch (x) {} showSelfMission(); };
-    $('tBack').onclick = function (e) { e.preventDefault(); window.BIO_START = ''; try { history.replaceState(null, '', location.pathname); } catch (x) { location.hash = ''; } if (S.session) location.reload(); else boot(); };
+    $('tBack').onclick = function (e) { e.preventDefault(); if (hubBack()) return; window.BIO_START = ''; try { history.replaceState(null, '', location.pathname); } catch (x) { location.hash = ''; } if (S.session) location.reload(); else boot(); };
     var card = function (h) { $('tCard').innerHTML = h; window.scrollTo(0, 0); };
     function idStep(msg) {
       card('<div class="lc-title"><b>بياناتك</b><span class="small muted">الكود مكتوب على كارت الأمن الحيوي</span></div><form id="tId" class="stack"><div class="field"><label for="tCode">كود الموظف</label><input id="tCode" dir="ltr" required value="' + esc(who ? who.code : '') + '" placeholder="مثال: E007"></div><div class="field"><label for="tPhone">رقم هاتفك المحمول</label><input id="tPhone" type="tel" dir="ltr" required value="' + esc(who ? who.phone : '') + '" placeholder="01xxxxxxxxx"></div><div class="login-err" id="tErr">' + esc(msg || '') + '</div><button class="btn primary big" type="submit">متابعة ' + icon('chev') + '</button></form>' +
@@ -4171,7 +4172,7 @@
 
   /* ---------- لوحة حالة المحطات ---------- */
   function viewStations() {
-    $('main').innerHTML = '<section class="view">' + v5Head('حالة المحطات حتى تاريخه', 'layers', 'آخر وضع لكل محطة وموقع: المرحلة الحالية وعمر القطيع ونشاط البوابة والنافق وآخر تقرير زيارة. تُستنتج تلقائياً من كل إدخالات التطبيق وتقارير الزيارات، وتُحفظ لقطة يومية في الشيت كل فجر.', '<button class="btn" type="button" id="stRef">' + icon('refresh') + ' تحديث</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('main').innerHTML = '<section class="view">' + v5Head('حالة المحطات حتى تاريخه', 'layers', 'آخر وضع لكل محطة وموقع: المرحلة الحالية وعمر القطيع ونشاط البوابة والنافق وآخر تقرير زيارة. تُستنتج تلقائياً من كل إدخالات التطبيق وتقارير الأمن الحيوي، وتُحفظ لقطة يومية في الشيت كل فجر.', '<button class="btn" type="button" id="stRef">' + icon('refresh') + ' تحديث</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
     $('stRef').onclick = viewStations;
     v5Load('stationStatus', [], drawStations, 'حالة المحطات');
   }
@@ -4182,7 +4183,7 @@
     var f = S.stF || '', sec = secs.indexOf(S.stSec) >= 0 ? S.stSec : '';
     var rows = d.rows.filter(function (r) { return (!f || (f === 'risk' ? r.risk >= 30 : r.phase === f)) && (!sec || r.sector === sec); });
     var html = kpiRow([['k-brand', 'layers', d.rows.filter(function (r) { return r.cycle; }).length, 'محطات تسمين'], ['k-ok', 'shield', d.counts['تربية'] || 0, 'في التربية'], ['k-warn', 'out', (d.counts['بيع'] || 0) + (d.counts['تحميل سبلة'] || 0), 'بيع أو تحميل سبلة'], ['k-bad', 'alert', d.rows.filter(function (r) { return r.risk >= 60; }).length, 'خطر مرتفع']]);
-    html += '<div class="st-src"><span class="' + (d.reports.linked ? 'on' : 'off') + '">' + icon('clip') + (d.reports.linked ? ' تقارير الزيارات مربوطة · ' + d.reports.count + ' تقرير' : ' تقارير الزيارات غير مربوطة' + (d.reports.error ? ': ' + esc(d.reports.error) : '')) + '</span><span class="on">' + icon('scan') + ' حركة البوابات حية</span><span class="on">' + icon('box') + ' النافق والسبلة</span><span class="' + (d.snapshot ? 'on' : 'mod') + '">' + icon('calendar') + (d.snapshot ? ' آخر لقطة يومية: ' + esc(d.snapshot) : ' أول لقطة يومية فجر الغد') + '</span></div>';
+    html += '<div class="st-src"><span class="' + (d.reports.linked ? 'on' : 'off') + '">' + icon('clip') + (d.reports.linked ? ' تقارير الأمن الحيوي مربوطة · ' + d.reports.count + ' تقرير' : ' تقارير الأمن الحيوي غير مربوطة' + (d.reports.error ? ': ' + esc(d.reports.error) : '')) + '</span><span class="on">' + icon('scan') + ' حركة البوابات حية</span><span class="on">' + icon('box') + ' النافق والسبلة</span><span class="' + (d.snapshot ? 'on' : 'mod') + '">' + icon('calendar') + (d.snapshot ? ' آخر لقطة يومية: ' + esc(d.snapshot) : ' أول لقطة يومية فجر الغد') + '</span></div>';
     html += '<div class="card st-filter"><div class="chips">' + [['', 'الكل', d.rows.length]].concat(d.phases.filter(function (p) { return d.counts[p.k]; }).map(function (p) { return [p.k, p.k, d.counts[p.k]]; }), [['risk', 'خطر متوسط أو أعلى', d.rows.filter(function (r) { return r.risk >= 30; }).length]]).map(function (c) { return '<button type="button" class="chip st-chip' + (f === c[0] ? ' on' : '') + '" data-stf="' + esc(c[0]) + '">' + esc(c[1]) + ' <b>' + c[2] + '</b></button>'; }).join('') + '</div>' +
       (secs.length > 1 ? '<div class="chips">' + [''].concat(secs).map(function (s) { return '<button type="button" class="chip' + (sec === s ? ' on' : '') + '" data-sts="' + esc(s) + '">' + (s ? 'قطاع ' + esc(s) : 'كل القطاعات') + '</button>'; }).join('') + '</div>' : '') + '</div>';
     html += '<div class="st-grid">' + (rows.map(stCard).join('') || '<div class="card"><p class="empty">لا توجد مواقع بهذا التصنيف</p></div>') + '</div>';
@@ -4230,7 +4231,7 @@
     if (!r) return;
     openSheet('<div class="sheet-head sh-brand"><h2>' + icon('history') + ' سجل «' + esc(shortSite(r.name)) + '»</h2></div><div class="sheet-body" id="stHist"><p class="empty"><span class="spin"></span></p></div>', function (a) { if (a === 'close') closeSheet(); });
     var ev = '<h3 class="pp-sec">آخر الإشارات التي حددت المرحلة</h3><div class="list">' + (r.history.map(function (h) { return '<div class="li"><span class="dot d-n"></span><div class="t"><b>' + esc(h.phase) + '</b><span>' + esc(h.label) + '</span></div><div class="meta"><time>' + esc(fmt(h.time)) + '</time></div></div>'; }).join('') || '<p class="empty">لا توجد إشارات</p>') + '</div>';
-    var reps = '<h3 class="pp-sec">تقارير الزيارات</h3><div class="list">' + (r.reports.map(function (x) { return '<div class="li"><span class="dot ' + (x.score >= 85 ? 'd-ok' : x.score >= 70 ? 'd-warn' : 'd-bad') + '"></span><div class="t"><b>' + esc(x.type) + (x.score != null ? ' · ' + x.score + '%' : '') + '</b><span>' + esc([x.no, x.by, x.grade, x.status].filter(Boolean).join(' · ')) + '</span></div><div class="meta"><time>' + esc(new Date(x.time).toLocaleDateString('ar-EG')) + '</time>' + (x.pdf ? '<a class="btn sm" target="_blank" rel="noopener" href="' + esc(x.pdf) + '">PDF</a>' : '') + '</div></div>'; }).join('') || '<p class="empty">لا توجد تقارير</p>') + '</div>';
+    var reps = '<h3 class="pp-sec">تقارير الأمن الحيوي</h3><div class="list">' + (r.reports.map(function (x) { return '<div class="li"><span class="dot ' + (x.score >= 85 ? 'd-ok' : x.score >= 70 ? 'd-warn' : 'd-bad') + '"></span><div class="t"><b>' + esc(x.type) + (x.score != null ? ' · ' + x.score + '%' : '') + '</b><span>' + esc([x.no, x.by, x.grade, x.status].filter(Boolean).join(' · ')) + '</span></div><div class="meta"><time>' + esc(new Date(x.time).toLocaleDateString('ar-EG')) + '</time>' + (x.pdf ? '<a class="btn sm" target="_blank" rel="noopener" href="' + esc(x.pdf) + '">PDF</a>' : '') + '</div></div>'; }).join('') || '<p class="empty">لا توجد تقارير</p>') + '</div>';
     remote('stationHistory', [S.session.pin, r.id]).then(function (h) {
       var box = $('stHist'); if (!box) return;
       box.innerHTML = ev + reps + '<h3 class="pp-sec">اللقطات اليومية</h3>' + (h.days.length ? '<div class="tbl"><table><thead><tr><th>اليوم</th><th>المرحلة</th><th>العمر</th><th>دخول</th><th>رفض</th><th>نافق</th><th>الخطر</th></tr></thead><tbody>' + h.days.map(function (x) { return '<tr><td class="mono">' + esc(x.day) + '</td><td>' + esc(x.phase) + '</td><td class="mono">' + esc(x.age || '—') + '</td><td class="mono">' + x.entries + '</td><td class="mono">' + x.denied + '</td><td class="mono">' + x.dead + '</td><td class="mono">' + x.risk + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="empty small">أول لقطة يومية تُحفظ فجر الغد تلقائياً.</p>') + '<button class="btn big" data-a="close">إغلاق</button>';
@@ -4403,8 +4404,9 @@
     var close = function () { clearInterval(T.clock); if (T.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(T.watch); if (overlay) host.remove(); };
     var frame = function (inner, tone) {
       host.innerHTML = '<div class="drv sp' + (tone ? ' sp-' + tone : '') + '"><header class="drv-h"><div class="logo">' + logoImg() + '</div><div><b>نقطة تسجيل احتياطية</b><span>' + esc((T.info && T.info.company) || CFG.COMPANY || 'كايرو ثري إيه') + ' · الأمن الحيوي</span></div>' +
-        (overlay ? '<button class="btn sm" type="button" id="spX">' + icon('x') + ' إغلاق</button>' : '') + '</header><div class="drv-b">' + inner + '</div></div>';
+        (overlay ? '<button class="btn sm" type="button" id="spX">' + icon('x') + ' إغلاق</button>' : window.BIO_HUB ? '<button class="btn sm" type="button" id="spMenu">' + icon('back') + ' القائمة</button>' : '') + '</header><div class="drv-b">' + inner + '</div></div>';
       if ($('spX')) $('spX').onclick = close;
+      if ($('spMenu')) $('spMenu').onclick = function () { close(); hubBack(); };
     };
     var pointHead = function () {
       var i = T.info;
@@ -4510,30 +4512,84 @@
     window.addEventListener('online', function () { cpFlush().then(function (n) { if (n) toast('أُرسل ' + n + ' تسجيل كان محفوظاً على موبايلك'); }); });
   }
 
+  /** القائمة التي يفتحها ملصق QR على مدخل البوابة: تسجيل دخول وخروج، مأمورية، تأهيل، دخول الأمن والمديرين */
+  function showGateHub(cp, overlay) {
+    stopCam();
+    window.BIO_HUB = cp;
+    var host;
+    if (overlay) { host = document.createElement('div'); host.className = 'drv-over sp-over'; host.id = 'spOver'; document.body.appendChild(host); }
+    else { document.body.innerHTML = demoStrip() + '<div class="drv-page sp-page" id="spHost"></div><div class="toasts" id="toasts"></div>'; host = $('spHost'); bindDemoStrip(); }
+    var H = { info: null, err: '', clock: null };
+    var leave = function () { clearInterval(H.clock); if (overlay) host.remove(); };
+    var draw = function () {
+      var i = H.info, open = i && i.open;
+      var tiles = [
+        ['cp', 'scan', 'تسجيل دخول أو خروج', i ? (open ? 'متاح الآن من موبايلك' : 'عند فرد الأمن · يُفتح هنا إذا توقف جهاز البوابة') : 'غير متاح من هذا الملصق', open ? 'live' : 'off'],
+        ['ms', 'calendar', 'طلب مأمورية أو زيارة', 'قبل الموعد بـ 24 ساعة · بكودك ورقم موبايلك', ''],
+        ['tr', 'grad', 'التأهيل الإلزامي', 'للموظف الجديد · 12 دقيقة ويتفعل كارتك', ''],
+        ['lg', 'key', 'دخول الأمن والمديرين', 'بالرقم السري · وتثبيت التطبيق على الموبايل', '']
+      ];
+      host.innerHTML = '<div class="gh">' +
+        '<header class="gh-hero"><div class="gh-top"><div class="logo">' + logoImg() + '</div><div><b>منظومة الأمن الحيوي</b><span>' + esc((i && i.company) || CFG.COMPANY || 'كايرو ثري إيه') + '</span></div>' + (overlay ? '<button class="btn sm light" type="button" id="ghX">' + icon('x') + ' إغلاق</button>' : '') + '</div>' +
+        '<span class="gh-kick">' + icon('gate') + ' ' + esc(i ? i.kind + ' · قطاع ' + i.sector : 'بوابة') + '</span><h1>' + esc(i ? i.name : 'مرحباً بك') + '</h1><div class="gh-clock" id="ghClock"></div></header>' +
+        '<div class="gh-body">' + (H.err ? '<div class="warnbox xs"><b>هذا الملصق لا يفتح التسجيل الاحتياطي</b><span>' + esc(H.err) + '</span></div>' : '') +
+        '<h2 class="gh-q">ماذا تريد أن تفعل؟</h2><div class="gh-tiles">' + tiles.map(function (t) {
+          return '<button type="button" class="gh-tile' + (t[4] ? ' ' + t[4] : '') + '" data-h="' + t[0] + '"><span class="gh-ico">' + icon(t[1]) + '</span><span class="gh-t"><b>' + t[2] + '</b><small>' + t[3] + '</small></span>' + (t[4] === 'live' ? '<span class="gh-dot"></span>' : '') + icon('chev') + '</button>';
+        }).join('') + '</div>' +
+        '<div class="gh-rules"><b>' + icon('shield') + ' قبل الدخول</b><span>لا دخول بدون تسجيل وكارت الأمن الحيوي</span><span>استحمام كامل وتغيير الملابس والحذاء</span><span>لا مخالطة دواجن أو طيور خلال 72 ساعة</span></div>' +
+        '<p class="gh-foot">' + esc(i ? i.id : '') + ' · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · الأمن الحيوي</p></div></div>';
+      if ($('ghX')) $('ghX').onclick = leave;
+      var tick = function () { var el = $('ghClock'); if (!el) return clearInterval(H.clock); var d = new Date(); el.textContent = d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }); };
+      clearInterval(H.clock); tick(); H.clock = setInterval(tick, 20000);
+      host.querySelectorAll('[data-h]').forEach(function (b) { b.onclick = function () {
+        var a = b.dataset.h;
+        if (a === 'cp') { if (!H.info) return toast(H.err || 'غير متاح'); leave(); return showSelfPoint(cp, overlay); }
+        clearInterval(H.clock);
+        if (a === 'ms') { if (overlay) host.remove(); return showSelfMission(); }
+        if (a === 'tr') { if (overlay) host.remove(); return showSelfTrain(); }
+        if (a === 'lg') { leave(); if (overlay) return; window.BIO_HUB = null; window.BIO_START = ''; window.BIO_CP = null; try { history.replaceState(null, '', location.pathname); } catch (x) {} return boot(); }
+      }; });
+    };
+    host.innerHTML = '<div class="drv"><div class="drv-big" style="margin-top:40px"><span class="spin"></span><span>جارٍ الفتح…</span></div></div>';
+    remote('selfPointInfo', [cp.g, cp.k]).then(function (d) { H.info = d; window.BIO_MS_SITE = d.sites.length === 1 ? d.sites[0].id : ''; draw(); })
+      .catch(function (e) { H.err = e.net ? 'لا يوجد اتصال بالإنترنت الآن.' : errText(e); draw(); });
+  }
+  function hubBack() { if (!window.BIO_HUB) return false; showGateHub(window.BIO_HUB, false); return true; }
   /* شاشة المدير: نقاط QR الاحتياطية */
   var SP_MODES = [['تلقائي', 'clock', 'تُفتح عند توقف جهاز البوابة'], ['مفعلة', 'check', 'مفتوحة الآن'], ['موقوفة', 'lock', 'لا تقبل تسجيلات']];
   function viewSelfPoints() {
-    $('main').innerHTML = '<section class="view sp-view">' + v5Head('نقاط QR الاحتياطية', 'scan', 'ملصق QR ثابت عند كل بوابة. إذا توقف جهاز البوابة لأي عطل (موبايل، شبكة، كهرباء)، يمسحه الموظف أو الزائر بموبايله ويسجل دخوله أو خروجه بكوده ورقم هاتفه، بنفس قواعد العزل.', '<button class="btn primary" type="button" id="spPrintAll">' + icon('printer') + ' ملصقات كل النقاط</button>', ['data', 'البيانات']) +
+    $('main').innerHTML = '<section class="view sp-view">' + v5Head('ملصقات QR للبوابات', 'scan', 'ملصق QR على مدخل كل بوابة يفتح التطبيق مباشرة: تسجيل الدخول والخروج من موبايل الشخص إذا توقف جهاز البوابة، وطلب المأمورية، والتأهيل الإلزامي، ودخول الأمن والمديرين.', '<button class="btn primary" type="button" id="spPrintAll">' + icon('printer') + ' ملصقات كل النقاط</button>', ['data', 'البيانات']) +
       '<div class="howto no-print"><div><span class="hn">1</span><b>اطبع وعلّق</b><span>ملصق لكل منطقة تطهير وبوابة موقع، في مكان ظاهر عند فرد الأمن.</span></div><div><span class="hn">2</span><b>تُفتح عند العطل</b><span>في الوضع «تلقائي» تعمل النقطة فقط إذا انقطع جهاز البوابة <b id="spAuto">15</b> دقيقة، ويصلك تنبيه.</span></div><div><span class="hn">3</span><b>يسجل بموبايله</b><span>بكوده ورقم موبايله المسجل، ويُتحقق من وجوده عند البوابة بالموقع الجغرافي.</span></div></div>' +
       '<div id="v5Out">' + v5Spin() + '</div><div id="spPrint" class="sp-print-host"></div></section>';
-    v5Load('selfPoints', [], drawSelfPoints, 'نقاط QR');
+    v5Load('selfPoints', [], drawSelfPoints, 'ملصقات QR');
   }
-  function spPoster(p, company) {
-    return '<div class="sp-poster"><div class="sp-p-top">' + logoImg() + '<div><b>' + esc(company || CFG.COMPANY || 'كايرو ثري إيه') + '</b><span>منظومة الأمن الحيوي</span></div></div>' +
-      '<span class="sp-p-kick">نقطة تسجيل احتياطية</span><h2>' + esc(p.name) + '</h2>' +
-      '<div class="sp-p-qr" data-url="' + esc(p.url) + '"></div>' +
-      '<ol class="sp-p-steps"><li>امسح الكود بكاميرا موبايلك</li><li>اكتب كودك ورقم موبايلك</li><li>اختر دخول أو خروج، واعرض النتيجة لفرد الأمن</li></ol>' +
-      '<p class="sp-p-foot">تعمل عند توقف جهاز البوابة فقط · ' + esc(p.id) + '</p></div>';
+  /** ملصق مدخل البوابة: A4 للتعليق، أو A6 صغير للمكتب والباب (4 في الصفحة). كل المقاسات بوحدة عرض الملصق فتتطابق المعاينة والطباعة */
+  var GH_SERVICES = [['scan', 'تسجيل دخول وخروج', 'احتياطي عند توقف جهاز البوابة'], ['calendar', 'طلب مأمورية أو زيارة', 'قبل الموعد بـ 24 ساعة'], ['grad', 'التأهيل الإلزامي', 'للموظف الجديد'], ['key', 'دخول الأمن والمديرين', 'وتثبيت التطبيق']];
+  function spPoster(p, company, size) {
+    var co = company || CFG.COMPANY || 'كايرو ثري إيه', small = size === 'a6';
+    return '<div class="pz' + (small ? ' pz-a6' : '') + '"><div class="pz-in">' +
+      '<div class="pz-head"><span class="pz-logo">' + logoImg() + '</span><div class="pz-brand"><b>منظومة الأمن الحيوي</b><span>BIOSECURITY SYSTEM · ' + esc(co) + '</span></div></div>' +
+      '<div class="pz-gate"><span class="pz-kick">' + (p.kind === 'منطقة تطهير' ? 'منطقة تطهير' : 'مدخل') + ' · قطاع ' + esc(p.sector || '') + '</span><h2>' + esc(p.name) + '</h2></div>' +
+      '<div class="pz-qrbox"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><div class="sp-p-qr pz-qr" data-url="' + esc(p.url) + '"></div><span class="pz-mark">' + logoImg() + '</span></div>' +
+      '<div class="pz-scan">' + icon('camera') + '<b>امسح بكاميرا موبايلك</b></div>' +
+      (small ? '' : '<div class="pz-svc">' + GH_SERVICES.map(function (x) { return '<div><span>' + icon(x[0]) + '</span><b>' + x[1] + '</b><small>' + x[2] + '</small></div>'; }).join('') + '</div>' +
+      '<div class="pz-rules"><span>' + icon('shield') + ' لا دخول بدون تسجيل</span><span>' + icon('user') + ' استحمام وتغيير الملابس</span><span>' + icon('bird') + ' لا مخالطة طيور 72 ساعة</span></div>') +
+      '<div class="pz-foot"><span class="mono">' + esc(p.id) + '</span><span>' + esc(co) + ' · إدارة الأمن الحيوي</span></div>' +
+      '</div></div>';
   }
-  function spDrawQr(root, size) { if (!window.QRCode) return; root.querySelectorAll('.sp-p-qr').forEach(function (el) { el.innerHTML = ''; new QRCode(el, { text: el.dataset.url, width: size, height: size, correctLevel: QRCode.CorrectLevel.M }); }); }
-  function spPrint(list, company) {
+  function spDrawQr(root) {
+    if (!window.QRCode) return;
+    root.querySelectorAll('.sp-p-qr').forEach(function (el) { el.innerHTML = ''; new QRCode(el, { text: el.dataset.url, width: 600, height: 600, colorDark: '#1d1517', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H }); });
+  }
+  function spPrint(list, company, size) {
     var host = $('spPrint'); if (!host) return;
-    host.innerHTML = list.map(function (p) { return spPoster(p, company); }).join('');
-    spDrawQr(host, 420);
+    host.className = 'sp-print-host' + (size === 'a6' ? ' a6' : '');
+    host.innerHTML = list.map(function (p) { return spPoster(p, company, size); }).join('');
+    spDrawQr(host);
     document.body.classList.add('print-posters');
     var done = function () { document.body.classList.remove('print-posters'); window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(done, 1500); }, 300);
+    setTimeout(function () { window.print(); setTimeout(done, 1500); }, 400);
   }
   function drawSelfPoints(d) {
     var out = $('v5Out'); if (!out) return;
@@ -4556,7 +4612,7 @@
     }).join('');
     out.innerHTML = html;
     var byId = function (id) { return d.points.filter(function (x) { return x.id === id; })[0]; };
-    $('spPrintAll').onclick = function () { if (MODE === 'demo') return toast('الطباعة تعمل في التطبيق الحقيقي. اضغط «الملصق» لمعاينة أي نقطة'); spPrint(d.points, d.company); };
+    $('spPrintAll').onclick = function () { if (MODE === 'demo') return toast('الطباعة تعمل في التطبيق الحقيقي. اضغط «الملصق» لمعاينة أي نقطة'); spPrint(d.points, d.company, 'a4'); };
     out.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () {
       if (b.classList.contains('on')) return;
       b.disabled = true;
@@ -4569,21 +4625,28 @@
     out.querySelectorAll('[data-poster]').forEach(function (b) { b.onclick = function () { spPosterSheet(byId(b.dataset.poster), d.company); }; });
     out.querySelectorAll('[data-try]').forEach(function (b) { b.onclick = function () {
       var p = byId(b.dataset.try);
-      if (MODE === 'demo') return showSelfPoint({ g: p.id, k: p.token }, true);
+      if (MODE === 'demo') return showGateHub({ g: p.id, k: p.token }, true);
       window.open(p.url, '_blank', 'noopener');
     }; });
   }
   function spPosterSheet(p, company) {
     if (!p) return;
-    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('printer') + ' ملصق النقطة</h2><span class="small">' + esc(p.name) + '</span></div><div class="sheet-body"><div class="sp-poster-prev">' + spPoster(p, company) + '</div>' +
-      '<div class="field"><label for="spUrl">رابط النقطة</label><input id="spUrl" type="text" dir="ltr" readonly value="' + esc(p.url) + '"></div>' +
-      '<div class="row">' + (MODE !== 'demo' ? '<button class="btn primary" data-a="print">' + icon('printer') + ' طباعة أو حفظ PDF</button>' : '') + '<button class="btn" data-a="copy">' + icon('copy') + ' نسخ الرابط</button><a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink('رابط نقطة التسجيل الاحتياطية «' + p.name + '»:\n' + p.url + '\nتُستخدم فقط إذا توقف جهاز البوابة.')) + '">' + icon('wa') + ' واتساب</a></div>' +
-      '<p class="xs muted">الملصق يعمل حتى تضغط «تغيير الرمز». غيّره إذا صُوّر الملصق أو نُقل من مكانه.</p></div>', function (a) {
+    var size = 'a4';
+    var prev = function () { $('spPrev').className = 'sp-poster-prev' + (size === 'a6' ? ' a6' : ''); $('spPrev').innerHTML = spPoster(p, company, size); spDrawQr($('spPrev')); $('sheetRoot').querySelectorAll('[data-a="sz"]').forEach(function (b) { b.classList.toggle('on', b.dataset.k === size); }); };
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('printer') + ' ملصق مدخل البوابة</h2><span class="small">' + esc(p.name) + '</span></div><div class="sheet-body">' +
+      '<div class="seg" role="group"><button type="button" data-a="sz" data-k="a4" class="on">' + icon('file') + ' ملصق A4 للتعليق</button><button type="button" data-a="sz" data-k="a6">' + icon('card') + ' ملصق صغير A6</button></div>' +
+      '<div id="spPrev" class="sp-poster-prev"></div>' +
+      '<div class="infobox xs">' + icon('scan') + ' يفتح الملصق قائمة التطبيق لهذه البوابة: تسجيل الدخول والخروج الاحتياطي، طلب مأمورية، التأهيل الإلزامي، ودخول الأمن والمديرين.</div>' +
+      '<div class="field"><label for="spUrl">رابط الملصق</label><input id="spUrl" type="text" dir="ltr" readonly value="' + esc(p.url) + '"></div>' +
+      '<div class="row">' + (MODE !== 'demo' ? '<button class="btn primary" data-a="print">' + icon('printer') + ' طباعة أو حفظ PDF</button>' : '') + '<button class="btn" data-a="copy">' + icon('copy') + ' نسخ الرابط</button><a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink('رابط تطبيق الأمن الحيوي لبوابة «' + p.name + '»:\n' + p.url)) + '">' + icon('wa') + ' واتساب</a></div>' +
+      '<p class="xs muted">اطبع على ورق مقوى أو ملصق لامع، ويُفضّل التغليف. الملصق يعمل حتى تضغط «تغيير الرمز»، فغيّره إذا صُوّر الملصق أو نُقل من مكانه.</p></div>', function (a, el) {
+      if (a === 'sz') { size = el.dataset.k; return prev(); }
       if (a === 'copy') return copyText(p.url);
-      if (a === 'print') { closeSheet(); spPrint([p], company); }
+      if (a === 'print') { closeSheet(); spPrint(size === 'a6' ? [p, p, p, p] : [p], company, size); }
     });
-    spDrawQr($('sheetRoot'), 220);
+    prev();
   }
+
 
   /* ---------- المقاولون ومعداتهم ---------- */
   var MEMBER_L = { 'عامل': ['user', 'W'], 'سائق': ['user', 'D'], 'مشرف': ['user', 'S'], 'مركبة': ['truck', 'V'], 'معدة': ['tool', 'E'] };
@@ -5458,7 +5521,7 @@
         if (t.age <= 7 && cp > 1) add('warn', farm, 'نفوق الأسبوع الأول ' + r2(cp) + '% (المستهدف أقل من 1%). راجع جودة الكتاكيت ومصدرها: ' + (t.source || 'غير مذكور'));
         else if (t.age > 7 && cp > 4) add('warn', farm, 'النافق التراكمي للدورة ' + r2(cp) + '% حتى عمر ' + t.age + ' يوم');
       }
-      if (t.lab > 0) add('info', farm, 'أُخذت ' + t.lab + ' عينة للمعمل. تابع النتيجة في تقارير الزيارات');
+      if (t.lab > 0) add('info', farm, 'أُخذت ' + t.lab + ' عينة للمعمل. تابع النتيجة في تقارير الأمن الحيوي');
       if (t.sold > 0 || /بيع/.test(t.status)) add('info', farm, 'يوم بيع' + (t.sold ? ': خرج ' + t.sold.toLocaleString('en') + ' طائر' : '') + '. تأكد من تطهير سيارات النقل والأقفاص وعمالة التحميل عند البوابة');
       if (/استلام|تسكين/.test(t.status) && (t.placed > 0 || t.age <= 2)) add('info', farm, 'استلام كتاكيت' + (t.placed ? ' (' + t.placed.toLocaleString('en') + ' كتكوت)' : '') + (t.source ? ' من قطعان: ' + t.source : '') + '. مصدر الكتاكيت مسجل لتتبع أي عدوى رأسية');
       if (t.detail.some(function (x) { return x.s < 0; })) add('warn', farm, 'رصيد سالب في ' + t.detail.filter(function (x) { return x.s < 0; }).map(function (x) { return x.h; }).join('، ') + ': راجع إدخال البيانات');

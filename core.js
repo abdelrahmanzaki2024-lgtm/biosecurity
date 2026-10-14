@@ -361,7 +361,7 @@ function BIO_seedV5(s, now) {
   );
   // حساب «مفتش أمن حيوي» تجريبي: يدخل على التقارير فقط
   s.users.push({ id: 'U13', pin: '7777', name: 'معاون الأمن الحيوي (مثال)', role: 'مفتش أمن حيوي', gate: '', scope: 'الواحات', phone: '' });
-  s.settings.push({ key: 'REPORTS_URL', value: BIO_REPORTS_URL, note: 'رابط تطبيق تقارير الزيارات (Apps Script) الذي يفتح داخل المنصة بنفس الدخول' });
+  s.settings.push({ key: 'REPORTS_URL', value: BIO_REPORTS_URL, note: 'رابط تطبيق تقارير الأمن الحيوي (Apps Script) الذي يفتح داخل المنصة بنفس الدخول' });
   return s;
 }
 
@@ -578,7 +578,7 @@ function BIO_api(store, deps) {
     var role = String(u.role).trim(), r = BIO_role(role) || BIO_role(BIO.ROLE_GUARD);
     var isMgr = r.k !== BIO.ROLE_GUARD, perms = BIO_userPerms({ role: r.k, perms: u.perms });
     // حساب التقارير فقط (المفتش / المعاون): لا يصل لعمليات نظام البوابات
-    if (r.reportsOnly && need !== 'login' && need !== 'vr') throw new Error('حسابك مخصص لتقارير الزيارات فقط');
+    if (r.reportsOnly && need !== 'login' && need !== 'vr') throw new Error('حسابك مخصص لتقارير الأمن الحيوي فقط');
     if (need === 'login') need = null;
     else if (need === 'vr') need = true;
     if (need && !isMgr) throw new Error('هذه العملية للمديرين فقط');
@@ -2557,8 +2557,8 @@ function BIO_ext(api, H) {
    والمنصة تسلّم تطبيق التقارير تذكرة دخول تُستخدم مرة واحدة، فيدخل المستخدم بدوره المناسب دون كود ثانٍ. */
 var BIO_REPORTS_URL = 'https://script.google.com/macros/s/AKfycbzhk71OJIFJNLcLHa9b2hqw3jHlAXEoBhcoxV6D34H2UvD8-p5fU52XmvEMhqXnG3hN/exec';
 BIO_PERMS.push(
-  { k: 'vr_write', label: 'تحرير تقارير الزيارات (إنشاء تقرير وإرساله)', short: 'تحرير التقارير', group: 'vr' },
-  { k: 'vr_view', label: 'الاطلاع على تقارير الزيارات', short: 'الاطلاع على التقارير', group: 'vr' },
+  { k: 'vr_write', label: 'تحرير تقارير الأمن الحيوي (إنشاء تقرير وإرساله)', short: 'تحرير التقارير', group: 'vr' },
+  { k: 'vr_view', label: 'الاطلاع على تقارير الأمن الحيوي', short: 'الاطلاع على التقارير', group: 'vr' },
   { k: 'vr_review', label: 'مراجعة التقارير وتعديلها (مسؤول الأمن الحيوي)', short: 'مراجعة وتعديل التقارير', group: 'vr' },
   { k: 'vr_approve', label: 'الاعتماد النهائي للتقارير (مدير إدارة الأمن الحيوي)', short: 'اعتماد التقارير', group: 'vr' }
 );
@@ -2567,7 +2567,7 @@ BIO_ROLES.forEach(function (r) {
   if (r.k === BIO.ROLE_MANAGER) r.perms = r.perms.concat(['vr_write', 'vr_view', 'vr_review', 'vr_approve']);
   else if (r.k === BIO.ROLE_SECTOR || r.k === BIO.ROLE_SITE || r.k === BIO.ROLE_VIEWER) r.perms = r.perms.concat(['vr_view']);
 });
-BIO_ROLES.splice(BIO_ROLES.length - 1, 0, { k: BIO.ROLE_INSPECTOR, label: 'مفتش / معاون أمن حيوي', desc: 'يدخل على تقارير الزيارات فقط: يحرر التقارير ويرسلها للمراجعة', scope: 'optional', perms: ['vr_write'], reportsOnly: true });
+BIO_ROLES.splice(BIO_ROLES.length - 1, 0, { k: BIO.ROLE_INSPECTOR, label: 'مفتش / معاون أمن حيوي', desc: 'يدخل على تقارير الأمن الحيوي فقط: يحرر التقارير ويرسلها للمراجعة', scope: 'optional', perms: ['vr_write'], reportsOnly: true });
 /** دور المستخدم في تطبيق التقارير حسب أعلى صلاحية تقارير لديه */
 var BIO_VR_ROLES = { mgr: 'مدير إدارة الأمن الحيوي (اعتماد)', sup: 'مسؤول الأمن الحيوي (مراجعة وتعديل)', insp: 'مفتش / معاون (تحرير)', view: 'اطلاع' };
 function BIO_vrRole(perms) {
@@ -2579,7 +2579,7 @@ function BIO_vrBridge(api, H) {
   /** يفتح تطبيق التقارير للمستخدم: يرجع الرابط ومعه تذكرة دخول تُستخدم مرة واحدة خلال 10 دقائق */
   api.vrOpen = function (pin) {
     var u = H.auth(pin, 'vr'), role = BIO_vrRole(u.perms);
-    if (!role) throw new Error('ليست لديك صلاحية على تقارير الزيارات. اطلبها من مدير الأمن الحيوي');
+    if (!role) throw new Error('ليست لديك صلاحية على تقارير الأمن الحيوي. اطلبها من مدير الأمن الحيوي');
     var url = String(H.settings().REPORTS_URL || BIO_REPORTS_URL).trim();
     var vr = u.perms.filter(function (p) { return p.indexOf('vr_') === 0; });
     var out = { role: role, roleLabel: BIO_VR_ROLES[role], perms: vr, url: url };
@@ -2604,10 +2604,10 @@ BIO.ROLE_OFFICER = 'مسؤول أمن حيوي';
 BIO.ROLE_SUPERVISOR = 'مشرف أمن حيوي';
 (function () {
   var ins = BIO_role(BIO.ROLE_INSPECTOR);
-  if (ins) { ins.label = 'معاون أمن حيوي'; ins.desc = 'معاون / مفتش ميداني: يدخل على تقارير الزيارات فقط، يحرر التقرير ويرسله للمراجعة'; }
+  if (ins) { ins.label = 'معاون أمن حيوي'; ins.desc = 'معاون / مفتش ميداني: يدخل على تقارير الأمن الحيوي فقط، يحرر التقرير ويرسله للمراجعة'; }
   BIO_ROLES.push(
-    { k: BIO.ROLE_OFFICER, label: 'مسؤول أمن حيوي', desc: 'مسؤول القطاع: يراجع تقارير الزيارات ويعدلها، وتصله طلبات وبلاغات قطاعه', scope: 'sector', perms: ['decide', 'reports', 'notices', 'analytics', 'vr_write', 'vr_view', 'vr_review'] },
-    { k: BIO.ROLE_SUPERVISOR, label: 'مشرف أمن حيوي', desc: 'يشرف على مجموعة محطات: يحرر تقارير الزيارات ويتابع بلاغات محطاته ولوحتها', scope: 'site', perms: ['reports', 'analytics', 'vr_write', 'vr_view'] }
+    { k: BIO.ROLE_OFFICER, label: 'مسؤول أمن حيوي', desc: 'مسؤول القطاع: يراجع تقارير الأمن الحيوي ويعدلها، وتصله طلبات وبلاغات قطاعه', scope: 'sector', perms: ['decide', 'reports', 'notices', 'analytics', 'vr_write', 'vr_view', 'vr_review'] },
+    { k: BIO.ROLE_SUPERVISOR, label: 'مشرف أمن حيوي', desc: 'يشرف على مجموعة محطات: يحرر تقارير الأمن الحيوي ويتابع بلاغات محطاته ولوحتها', scope: 'site', perms: ['reports', 'analytics', 'vr_write', 'vr_view'] }
   );
   var order = [BIO.ROLE_MANAGER, BIO.ROLE_SECTOR, BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_SITE, BIO.ROLE_GUARD, BIO.ROLE_VIEWER];
   BIO_ROLES.sort(function (a, b) { return order.indexOf(a.k) - order.indexOf(b.k); });

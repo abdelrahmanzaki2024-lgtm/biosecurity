@@ -2500,24 +2500,91 @@ body.vr-on .main:empty { display: none; }
 .sp-mode { display: grid; grid-template-columns: repeat(3, 1fr); }
 .sp-mode button { font-size: .84rem; padding-inline: 6px; }
 .sp-acts { flex-wrap: wrap; gap: 6px; }
-/* الملصق: معاينة داخل النافذة، وطباعة صفحة A4 لكل نقطة */
-.sp-poster { background: #fff; color: #221f20; border: 2px solid #c8182a; border-radius: 18px; padding: 18px; display: grid; justify-items: center; gap: 8px; text-align: center; }
-.sp-p-top { display: flex; gap: 10px; align-items: center; justify-self: stretch; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-.sp-p-top img { width: 42px; height: 42px; object-fit: contain; }
-.sp-p-top div { display: grid; text-align: right; line-height: 1.3; }
-.sp-p-top span { font-size: .8rem; color: #7a7371; }
-.sp-p-kick { background: #c8182a; color: #fff; font-weight: 800; padding: 4px 14px; border-radius: 999px; font-size: .9rem; }
-.sp-poster h2 { font-size: 1.3rem; color: #221f20; }
-.sp-p-qr { padding: 8px; background: #fff; }
-.sp-p-qr img, .sp-p-qr canvas { max-width: 100%; height: auto; }
-.sp-p-steps { text-align: right; margin: 0; padding-inline-start: 22px; display: grid; gap: 4px; font-weight: 700; }
-.sp-p-foot { font-size: .78rem; color: #7a7371; }
-.sp-poster-prev { max-width: 340px; margin: 0 auto; }
+/* ملصق مدخل البوابة: كل المقاسات بنسبة عرض الملصق (cqw) فتتطابق المعاينة والطباعة على A4 و A6 */
+.pz { container-type: inline-size; width: 100%; aspect-ratio: 210 / 297; background: #fff; color: #1d1517; border-radius: 2.4cqw; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 18px 40px -18px rgba(60,10,16,.45); -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: var(--font-body); }
+.pz-in { height: 100%; display: grid; grid-template-rows: auto auto 1fr auto auto auto auto; justify-items: center; text-align: center; }
+.pz-head { justify-self: stretch; display: flex; align-items: center; gap: 3.4cqw; padding: 4.4cqw 6.5cqw 9cqw; color: #fff; background: var(--peaks), linear-gradient(160deg, #c8182a 0%, #a81323 55%, #5e0a14 100%); background-size: 17cqw auto, cover; clip-path: polygon(0 0, 100% 0, 100% 72%, 50% 100%, 0 72%); }
+.pz-logo { width: 12.5cqw; height: 12.5cqw; border-radius: 3.6cqw; background: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 1cqw 3cqw rgba(0,0,0,.25); }
+.pz-logo img { width: 80%; height: 80%; object-fit: contain; }
+.pz-brand { display: grid; text-align: right; line-height: 1.25; }
+.pz-brand b { font-family: var(--font-display); font-size: 6.6cqw; font-weight: 700; }
+.pz-brand span { font-family: var(--font-mono); font-size: 2.2cqw; letter-spacing: .28em; opacity: .85; direction: ltr; text-align: right; }
+.pz-gate { display: grid; gap: 1.4cqw; margin-top: -2cqw; padding: 0 6cqw; }
+.pz-kick { justify-self: center; font-size: 2.9cqw; font-weight: 800; color: #a81323; background: #fcebec; border: .3cqw solid #f3c7cb; padding: .8cqw 3.4cqw; border-radius: 99cqw; }
+.pz-gate h2 { font-family: var(--font-display); font-size: 5.6cqw; line-height: 1.18; color: #1d1517; text-wrap: balance; }
+.pz-qrbox { position: relative; align-self: center; width: 42cqw; aspect-ratio: 1; padding: 2.8cqw; margin-top: 2.4cqw; }
+.pz-qrbox i { position: absolute; width: 9cqw; height: 9cqw; border: 1.3cqw solid #c8182a; }
+.pz-qrbox .c1 { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 3cqw; }
+.pz-qrbox .c2 { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 3cqw; }
+.pz-qrbox .c3 { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 3cqw; }
+.pz-qrbox .c4 { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 3cqw; }
+.pz-qr { width: 100%; height: 100%; }
+.pz-qr img, .pz-qr canvas { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }
+.pz-mark { position: absolute; top: 50%; left: 50%; width: 10.5cqw; height: 10.5cqw; transform: translate(-50%, -50%); background: #fff; border-radius: 2.4cqw; display: grid; place-items: center; box-shadow: 0 0 0 1.1cqw #fff, 0 0 0 1.5cqw #c8182a; }
+.pz-mark img { width: 80%; height: 80%; object-fit: contain; }
+.pz-scan { display: flex; align-items: center; gap: 2cqw; margin-top: 1.8cqw; font-family: var(--font-display); font-size: 4.4cqw; color: #c8182a; }
+.pz-scan .ico { width: 5.6cqw; height: 5.6cqw; }
+.pz-svc { justify-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2cqw; margin: 3.4cqw 6cqw 0; }
+.pz-svc > div { display: grid; justify-items: center; align-content: start; gap: .8cqw; padding: 2.2cqw 1.2cqw; border-radius: 2.6cqw; background: #faf6f5; border: .3cqw solid #efe6e4; }
+.pz-svc span { width: 7.4cqw; height: 7.4cqw; border-radius: 2.4cqw; display: grid; place-items: center; background: #c8182a; color: #fff; }
+.pz-svc span .ico { width: 4.2cqw; height: 4.2cqw; }
+.pz-svc b { font-size: 2.55cqw; line-height: 1.3; }
+.pz-svc small { font-size: 1.85cqw; color: #7a7371; line-height: 1.25; }
+.pz-rules { justify-self: stretch; display: flex; justify-content: center; flex-wrap: nowrap; white-space: nowrap; gap: 1.4cqw 3.2cqw; margin: 3.2cqw 0 0; padding: 2.2cqw 4cqw; background: #2b2a2c; color: #fff; font-size: 2.3cqw; font-weight: 700; }
+.pz-rules span { display: inline-flex; align-items: center; gap: 1.2cqw; }
+.pz-rules .ico { width: 3.4cqw; height: 3.4cqw; color: #ff8a95; }
+.pz-foot { justify-self: stretch; display: flex; justify-content: space-between; align-items: center; padding: 2cqw 6cqw 2.6cqw; font-size: 2.2cqw; color: #7a7371; }
+.pz-foot .mono { font-weight: 600; color: #a81323; direction: ltr; }
+/* A6: ملصق صغير، الرمز أكبر نسبياً */
+.pz-a6 .pz-head { padding: 4.6cqw 6cqw 10cqw; }
+.pz-a6 .pz-brand b { font-size: 7.4cqw; }
+.pz-a6 .pz-gate h2 { font-size: 7cqw; }
+.pz-a6 .pz-kick { font-size: 3.6cqw; }
+.pz-a6 .pz-qrbox { width: 58cqw; }
+.pz-a6 .pz-scan { font-size: 5.6cqw; margin-bottom: 2cqw; }
+.pz-a6 .pz-foot { font-size: 3cqw; }
+.sp-poster-prev { max-width: 360px; margin: 0 auto; width: 100%; }
+.sp-poster-prev.a6 { max-width: 300px; }
 .sp-print-host { display: none; }
 @media print {
   body.print-posters .sp-view > *:not(.sp-print-host), body.print-posters .sheet-wrap, body.print-posters #sheetRoot { display: none !important; }
   body.print-posters .sp-print-host { display: block; }
-  body.print-posters .sp-poster { break-after: page; border-width: 4px; min-height: 92vh; align-content: center; gap: 18px; font-size: 1.3rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body.print-posters .sp-poster h2 { font-size: 2.2rem; }
-  body.print-posters .sp-p-qr img, body.print-posters .sp-p-qr canvas { width: 9.5cm !important; height: 9.5cm !important; }
+  body.print-posters .sp-print-host .pz { width: 190mm; margin: 0 auto; border-radius: 0; box-shadow: none; break-after: page; }
+  body.print-posters .sp-print-host.a6 { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; justify-items: center; }
+  body.print-posters .sp-print-host.a6 .pz { width: 92mm; break-after: auto; break-inside: avoid; border: .3mm dashed #bbb; }
 }
+
+/* قائمة البوابة التي يفتحها الملصق */
+.gh { min-height: 100%; background: var(--bg); }
+.gh-hero { position: relative; overflow: hidden; display: grid; justify-items: center; text-align: center; gap: 8px; color: #fff; padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 46px max(16px, env(safe-area-inset-left, 0px)); background: var(--peaks), linear-gradient(165deg, #c8182a 0%, #a81323 55%, #5e0a14 100%); clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); }
+.gh-top { justify-self: stretch; display: flex; align-items: center; gap: 12px; text-align: start; max-width: 560px; width: 100%; margin: 0 auto 6px; }
+.gh-top .logo { flex: none; width: 46px; height: 46px; padding: 0; margin: 0; background: none; box-shadow: none; border-radius: 14px; }
+.gh-top .logo img { width: 46px; height: 46px; border-radius: 14px; background: #fff; object-fit: contain; padding: 4px; }
+.gh-top > div:not(.logo) { flex: 1; display: grid; line-height: 1.3; }
+.gh-top b { font-family: var(--font-display); font-size: 1.05rem; }
+.gh-top span { font-size: .78rem; opacity: .85; }
+.gh-kick { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 800; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); padding: 4px 12px; border-radius: 999px; }
+.gh-kick .ico { width: 15px; height: 15px; }
+.gh-hero h1 { font-size: 1.6rem; color: #fff; max-width: 520px; }
+.gh-clock { font-size: .86rem; opacity: .9; }
+.gh-body { max-width: 560px; margin: -18px auto 0; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; position: relative; }
+.gh-q { font-size: 1.05rem; color: var(--ink-2); padding-top: 22px; }
+.gh-tiles { display: grid; gap: 10px; }
+.gh-tile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: start; font: inherit; cursor: pointer; box-shadow: var(--shadow); transition: transform .15s ease; }
+.gh-tile:active { transform: scale(.985); }
+.gh-tile:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.gh-ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.gh-ico .ico { width: 26px; height: 26px; }
+.gh-t { display: grid; gap: 2px; }
+.gh-t b { font-family: var(--font-display); font-size: 1.08rem; }
+.gh-t small { font-size: .8rem; color: var(--muted); line-height: 1.45; }
+.gh-tile > .ico { color: var(--muted); width: 18px; height: 18px; }
+.gh-tile.live { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok), var(--shadow); }
+.gh-tile.live .gh-ico { background: var(--ok-soft); color: var(--ok); }
+.gh-tile.off .gh-ico { background: var(--surface-3); color: var(--muted); }
+.gh-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: ghPulse 1.8s infinite; }
+@keyframes ghPulse { 70% { box-shadow: 0 0 0 9px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.gh-rules { display: grid; gap: 6px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); font-size: .86rem; }
+.gh-rules b { display: flex; align-items: center; gap: 6px; color: var(--brand); }
+.gh-rules span::before { content: "• "; color: var(--brand); }
+.gh-foot { text-align: center; font-size: .76rem; color: var(--muted); }
