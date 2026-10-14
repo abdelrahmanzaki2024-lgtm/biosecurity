@@ -1882,6 +1882,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v14 === 'function') BIO_v14(api, H_);
   if (typeof BIO_v15 === 'function') BIO_v15(api, H_);
   if (typeof BIO_v16 === 'function') BIO_v16(api, H_);
+  if (typeof BIO_v17 === 'function') BIO_v17(api, H_);
   return api;
 }
 
@@ -3896,5 +3897,174 @@ function BIO_v16(api, H) {
         body: 'سُجّل الآن من البوابة بواسطة ' + u.name + ' بدون تسجيل مسبق، وإقراره ' + (res.decl.flags.length ? 'غير مطابق للسجل' : 'عالي الخطورة') + ':\n' + res.decl.flags.concat(res.decl.why).join('\n') + '\nلن تسمح البوابة بدخوله إلا بعد اعتمادك من شاشة المأموريات.' + H.appUrl('#missions') });
     }
     return { ok: true, type: 'person', id: res.mission.itemId, mission: res.mission, decl: res.decl, hold: !!hold };
+  };
+}
+
+
+/* ============ v17: نقطة QR احتياطية لكل بوابة ============
+   ملصق QR ثابت عند كل منطقة تطهير وبوابة موقع. إذا توقف جهاز البوابة (عطل موبايل أو شبكة أو كهرباء)
+   يمسحه الموظف أو الزائر بموبايله ويسجل دخوله أو خروجه بكوده ورقم هاتفه. يُطبَّق نفس فحص العزل والمأمورية والتأهيل،
+   وتُحفظ الحركة باسم النقطة وبعلامة «تسجيل ذاتي». الوضع «تلقائي» يفتح النقطة فقط عندما يتوقف جهاز البوابة عن الاتصال. */
+TABLES.selfpoints = { sheet: 'نقاط QR الاحتياطية', key: 'id', cols: { id: 'كود النقطة', name: 'النقطة', token: 'رمز الملصق', mode: 'الوضع', lastSeen: 'آخر اتصال لجهاز البوابة', lastUse: 'آخر تسجيل ذاتي', alertAt: 'آخر تنبيه للمدير', by: 'آخر تعديل بواسطة', at: 'وقت التعديل' } };
+var BIO_SP_MODES = ['تلقائي', 'مفعلة', 'موقوفة'];
+function BIO_v17(api, H) {
+  var store = H.store, deps = H.deps, MIN = 60000;
+  function st() { return H.settings(); }
+  function num(v, d) { var n = Number(v); return v === '' || v == null || isNaN(n) ? d : n; }
+  function autoMin() { return num(st().SELF_POINT_AUTO_MIN, 15); }
+  function radiusM() { return num(st().SELF_POINT_RADIUS_M, 800); }
+  function token() { var a = '', c = 'abcdefghjkmnpqrstuvwxyz23456789'; for (var i = 0; i < 10; i++) a += c.charAt(Math.floor(Math.random() * c.length)); return a; }
+  function baseUrl() { var u = String(st().TRACK_URL || 'https://abdelrahmanzaki2024-lgtm.github.io/biosecurity/').trim(); return u + (u.indexOf('?') >= 0 ? '&' : '?'); }
+  function phoneKey(v) { var d = String(v || '').replace(/\D/g, ''); return d.length >= 9 ? d.slice(-9) : ''; }
+  /** كل النقاط: مناطق التطهير + بوابات المواقع (غير الخارجية) */
+  function points() {
+    var sites = H.sitesById(), out = [];
+    store.all('checkpoints').forEach(function (c) { if (!c.id) return; out.push({ id: BIO_norm(c.id), name: c.name, sector: c.sector, kind: 'منطقة تطهير', sites: BIO_list(c.serves).map(BIO_norm).map(function (i) { return sites[i]; }).filter(Boolean) }); });
+    H.sitesList(sites).filter(function (s) { return !s.external; }).forEach(function (s) { out.push({ id: s.id, name: 'بوابة ' + s.name, sector: s.sector, kind: 'بوابة موقع', sites: [s] }); });
+    return out;
+  }
+  function pointOf(id) { id = BIO_norm(id); return points().filter(function (p) { return p.id === id; })[0] || null; }
+  function guardOf(id) {
+    id = BIO_norm(id);
+    return store.all('users').filter(function (x) { var r = BIO_role(x.role); return r && r.k === BIO.ROLE_GUARD && BIO_norm(x.gate) === id && String(x.pin == null ? '' : x.pin).trim() && !(x.active != null && String(x.active).trim() === BIO.NO); })[0] || null;
+  }
+  function rowOf(id, create) {
+    id = BIO_norm(id);
+    var r = store.find('selfpoints', id);
+    if (!r && create) { var p = pointOf(id); r = { id: id, name: p ? p.name : id, token: token(), mode: 'تلقائي', lastSeen: '', lastUse: '', alertAt: '', by: '', at: deps.now() }; deps.lock(function () { if (!store.find('selfpoints', id)) store.append('selfpoints', r); }); r = store.find('selfpoints', id) || r; }
+    return r;
+  }
+  /** هل النقطة مفتوحة للتسجيل الذاتي الآن؟ */
+  function stateOf(row, now) {
+    var mode = BIO_SP_MODES.indexOf(String(row && row.mode || '')) >= 0 ? String(row.mode) : 'تلقائي';
+    var seen = BIO_ms(row && row.lastSeen) || 0, silent = seen ? Math.round((now - seen) / MIN) : null;
+    if (mode === 'موقوفة') return { mode: mode, open: false, silent: silent, why: 'النقطة موقوفة من مدير الأمن الحيوي' };
+    if (mode === 'مفعلة') return { mode: mode, open: true, silent: silent, why: 'مفعلة يدوياً من المدير' };
+    if (silent == null || silent >= autoMin()) return { mode: mode, open: true, silent: silent, why: silent == null ? 'لم يتصل جهاز بوابة بهذه النقطة بعد' : 'جهاز البوابة غير متصل منذ ' + silent + ' دقيقة' };
+    return { mode: mode, open: false, silent: silent, why: 'جهاز البوابة يعمل الآن (آخر اتصال منذ ' + Math.max(0, silent) + ' دقيقة). سجّل عند فرد الأمن' };
+  }
+  function siteGeo(p) { return p.sites.filter(function (s) { return s.lat !== '' && s.lat != null && s.lng !== '' && s.lng != null && !isNaN(Number(s.lat)) && Number(s.lat) !== 0; }).map(function (s) { return [Number(s.lat), Number(s.lng), s.name]; }); }
+  function checkToken(g, k) {
+    var p = pointOf(g); if (!p) throw new Error('رمز النقطة غير صحيح. امسح الملصق المعلق على البوابة');
+    var row = rowOf(p.id, false);
+    if (!row || !k || String(row.token) !== String(k)) throw new Error('هذا الملصق قديم أو غير صالح. امسح الملصق الحالي المعلق على البوابة');
+    return { p: p, row: row };
+  }
+  function person(code, phone) {
+    var card = BIO_parseCard(code), id = BIO_norm(card.id), it = H.itemInfo(store.find('items', id)), pk = phoneKey(phone);
+    if (!id || !it) throw new Error('الكود غير مسجل. اكتب الكود المكتوب على كارت الأمن الحيوي، أو سجّل عند فرد الأمن');
+    if (it.kind === 'مركبة' || it.kind === 'معدة') throw new Error('هذه النقطة للأفراد. المركبات والمعدات تُسجَّل عند فرد الأمن');
+    if (!pk) throw new Error('اكتب رقم هاتفك المحمول كاملاً');
+    var have = phoneKey(it.phone);
+    if (!have) {
+      var ms = store.all('missions').filter(function (m) { return BIO_norm(m.itemId) === id && phoneKey(m.phone); }).pop();
+      have = ms ? phoneKey(ms.phone) : '';
+    }
+    var bound = false;
+    // موظف الشركة بدون رقم مسجل: يُربط الكود بهذا الرقم من أول استخدام (مثل نموذج المأمورية الذاتي)
+    if (!have && ['موظف', 'عامل', 'سائق'].indexOf(it.kind) >= 0) { store.update('items', id, { phone: String(phone).replace(/[^\d+]/g, '') }); have = pk; bound = true; }
+    if (!have) throw new Error('لا يوجد رقم هاتف مسجل لهذا الكود، فلا يمكن التحقق منه هنا. سجّل عند فرد الأمن');
+    if (have !== pk) throw new Error('رقم الهاتف لا يطابق الرقم المسجل لهذا الكود');
+    if (!it.active) throw new Error('هذا الكود موقوف. تواصل مع الأمن الحيوي');
+    return { it: it, card: card, bound: bound };
+  }
+  // آخر اتصال لجهاز كل بوابة: يُسجَّل من مزامنة تطبيق البوابة (كل بضع دقائق، وليس مع كل مزامنة)
+  var sync0 = api.sync;
+  api.sync = function (pin, p) {
+    var r = sync0(pin, p);
+    try {
+      var u = H.auth(pin);
+      if (!u.isManager && u.gateId && pointOf(u.gateId)) {
+        var now = deps.now(), row = rowOf(u.gateId, true);
+        if (!BIO_ms(row.lastSeen) || now - BIO_ms(row.lastSeen) > 3 * MIN) store.update('selfpoints', row.id, { lastSeen: now });
+      }
+    } catch (e) {}
+    return r;
+  };
+  function canManage(u) { return u.isAdmin || (u.perms || []).indexOf('sites') >= 0 || (u.perms || []).indexOf('data') >= 0; }
+
+  /** شاشة المدير: كل النقاط وحالتها وروابط ملصقاتها */
+  api.selfPoints = function (pin) {
+    var u = H.auth(pin, true), now = deps.now(), day0 = now - ((now + 3 * BIO.HOUR) % (24 * BIO.HOUR));
+    var moves = store.all('moves').filter(function (m) { return /نقطة QR/.test(m.via || '') && BIO_ms(m.time) >= now - 7 * 24 * BIO.HOUR; });
+    var list = points().filter(function (p) { return p.sites.some(function (s) { return H.inScope(u, s.id); }); }).map(function (p) {
+      var row = rowOf(p.id, true), s = stateOf(row, now), g = guardOf(p.id);
+      var mine = moves.filter(function (m) { return m.checkpoint === p.name || m.checkpoint === 'نقطة QR: ' + p.name; });
+      return { id: p.id, name: p.name, sector: p.sector, kind: p.kind, sites: p.sites.map(function (x) { return x.name; }), mode: s.mode, open: s.open, why: s.why, silent: s.silent,
+        lastSeen: BIO_ms(row.lastSeen) || 0, lastUse: BIO_ms(row.lastUse) || 0, guard: g ? g.name : '', geo: siteGeo(p).length > 0,
+        today: mine.filter(function (m) { return BIO_ms(m.time) >= day0; }).length, week: mine.length, denied: mine.filter(function (m) { return m.decision === BIO.DENY; }).length,
+        url: baseUrl() + 'p=cp&g=' + encodeURIComponent(p.id) + '&k=' + row.token, token: row.token };
+    });
+    return { now: now, autoMin: autoMin(), radius: radiusM(), canEdit: canManage(u), company: st().COMPANY || '', points: list };
+  };
+  api.selfPointSet = function (pin, id, act) {
+    var u = H.auth(pin, true);
+    if (!canManage(u)) throw new Error('تغيير نقاط QR لمن لديه صلاحية المواقع أو البيانات');
+    var p = pointOf(id); if (!p) throw new Error('النقطة غير موجودة');
+    var row = rowOf(p.id, true), patch = { by: u.name, at: deps.now() };
+    if (act === 'rotate') patch.token = token();
+    else if (BIO_SP_MODES.indexOf(act) >= 0) patch.mode = act;
+    else throw new Error('إجراء غير معروف');
+    store.update('selfpoints', row.id, patch);
+    if (api._log) api._log(u, 'selfpoints', p.id, act === 'rotate' ? 'تغيير رمز ملصق QR' : 'وضع النقطة: ' + act, { mode: row.mode }, patch);
+    return api.selfPoints(pin);
+  };
+
+  /** صفحة الموظف أو الزائر بعد مسح الملصق */
+  api.selfPointInfo = function (g, k) {
+    var c = checkToken(g, k), now = deps.now(), s = stateOf(c.row, now);
+    return { now: now, id: c.p.id, name: c.p.name, sector: c.p.sector, kind: c.p.kind, company: st().COMPANY || '', open: s.open, mode: s.mode, why: s.why, radius: radiusM(), geo: siteGeo(c.p).length > 0,
+      sites: c.p.sites.map(function (x) { return { id: x.id, name: x.name, status: x.status }; }), dest: BIO_EXT_DEST.map(function (d) { return { id: d.id, name: d.name, risk: d.risk }; }) };
+  };
+  api.selfPointScan = function (g, k, code, phone, q) {
+    q = q || {};
+    var c = checkToken(g, k), now = deps.now(), s = stateOf(c.row, now);
+    var queued = !!(q.offline && q.time && Number(q.time) < now - 2 * MIN);
+    if (!s.open && !queued) throw new Error('النقطة غير مفعلة الآن: ' + s.why);
+    var P = person(code, phone), it = P.it;
+    if (q.id) { var dup = store.find('moves', q.id); if (dup) return { duplicate: true, moveId: dup.id, decision: dup.decision, dir: dup.dir === BIO.OUT ? 'OUT' : 'IN', name: it.name, itemId: it.id, siteName: dup.siteName, time: BIO_ms(dup.time), reasons: String(dup.reason || '').split(' | ').filter(String), warnings: [], checks: [] }; }
+    var recent = store.all('moves').filter(function (m) { return BIO_norm(m.itemId) === it.id && /نقطة QR/.test(m.via || '') && BIO_ms(m.time) > now - BIO.HOUR; }).length;
+    if (recent >= 6) throw new Error('عدد كبير من التسجيلات خلال ساعة. سجّل عند فرد الأمن');
+    // موقع الشخص: يجب أن يكون عند النقطة إن عُرفت إحداثيات المواقع
+    var geoNote = '', flag = '', near = siteGeo(c.p), lat = Number(q.lat), lng = Number(q.lng), hasLoc = q.lat != null && q.lat !== '' && !isNaN(lat) && !isNaN(lng);
+    if (hasLoc && near.length) {
+      var dm = Math.round(1000 * Math.min.apply(null, near.map(function (x) { return BIO_km([lat, lng], [x[0], x[1]]); })));
+      var acc = Math.min(Number(q.acc) || 0, 1500);
+      if (dm - acc > radiusM() && !queued) throw new Error('موقعك الحالي يبعد ' + (dm >= 1000 ? (dm / 1000).toFixed(1) + ' كم' : dm + ' متر') + ' عن «' + c.p.name + '». التسجيل من هذه النقطة يتم عند البوابة فقط');
+      geoNote = ' · على بعد ' + dm + ' م من الموقع';
+      if (dm - acc > radiusM()) flag = 'تسجيل ذاتي من خارج نطاق البوابة (' + dm + ' م)';
+    } else if (!hasLoc) { geoNote = ' · بدون تحديد الموقع'; flag = 'تسجيل ذاتي بدون تحديد الموقع'; }
+    var guard = guardOf(c.p.id);
+    if (!guard) throw new Error('لا يوجد حساب أمن مربوط بهذه النقطة. أبلغ مدير الأمن الحيوي');
+    var siteId = BIO_norm(q.siteId || (c.p.sites.length === 1 ? c.p.sites[0].id : ''));
+    if (!siteId) throw new Error('اختر الموقع');
+    var mid = q.id || deps.id('M');
+    // الهوية مؤكدة برقم الهاتف، فيُستخدم إصدار الكارت الحالي
+    var r = api.scan(guard.pin, { id: mid, itemId: it.id + (Number(it.card) > 1 ? '.' + it.card : ''), dir: q.dir === 'OUT' ? 'OUT' : 'IN', siteId: siteId, offline: queued, time: queued ? Number(q.time) : null, extKind: q.extKind, extSiteId: q.extSiteId, extNote: q.extNote });
+    var via = 'نقطة QR احتياطية بموبايل الشخص' + (queued ? ' (أُرسل لاحقاً بعد انقطاع الإنترنت)' : '') + geoNote;
+    var patch = { user: 'تسجيل ذاتي: ' + it.name, checkpoint: 'نقطة QR: ' + c.p.name, via: via, updatedAt: deps.now() };
+    var mv = store.find('moves', r.moveId || mid);
+    if (flag && mv && !mv.flag) patch.flag = flag;
+    if (mv) store.update('moves', mv.id, patch);
+    if (r.ext && store.find('moves', (r.moveId || mid) + '-X')) store.update('moves', (r.moveId || mid) + '-X', { user: patch.user, checkpoint: patch.checkpoint, via: via });
+    var rowPatch = { lastUse: now };
+    // تنبيه المدير: أول استخدام للنقطة كل 6 ساعات (يعني غالباً أن جهاز البوابة متوقف)، أو تسجيل بدون موقع
+    if (!BIO_ms(c.row.alertAt) || now - BIO_ms(c.row.alertAt) > 6 * BIO.HOUR) {
+      rowPatch.alertAt = now;
+      deps.notify({ kind: 'report', siteId: siteId, title: '🔲 نقطة QR الاحتياطية تعمل في «' + c.p.name + '»', body: it.name + ' (' + it.id + ') سجّل ' + (q.dir === 'OUT' ? 'خروجه' : 'دخوله') + ' بموبايله من ملصق النقطة.\n' + s.why + '.\nتأكد من جهاز البوابة، وراجع التسجيلات الذاتية من شاشة نقاط QR.' + H.appUrl('#selfpoints') });
+    }
+    store.update('selfpoints', c.row.id, rowPatch);
+    var site = H.sitesById()[siteId];
+    return { ok: true, moveId: r.moveId || mid, dir: r.dir, decision: r.decision, reasons: r.reasons || [], warnings: r.warnings || [], checks: r.checks || [], name: it.name, itemId: it.id, kind: it.kind,
+      siteName: site ? site.name : '', point: c.p.name, bound: P.bound, time: mv ? BIO_ms(mv.time) : now, flag: patch.flag || (mv && mv.flag) || '', geo: geoNote.replace(/^ · /, ''), queued: queued, dest: r.dest || '' };
+  };
+  /** الشخص يقر بإجراءات الدخول (استحمام وتغيير ملابس...) فتُحفظ مع الحركة كإقرار ذاتي */
+  api.selfPointConfirm = function (g, k, code, phone, moveId, checks) {
+    var c = checkToken(g, k), P = person(code, phone), m = store.find('moves', moveId);
+    if (!m || BIO_norm(m.itemId) !== P.it.id || !/نقطة QR/.test(m.via || '')) throw new Error('الحركة غير موجودة');
+    if (m.decision !== BIO.ALLOW || m.dir !== BIO.IN) throw new Error('لا يوجد دخول مسموح لتأكيده');
+    var list = (checks || []).map(function (x) { return String(x).slice(0, 80); }).slice(0, 12);
+    store.update('moves', m.id, { checks: list.concat(['(إقرار ذاتي بالموبايل)']).join('، '), updatedAt: deps.now() });
+    return { ok: true, point: c.p.name };
   };
 }

@@ -230,6 +230,7 @@
   function selfTrainStart() { return window.BIO_START === 'train' || /(^|[?&])p=train\b/.test(location.search) || location.hash === '#train'; }
   function selfStart() { if (selfTrainStart()) return true; return window.BIO_START === 'mission' || /(^|[?&])p=mission\b/.test(location.search) || location.hash === '#mission'; }
   function boot() {
+    var cpp = cpStartParam(); if (cpp) { showSelfPoint(cpp, false); return; }
     var trip = tripStartParam(); if (trip != null) { tripDriver(trip, false); return; }
     if (selfStart()) { if (selfTrainStart()) showSelfTrain(); else showSelfMission(); return; }
     Promise.all(['session', 'ref', 'moves', 'outbox', 'lastSync', 'notices', 'approvals', 'comms', 'chats', 'showers'].map(KV.get)).then(function (v) {
@@ -339,7 +340,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 16</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 17</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -449,7 +450,7 @@
   function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(); }
   function currentRoute() {
     var r = (location.hash || '').replace('#', '');
-    var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external'] : [], ['tv'], isAdmin() ? ['backup', 'codes'] : []) : ['ref', 'passport', 'disposal']);
+    var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external', 'selfpoints'] : can('sites') ? ['selfpoints'] : [], ['tv'], isAdmin() ? ['backup', 'codes'] : []) : ['ref', 'passport', 'disposal']);
     var base = r.split('/')[0];
     if (allowed.indexOf(base) < 0) return vrOnly() ? 'vr' : S.session.user.isManager ? 'dash' : 'gate';
     return r;
@@ -465,9 +466,9 @@
     if ($('vrHost')) $('vrHost').hidden = base !== 'vr' || !S.vrFrame;
     clearInterval(S.poll);
     S.route = r;
-    document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
+    document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, academy: viewAcademy, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -2089,6 +2090,7 @@
         return '<button class="tile" type="button" data-t="' + t + '"><span class="tico">' + icon(TABLE_ICONS[t]) + '</span><span><b>' + esc(ADMIN[t].title) + '</b><span>' + (counts[t] != null ? counts[t] + ' سجل' : 'عرض وتعديل') + '</span></span></button>';
       }).join('') +
       '<button class="tile" type="button" data-r="cards"><span class="tico">' + icon('printer') + '</span><span><b>كروت QR</b><span>طباعة وإرسال الكروت ودخول البوابات والفقد والتلف</span></span></button>' +
+      '<button class="tile" type="button" data-r="selfpoints"><span class="tico">' + icon('scan') + '</span><span><b>نقاط QR الاحتياطية</b><span>ملصق عند كل بوابة يعمل إذا توقف جهازها</span></span></button>' +
       '<button class="tile" type="button" data-r="history"><span class="tico">' + icon('search') + '</span><span><b>سجل فرد أو مركبة</b><span>كل الحركات والقيود الحالية</span></span></button>' +
       '<button class="tile" type="button" data-r="external"><span class="tico">' + icon('alert') + '</span><span><b>تسجيل زيارة خارجية</b><span>سوق أو مزرعة أو مجزر لم تُسجَّل على البوابة</span></span></button>' +
       '</div></section>';
@@ -4369,6 +4371,218 @@
         closeSheet(); return sync().then(function () { if (o.done) o.done(r); else if (S.route === 'fleet') viewFleet(); else if (S.route === 'gate') render(); });
       }).catch(function (e) { el.disabled = false; toast(e.net ? 'التسجيل يحتاج اتصالاً بالإنترنت' : errText(e)); });
     });
+  }
+
+  /* ---------- v17: نقطة QR احتياطية لكل بوابة ---------- */
+  function cpStartParam() {
+    if (window.BIO_START === 'cp' && window.BIO_CP) return window.BIO_CP;
+    if (!/(^|[?&])p=cp\b/.test(location.search)) return null;
+    var g = /[?&]g=([^&]+)/.exec(location.search), k = /[?&]k=([a-z0-9]+)/i.exec(location.search);
+    return { g: g ? decodeURIComponent(g[1]) : '', k: k ? k[1] : '' };
+  }
+  var CPQ_KEY = 'bio-cpq';
+  function cpQueue() { try { return JSON.parse(localStorage.getItem(CPQ_KEY) || '[]'); } catch (e) { return []; } }
+  function cpQueueSave(q) { try { localStorage.setItem(CPQ_KEY, JSON.stringify(q.slice(-30))); } catch (e) {} }
+  /** يرسل التسجيلات المحفوظة على موبايل الشخص أثناء انقطاع الإنترنت */
+  function cpFlush() {
+    var q = cpQueue(); if (!q.length) return Promise.resolve(0);
+    var sent = 0;
+    return q.reduce(function (p, x) {
+      return p.then(function () {
+        return remote('selfPointScan', [x.g, x.k, x.code, x.phone, x.q]).then(function () { sent++; x.done = true; }).catch(function (e) { if (!e.net) { x.done = true; toast('تسجيل محفوظ لم يُقبل: ' + errText(e), 6000); } });
+      });
+    }, Promise.resolve()).then(function () { cpQueueSave(q.filter(function (x) { return !x.done; })); return sent; });
+  }
+  function showSelfPoint(cp, overlay) {
+    stopCam();
+    var host;
+    if (overlay) { host = document.createElement('div'); host.className = 'drv-over sp-over'; host.id = 'spOver'; document.body.appendChild(host); }
+    else { document.body.innerHTML = demoStrip() + '<div class="drv-page sp-page" id="spHost"></div><div class="toasts" id="toasts"></div>'; host = $('spHost'); bindDemoStrip(); }
+    var who = null; try { who = JSON.parse(localStorage.getItem('bio-self') || 'null'); } catch (e) {}
+    var T = { info: null, dir: 'IN', geo: null, geoMsg: 'جارٍ تحديد موقعك…', watch: null, clock: null, res: null, checks: {} };
+    var close = function () { clearInterval(T.clock); if (T.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(T.watch); if (overlay) host.remove(); };
+    var frame = function (inner, tone) {
+      host.innerHTML = '<div class="drv sp' + (tone ? ' sp-' + tone : '') + '"><header class="drv-h"><div class="logo">' + logoImg() + '</div><div><b>نقطة تسجيل احتياطية</b><span>' + esc((T.info && T.info.company) || CFG.COMPANY || 'كايرو ثري إيه') + ' · الأمن الحيوي</span></div>' +
+        (overlay ? '<button class="btn sm" type="button" id="spX">' + icon('x') + ' إغلاق</button>' : '') + '</header><div class="drv-b">' + inner + '</div></div>';
+      if ($('spX')) $('spX').onclick = close;
+    };
+    var pointHead = function () {
+      var i = T.info;
+      return '<div class="sp-point"><span class="sp-ico">' + icon('scan') + '</span><div><span class="kick">' + esc(i.kind) + ' · قطاع ' + esc(i.sector) + '</span><h1>' + esc(i.name) + '</h1></div>' +
+        '<span class="pill ' + (i.open ? 'p-ok' : 'p-n') + '">' + (i.open ? 'مفعلة الآن' : 'غير مفعلة') + '</span></div>';
+    };
+    var startGeo = function () {
+      if (!navigator.geolocation) { T.geoMsg = 'الموبايل لا يدعم تحديد الموقع'; return; }
+      try {
+        T.watch = navigator.geolocation.watchPosition(function (p) {
+          T.geo = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) };
+          T.geoMsg = 'تم تحديد موقعك (بدقة ' + T.geo.acc + ' م)'; geoLine();
+        }, function () { T.geo = null; T.geoMsg = 'لم يُسمح بتحديد الموقع. سيُسجَّل التسجيل مع تنبيه للإدارة'; geoLine(); }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 });
+      } catch (e) { T.geoMsg = 'تعذر تحديد الموقع'; }
+    };
+    var geoLine = function () { var el = $('spGeo'); if (el) { el.className = 'sp-geo ' + (T.geo ? 'ok' : 'warn'); el.innerHTML = icon('pin') + ' ' + esc(T.geoMsg); } };
+    var load = function () {
+      frame('<div class="drv-big"><span class="spin"></span><span>جارٍ فتح النقطة…</span></div>');
+      cpFlush().then(function (n) { if (n) toast('أُرسل ' + n + ' تسجيل كان محفوظاً على موبايلك'); });
+      remote('selfPointInfo', [cp.g, cp.k]).then(function (d) { T.info = d; form(); }).catch(function (e) {
+        if (e.net && T.info) return form();
+        frame('<div class="drv-big bad">' + icon('alert') + '<b>' + (e.net ? 'لا يوجد اتصال بالإنترنت' : 'تعذر فتح النقطة') + '</b><span>' + esc(e.net ? 'افتح بيانات الموبايل أو الواي فاي ثم أعد المحاولة.' : errText(e)) + '</span></div><button class="btn primary big" id="spRe">' + icon('refresh') + ' إعادة المحاولة</button>');
+        $('spRe').onclick = load;
+      });
+    };
+    var form = function () {
+      var i = T.info;
+      if (!i.open) {
+        frame(pointHead() + '<div class="drv-card sp-closed"><h2>' + icon('lock') + ' النقطة تعمل فقط عند توقف جهاز البوابة</h2><p class="small">' + esc(i.why) + '</p>' +
+          '<p class="small muted">سجّل دخولك وخروجك عند فرد الأمن كالمعتاد. ' + (i.mode === 'موقوفة' ? 'إذا كان جهاز البوابة متوقفاً، يطلب فرد الأمن من مدير الأمن الحيوي تفعيل النقطة.' : 'إذا كان جهاز البوابة متوقفاً فعلاً، ستُفتح هذه النقطة تلقائياً خلال دقائق، أو يفعّلها مدير الأمن الحيوي.') + '</p></div>' +
+          '<button class="btn big" id="spRe">' + icon('refresh') + ' إعادة المحاولة</button>');
+        $('spRe').onclick = load; return;
+      }
+      var sites = i.sites, many = sites.length > 1;
+      frame(pointHead() +
+        '<form class="drv-card sp-form" id="spForm"><div class="seg sp-dir" role="group"><button type="button" data-d="IN" class="' + (T.dir === 'IN' ? 'on' : '') + '">' + icon('inn') + ' دخول</button><button type="button" data-d="OUT" class="' + (T.dir === 'OUT' ? 'on' : '') + '">' + icon('out') + ' خروج</button></div>' +
+        '<div class="grid-2" style="gap:12px;width:100%"><div class="field"><label for="spCode">الكود</label><input id="spCode" type="text" dir="ltr" autocomplete="off" required placeholder="مكتوب على الكارت" value="' + esc(who ? who.code : '') + '"></div>' +
+        '<div class="field"><label for="spPhone">رقم موبايلك</label><input id="spPhone" type="tel" dir="ltr" inputmode="tel" required placeholder="01xxxxxxxxx" value="' + esc(who ? who.phone : '') + '"></div></div>' +
+        (many ? '<div class="field" style="width:100%"><label for="spSite">الموقع</label><select id="spSite">' + sites.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + (s.status === 'مغلق' ? ' (مغلق)' : '') + '</option>'; }).join('') + '</select></div>' : '<div class="sp-site">' + icon('gate') + ' ' + esc(sites[0] ? sites[0].name : '') + '</div>') +
+        '<div class="field sp-dest" style="width:100%"' + (T.dir === 'OUT' ? '' : ' hidden') + '><label for="spDest">إلى أين بعد الخروج؟</label><select id="spDest"><option value="">اختر</option>' + i.dest.filter(function (d) { return d.id !== 'XD-CO'; }).map(function (d) { return '<option value="' + esc(d.id) + '">' + esc(d.name) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="sp-geo" id="spGeo"></div>' +
+        '<div class="login-err" id="spErr" role="alert"></div>' +
+        '<button class="btn primary big sp-go" type="submit">' + icon(T.dir === 'OUT' ? 'out' : 'inn') + ' ' + (T.dir === 'OUT' ? 'تسجيل الخروج' : 'تسجيل الدخول') + '</button></form>' +
+        '<div class="drv-rules"><b>' + icon('shield') + ' تُطبَّق نفس قواعد البوابة</b><span>فترة العزل بين المواقع، والمأمورية للزوار، والتأهيل الإلزامي</span><span>التسجيل باسمك وكودك ورقم موبايلك، ويراجعه الأمن الحيوي</span><span>اعرض شاشة النتيجة لفرد الأمن عند البوابة</span></div>' +
+        (MODE === 'demo' ? '<div class="demo-pins"><span class="xs muted">للتجربة في نسخة العرض:</span><button type="button" id="spDemo"><span>عمر فتحي عبدالحليم</span><b>102818</b></button></div>' : ''));
+      geoLine();
+      if ($('spDemo')) $('spDemo').onclick = function () { $('spCode').value = '102818'; $('spPhone').value = '01111222333'; if (many) $('spSite').value = 'W-F05'; };
+      host.querySelectorAll('.sp-dir [data-d]').forEach(function (b) { b.onclick = function () { T.dir = b.dataset.d; who = { code: $('spCode').value.trim(), phone: $('spPhone').value.trim() }; form(); }; });
+      $('spForm').onsubmit = function (e) {
+        e.preventDefault();
+        var code = $('spCode').value.trim(), phone = $('spPhone').value.trim();
+        if (!code || !phone) return;
+        if (T.dir === 'OUT' && !$('spDest').value) { $('spErr').textContent = 'اختر وجهتك بعد الخروج'; return; }
+        who = { code: code, phone: phone }; try { localStorage.setItem('bio-self', JSON.stringify(who)); } catch (x) {}
+        var q = { id: 'M' + uid(), dir: T.dir, siteId: many ? $('spSite').value : (sites[0] && sites[0].id), extKind: T.dir === 'OUT' ? $('spDest').value : '', time: Date.now() };
+        if (T.geo) { q.lat = T.geo.lat; q.lng = T.geo.lng; q.acc = T.geo.acc; }
+        var b = $('spForm').querySelector('[type=submit]'); b.disabled = true; $('spErr').innerHTML = '<span class="spin"></span>';
+        remote('selfPointScan', [cp.g, cp.k, code, phone, q]).then(result).catch(function (x) {
+          b.disabled = false;
+          if (x.net) {
+            var list = cpQueue(); list.push({ g: cp.g, k: cp.k, code: code, phone: phone, q: Object.assign({}, q, { offline: true }) }); cpQueueSave(list);
+            return result({ queued: true, local: true, dir: T.dir, time: q.time, name: code, itemId: code, siteName: '', reasons: [], warnings: [], checks: [] });
+          }
+          $('spErr').textContent = errText(x);
+        });
+      };
+    };
+    var result = function (r) {
+      T.res = r; T.checks = {};
+      var ok = r.decision === 'مسموح', tone = r.local ? 'wait' : ok ? 'ok' : 'bad';
+      var title = r.local ? 'لم يُرسل بعد: لا يوجد إنترنت' : (r.dir === 'OUT' ? (ok ? 'خروج مسجل' : 'خروج') : (ok ? 'دخول مسموح' : 'دخول مرفوض'));
+      var body = '<div class="sp-res sp-res-' + tone + '"><div class="sp-band"></div><div class="sp-big">' + icon(r.local ? 'wifioff' : ok ? 'check' : 'x') + '</div><h1>' + esc(title) + '</h1>' +
+        (r.local ? '' : '<b class="sp-name">' + esc(r.name) + '</b><span class="mono">' + esc(r.itemId) + '</span>') +
+        '<div class="sp-clock" id="spClock"></div>' +
+        '<span class="sp-where">' + esc([r.siteName, T.info ? T.info.name : ''].filter(Boolean).join(' · ')) + '</span></div>';
+      if (r.local) body += '<div class="warnbox"><b>حُفظ التسجيل على موبايلك</b><span>سيُرسل تلقائياً عند فتح هذه الصفحة والإنترنت متاح. لا تدخل إلا بإذن فرد الأمن، فالقرار يحتاج مراجعة سجل العزل.</span></div>';
+      if ((r.reasons || []).length) body += '<div class="reason">' + icon('alert') + ' <b>السبب</b>' + r.reasons.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>';
+      if ((r.warnings || []).length) body += '<div class="infobox">' + r.warnings.map(esc).join('<br>') + '</div>';
+      if (r.flag) body += '<div class="infobox xs">' + icon('eye') + ' ' + esc(r.flag) + '. يراجعه الأمن الحيوي.</div>';
+      if (r.bound) body += '<div class="infobox xs">' + icon('phone') + ' رُبط رقم موبايلك بكودك. التسجيلات القادمة تُقبل بهذا الرقم فقط.</div>';
+      if (ok && r.dir === 'IN' && (r.checks || []).length) {
+        body += '<div class="drv-card sp-checks" id="spChecks"><h2>' + icon('shield') + ' أقر بأنني نفذت قبل الدخول</h2>' + r.checks.map(function (c, n) { return '<label class="check-row"><input type="checkbox" data-c="' + n + '"> <span>' + esc(c) + '</span></label>'; }).join('') +
+          '<button class="btn ok big" id="spConf" disabled>' + icon('check') + ' تأكيد الإقرار</button></div>';
+      }
+      body += '<p class="sp-show">' + icon('eye') + ' اعرض هذه الشاشة لفرد الأمن عند البوابة</p><button class="btn big" id="spAgain">' + icon('refresh') + ' تسجيل آخر</button>';
+      frame(body, tone);
+      var tick = function () { var el = $('spClock'); if (!el) return clearInterval(T.clock); var d = new Date(); el.textContent = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); };
+      clearInterval(T.clock); tick(); T.clock = setInterval(tick, 1000);
+      $('spAgain').onclick = function () { clearInterval(T.clock); form(); };
+      if ($('spChecks')) {
+        var boxes = $('spChecks').querySelectorAll('input[type=checkbox]');
+        boxes.forEach(function (x) { x.onchange = function () { $('spConf').disabled = [].some.call(boxes, function (y) { return !y.checked; }); }; });
+        $('spConf').onclick = function () {
+          var btn = this; btn.disabled = true;
+          remote('selfPointConfirm', [cp.g, cp.k, who.code, who.phone, r.moveId, r.checks]).then(function () {
+            $('spChecks').innerHTML = '<div class="sp-done">' + icon('check') + ' <b>تم تأكيد الإقرار وتسجيله مع دخولك</b></div>';
+          }).catch(function (x) { btn.disabled = false; toast(x.net ? 'لا يوجد اتصال. أعد المحاولة' : errText(x)); });
+        };
+      }
+    };
+    startGeo();
+    load();
+    window.addEventListener('online', function () { cpFlush().then(function (n) { if (n) toast('أُرسل ' + n + ' تسجيل كان محفوظاً على موبايلك'); }); });
+  }
+
+  /* شاشة المدير: نقاط QR الاحتياطية */
+  var SP_MODES = [['تلقائي', 'clock', 'تُفتح عند توقف جهاز البوابة'], ['مفعلة', 'check', 'مفتوحة الآن'], ['موقوفة', 'lock', 'لا تقبل تسجيلات']];
+  function viewSelfPoints() {
+    $('main').innerHTML = '<section class="view sp-view">' + v5Head('نقاط QR الاحتياطية', 'scan', 'ملصق QR ثابت عند كل بوابة. إذا توقف جهاز البوابة لأي عطل (موبايل، شبكة، كهرباء)، يمسحه الموظف أو الزائر بموبايله ويسجل دخوله أو خروجه بكوده ورقم هاتفه، بنفس قواعد العزل.', '<button class="btn primary" type="button" id="spPrintAll">' + icon('printer') + ' ملصقات كل النقاط</button>', ['data', 'البيانات']) +
+      '<div class="howto no-print"><div><span class="hn">1</span><b>اطبع وعلّق</b><span>ملصق لكل منطقة تطهير وبوابة موقع، في مكان ظاهر عند فرد الأمن.</span></div><div><span class="hn">2</span><b>تُفتح عند العطل</b><span>في الوضع «تلقائي» تعمل النقطة فقط إذا انقطع جهاز البوابة <b id="spAuto">15</b> دقيقة، ويصلك تنبيه.</span></div><div><span class="hn">3</span><b>يسجل بموبايله</b><span>بكوده ورقم موبايله المسجل، ويُتحقق من وجوده عند البوابة بالموقع الجغرافي.</span></div></div>' +
+      '<div id="v5Out">' + v5Spin() + '</div><div id="spPrint" class="sp-print-host"></div></section>';
+    v5Load('selfPoints', [], drawSelfPoints, 'نقاط QR');
+  }
+  function spPoster(p, company) {
+    return '<div class="sp-poster"><div class="sp-p-top">' + logoImg() + '<div><b>' + esc(company || CFG.COMPANY || 'كايرو ثري إيه') + '</b><span>منظومة الأمن الحيوي</span></div></div>' +
+      '<span class="sp-p-kick">نقطة تسجيل احتياطية</span><h2>' + esc(p.name) + '</h2>' +
+      '<div class="sp-p-qr" data-url="' + esc(p.url) + '"></div>' +
+      '<ol class="sp-p-steps"><li>امسح الكود بكاميرا موبايلك</li><li>اكتب كودك ورقم موبايلك</li><li>اختر دخول أو خروج، واعرض النتيجة لفرد الأمن</li></ol>' +
+      '<p class="sp-p-foot">تعمل عند توقف جهاز البوابة فقط · ' + esc(p.id) + '</p></div>';
+  }
+  function spDrawQr(root, size) { if (!window.QRCode) return; root.querySelectorAll('.sp-p-qr').forEach(function (el) { el.innerHTML = ''; new QRCode(el, { text: el.dataset.url, width: size, height: size, correctLevel: QRCode.CorrectLevel.M }); }); }
+  function spPrint(list, company) {
+    var host = $('spPrint'); if (!host) return;
+    host.innerHTML = list.map(function (p) { return spPoster(p, company); }).join('');
+    spDrawQr(host, 420);
+    document.body.classList.add('print-posters');
+    var done = function () { document.body.classList.remove('print-posters'); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(done, 1500); }, 300);
+  }
+  function drawSelfPoints(d) {
+    var out = $('v5Out'); if (!out) return;
+    if ($('spAuto')) $('spAuto').textContent = d.autoMin;
+    var open = d.points.filter(function (p) { return p.open; }), sectors = {};
+    d.points.forEach(function (p) { (sectors[p.sector || 'عام'] = sectors[p.sector || 'عام'] || []).push(p); });
+    var html = kpiRow([['k-brand', 'scan', d.points.length, 'نقطة'], [open.length ? 'k-warn' : 'k-ok', 'wifioff', open.length, 'مفتوحة الآن'], ['k-ok', 'check', d.points.reduce(function (a, p) { return a + p.today; }, 0), 'تسجيل ذاتي اليوم'], ['k-bad', 'x', d.points.reduce(function (a, p) { return a + p.denied; }, 0), 'مرفوض خلال 7 أيام']]);
+    html += Object.keys(sectors).map(function (sec) {
+      return '<h2 class="sp-sec">' + icon('layers') + ' قطاع ' + esc(sec) + '</h2><div class="sp-grid">' + sectors[sec].map(function (p) {
+        var state = p.mode === 'موقوفة' ? ['p-bad', 'موقوفة'] : p.open ? ['p-warn', 'مفتوحة الآن'] : ['p-ok', 'جاهزة · البوابة تعمل'];
+        return '<div class="card sp-card' + (p.open ? ' is-open' : '') + '"><div class="sp-c-h"><div><span class="kick">' + esc(p.kind) + ' · <span class="mono">' + esc(p.id) + '</span></span><h3>' + esc(p.name) + '</h3></div><span class="pill ' + state[0] + '">' + state[1] + '</span></div>' +
+          '<p class="xs muted">' + esc(p.why) + '</p>' +
+          '<div class="sp-c-stats"><span>' + icon('wifioff') + ' جهاز البوابة: <b>' + (p.lastSeen ? esc(ago(p.lastSeen)) : 'لم يتصل') + '</b></span><span>' + icon('scan') + ' اليوم <b>' + p.today + '</b> · الأسبوع <b>' + p.week + '</b>' + (p.denied ? ' · مرفوض <b>' + p.denied + '</b>' : '') + '</span></div>' +
+          (!p.guard ? '<div class="warnbox xs"><b>لا يوجد حساب أمن مربوط بهذه النقطة</b><span>أضف حساب «أمن بوابة» لها من المستخدمين حتى تعمل.</span></div>' : '') +
+          (!p.geo ? '<div class="infobox xs">' + icon('pin') + ' أضف إحداثيات الموقع ليتحقق التطبيق أن الشخص عند البوابة فعلاً.</div>' : '') +
+          (d.canEdit ? '<div class="seg sp-mode" role="group">' + SP_MODES.map(function (m) { return '<button type="button" data-sp="' + esc(p.id) + '" data-m="' + m[0] + '" class="' + (p.mode === m[0] ? 'on' : '') + '" title="' + esc(m[2]) + '">' + icon(m[1]) + ' ' + m[0] + '</button>'; }).join('') + '</div>' : '') +
+          '<div class="row sp-acts"><button type="button" class="btn sm primary" data-poster="' + esc(p.id) + '">' + icon('printer') + ' الملصق</button><button type="button" class="btn sm" data-try="' + esc(p.id) + '">' + icon('scan') + ' تجربة</button>' +
+          (d.canEdit ? '<button type="button" class="btn sm" data-rot="' + esc(p.id) + '" title="يلغي الملصق القديم">' + icon('refresh') + ' تغيير الرمز</button>' : '') + '</div></div>';
+      }).join('') + '</div>';
+    }).join('');
+    out.innerHTML = html;
+    var byId = function (id) { return d.points.filter(function (x) { return x.id === id; })[0]; };
+    $('spPrintAll').onclick = function () { if (MODE === 'demo') return toast('الطباعة تعمل في التطبيق الحقيقي. اضغط «الملصق» لمعاينة أي نقطة'); spPrint(d.points, d.company); };
+    out.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () {
+      if (b.classList.contains('on')) return;
+      b.disabled = true;
+      remote('selfPointSet', [S.session.pin, b.dataset.sp, b.dataset.m]).then(function (r) { toast('«' + byId(b.dataset.sp).name + '»: ' + b.dataset.m); drawSelfPoints(r); }).catch(function (e) { b.disabled = false; toast(e.net ? 'يحتاج اتصالاً بالإنترنت' : errText(e)); });
+    }; });
+    out.querySelectorAll('[data-rot]').forEach(function (b) { b.onclick = function () {
+      if (!b.dataset.sure) { b.dataset.sure = '1'; b.innerHTML = icon('alert') + ' اضغط مرة أخرى للتأكيد'; b.classList.add('bad'); return; }
+      remote('selfPointSet', [S.session.pin, b.dataset.rot, 'rotate']).then(function (r) { toast('تغيّر الرمز. الملصق القديم لم يعد يعمل، اطبع الجديد'); drawSelfPoints(r); spPosterSheet(r.points.filter(function (x) { return x.id === b.dataset.rot; })[0], r.company); }).catch(function (e) { toast(errText(e)); });
+    }; });
+    out.querySelectorAll('[data-poster]').forEach(function (b) { b.onclick = function () { spPosterSheet(byId(b.dataset.poster), d.company); }; });
+    out.querySelectorAll('[data-try]').forEach(function (b) { b.onclick = function () {
+      var p = byId(b.dataset.try);
+      if (MODE === 'demo') return showSelfPoint({ g: p.id, k: p.token }, true);
+      window.open(p.url, '_blank', 'noopener');
+    }; });
+  }
+  function spPosterSheet(p, company) {
+    if (!p) return;
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('printer') + ' ملصق النقطة</h2><span class="small">' + esc(p.name) + '</span></div><div class="sheet-body"><div class="sp-poster-prev">' + spPoster(p, company) + '</div>' +
+      '<div class="field"><label for="spUrl">رابط النقطة</label><input id="spUrl" type="text" dir="ltr" readonly value="' + esc(p.url) + '"></div>' +
+      '<div class="row">' + (MODE !== 'demo' ? '<button class="btn primary" data-a="print">' + icon('printer') + ' طباعة أو حفظ PDF</button>' : '') + '<button class="btn" data-a="copy">' + icon('copy') + ' نسخ الرابط</button><a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink('رابط نقطة التسجيل الاحتياطية «' + p.name + '»:\n' + p.url + '\nتُستخدم فقط إذا توقف جهاز البوابة.')) + '">' + icon('wa') + ' واتساب</a></div>' +
+      '<p class="xs muted">الملصق يعمل حتى تضغط «تغيير الرمز». غيّره إذا صُوّر الملصق أو نُقل من مكانه.</p></div>', function (a) {
+      if (a === 'copy') return copyText(p.url);
+      if (a === 'print') { closeSheet(); spPrint([p], company); }
+    });
+    spDrawQr($('sheetRoot'), 220);
   }
 
   /* ---------- المقاولون ومعداتهم ---------- */
