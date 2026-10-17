@@ -3157,3 +3157,5 @@ body.vr-on .main:empty { display: none; }
 .cc19 .card { transition: box-shadow .2s; }
 .br19 .br-lines li { border-radius: 12px; }
 .th19 .th-row { transition: transform .15s, box-shadow .15s; } .th19 .th-row:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+/* v20.1 نشرات الرصد */
+.e20-feeds { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
