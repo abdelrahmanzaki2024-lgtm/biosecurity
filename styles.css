@@ -3159,3 +3159,7 @@ body.vr-on .main:empty { display: none; }
 .th19 .th-row { transition: transform .15s, box-shadow .15s; } .th19 .th-row:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 /* v20.1 نشرات الرصد */
 .e20-feeds { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.e20-hub { grid-column: 1 / -1; }
+.e20-hubl { margin: 0; padding-inline-start: 18px; display: grid; gap: 4px; font-size: 13px; }
+.e20-hubl a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.e20-hubl li.key a { color: var(--red); font-weight: 700; }
