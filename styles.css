@@ -4315,3 +4315,9 @@ kbd { font-family: var(--font-mono); font-size: .7rem; font-weight: 600; line-he
 .iso-exsave { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .iso-exsave .grow { flex: 1 1 220px; min-width: 0; }
 @media (max-width: 560px) { .iso-exh { grid-template-columns: minmax(0, 1fr) auto; } .iso-exh select[data-k=ref] { grid-column: 1 / -1; grid-row: 2; } }
+.iso-exn { display: flex; gap: 6px; align-items: flex-start; color: var(--ok, #1f8a5b); font-weight: 700; margin: 0; } .iso-exn svg { flex: none; width: 14px; height: 14px; margin-top: 2px; }
+.iso-ex .warnbox { margin: 0; }
+/* v29.5: وجهات تابعة للشركة (مصنع علف السادات، معامل التفريخ) */
+.xd-chip.co { border-color: color-mix(in srgb, var(--ok, #1f8a5b) 40%, var(--line)); }
+.xd-chip.co svg { color: var(--ok, #1f8a5b); opacity: 1; }
+.xd-chip.co.on { border-color: var(--ok, #1f8a5b); background: color-mix(in srgb, var(--ok, #1f8a5b) 12%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok, #1f8a5b) 18%, transparent); }
