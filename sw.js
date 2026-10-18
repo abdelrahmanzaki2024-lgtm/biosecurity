@@ -1,6 +1,6 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v28';
-var SHELL = ['./', 'index.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
+var CACHE = 'bio-v29';
+var SHELL = ['./', 'index.html', 'reports.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
 self.addEventListener('install', function (e) {
