@@ -4162,3 +4162,142 @@ kbd { font-family: var(--font-mono); font-size: .7rem; font-weight: 600; line-he
 .bx-pf { display: grid; gap: 4px; flex: 1 1 260px; min-width: 0; }
 .bx-eq b { color: var(--brand); }
 .bx-spark { width: 160px; height: 40px; color: var(--brand); flex: none; }
+
+/* ============================ الإصدار 27 ============================ */
+/* مقارنة الدورات وقياس الأداء */
+.cmp27 .cmp-modes a { white-space: nowrap; }
+.cmp-ctl .row { gap: 12px; align-items: flex-end; }
+.cmp-ctl .field { flex: 1 1 200px; min-width: 0; margin: 0; }
+.cmp-run { flex: 1 1 240px; }
+.cmp-per { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1 1 260px; }
+.cmp-per b { font-size: .85rem; color: var(--ink-2); min-width: 54px; }
+.cmp-per input { flex: 1 1 120px; min-width: 0; }
+.cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.cmp-k { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 2px; background: var(--surface); min-width: 0; }
+.cmp-k small { color: var(--muted); font-size: .78rem; }
+.cmp-k b { font-size: 1.45rem; font-family: var(--mono, inherit); line-height: 1.2; }
+.cmp-k b em { font-style: normal; font-size: .8rem; color: var(--muted); }
+.cmp-k span { font-size: .8rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-k.up { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); background: color-mix(in srgb, var(--ok) 7%, var(--surface)); }
+.cmp-k.dn { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); background: color-mix(in srgb, var(--bad) 7%, var(--surface)); }
+.cmp-k.up b .cmp-d, .cmp-k.dn b .cmp-d { font-size: 1rem; }
+.cmp-chart { overflow-x: auto; margin: 4px 0 12px; padding-bottom: 4px; }
+.cmp-chart svg { display: block; max-width: none; }
+.cmp-tv { font: 700 11px var(--mono, system-ui); fill: var(--ink-2); text-anchor: middle; }
+.cmp-tv.b { fill: var(--ink); }
+.cmp-tl { font: 600 11px system-ui, sans-serif; fill: var(--ink-2); text-anchor: middle; direction: rtl; }
+.cmp-tg { font: 600 10px system-ui, sans-serif; text-anchor: start; direction: rtl; }
+.cmp-ax { font: 500 10px var(--mono, system-ui); fill: var(--muted); }
+.cmp-leg { display: flex; gap: 14px; align-items: center; }
+.cmp-leg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-inline-end: 4px; vertical-align: -2px; }
+.cmp-leg i.a { background: var(--line-2); } .cmp-leg i.b { background: var(--sig, var(--brand)); }
+.cmp-tbl table { font-size: .86rem; }
+.cmp-tbl td b { display: block; }
+.cmp-tbl td .xs { display: block; white-space: nowrap; }
+.cmp-tbl th.on, .cmp-tbl td.on { background: color-mix(in srgb, var(--sig, var(--brand)) 10%, transparent); font-weight: 700; }
+.cmp-tbl tr.tot td { border-top: 2px solid var(--line-2); font-weight: 700; }
+.cmp-d { font: 700 .82rem var(--mono, system-ui); white-space: nowrap; }
+.cmp-d small { font-weight: 600; font-family: inherit; }
+.cmp-up { color: var(--ok); } .cmp-dn { color: var(--bad); } .cmp-d0 { color: var(--muted); }
+.cmp-lv { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .76rem; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); white-space: nowrap; }
+.cmp-curl { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .82rem; color: var(--ink-2); }
+.cmp-curl i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-inline-end: 6px; vertical-align: middle; }
+.cmp-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.cmp-two > .card { margin: 0; min-width: 0; }
+.cmp-w { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .9rem; line-height: 1.6; }
+.cmp-w:last-child { border-bottom: 0; }
+.cmp-wins .cmp-w svg { color: var(--ok); flex: 0 0 auto; margin-top: 3px; }
+.cmp-watch .cmp-w svg { color: var(--warn); flex: 0 0 auto; margin-top: 3px; }
+.cmp-lvs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.cmp-lvb { border-radius: 14px; padding: 12px; border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); display: grid; gap: 2px; }
+.cmp-lvb b { color: var(--c); font-size: 1.05rem; }
+.cmp-lvb span { font: 700 .9rem var(--mono, system-ui); }
+.cmp-lvb em { font-style: normal; font-size: .8rem; color: var(--muted); }
+.cmp-lvset { gap: 10px; align-items: flex-end; margin-top: 14px; }
+.cmp-lvset .field { flex: 1 1 130px; margin: 0; }
+/* بيانات المزارع والإنذار المبكر: المحطات اللي دورتها انتهت */
+.fx-end { margin: 8px 0 0; line-height: 1.7; }
+.ews-site.idle { opacity: .8; }
+/* قيمة الطائر: سعر بيع الشركة */
+.bx-ref { display: block; margin-top: 4px; }
+.bx-co { display: grid; gap: 6px; flex: 1 1 280px; min-width: 0; }
+.bx-co label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.bx-co .row { gap: 6px; flex-wrap: wrap; }
+.bx-co input { flex: 1 1 110px; min-width: 0; }
+@media print { .cmp-lvset, .cmp-ctl { display: none !important; } .cmp-chart { overflow: visible; } }
+
+/* ============ v28: ترتيب التقييمات وشهادات التقدير ============ */
+.ev-rf { align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.ev-rf .field { min-width: 150px; margin: 0; }
+.ev-qp { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+.ev-rt td { vertical-align: middle; }
+.ev-rt td b + .xs { display: block; }
+.ev-rt tr.top td { background: color-mix(in srgb, #f6d365 9%, transparent); }
+.ev-rt .rk { width: 52px; text-align: center; }
+.aw-medal { display: block; flex: none; }
+.aw-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 12px 0; }
+.aw-col h3 { font-size: 14px; margin: 0 0 8px; color: var(--ink-2); }
+.aw-pod { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 8px; background: var(--surface); }
+.aw-pod.r1 { border-color: #e2b93b; background: linear-gradient(90deg, color-mix(in srgb, #f6d365 16%, var(--surface)), var(--surface)); }
+.aw-pod.r2 { border-color: #c3cad2; }
+.aw-pod.r3 { border-color: #d9a579; }
+.aw-pod .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.aw-hist summary { cursor: pointer; font-weight: 700; padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+.aw-hm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px dashed var(--line); }
+.aw-hm b { min-width: 110px; }
+.aw-pad { width: 100%; max-width: 560px; aspect-ratio: 3 / 1; background: #fff; border: 1.5px dashed var(--line-2, #bbb); border-radius: 12px; touch-action: none; cursor: crosshair; display: block; margin-bottom: 8px; }
+.aw-sigcur { background: #fff; border-radius: 10px; padding: 8px; display: inline-block; margin-bottom: 10px; border: 1px solid var(--line); }
+.aw-sigcur img { max-height: 70px; display: block; }
+.aw-chk { display: flex; gap: 8px; align-items: center; margin: 10px 0; font-weight: 600; }
+.aw-sb .aw-frame { border-radius: 10px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.18); margin-bottom: 14px; }
+
+/* الشهادة: ورقة A4 بالعرض، كل المقاسات بنسبة عرضها */
+.aw-cert { container-type: inline-size; width: 100%; aspect-ratio: 297 / 210; background: #fffdf8; color: #1f2329; position: relative; font-family: 'Readex Pro', 'El Messiri', system-ui, sans-serif; direction: rtl; overflow: hidden; }
+.awc-in { position: absolute; inset: 2.2cqw; border: .35cqw solid #2b2f36; outline: .12cqw solid #c8161e; outline-offset: -1.1cqw; display: flex; flex-direction: column; align-items: center; padding: 2.6cqw 4.5cqw 2.2cqw; text-align: center; }
+.awc-bg { position: absolute; inset: 0; width: 100%; height: 100%; color: #c8161e; opacity: .09; pointer-events: none; }
+.awc-cn { position: absolute; width: 7cqw; height: 7cqw; border: .5cqw solid var(--m1); }
+.awc-cn.tl { top: -.6cqw; left: -.6cqw; border-right: 0; border-bottom: 0; }
+.awc-cn.tr { top: -.6cqw; right: -.6cqw; border-left: 0; border-bottom: 0; }
+.awc-cn.bl { bottom: -.6cqw; left: -.6cqw; border-right: 0; border-top: 0; }
+.awc-cn.br { bottom: -.6cqw; right: -.6cqw; border-left: 0; border-top: 0; }
+.awc-h { width: 100%; display: flex; align-items: center; gap: 1.6cqw; position: relative; }
+.awc-logo img { width: 6.4cqw; height: 6.4cqw; object-fit: contain; display: block; }
+.awc-org { display: flex; flex-direction: column; text-align: start; flex: 1; }
+.awc-org b { font-size: 2.1cqw; color: #c8161e; }
+.awc-org span { font-size: 1.35cqw; color: #555b63; }
+.awc-no { font-size: 1cqw; color: #6b7178; display: flex; flex-direction: column; text-align: end; }
+.awc-no b { font: 600 1.1cqw ui-monospace, monospace; color: #2b2f36; }
+.awc-title { margin-top: 1.4cqw; position: relative; display: flex; flex-direction: column; align-items: center; }
+.awc-k { font: 600 1.15cqw system-ui, sans-serif; letter-spacing: .5cqw; color: var(--m1); }
+.awc-title h1 { font-size: 5.6cqw; margin: .2cqw 0 0; line-height: 1.15; color: #2b2f36; font-weight: 800; }
+.awc-line { width: 22cqw; height: .45cqw; margin-top: .6cqw; background: linear-gradient(90deg, transparent, var(--m1), #c8161e, var(--m1), transparent); border-radius: 1cqw; }
+.awc-to { font-size: 1.75cqw; margin: 1.8cqw 0 .4cqw; color: #3a3f46; position: relative; }
+.awc-name { font-size: 4.4cqw; font-weight: 800; color: #c8161e; line-height: 1.25; padding: 0 3cqw .3cqw; border-bottom: .14cqw solid color-mix(in srgb, var(--m1) 60%, transparent); position: relative; }
+.awc-job { font-size: 1.6cqw; color: #4a5058; margin: .7cqw 0 0; position: relative; }
+.awc-txt { font-size: 1.62cqw; line-height: 1.85; max-width: 72cqw; margin: 1.3cqw 0 0; color: #2b2f36; position: relative; }
+.awc-f { margin-top: auto; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 2cqw; position: relative; }
+.awc-date { display: flex; flex-direction: column; text-align: start; font-size: 1.25cqw; color: #555b63; gap: .2cqw; }
+.awc-date b { font-size: 1.5cqw; color: #2b2f36; }
+.awc-sm { font-size: 1.1cqw; }
+.awc-seal { display: flex; flex-direction: column; align-items: center; gap: .3cqw; }
+.awc-seal .aw-medal { width: 11cqw; height: 11cqw; filter: drop-shadow(0 .4cqw .6cqw rgba(0,0,0,.18)); }
+.awc-seal span { font-size: 1.2cqw; font-weight: 700; color: var(--m1); }
+.awc-sig { display: flex; flex-direction: column; align-items: flex-end; text-align: end; }
+.awc-sig img { height: 7cqw; max-width: 26cqw; object-fit: contain; margin-bottom: -1.2cqw; }
+.awc-nosig { height: 6cqw; display: block; }
+.awc-sig i { width: 24cqw; height: .12cqw; background: #2b2f36; display: block; }
+.awc-sig b { font-size: 1.55cqw; margin-top: .5cqw; }
+.awc-sig span { font-size: 1.2cqw; color: #555b63; }
+#awPrint { display: none; }
+@page awp { size: A4 landscape; margin: 0; }
+@media print {
+  body.print-aw > *:not(#awPrint) { display: none !important; }
+  body.print-aw #awPrint { display: block !important; page: awp; width: 297mm; height: 210mm; }
+  body.print-aw #awPrint .aw-cert { width: 297mm; height: 210mm; aspect-ratio: auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+@media (max-width: 560px) {
+  .ev-rt th:nth-child(5), .ev-rt td:nth-child(5), .ev-rt th:nth-child(6), .ev-rt td:nth-child(6) { display: none; }
+  .ev-rt td, .ev-rt th { padding: 9px 8px; }
+  .ev-rt td:nth-child(2) b { white-space: normal; }
+  .aw-pod { flex-wrap: wrap; }
+}
