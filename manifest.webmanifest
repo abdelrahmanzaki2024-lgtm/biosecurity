@@ -9,8 +9,8 @@
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "#a81323",
-  "theme_color": "#a81323",
+  "background_color": "#c8161e",
+  "theme_color": "#c8161e",
   "categories": ["business", "productivity"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
