@@ -4485,3 +4485,7 @@ polyline.tn-road, polyline.tn-rc { fill: none; stroke-linejoin: round; stroke-li
   .tn-radl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .tn-stage.tn-full .tn-vp { height: auto !important; }
+/* v29.8: التقييم الملغى */
+.ev-card.ev-cx { opacity: .62; }
+.ev-card.ev-cx .t b { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.pill.ev-x { background: var(--surface-3); color: var(--muted); }
