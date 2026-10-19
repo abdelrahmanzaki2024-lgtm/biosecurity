@@ -4489,3 +4489,9 @@ polyline.tn-road, polyline.tn-rc { fill: none; stroke-linejoin: round; stroke-li
 .ev-card.ev-cx { opacity: .62; }
 .ev-card.ev-cx .t b { text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .pill.ev-x { background: var(--surface-3); color: var(--muted); }
+/* v29.10: اختيار العربية بدل الرفض */
+.unk-list { display: grid; gap: 8px; margin: 4px 0 12px; }
+.unk-it { display: flex; align-items: center; gap: 10px; width: 100%; text-align: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: inherit; font: inherit; cursor: pointer; }
+.unk-it:hover, .unk-it:focus-visible { border-color: var(--brand); }
+.unk-it > span:nth-child(2) { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.unk-it small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
