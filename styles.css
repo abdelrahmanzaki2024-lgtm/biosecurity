@@ -4495,9 +4495,3 @@ polyline.tn-road, polyline.tn-rc { fill: none; stroke-linejoin: round; stroke-li
 .unk-it:hover, .unk-it:focus-visible { border-color: var(--brand); }
 .unk-it > span:nth-child(2) { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .unk-it small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-
-/* v29.12: الخريطة الحية: خطوط المحطات مجمّعة، وآخر الحركات في سطر واحد مرتب */
-.smap .edge.bus { stroke-dasharray: none; stroke-width: 1.4; opacity: .75; }
-.map-feed .fe { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
-.map-feed .fe > .xs, .map-feed .fe > span.muted { white-space: nowrap; }
-.map-feed .fe .xs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
