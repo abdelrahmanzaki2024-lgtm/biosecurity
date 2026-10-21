@@ -117,7 +117,7 @@
   var DemoNet = { offline: false };
   /* v27: ذاكرة فورية للشاشات. أي شاشة اتفتحت قبل كده تظهر في الحال من آخر بيانات محفوظة على الجهاز،
      وفي الخلفية يتجاب الجديد من الخادم ويتحدث المعروض لو اتغير. أي حفظ أو تعديل يمسح الذاكرة فوراً علشان مايظهرش رقم قديم. */
-  var RC_FN = { dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
+  var RC_FN = { gateLog: 1, dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
   var RC_FREE = { login: 1, sync: 1, ping: 1, presence: 1, threads: 1, myQuality: 1, gateAccess: 1, approvalStatus: 1, selfPointInfo: 1, selfMissionInfo: 1, tripInfo: 1, history: 1, trace: 1, passport: 1, stationHistory: 1, cardReport: 1, reportOpen: 1, settlePreview: 1, isoPreview: 1, tourPreview: 1, codesPreview: 1, farmMetaX: 1, myAwards: 1, adminList: 1, audit: 1, cardLog: 1, changes: 1, chat: 1, planVisits: 1, noticeAcks: 1, simulate: 1, containPlan: 1, registerDevice: 1, vrOpen: 1, tripPing: 1, disProgram: 1, purgeList: 1 };
   var RC = { m: {}, n: 0, flight: {} }, RC_FRESH = 20000;
   function rcKey(fn, args) { return (S.session && S.session.user ? S.session.user.id : '') + '|' + fn + '|' + JSON.stringify((args || []).slice(1)); }
@@ -505,12 +505,12 @@
   function navItems0() {
     if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'خريطة العمليات', 'map'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'خريطة العمليات', 'map'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
   }
   /** الشريط السفلي للموبايل: خمسة أزرار بحد أقصى بأسماء قصيرة، والباقي في «المزيد» */
-  var NAV_SHORT = { dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
+  var NAV_SHORT = { gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
   function bottomItems() {
     var all = navItems(), pick = vrOnly() ? ['vr', 'calc', 'more'] : S.session.user.isManager ? (isAdmin() ? ['dash', 'twin', 'requests', 'stations', 'comms', 'missions', 'notices', 'more'] : ['dash', 'stations', 'store', 'calc', 'more']) : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
     var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
@@ -526,7 +526,7 @@
     ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'ews', 'integ', 'sim', 'trace', 'insights']],
     ['sites', 'المواقع', 'layers', ['stations', 'farm', 'disposal', 'inspect', 'cams']],
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
-    ['move', 'الحركة', 'truck', ['iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
+    ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
     ['people', 'HR إدارة الأمن الحيوي', 'user', ['evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
     ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'purge']]
   ];
@@ -660,7 +660,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOps21, twin: viewTwin, iso: viewIso, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOps21, twin: viewTwin, iso: viewIso, gates: viewGates, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -2249,7 +2249,7 @@
       try { (fs ? document.exitFullscreen() : el.requestFullscreen()).catch(function () { toast('الشاشة الكاملة غير متاحة في هذا المتصفح'); }); } catch (e) { toast('الشاشة الكاملة غير متاحة في هذا المتصفح'); }
     };
   }
-  function shortName(n, sector) { return String(n || '').replace('منطقة ', '').replace(' - ' + sector, '').replace(' ' + sector, '').trim(); }
+  function shortName(n, sector) { var t = String(n || '').replace('منطقة ', ''); return (sector ? t.replace(' - ' + sector, '').replace(' ' + sector, '') : t).trim(); }
   /* v29.12: اسم مختصر لعناوين الخريطة الحية (بدون الأقواس و«نقطة» واللاحقة بعد الشرطة)، وقص بالنقاط لو أطول من المساحة */
   function mapName(n, sector) { var s = shortName(n, sector); return s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/^نقطة\s+/, '').replace(/\s+-\s+.*$/, '').replace(/\s+(للقطاع|بالقطاع)$/, '').trim() || s; }
   function fitTxt(t, n) { t = String(t || ''); n = Math.max(4, Math.floor(n)); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; }
@@ -9182,8 +9182,92 @@
     var imp = '<div class="card iso-imp"><div class="card-head"><h2>' + icon('user') + ' الأثر قبل الاعتماد</h2></div><p class="small muted">يحسب لكل من تحرك خلال آخر ' + D.lookback + ' ساعة: هل فترة عزله هتطول أو تقصر أو يتمنع أو يتفك؟</p><button class="btn block" type="button" id="isoPrev">' + icon('refresh') + ' احسب الأثر الآن</button><div id="isoPrevOut"></div></div>';
     var save = ro ? '' : '<div class="card iso-save" id="isoSave"><div class="field"><label for="isoWhy">سبب التعديل (إجباري، يُحفظ في السجل)</label><textarea id="isoWhy" rows="2" placeholder="مثال: رفع عزل التسمين للأمهات بعد ارتفاع النافق في ريجوا"></textarea></div><div class="row"><button class="btn primary grow" type="button" id="isoGo">' + icon('check') + ' اعتماد المعادلة</button><button class="btn" type="button" id="isoUndo">' + icon('back') + ' تراجع</button></div><p class="xs muted" id="isoDirty"></p></div>';
     var log = '<div class="card" id="isoLog"><div class="card-head"><h2>' + icon('history') + ' سجل التغييرات</h2><span class="xs muted">' + (F.log || []).length + ' تعديل</span></div>' + ((D.formula.log || []).length ? '<div class="iso-log">' + D.formula.log.map(function (l) { return '<div class="iso-li"><div class="iso-lh"><b>' + esc(l.by) + '</b><span class="xs muted">' + esc(fmt(l.at)) + '</span></div><p class="small">' + esc(l.why) + '</p><ul>' + (l.ch || []).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>'; }).join('') + '</div>' : '<p class="empty">لم تُعدَّل المعادلة من هذه الشاشة بعد. القيم الحالية هي المعتمدة من دليل هابرد.</p>') + '</div>';
-    $('isoOut').innerHTML = eq + '<div class="iso-grid"><div class="iso-main">' + mx + fac + em + pr + isoExCard() + log + '</div><aside class="iso-side">' + sim + imp + save + '</aside></div>';
-    isoBind(); isoExBind(); isoSim(); isoDirtyPaint();
+    $('isoOut').innerHTML = eq + '<div class="iso-grid"><div class="iso-main">' + (I.d.canEdit ? '<div id="isoRe"></div>' : '') + mx + fac + em + pr + isoExCard() + log + '</div><aside class="iso-side">' + sim + imp + save + '</aside></div>';
+    isoBind(); isoExBind(); isoSim(); isoDirtyPaint(); if (I.d.canEdit) isoRe();
+  }
+  /* ============================ v29.13: سجل البوابات ============================
+     آخر حركة من كل بوابة (منطقة تطهير أو بوابة موقع) وعداداتها، والسجل الكامل بفلاتر: البوابة، الفترة، الاتجاه، القرار، والبحث بالاسم أو الكود أو اللوحة */
+  function glDay(t) { return new Date(t + 3 * 36e5).toISOString().slice(0, 10); }
+  function glAdd(d, n) { return glDay(Date.parse(d + 'T12:00:00+03:00') - 3 * 36e5 + n * 864e5); }
+  function viewGates(args) {
+    var td = glDay(Date.now());
+    S.gl = S.gl || { gate: '', from: td, to: td, dir: '', dec: '', q: '' };
+    if (args && args[0] != null) S.gl.gate = decodeURIComponent(args[0]);
+    var F = S.gl;
+    $('main').innerHTML = '<section class="view gl-view">' + v5Head('سجل البوابات', 'list', 'آخر حركة من كل بوابة وسجلها الكامل. افتح كل البوابات، أو اضغط على بوابة تشوف سجلها لوحدها.', '<a class="btn" href="#integ">' + icon('fingerprint') + ' صدق البيانات</a>') +
+      '<div class="card gl-bar"><div class="gl-f"><div class="field"><label for="glGate">البوابة</label><select id="glGate"><option value="">كل البوابات</option></select></div>' +
+      '<div class="field"><label>الفترة</label><div class="seg" id="glPer">' + [['0', 'اليوم'], ['1', 'أمس'], ['7', '7 أيام'], ['30', '30 يوم']].map(function (x) { return '<button type="button" data-p="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="field"><label for="glFrom">من</label><input type="date" id="glFrom" value="' + esc(F.from) + '"></div><div class="field"><label for="glTo">إلى</label><input type="date" id="glTo" value="' + esc(F.to) + '"></div>' +
+      '<div class="field"><label for="glDir">الاتجاه</label><select id="glDir"><option value="">الكل</option><option>' + B.IN + '</option><option>' + B.OUT + '</option><option>' + B.EXT + '</option></select></div>' +
+      '<div class="field"><label for="glDec">القرار</label><select id="glDec"><option value="">الكل</option><option value="ok">مسموح</option><option value="bad">مرفوض / انتظار</option><option value="ovr">مسموح استثنائياً</option><option value="void">ملغاة</option></select></div>' +
+      '<div class="field grow"><label for="glQ">بحث</label><input id="glQ" placeholder="اسم، كود، لوحة، أو المسجِّل" value="' + esc(F.q) + '" autocomplete="off"></div></div></div>' +
+      '<div id="glOut">' + v5Spin() + '</div></section>';
+    $('glDir').value = F.dir; $('glDec').value = F.dec;
+    var tq = 0;
+    function per() { var n = null; [['0', td, td], ['1', glAdd(td, -1), glAdd(td, -1)], ['7', glAdd(td, -6), td], ['30', glAdd(td, -29), td]].forEach(function (x) { if (F.from === x[1] && F.to === x[2]) n = x[0]; }); $('glPer').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.p === n); }); }
+    function load() { per(); return remote('gateLog', [S.session.pin, { gate: F.gate, from: F.from, to: F.to, dir: F.dir, dec: F.dec, q: F.q }]).then(glDraw).catch(function (e) { if ($('glOut')) $('glOut').innerHTML = e.net ? offlineCard('سجل البوابات') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; }); }
+    S.glLoad = load;
+    $('glPer').querySelectorAll('button').forEach(function (b) { b.onclick = function () { var n = Number(b.dataset.p); F.to = n === 1 ? glAdd(td, -1) : td; F.from = n === 0 ? td : n === 1 ? F.to : glAdd(td, -(n - 1)); $('glFrom').value = F.from; $('glTo').value = F.to; load(); }; });
+    $('glFrom').onchange = function () { if (this.value) { F.from = this.value; load(); } };
+    $('glTo').onchange = function () { if (this.value) { F.to = this.value; load(); } };
+    $('glGate').onchange = function () { F.gate = this.value; load(); };
+    $('glDir').onchange = function () { F.dir = this.value; load(); };
+    $('glDec').onchange = function () { F.dec = this.value; load(); };
+    $('glQ').oninput = function () { var v = this.value; clearTimeout(tq); tq = setTimeout(function () { F.q = v.trim(); load(); }, 350); };
+    load();
+    S.poll = setInterval(function () { if (!document.hidden && S.route === 'gates' && !$('sheetWrap') && F.to >= glDay(Date.now())) load(); }, MODE === 'demo' ? 8000 : 30000);
+  }
+  function glPill(d) { return d === B.ALLOW ? '<span class="pill p-ok">مسموح</span>' : d === B.OVERRIDE ? '<span class="pill p-warn">استثنائي</span>' : d === B.DENY ? '<span class="pill p-bad">مرفوض</span>' : d === B.PENDING ? '<span class="pill p-bad">انتظار</span>' : d === B.VOID ? '<span class="pill p-n">ملغاة</span>' : d ? '<span class="pill p-n">' + esc(d) + '</span>' : ''; }
+  function glDraw(d) {
+    var F = S.gl, box = $('glOut'); if (!box) return;
+    var sel = $('glGate'); if (sel) { sel.innerHTML = '<option value="">كل البوابات (' + d.gates.length + ')</option>' + d.gates.map(function (g) { return '<option value="' + esc(g.key) + '"' + (g.key === F.gate ? ' selected' : '') + '>' + esc((String(g.name).match(/محطة\s*\d+/) || [])[0] || mapName(g.name, g.sector) || g.name) + (g.sector ? ' · ' + g.sector : '') + (g.n ? ' (' + g.n + ')' : '') + '</option>'; }).join(''); }
+    var stale = function (g) { return g.kind === 'cp' && (!g.lastAny || d.now - g.lastAny > 6 * 36e5); };
+    var gn = function (g) { var m = String(g.name).match(/محطة\s*\d+/); return m ? m[0] + (g.sector ? '' : '') : mapName(g.name, g.sector) || g.name; };
+    var shown = d.gates.filter(function (g) { return g.kind === 'cp' || g.n || g.key === F.gate; }), idle = d.gates.filter(function (g) { return shown.indexOf(g) < 0; });
+    var cards = '<div class="gl-gates">' + shown.map(function (g) {
+      var L = g.last, on = g.key === F.gate;
+      return '<button type="button" class="card gl-g' + (on ? ' on' : '') + (stale(g) ? ' quiet' : '') + '" data-g="' + esc(g.key) + '" aria-pressed="' + on + '">' +
+        '<span class="gl-gh"><span class="gl-ic">' + icon(g.kind === 'cp' ? 'gate' : 'pin') + '</span><span class="gl-gn"><b title="' + esc(g.name) + '">' + esc(gn(g)) + '</b><span class="xs muted">' + (g.sector ? 'قطاع ' + esc(g.sector) + ' · ' : '') + (g.kind === 'cp' ? 'منطقة تطهير' : 'بوابة موقع') + '</span>' +
+        '<span class="xs ' + (stale(g) ? 'warn-t' : 'muted') + '">' + icon('clock') + ' ' + (g.lastAny ? 'آخر حركة ' + esc(ago(g.lastAny)) : 'لا حركة مسجلة') + (stale(g) && g.lastAny ? ' · ساكتة' : '') + '</span></span></span>' +
+        (L ? '<span class="gl-lm small"><span class="gl-d ' + (L.dir === B.OUT ? 'out' : L.decision === B.DENY || L.decision === B.PENDING ? 'bad' : 'in') + '"></span><b>' + esc(L.itemName) + '</b> ' + esc(L.dir === B.OUT ? 'خرج من' : L.dir === B.EXT ? 'زيارة خارجية' : 'دخل') + ' ' + esc(shortSite(L.siteName)) + ' ' + glPill(L.decision) + '</span>' : '<span class="gl-lm xs muted">لا حركة في الفترة دي</span>') +
+        '<span class="gl-cnt"><span><b class="num">' + g.inN + '</b>دخول</span><span><b class="num">' + g.outN + '</b>خروج</span><span class="' + (g.deny + g.pend ? 'bad' : '') + '"><b class="num">' + (g.deny + g.pend) + '</b>رفض</span><span class="' + (g.ovr ? 'warn' : '') + '"><b class="num">' + g.ovr + '</b>استثنائي</span><span><b class="num">' + g.manual + '</b>يدوي</span></span></button>';
+    }).join('') + '</div>' + (idle.length ? '<div class="gl-idle xs muted">' + icon('pause') + ' بوابات مواقع بدون حركة في الفترة: ' + idle.map(function (g) { return '<button type="button" class="sh-chip c-na" data-g="' + esc(g.key) + '">' + esc(gn(g)) + '</button>'; }).join('') + '</div>' : '');
+    var g0 = F.gate ? d.gates.filter(function (g) { return g.key === F.gate; })[0] : null, gName = F.gate ? (g0 ? gn(g0) : F.gate) : 'كل البوابات';
+    var byDay = {}, days = []; d.rows.forEach(function (m) { var k = glDay(m.time); if (!byDay[k]) { byDay[k] = []; days.push(k); } byDay[k].push(m); });
+    var log = '<div class="card gl-log"><div class="card-head"><h2>' + icon('history') + ' سجل ' + esc(gName) + '</h2><span class="sub">' + (d.from === d.to ? esc(dayLabel(Date.parse(d.from + 'T12:00:00+03:00'))) : esc(d.from) + ' ← ' + esc(d.to)) + ' · ' + d.total + ' حركة' + (d.total > d.rows.length ? ' (أحدث ' + d.rows.length + ')' : '') + '</span>' + (F.gate ? '<button class="btn sm ghost" id="glAll">' + icon('layers') + ' كل البوابات</button>' : '') + '</div>' +
+      (d.rows.length ? days.map(function (k) {
+        return '<div class="gl-day"><span class="kick">' + esc(dayLabel(Date.parse(k + 'T12:00:00+03:00'))) + ' · ' + byDay[k].length + '</span>' + byDay[k].map(function (m) {
+          var bad = m.decision === B.DENY || m.decision === B.PENDING, out = m.dir === B.OUT;
+          return '<div class="gl-row' + (bad ? ' bad' : m.decision === B.VOID ? ' void' : '') + '"><span class="gl-t mono">' + esc(new Date(m.time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Cairo' })) + '</span>' +
+            '<span class="gl-d ' + (out ? 'out' : bad ? 'bad' : 'in') + '" title="' + esc(m.dir) + '"></span>' +
+            '<span class="gl-w"><b>' + esc(m.itemName) + '</b> <span class="xs muted mono">' + esc(m.itemId) + '</span>' + (m.plate ? ' <span class="xs muted">لوحة ' + esc(m.plate) + '</span>' : '') +
+            '<span class="xs">' + icon(kindIcon(m.kind)) + ' ' + esc(m.dir) + ' · ' + esc(shortSite(m.siteName)) + (F.gate ? '' : ' · <span class="muted">' + esc(shortSite(m.cp)) + '</span>') + '</span>' +
+            (bad || m.decision === B.OVERRIDE || m.decision === B.VOID ? '<span class="xs muted gl-why">' + esc(m.reason) + '</span>' : '') + '</span>' +
+            '<span class="gl-m">' + glPill(m.decision) + '<span class="xs muted">' + esc(m.user || '') + (/يدوي/.test(m.via) ? ' · يدوي' : '') + (m.offline ? ' · دون اتصال' : '') + '</span></span></div>';
+        }).join('') + '</div>';
+      }).join('') : '<p class="empty">' + icon('check') + ' لا حركات بالفلاتر دي</p>') + '</div>';
+    box.innerHTML = cards + log;
+    box.querySelectorAll('[data-g]').forEach(function (b) { b.onclick = function () { F.gate = F.gate === b.dataset.g ? '' : b.dataset.g; if ($('glGate')) $('glGate').value = F.gate; S.glLoad(); }; });
+    if ($('glAll')) $('glAll').onclick = function () { F.gate = ''; if ($('glGate')) $('glGate').value = ''; S.glLoad(); };
+  }
+  /* v29.13: إعادة تقييم حالات الرفض والدخول الاستثنائي بالمعادلات الحالية (قاعدة سيارات بوابة المحطة + الاستثناءات) */
+  function isoRe(done) {
+    var box = $('isoRe'); if (!box) return;
+    box.innerHTML = '<div class="card iso-re"><p class="empty"><span class="spin"></span></p></div>';
+    remote('isoReassess', [S.session.pin, 14, 'preview']).then(function (r) {
+      if (!$('isoRe')) return;
+      var lab = function (x) { return x.to === B.ALLOW ? '<span class="pill p-ok">مسموح</span>' : x.to === B.VOID ? '<span class="pill p-n">محاولة مكررة</span>' : '<span class="pill p-bad">لسه مخالفة</span>'; };
+      var rows = r.rows.map(function (x) { return '<tr><td class="small">' + esc(fmt(x.time)) + '</td><td><b>' + esc(x.itemName) + '</b> <span class="xs muted mono">' + esc(x.itemId) + '</span></td><td class="small">' + esc(shortSite(x.siteName)) + '</td><td class="small">' + esc(x.from) + '</td><td>' + lab(x) + '</td><td class="xs muted">' + esc(x.why) + '</td></tr>'; }).join('');
+      $('isoRe').innerHTML = '<div class="card iso-re"><div class="card-head"><h2>' + icon('refresh') + ' إعادة تقييم حالات الرفض والاستثناء</h2><span class="sub">آخر 14 يوم بالمعادلات الحالية</span></div>' +
+        (done ? '<div class="infobox">' + icon('check') + ' ' + esc(done) + '</div>' : '') +
+        (r.rows.length ? '<p class="small">من ' + r.rows.length + ' حالة: <b>' + r.allowed + '</b> بقت مسموحة، <b>' + r.voided + '</b> محاولة مكررة، و<b>' + r.left + '</b> لسه مخالفة.</p><div class="tbl"><table><thead><tr><th>الوقت</th><th>العنصر</th><th>الموقع</th><th>كان</th><th>يبقى</th><th>السبب</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+          '<div class="row wrap">' + (r.allowed + r.voided ? '<button class="btn primary" id="isoReGo">' + icon('check') + ' تصحيح ' + (r.allowed + r.voided) + ' حالة</button>' : '') + (r.left ? '<button class="btn" id="isoReCv">' + icon('shield') + ' تصحيح الكل وتحويل الـ ' + r.left + ' الباقية لاستثناءات</button>' : '') + '</div>' +
+          '<p class="xs muted">القرار القديم يتحفظ في عمود السبب، والتعديل يتسجل في سجل التعديلات. الأفراد مش بيتحولوا لاستثناءات.</p>'
+          : '<p class="empty">' + icon('check') + ' مفيش حالات رفض أو دخول استثنائي محتاجة مراجعة</p>') + '</div>';
+      var go = function (mode, b) { b.disabled = true; remote('isoReassess', [S.session.pin, 14, mode]).then(function (x) { S.mapKey = ''; var m = 'اتصححت ' + x.allowed + ' حالة لمسموح، و' + x.voided + ' محاولة مكررة اتلغت' + (x.exempted.length ? '، واتضاف للاستثناءات: ' + x.exempted.join('، ') : ''); toast(m, 7000); isoRe(m); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
+      if ($('isoReGo')) $('isoReGo').onclick = function () { go('apply', this); };
+      if ($('isoReCv')) $('isoReCv').onclick = function () { go('convert', this); };
+    }).catch(function (e) { if ($('isoRe')) $('isoRe').innerHTML = '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
   }
   /* v29.2: استثناء السيارات من العزل (المدير والمسؤول والمشرف) */
   var ISO_EX_QUICK = [['سيارة داخلية مؤجرة', 'السيارات الداخلية المؤجرة'], ['نقل علف', 'عربيات وبامبات العلف (من مصانع علف الشركة)'], ['نقل كتاكيت', 'عربيات الكتاكيت (من معامل تفريخ الشركة)'], ['غاز وسولار', 'سيارات السولار والغاز'], ['مياه', 'سيارات المياه'], ['نقل موظفين / أتوبيس', 'أتوبيسات الموظفين'], ['معدة: ماكينة رش وتطهير', 'ماكينات الرش والتطهير'], ['معدة: جرار وعربة', 'الجرارات والعربات'], ['معدة: مولد كهرباء', 'مولدات الكهرباء'], ['معدة: أقفاص وصناديق نقل', 'الأقفاص والصناديق']];

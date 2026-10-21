@@ -603,11 +603,16 @@ function BIO_contacts(moves, now) {
   return contacts;
 }
 
+/* v29.13: السيارات اللي بتروح محطات التسمين (المستوى 3: المحطات وبوابة التسمين كلين وطريق البيع) بتقف على بوابة المحطة من الخارج
+   ومش بتدخل حرم المحطة، فوجودها هناك مش خطر على المحطة ولا على أي موقع تروحه بعدها، ودخولها لبوابة المحطة مش محتاج عزل.
+   حدود الأمان: الموقع في حالة إنذار يفضل بحده، وبعد زيارة خارج الشركة العزل يفضل كما هو، والتطهير الكامل على البوابة إلزامي دائماً.
+   المعدات (جرارات، ماكينات رش...) بتدخل فعلاً، فالقاعدة للمركبات بس. */
+function BIO_vehGate(kind, s) { return BIO_kindGroup(kind) === 'vehicle' && !!s && !s.external && !s.virtual && Number(s.level) === 3 && s.status !== BIO.ST_ALERT; }
 function BIO_evaluate(ctx) {
   var now = ctx.now, target = ctx.target, settings = ctx.settings;
   var lookback = (Number(settings.LOOKBACK_HOURS) || 240) * BIO.HOUR;
   var alertHours = Number(settings.ALERT_HOURS) || 0;
-  var bySite = {}, warnings = [], F = ctx.formula || BIO_isoFormula(settings), exUsed = false;
+  var bySite = {}, warnings = [], F = ctx.formula || BIO_isoFormula(settings), exUsed = false, gateOnly = false;
   BIO_contacts(ctx.itemMoves, now).forEach(function (c) {
     var src = ctx.sitesById[c.siteId];
     if (!src) return;
@@ -616,6 +621,8 @@ function BIO_evaluate(ctx) {
       return;
     }
     if (now - c.time > lookback) return;
+    if (!c.ext && BIO_vehGate(ctx.kind, src)) return; // v29.13: المركبة كانت على بوابة محطة تسمين من بره: مش تماس
+    if (!c.ext && !src.external && BIO_vehGate(ctx.kind, target) && src.status !== BIO.ST_ALERT) { gateOnly = true; return; } // v29.13: رايحة بوابة محطة تسمين من موقع للشركة
     if (c.stillInside) warnings.push('مسجل داخل «' + src.name + '» ولم يُسجَّل خروجه منه');
     else if (c.missingExit) warnings.push('لم يُسجَّل خروجه من «' + src.name + '»');
     var calc = BIO_isoCalc(F, ctx.rules, src, target, ctx.kind, now), req = calc.hours;
@@ -638,6 +645,7 @@ function BIO_evaluate(ctx) {
     }
   });
   var violations = Object.keys(bySite).map(function (k) { return bySite[k]; }).sort(function (a, b) { return b.until - a.until; });
+  if (gateOnly && !violations.length) warnings.push('مركبة على بوابة محطة التسمين من الخارج: لا عزل مطلوب. ممنوع تدخل حرم المحطة، والتطهير الكامل على البوابة إلزامي');
   if (ctx.exempt && ctx.exempt.leave && !violations.length) warnings.push('سيارة إجازات: مستثناة من العزل لأنها بتنزّل عند البوابة الخارجية بس. ممنوع تدخل حرم المزارع أو المناطق');
   else if (exUsed && !violations.length) { var X = ctx.exempt; warnings.push('مستثناة من العزل (' + X.label + (X.mode === 'hours' ? '، ' + X.hours + ' س فقط' : '') + (X.note ? ' · ' + X.note : '') + '): التطهير الكامل على البوابة إلزامي'); }
   var reasons = violations.map(function (v) {
@@ -1516,7 +1524,8 @@ function BIO_api(store, deps) {
       var exposed = Object.keys(byItem).map(function (id) {
         var e = byItem[id], it = itemInfo(store.find('items', id));
         e.kind = it ? it.kind : ''; e.dept = it ? it.dept : '';
-        e.onward = win.filter(function (m) { return m.itemId === id && m.siteId !== site.id && m.time > e.firstAt; }).map(function (m) {
+        e.gateOnly = BIO_vehGate(e.kind, site); // v29.13: مركبة وقفت على بوابة المحطة من بره: مش ناقلة عدوى منها
+        e.onward = (e.gateOnly ? [] : win).filter(function (m) { return m.itemId === id && m.siteId !== site.id && m.time > e.firstAt && !BIO_vehGate(e.kind, sites[m.siteId]); }).map(function (m) {
           var s = sites[m.siteId] || {};
           var x = secondary[m.siteId] || (secondary[m.siteId] = { siteId: m.siteId, name: m.siteName, sector: s.sector || '', level: s.level || '', status: s.status || '', names: [], firstAt: m.time });
           if (x.names.indexOf(e.name) < 0) x.names.push(e.name);
@@ -1560,7 +1569,7 @@ function BIO_api(store, deps) {
         var list = byItem[id], last = null;
         list.forEach(function (m) { if (BIO_counted(m) && m.dir !== BIO.EXT) last = m; });
         var info = items[id] || { id: id, name: list[list.length - 1].itemName, kind: '' };
-        if (last && last.dir === BIO.IN && sc(last.siteId)) onSite.push({ item: info, siteName: last.siteName, siteId: last.siteId, since: last.time });
+        if (last && last.dir === BIO.IN && sc(last.siteId) && !BIO_isLeaveVeh(info) && !BIO_vehGate(info.kind, sites[last.siteId])) onSite.push({ item: info, siteName: last.siteName, siteId: last.siteId, since: last.time });
         if (now - list[list.length - 1].time > lookback) return;
         var until = {}, any = false, lastSite = null;
         levels.forEach(function (lv) {
@@ -2135,7 +2144,7 @@ function BIO_api(store, deps) {
       return { ok: true };
     }
   };
-  var H_ = { store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor, userByPin: userByPin };
+  var H_ = { isoEval: isoEval, store: store, deps: deps, auth: auth, settings: settings, sitesById: sitesById, sitesList: sitesList, inScope: inScope, itemInfo: itemInfo, allMoves: allMoves, movesOf: movesOf, appUrl: appUrl, missionOut: missionOut, selfStaff: selfStaff, gateFor: gateFor, userByPin: userByPin };
   BIO_ext(api, H_);
   BIO_vrBridge(api, H_);
   BIO_codes(api, H_);
@@ -2154,6 +2163,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v27 === 'function') BIO_v27(api, H_);
   if (typeof BIO_v28 === 'function') BIO_v28(api, H_);
   if (typeof BIO_v292 === 'function') BIO_v292(api, H_);
+  if (typeof BIO_v2913 === 'function') BIO_v2913(api, H_);
   return api;
 }
 
@@ -2289,12 +2299,14 @@ function BIO_v25b(api, H) {
       var sk = g.id + '|' + Math.floor(m.time / 1000); stamp[sk] = (stamp[sk] || 0) + 1;
     });
     Object.keys(stamp).forEach(function (k) { if (stamp[k] >= 5) G[k.split('|')[0]].burst++; });
+    // v29.13: سيارات الإجازات بتنزّل الموظفين عند البوابة الخارجية ومش بتدخل، فمفيش خروج متوقع منها
+    var leaveV = {}, kindOf = {}; rows('items').forEach(function (it) { kindOf[BIO_norm(it.id)] = it.kind; if (BIO_isLeaveVeh(it)) leaveV[BIO_norm(it.id)] = 1; });
     Object.keys(byItem).forEach(function (id) {
-      var L = byItem[id];
+      var L = byItem[id]; if (leaveV[BIO_norm(id)]) return;
       for (var i = 1; i < L.length; i++) {
         var a = L[i - 1], b = L[i]; if (b.time < since || a.siteId === b.siteId) continue;
         var sa = sites[a.siteId], sb = sites[b.siteId];
-        if (a.dir === BIO.IN && b.dir === BIO.IN && sa && !sa.external && !sa.infra && a.decision !== BIO.DENY && a.decision !== BIO.PENDING) { var g1 = gOf(a); g1.missing++; if (g1.ex.length < 3) g1.ex.push({ k: 'missing', text: (a.itemName || id) + ' دخل ' + sa.name + ' ثم ظهر في ' + (sb ? sb.name : b.siteId) + ' بدون تسجيل خروج' }); }
+        if (a.dir === BIO.IN && b.dir === BIO.IN && sa && !sa.external && !sa.infra && !BIO_vehGate(kindOf[BIO_norm(id)], sa) && a.decision !== BIO.DENY && a.decision !== BIO.PENDING) { var g1 = gOf(a); g1.missing++; if (g1.ex.length < 3) g1.ex.push({ k: 'missing', text: (a.itemName || id) + ' دخل ' + sa.name + ' ثم ظهر في ' + (sb ? sb.name : b.siteId) + ' بدون تسجيل خروج' }); }
         if (sa && sb && sa.lat && sb.lat) {
           var km = BIO_km({ lat: Number(sa.lat), lng: Number(sa.lng) }, { lat: Number(sb.lat), lng: Number(sb.lng) }), hrs = (b.time - a.time) / HR;
           if (km > 3 && hrs < km / 70) { var g2 = gOf(b); g2.impossible++; if (g2.ex.length < 3) g2.ex.push({ k: 'impossible', text: (b.itemName || id) + ': ' + Math.round(km) + ' كم بين ' + sa.name + ' و' + sb.name + ' في ' + Math.max(1, Math.round(hrs * 60)) + ' دقيقة فقط' }); }
@@ -5300,7 +5312,7 @@ function BIO_v18(api, H) {
    4) مؤشرات مقارنة بالأمس والأسبوع الماضي مع خط الهدف، والترتيب الشهري للمحطات
    5) خريطة العمليات الحية */
 var BIO_SCREENS = [
-  { k: 'board', label: 'غرفة الإدارة العليا', g: 'القيادة والمتابعة' }, { k: 'shield', label: 'درع الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'integ', label: 'رادار صدق البيانات', g: 'القيادة والمتابعة' }, { k: 'iso', label: 'معادلات العزل', g: 'الحركة والمركبات' },
+  { k: 'board', label: 'غرفة الإدارة العليا', g: 'القيادة والمتابعة' }, { k: 'shield', label: 'درع الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'integ', label: 'رادار صدق البيانات', g: 'القيادة والمتابعة' }, { k: 'iso', label: 'معادلات العزل', g: 'الحركة والمركبات' }, { k: 'gates', label: 'سجل البوابات', g: 'الحركة والمركبات' },
   { k: 'ops', label: 'خريطة العمليات الحية', g: 'القيادة والمتابعة' }, { k: 'stations', label: 'حالة المحطات', g: 'القيادة والمتابعة' },
   { k: 'ews', label: 'الإنذار المبكر', g: 'القيادة والمتابعة' }, { k: 'farm', label: 'بيانات المزارع', g: 'القيادة والمتابعة' }, { k: 'cams', label: 'حائط الكاميرات', g: 'القيادة والمتابعة' },
   { k: 'report', label: 'التقرير التنفيذي', g: 'القيادة والمتابعة' }, { k: 'sim', label: 'محاكاة التفشي', g: 'القيادة والمتابعة' }, { k: 'map', label: 'الخريطة الحية', g: 'القيادة والمتابعة' },
@@ -5906,6 +5918,7 @@ var BIO_EPI_PLAN = {
 };
 TABLES.epi = { sheet: 'الرصد الوبائي', key: 'id', cols: { id: 'الرقم', source: 'المصدر', fetched: 'وقت الجلب', reportId: 'رقم التقرير', disease: 'المرض', kind: 'التصنيف', agent: 'المسبب (العترة)', country: 'الدولة', place: 'المكان', lat: 'خط العرض', lng: 'خط الطول', start: 'تاريخ البدء', end: 'تاريخ الانتهاء', status: 'الحالة', species: 'النوع', cases: 'الحالات', deaths: 'النافق', killed: 'الإعدام', by: 'سجّلها', note: 'ملاحظات', notified: 'تم التنبيه' } };
 BIO_SCREENS.splice(1, 0, { k: 'epi', label: 'رادار الوبائيات', g: 'القيادة والمتابعة' });
+BIO_SCREEN_API.gates = ['gateLog'];
 BIO_SCREEN_API.epi = ['epiData', 'epiReport', 'epiDelete', 'epiRefresh', 'epiLab', 'epiImport', 'epiVerify', 'epiFeeds'];
 function BIO_epiKind(name, agent) {
   var s = String(name || '') + ' ' + String(agent || '');
@@ -7722,5 +7735,111 @@ function BIO_v292(api, H) {
     deps.lock(function () { setS('ISO_EXEMPT', JSON.stringify(L), 'الإصدار 29.3: سيارات ومعدات مستثناة من فترات العزل. تُعدّل من شاشة «معادلات العزل» (المدير والمسؤول والمشرف)'); });
     if (api._log) try { api._log(u, 'settings', 'ISO_EXEMPT', 'استثناء سيارات ومعدات من العزل', null, { why: why, ch: ch.join(' | ') }); } catch (e) { }
     return { ok: true, changes: ch, exempt: exData(u) };
+  };
+}
+
+/* ============================ الإصدار 29.13: إعادة تقييم الحركات بالمعادلات الحالية ============================
+   بيراجع كل حالة رفض أو دخول استثنائي أو انتظار موافقة في آخر N يوم بنفس معادلات العزل والاستثناءات الحالية:
+   - اللي بقت مسموحة (زي سيارة على بوابة محطة تسمين، أو نوع اتضاف للاستثناءات) قرارها يبقى «مسموح» والسبب القديم يتحفظ في عمود السبب.
+   - محاولة الرفض اللي اتسجل بعدها محاولة تانية لنفس العنصر في نفس الموقع خلال 20 دقيقة = محاولة مكررة، تتعلّم «ملغاة» علشان الدخول ما يتحسبش مرتين.
+   - اللي لسه مخالفة: بقرار المدير تتحول لاستثناء بكود السيارة في «معادلات العزل»، وبعدها تتقيّم تاني.
+   المعاينة ما بتكتبش حاجة، والتنفيذ بيتسجل في سجل التعديلات. */
+function BIO_v2913(api, H) {
+  var store = H.store, deps = H.deps, D = 864e5;
+  var FIX = { 'مرفوض': 1, 'بانتظار الموافقة': 1, 'مسموح استثنائياً': 1 };
+  function scan(days) {
+    var now = deps.now(), since = now - Math.max(1, Math.min(60, Number(days) || 14)) * D, sites = H.sitesById(), st = H.settings(), rules = store.all('rules');
+    var all = H.allMoves(), items = {}; store.all('items').forEach(function (it) { items[BIO_norm(it.id)] = it; });
+    var list = all.filter(function (m) { return m.time >= since && m.dir === BIO.IN && FIX[m.decision]; });
+    return list.map(function (m) {
+      var it = items[m.itemId] || {}, out = { id: m.id, time: m.time, itemId: m.itemId, itemName: m.itemName, kind: it.kind || '', vtype: it.vtype || '', siteId: m.siteId, siteName: m.siteName, from: m.decision, reason: m.reason, checkpoint: m.checkpoint, user: m.user };
+      var dup = m.decision === BIO.DENY || m.decision === BIO.PENDING ? all.filter(function (x) { return x.itemId === m.itemId && x.siteId === m.siteId && x.dir === BIO.IN && x.time > m.time && x.time - m.time <= 20 * 6e4; })[0] : null;
+      if (dup) { out.to = BIO.VOID; out.why = 'محاولة مكررة: اتسجلت تاني بعدها بـ ' + Math.max(1, Math.round((dup.time - m.time) / 6e4)) + ' دقيقة'; return out; }
+      var s = sites[m.siteId]; if (!s) { out.to = null; out.why = 'الموقع غير معروف'; return out; }
+      var r = H.isoEval({ itemMoves: H.movesOf(m.itemId, m.time), target: s, sitesById: sites, rules: rules, settings: st, now: m.time });
+      if (r.decision === BIO.ALLOW) { out.to = BIO.ALLOW; out.why = (r.warnings || []).filter(function (w) { return /عزل|مستثناة|بوابة/.test(w); })[0] || 'مسموحة بالمعادلات الحالية'; }
+      else { out.to = null; out.why = (r.reasons || [])[0] || 'لسه مخالفة'; out.left = true; }
+      return out;
+    });
+  }
+  api.isoReassess = function (pin, days, mode) {
+    var u = H.auth(pin, true); if (!(u.isAdmin || u.isManager && (u.perms || []).indexOf('data') >= 0)) throw new Error('إعادة التقييم لمدير الأمن الحيوي فقط');
+    var rows = scan(days), now = deps.now(), added = [];
+    if (mode === 'convert' || mode === 'apply') {
+      if (mode === 'convert') {
+        // اللي لسه مخالفة: استثناء بكود السيارة / المعدة (الأفراد ما بيتحولوش)
+        var L = BIO_isoExList(H.settings()), have = {}; L.forEach(function (x) { if (x.by === 'item') have[BIO_norm(x.ref)] = 1; });
+        var sites = H.sitesById();
+        rows.filter(function (r) { return r.left && BIO_kindGroup(r.kind) !== 'person'; }).forEach(function (r) {
+          if (have[r.itemId]) return; have[r.itemId] = 1;
+          var l1 = rows.some(function (x) { return x.itemId === r.itemId && x.left && sites[x.siteId] && Number(sites[x.siteId].level) === 1; });
+          L.push({ id: 'EX' + now.toString(36) + added.length, by: 'item', ref: r.itemId, label: r.itemId + ' ' + r.itemName, mode: 'free', hours: 0, scope: 'sector', l1: l1, until: 0, note: 'تحويل مخالفات سابقة لاستثناء بقرار مدير الأمن الحيوي', who: u.name, at: now });
+          added.push(r.itemId + ' ' + r.itemName);
+        });
+        if (added.length) {
+          var v = JSON.stringify(L);
+          if (store.find('settings', 'ISO_EXEMPT')) store.update('settings', 'ISO_EXEMPT', { value: v }); else store.append('settings', { key: 'ISO_EXEMPT', value: v, note: 'سيارات ومعدات مستثناة من فترات العزل' });
+          rows = scan(days);
+        }
+      }
+      var done = 0, voided = 0, stamp = new Date(now + 3 * 36e5).toISOString().slice(0, 10);
+      deps.lock(function () {
+        rows.filter(function (r) { return r.to; }).forEach(function (r) {
+          store.update('moves', r.id, { decision: r.to, reason: 'إعادة تقييم ' + stamp + ': ' + r.from + ' ← ' + r.to + ' (' + r.why + ')' + (r.reason ? ' | كان: ' + String(r.reason).slice(0, 300) : ''), updatedAt: now });
+          if (r.to === BIO.VOID) voided++; else done++;
+          store.all('approvals').filter(function (a) { return String(a.moveId) === String(r.id) && a.status === BIO.PENDING; }).forEach(function (a) { store.update('approvals', a.id, { status: BIO.APPROVED, decidedBy: u.name + ' (إعادة تقييم)', decidedAt: now, updatedAt: now }); });
+        });
+      });
+      if (api._log) try { api._log(u, 'moves', '*', 'إعادة تقييم الحركات بمعادلات العزل الحالية', { count: rows.length }, { allowed: done, voided: voided, exempted: added }); } catch (e) { }
+      return { ok: true, allowed: done, voided: voided, exempted: added, left: rows.filter(function (r) { return !r.to; }).length, rows: rows };
+    }
+    return { ok: true, preview: true, rows: rows, allowed: rows.filter(function (r) { return r.to === BIO.ALLOW; }).length, voided: rows.filter(function (r) { return r.to === BIO.VOID; }).length, left: rows.filter(function (r) { return !r.to; }).length };
+  };
+
+  /* ---------- v29.13: سجل البوابات: آخر حركة من كل بوابة وسجلها الكامل، لكل البوابات أو لبوابة واحدة ---------- */
+  function cairoDay(t) { return new Date(t + 3 * 36e5).toISOString().slice(0, 10); }
+  function dayStart(d) { return Date.parse(d + 'T00:00:00+03:00'); }
+  api.gateLog = function (pin, p) {
+    var u = H.auth(pin, true); if (!u.isManager) throw new Error('سجل البوابات للمديرين');
+    p = p || {};
+    var now = deps.now(), today = cairoDay(now), re = /^\d{4}-\d{2}-\d{2}$/;
+    var from = re.test(p.from) ? p.from : today, to = re.test(p.to) ? p.to : today; if (to < from) { var x = from; from = to; to = x; }
+    var t0 = dayStart(from), t1 = dayStart(to) + D; if (t1 - t0 > 31 * D) t0 = t1 - 31 * D, from = cairoDay(t0);
+    var sites = H.sitesById(), cps = store.all('checkpoints'), byName = {}, G = {}, order = 0;
+    function gate(key, name, sector, kind) { return G[key] || (G[key] = { key: key, name: name, sector: sector || '', kind: kind, ord: order++, n: 0, inN: 0, outN: 0, deny: 0, ovr: 0, pend: 0, voidN: 0, manual: 0, offline: 0, last: null, lastAny: 0 }); }
+    cps.forEach(function (c) { if (!c.id) return; var k = BIO_norm(c.id); gate(k, String(c.name || k).trim(), c.sector, 'cp'); byName[String(c.name || '').trim()] = k; });
+    function inSc(m) { var s = sites[m.siteId]; return !s || s.external || H.inScope(u, m.siteId, sites); }
+    var items = {}; store.all('items').forEach(function (it) { items[BIO_norm(it.id)] = it; });
+    var all = store.all('moves').map(function (m) {
+      var t = BIO_ms(m.time), cp = String(m.checkpoint || '').trim(), sid = BIO_norm(m.siteId), s = sites[sid];
+      var key = byName[cp] || ('N:' + (cp || (s ? s.name : sid)));
+      return { id: m.id, time: t, itemId: BIO_norm(m.itemId), itemName: m.itemName, siteId: sid, siteName: m.siteName || (s ? s.name : sid), dir: m.dir, decision: m.decision, reason: String(m.reason || '').slice(0, 220), user: m.user || '', via: m.via || '', offline: BIO_isYes(m.offline) || m.offline === true, key: key, cp: cp || (s ? s.name : sid), sector: s ? s.sector : '' };
+    }).filter(function (m) { return m.time && inSc(m); });
+    all.forEach(function (m) {
+      var g = G[m.key] || gate(m.key, m.cp, m.sector, 'site');
+      if (m.time > g.lastAny) g.lastAny = m.time;
+      if (m.time < t0 || m.time >= t1) return;
+      g.n++; if (m.dir === BIO.IN) g.inN++; else if (m.dir === BIO.OUT) g.outN++;
+      if (m.decision === BIO.DENY) g.deny++; else if (m.decision === BIO.OVERRIDE) g.ovr++; else if (m.decision === BIO.PENDING) g.pend++; else if (m.decision === BIO.VOID) g.voidN++;
+      if (/يدوي/.test(m.via)) g.manual++; if (m.offline) g.offline++;
+      if (!g.last || m.time > g.last.time) g.last = { time: m.time, itemName: m.itemName, dir: m.dir, decision: m.decision, siteName: m.siteName };
+    });
+    var gates = Object.keys(G).map(function (k) { return G[k]; }).filter(function (g) { return g.kind === 'cp' || g.lastAny; })
+      .sort(function (a, b) { return (a.kind === 'cp' ? 0 : 1) - (b.kind === 'cp' ? 0 : 1) || (b.lastAny - a.lastAny) || a.ord - b.ord; });
+    var dec = String(p.dec || ''), dir = String(p.dir || ''), q = String(p.q || '').trim().toLowerCase(), gk = String(p.gate || '');
+    var rows = all.filter(function (m) {
+      if (m.time < t0 || m.time >= t1) return false;
+      if (gk && m.key !== gk) return false;
+      if (dir && m.dir !== dir) return false;
+      if (dec === 'bad' && m.decision !== BIO.DENY && m.decision !== BIO.PENDING) return false;
+      if (dec === 'ovr' && m.decision !== BIO.OVERRIDE) return false;
+      if (dec === 'ok' && m.decision !== BIO.ALLOW) return false;
+      if (dec === 'void' && m.decision !== BIO.VOID) return false;
+      if (q) { var it = items[m.itemId] || {}; if ((m.itemName + ' ' + m.itemId + ' ' + (it.plate || '') + ' ' + m.user).toLowerCase().indexOf(q) < 0) return false; }
+      return true;
+    }).sort(function (a, b) { return b.time - a.time; });
+    var total = rows.length;
+    rows = rows.slice(0, 1500).map(function (m) { var it = items[m.itemId] || {}; m.kind = it.kind || ''; m.vtype = it.vtype || ''; m.plate = it.plate ? String(it.plate) : ''; return m; });
+    return { now: now, from: from, to: to, today: today, gate: gk, gates: gates.map(function (g) { delete g.ord; return g; }), rows: rows, total: total };
   };
 }
