@@ -557,6 +557,8 @@ function BIO_coAlias(item) { return item ? (BIO_CO_ALIAS[String(item.vtype || ''
    الاستثناء الوحيد: الموقع في حالة إنذار وبائي (يفضل حد الإنذار سارياً) */
 var BIO_LEAVE_VT = 'نقل إجازات (بوابة خارجية)';
 function BIO_isLeaveVeh(item) { return !!item && BIO_kindGroup(item.kind) === 'vehicle' && (String(item.vtype || '').trim() === BIO_LEAVE_VT || /[اإأ]جاز/.test(String(item.name || '') + ' ' + String(item.dept || ''))); }
+/* v29.12: ركيزة التطهير في الدرع متوقفة مؤقتاً (تجديد المغاطس خارج التقييم لحين تدريب الموظفين). تتفعل بالإعداد SHIELD_DIS = تشغيل */
+function BIO_disPaused(st) { return String(st && st.SHIELD_DIS || '').trim() !== 'تشغيل'; }
 var BIO_LEAVE_EX = { id: 'leave', by: 'vtype', ref: BIO_LEAVE_VT, label: 'سيارة إجازات', mode: 'free', hours: 0, scope: 'all', l1: true, until: 0, note: '', leave: true };
 function BIO_isoExApplies(ex, src, target) {
   if (ex && ex.leave) return !!src && src.status !== BIO.ST_ALERT;
@@ -1157,6 +1159,8 @@ function BIO_api(store, deps) {
         serverTime: now, session: session(u), results: results,
         ref: p.refVersion === ref.version ? null : ref, refVersion: ref.version,
         moves: moves.map(function (m) { return { id: m.id, time: m.time, itemId: m.itemId, itemName: m.itemName, siteId: m.siteId, siteName: m.siteName, dir: m.dir, decision: m.decision, checkpoint: m.checkpoint, user: m.user, flag: m.flag, offline: m.offline, updatedAt: m.updatedAt }; }),
+        // v29.12: الحركات اللي اتعلّمت «ملغاة (خطأ تسجيل)» تتشال من ذاكرة الأجهزة فوراً
+        voided: store.all('moves').filter(function (m) { return m.decision === BIO.VOID && BIO_ms(m.time) >= lookFrom; }).map(function (m) { return m.id; }),
         approvals: approvals,
         pendingCount: store.all('approvals').filter(function (a) { return a.status === BIO.PENDING; }).length,
         notices: myNotices(u),
@@ -2367,7 +2371,7 @@ function BIO_v25b(api, H) {
     var overdue = acts.filter(function (a) { var d = BIO_ms(a.due); return d && d < now; });
     function auditFor(f) { var I = insp.filter(f), O = overdue.filter(f); if (!I.length && !O.length) return null; var av = I.length ? I.reduce(function (a, r) { return a + num(r.score, 0); }, 0) / I.length : 85; return clamp(av - O.length * 6); }
     // التطهير
-    var dis = null; try { var dd = api.disData ? api.disData(pin, 7) : null; if (dd && dd.kpi && dd.kpi.bathOk != null) dis = dd.kpi.bathOk; } catch (e) {}
+    var dis = null, disOff = BIO_disPaused(st); if (!disOff) try { var dd = api.disData ? api.disData(pin, 7) : null; if (dd && dd.kpi && dd.kpi.bathOk != null) dis = dd.kpi.bathOk; } catch (e) {}
     // حداثة البيانات
     var lastDay = ''; rows('daily').forEach(function (r) { var d = BIO_dayOf(r.day); if (d > lastDay) lastDay = d; });
     var age = lastDay ? Math.round((Date.parse(cairoDay(now)) - Date.parse(lastDay)) / D) : null; if (age != null && isNaN(age)) { lastDay = ''; age = null; } // v29.12: تاريخ مش مقروء ما يتحسبش «متأخر»
@@ -2378,7 +2382,7 @@ function BIO_v25b(api, H) {
       gate: mp.ent ? mp.ent + ' دخول خلال 7 أيام، ' + mp.den + ' رفض و' + mp.ovr + ' استثناء' : 'لا دخول مسجل خلال 7 أيام',
       iso: mp.flg ? mp.flg + ' مخالفة مسجلة' : 'لا مخالفات مسجلة',
       integ: integ.totals.missing + ' خروج لم يُسجَّل، ' + integ.totals.impossible + ' انتقال مستحيل، ' + integ.totals.manual + ' إدخال يدوي',
-      dis: dis == null ? 'لم تُسجل قراءات مغاطس بعد' : 'مغاطس في موعدها ' + Math.round(dis) + '%',
+      dis: disOff ? 'متوقف مؤقتاً: تجديد المغاطس خارج التقييم لحين تدريب الموظفين' : dis == null ? 'لم تُسجل قراءات مغاطس بعد' : 'مغاطس في موعدها ' + Math.round(dis) + '%',
       resp: resp.n ? 'الوسيط ' + (resp.median == null ? '-' : resp.median) + ' دقيقة مقابل مستهدف ' + T.resp + ' دقيقة' : 'لا بلاغات خلال 30 يوم',
       audit: insp.length + ' زيارة تدقيق خلال 60 يوم، ' + overdue.length + ' إجراء متأخر',
       health: 'النافق اليومي مقابل مستهدف ' + T.mort + '%',
@@ -3294,6 +3298,46 @@ function BIO_codes(api, H) {
     });
     if (api._log) api._log(me, 'users', '*', 'نظام الأكواد', { count: old.length }, { count: rows.length });
     return { ok: true, created: rows.length, archived: old.length, myId: 'HQ-MD01' };
+  };
+  /* v29.13: استرجاع التكويد السابق بنفس الأكواد والأرقام السرية اللي اتوزعت على الناس.
+     المصدر: آخر دفعة اتأرشفت في «المستخدمون - قبل نظام الأكواد» (نفس الكود والرقم السري والدور والبوابة والنطاق والصلاحيات)،
+     والشاشات المحجوبة وصلاحية الطباعة من آخر نسخة احتياطية قبل التكويد الغلط. الحسابات الحالية تتأرشف هي كمان، فالعملية ترجع لو اتعملت بالغلط */
+  function lastBatch() {
+    var at = 0, rows = store.all('usersOld').filter(function (x) { return x.id !== '' && x.id != null; });
+    rows.forEach(function (x) { var t = BIO_ms(x.archivedAt) || Number(x.archivedAt) || 0; if (t > at) at = t; });
+    return { at: at, rows: at ? rows.filter(function (x) { return (BIO_ms(x.archivedAt) || Number(x.archivedAt) || 0) === at; }) : [] };
+  }
+  api.codesRestoreInfo = function (pin) {
+    H.auth(pin, 'admin'); var b = lastBatch();
+    return b.rows.length ? { at: b.at, n: b.rows.length, sample: b.rows.slice(0, 4).map(function (x) { return { id: BIO_norm(x.id), name: x.name }; }), current: store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).length } : null;
+  };
+  api.codesRestore = function (pin, sure) {
+    var me = H.auth(pin, 'admin');
+    if (String(sure || '').trim() !== 'استرجاع') throw new Error('اكتب كلمة «استرجاع» للتأكيد');
+    var b = lastBatch(); if (!b.rows.length) throw new Error('لا توجد حسابات مؤرشفة للاسترجاع');
+    var pinOk = b.rows.some(function (x) { return String(x.pin).trim() === String(pin).trim(); });
+    if (!pinOk) throw new Error('رقمك السري الحالي مش موجود في الحسابات المؤرشفة، فالاسترجاع هيقفل دخولك. راجع ورقة «المستخدمون - قبل نظام الأكواد»');
+    var extra = {}, src = null;
+    try { var bk = deps.backups && deps.backups.usersBefore ? deps.backups.usersBefore(b.at) : null; if (bk) { src = bk.name; bk.rows.forEach(function (r) { extra[BIO_norm(r.id)] = r; }); } } catch (e) { }
+    var now = deps.now(), cur = store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).map(function (x) { var o = {}; Object.keys(TABLES.users.cols).forEach(function (k) { o[k] = x[k]; }); return o; });
+    var objs = b.rows.map(function (x) {
+      var id = BIO_norm(x.id), e = extra[id] || {}, o = { id: id, pin: String(x.pin == null ? '' : x.pin).trim(), name: x.name, role: x.role, gate: x.gate || '', phone: x.phone || '', scope: x.scope || '', perms: x.perms || '', active: x.active === '' || x.active == null ? BIO.YES : x.active };
+      if (TABLES.users.cols.hide) o.hide = e.hide || '';
+      if (TABLES.users.cols.prints) o.prints = e.prints || '';
+      return o;
+    });
+    var mine = objs.filter(function (o) { return o.pin === String(pin).trim(); })[0];
+    deps.lock(function () {
+      var arch = cur.map(function (o) { return { id: o.id, pin: o.pin, name: o.name, role: o.role, gate: o.gate, phone: o.phone, scope: o.scope, perms: o.perms, active: o.active, newId: '(تكويد أُلغي بالاسترجاع)', archivedAt: now }; });
+      if (store.appendMany) store.appendMany('usersOld', arch); else arch.forEach(function (o) { store.append('usersOld', o); });
+      var ids = cur.map(function (o) { return o.id; });
+      if (store.removeMany) store.removeMany('users', ids); else ids.forEach(function (k) { store.remove('users', k); });
+      if (store.appendMany) store.appendMany('users', objs); else objs.forEach(function (o) { store.append('users', o); });
+      if (mine) store.all('devices').filter(function (d) { return BIO_norm(d.userId) === me.id; }).forEach(function (d) { store.update('devices', d.token, { userId: mine.id }); });
+      store.append('cardlog', { id: deps.id('K'), time: now, itemId: mine ? mine.id : me.id, itemName: me.name, action: 'استرجاع التكويد السابق: ' + objs.length + ' حساب بنفس الأكواد والأرقام السرية، وأُرشف ' + cur.length + ' حساب', card: '', by: me.name, note: src ? 'الشاشات وصلاحية الطباعة من ' + src : '' });
+    });
+    if (api._log) api._log(me, 'users', '*', 'استرجاع التكويد السابق', { count: cur.length }, { count: objs.length, from: b.at });
+    return { ok: true, restored: objs.length, archived: cur.length, myId: mine ? mine.id : me.id, extras: src };
   };
   /** كروت الدخول للطباعة والتوزيع: الكود والرقم السري والمكان لكل حساب */
   api.codesCards = function (pin) {
@@ -5594,7 +5638,7 @@ function BIO_v19(api, H) {
     var birds = {}; rows('birdalerts').forEach(function (b) { var id = BIO_norm(b.siteId), t = BIO_ms(b.time); if (t < now - D) return; birds[id] = Math.max(birds[id] || 0, num(b.score, 0)); });
     var FNt = BIO_farmNow(rows('daily'), rows('cycles')), lastFarm = {}; rows('daily').forEach(function (r) { var id = BIO_norm(r.siteId), d = BIO_dayOf(r.day); if (FNt.ended[id]) return; if (!lastFarm[id] || d > lastFarm[id].d) { var dead = num(r.dead, 0) + num(r.killed, 0), stk = num(r.stock, 0) + dead; lastFarm[id] = { d: d, pct: stk ? dead / stk * 100 : 0 }; } });
     var reps = rows('reports').filter(function (r) { return String(r.status || '') !== BIO.R_DONE && BIO_ms(r.time) >= now - 3 * D; });
-    var disBad = {}; (dis ? dis.alerts : []).forEach(function (a) { if (a.level === 'bad' && a.point) disBad[a.point] = (disBad[a.point] || 0) + 1; });
+    var disOff = BIO_disPaused(H.settings()), disBad = {}; (dis ? dis.alerts : []).forEach(function (a) { if (disOff && a.k === 'bath') return; if (a.level === 'bad' && a.point) disBad[a.point] = (disBad[a.point] || 0) + 1; });
     var cps = store.all('checkpoints'), epiS = api._epiSector ? api._epiSector(u) : {};
     return Object.keys(secs).map(function (k) {
       var S = secs[k], ids = {}; S.sites.forEach(function (s) { ids[s.id] = s; });
@@ -5656,7 +5700,7 @@ function BIO_v19(api, H) {
       var series = dailySeries(u, now, sites, allM), T = targets();
       var threat = threatModel(u, now, sites, allM, dis);
       d.cmp = { targets: T, kpis: compareKpis(series, T), days: series.map(function (x) { return x.day; }) };
-      if (dis && dis.kpi.bathOk != null) d.cmp.kpis.push({ k: 'bathOk', label: 'مغاطس الأقدام في موعدها', unit: '%', today: dis.kpi.bathOk, yesterday: null, lastWeek: null, avg7: null, target: T.bathOk, better: 'up', series: [] });
+      if (dis && dis.kpi.bathOk != null && !BIO_disPaused(H.settings())) d.cmp.kpis.push({ k: 'bathOk', label: 'مغاطس الأقدام في موعدها', unit: '%', today: dis.kpi.bathOk, yesterday: null, lastWeek: null, avg7: null, target: T.bathOk, better: 'up', series: [] });
       d.threat = threat;
       d.threatTop = threat.length ? { level: Math.max.apply(null, threat.map(function (t) { return t.level; })), score: Math.max.apply(null, threat.map(function (t) { return t.score; })) } : { level: 1, score: 0 };
       d.threatScale = THREAT.map(function (t) { return { n: t.n, k: t.k, label: t.label }; });

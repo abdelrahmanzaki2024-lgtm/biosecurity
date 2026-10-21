@@ -253,6 +253,7 @@
       if ((r.moves && r.moves.length) || r.ref || (r.results && r.results.length)) rcStale();
       if (epochCheck(r.epoch)) { S.moves = {}; S.approvals = {}; S.dash = null; S.stData = null; }
       r.moves.forEach(function (m) { S.moves[m.id] = m; });
+      (r.voided || []).forEach(function (id) { if (S.moves[id]) { delete S.moves[id]; S._vd = 1; } }); // v29.12
       Object.keys(S.moves).forEach(function (k) { if (S.moves[k]._local && !S.outbox.some(function (o) { return o.fn === 'scan' && (o.args[0].id === k || o.args[0].id + '-X' === k); }) && !r.moves.some(function (m) { return m.id === k; }) && S.lastSync) delete S.moves[k]; });
       pruneMoves();
       r.approvals.forEach(function (a) { S.approvals[a.id] = a; });
@@ -441,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 29.12</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 29.13</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -1671,7 +1672,7 @@
   var DAYN = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
   function dayName(t) { return DAYN[new Date(t + 3 * 36e5).getUTCDay()]; }
   function plural(n, one, many) { return n + ' ' + (n >= 3 && n <= 10 ? many : one); }
-  function pctTxt(v) { return v == null ? '—' : (Math.round(v * 10) / 10) + '%'; }
+  function pct1Txt(v) { return v == null ? '—' : (Math.round(v * 10) / 10) + '%'; }
   /** حلقة قياس 0-100 */
   function ring(v, size, stroke, color, label) {
     var r = (size - stroke) / 2, c = 2 * Math.PI * r, f = Math.max(0, Math.min(100, v || 0)) / 100;
@@ -1713,7 +1714,7 @@
       return '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="' + s.w + '"' + (s.dash ? ' stroke-dasharray="1 0"' : '') + ' stroke-linejoin="round" stroke-linecap="round"/>' + dots;
     }).join('');
     var hits = model.days.map(function (d, i) { var w = (W - pl - pr) / (n - 1); return '<rect class="hit" data-i="' + i + '" x="' + (x(i) - w / 2) + '" y="' + pt + '" width="' + w + '" height="' + (H - pt - pb) + '"/>'; }).join('');
-    var legend = series.map(function (s) { var last = s.vals.filter(function (v) { return v != null; }).pop(); return '<span><i style="background:' + s.c + '"></i>' + esc(s.name) + ' <b class="mono">' + pctTxt(last) + '</b></span>'; }).join('');
+    var legend = series.map(function (s) { var last = s.vals.filter(function (v) { return v != null; }).pop(); return '<span><i style="background:' + s.c + '"></i>' + esc(s.name) + ' <b class="mono">' + pct1Txt(last) + '</b></span>'; }).join('');
     return '<div class="chart cc-chart"><div class="chart-legend">' + legend + '</div><svg viewBox="0 0 ' + W + ' ' + H + '" dir="ltr" role="img" aria-label="مؤشر الالتزام اليومي آخر 7 أيام">' + g + xl + '<line class="cc-cross" id="ccCross" x1="0" x2="0" y1="' + pt + '" y2="' + (H - pb) + '" opacity="0"/>' + lines + hits + '</svg></div>';
   }
   function bindComplianceChart(root, model) {
@@ -1723,7 +1724,7 @@
         var i = +r.dataset.i, d = model.days[i]; hide();
         var c = $('ccCross'); if (c) { var x = Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2; c.setAttribute('x1', x); c.setAttribute('x2', x); c.setAttribute('opacity', 1); }
         tip = document.createElement('div'); tip.className = 'chart-tip';
-        tip.innerHTML = '<b>' + (i === model.days.length - 1 ? 'اليوم' : dayName(d.start + 12 * 36e5)) + '</b><span>الشركة <b>' + pctTxt(d.compliance) + '</b></span>' + model.bySector.map(function (s) { return '<span>قطاع ' + esc(s.name) + ' <b>' + pctTxt(s.series[i]) + '</b></span>'; }).join('') + '<span>محاولات الدخول <b>' + d.attempts + '</b> · مرفوض <b>' + d.denied + '</b></span>';
+        tip.innerHTML = '<b>' + (i === model.days.length - 1 ? 'اليوم' : dayName(d.start + 12 * 36e5)) + '</b><span>الشركة <b>' + pct1Txt(d.compliance) + '</b></span>' + model.bySector.map(function (s) { return '<span>قطاع ' + esc(s.name) + ' <b>' + pct1Txt(s.series[i]) + '</b></span>'; }).join('') + '<span>محاولات الدخول <b>' + d.attempts + '</b> · مرفوض <b>' + d.denied + '</b></span>';
         document.body.appendChild(tip);
         var X = (e.touches ? e.touches[0].clientX : e.clientX), Y = (e.touches ? e.touches[0].clientY : e.clientY);
         tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, X - tip.offsetWidth / 2)) + 'px';
@@ -1980,7 +1981,7 @@
   }
   function repText(r) {
     var c = r.cur, L = ['📊 التقرير التنفيذي للأمن الحيوي · ' + (r.days === 7 ? 'أسبوعي' : 'آخر ' + r.days + ' يوماً'), (CFG.COMPANY || 'كايرو ثري إيه') + ' · ' + fmt(r.from) + ' – ' + fmt(r.now), '',
-      'مؤشر الجاهزية: ' + r.posture + '/100 · الحالة: ' + r.readiness.label, 'الالتزام: ' + pctTxt(c.compliance), 'محاولات الدخول: ' + c.attempts + ' · مرفوض: ' + c.denied + ' · استثنائي: ' + c.overrides, 'البلاغات العاجلة: ' + c.reports + (c.avgAck != null ? ' · متوسط الاستجابة ' + c.avgAck + ' د' : ''), '', 'أعلى المواقع خطراً:'];
+      'مؤشر الجاهزية: ' + r.posture + '/100 · الحالة: ' + r.readiness.label, 'الالتزام: ' + pct1Txt(c.compliance), 'محاولات الدخول: ' + c.attempts + ' · مرفوض: ' + c.denied + ' · استثنائي: ' + c.overrides, 'البلاغات العاجلة: ' + c.reports + (c.avgAck != null ? ' · متوسط الاستجابة ' + c.avgAck + ' د' : ''), '', 'أعلى المواقع خطراً:'];
     r.topRisk.slice(0, 3).forEach(function (x, i) { L.push((i + 1) + '. ' + x.name + ' · ' + x.score + ' (' + x.band + ')'); });
     L.push('', 'التوصيات:'); r.recs.forEach(function (x) { L.push('• ' + x); });
     return L.join('\n');
@@ -1994,9 +1995,9 @@
     };
     var pc = r.posture >= 85 ? 'var(--r-low)' : r.posture >= 70 ? 'var(--r-mid)' : r.posture >= 55 ? 'var(--r-high)' : 'var(--r-crit)';
     var html = '<article class="rep"><header class="rep-h"><div class="rep-brand">' + logoImg() + '<div><b>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + '</b><span>التقرير التنفيذي للأمن الحيوي</span></div></div><div class="rep-meta"><b>' + (r.days === 7 ? 'التقرير الأسبوعي' : 'تقرير آخر ' + r.days + ' يوماً') + '</b><span>' + esc(fmt(r.from)) + ' – ' + esc(fmt(r.now)) + '</span><span>النطاق: ' + esc(r.scope || 'كل القطاعات') + '</span></div></header>' +
-      '<section class="rep-hero"><div class="cc-gauge">' + ring(r.posture, 112, 10, pc, 'مؤشر الجاهزية') + '<div class="cc-gv"><b class="mono">' + r.posture + '</b><span>مؤشر الجاهزية</span></div></div><div class="rep-sum"><span class="cc-state st-' + r.readiness.k + ' inline"><b>' + esc(r.readiness.label) + '</b></span><h2>' + (r.posture >= 85 ? 'الوضع مستقر والالتزام مرتفع' : r.posture >= 70 ? 'الوضع جيد مع نقاط تحتاج متابعة' : 'الوضع يحتاج تدخلاً إدارياً') + '</h2><p>سجّل النظام <b>' + c.attempts + '</b> محاولة دخول لـ <b>' + c.people + '</b> فرداً ومركبة ومعدة. نسبة الالتزام <b>' + pctTxt(c.compliance) + '</b>، ومنع النظام <b>' + c.denied + '</b> محاولة دخول مخالفة قبل وقوعها' + (c.reports ? '، وتعامل مع <b>' + c.reports + '</b> بلاغ عاجل' + (c.avgAck != null ? ' بمتوسط استجابة ' + c.avgAck + ' دقيقة' : '') : '') + '.</p></div></section>' +
+      '<section class="rep-hero"><div class="cc-gauge">' + ring(r.posture, 112, 10, pc, 'مؤشر الجاهزية') + '<div class="cc-gv"><b class="mono">' + r.posture + '</b><span>مؤشر الجاهزية</span></div></div><div class="rep-sum"><span class="cc-state st-' + r.readiness.k + ' inline"><b>' + esc(r.readiness.label) + '</b></span><h2>' + (r.posture >= 85 ? 'الوضع مستقر والالتزام مرتفع' : r.posture >= 70 ? 'الوضع جيد مع نقاط تحتاج متابعة' : 'الوضع يحتاج تدخلاً إدارياً') + '</h2><p>سجّل النظام <b>' + c.attempts + '</b> محاولة دخول لـ <b>' + c.people + '</b> فرداً ومركبة ومعدة. نسبة الالتزام <b>' + pct1Txt(c.compliance) + '</b>، ومنع النظام <b>' + c.denied + '</b> محاولة دخول مخالفة قبل وقوعها' + (c.reports ? '، وتعامل مع <b>' + c.reports + '</b> بلاغ عاجل' + (c.avgAck != null ? ' بمتوسط استجابة ' + c.avgAck + ' دقيقة' : '') : '') + '.</p></div></section>' +
       '<section class="rep-k">' + kv('نسبة الالتزام', c.compliance, p.compliance, true, '%') + kv('محاولات الدخول', c.attempts, p.attempts, null) + kv('دخول مرفوض', c.denied, p.denied, false) + kv('دخول استثنائي', c.overrides, p.overrides, false) + kv('دخول يدوي بدون كارت', c.manual, p.manual, false) + kv('بلاغات عاجلة', c.reports, p.reports, false) + '</section>' +
-      '<section class="rep-2"><div><h3>الالتزام حسب القطاع</h3><table class="rep-t"><thead><tr><th>القطاع</th><th>الالتزام</th><th>متوسط الخطر</th><th>أعلى خطر</th><th>الحالة</th></tr></thead><tbody>' + r.bySector.map(function (s) { return '<tr><td><b>' + esc(s.name) + '</b></td><td class="mono">' + pctTxt(s.compliance) + '</td><td class="mono">' + s.avgRisk + '</td><td class="mono">' + s.maxRisk + '</td><td>' + (s.closed ? '<span class="pill p-bad">' + s.closed + ' مغلق</span>' : s.alert ? '<span class="pill p-warn">' + s.alert + ' إنذار</span>' : '<span class="pill p-ok">طبيعي</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<section class="rep-2"><div><h3>الالتزام حسب القطاع</h3><table class="rep-t"><thead><tr><th>القطاع</th><th>الالتزام</th><th>متوسط الخطر</th><th>أعلى خطر</th><th>الحالة</th></tr></thead><tbody>' + r.bySector.map(function (s) { return '<tr><td><b>' + esc(s.name) + '</b></td><td class="mono">' + pct1Txt(s.compliance) + '</td><td class="mono">' + s.avgRisk + '</td><td class="mono">' + s.maxRisk + '</td><td>' + (s.closed ? '<span class="pill p-bad">' + s.closed + ' مغلق</span>' : s.alert ? '<span class="pill p-warn">' + s.alert + ' إنذار</span>' : '<span class="pill p-ok">طبيعي</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
       '<div><h3>أعلى المواقع خطراً</h3><ol class="rep-risk">' + r.topRisk.map(function (x) { return '<li><span class="tr-sc" style="--c:' + BAND_C[x.bk] + '"><b class="mono">' + x.score + '</b>' + esc(x.band) + '</span><div><b>' + esc(x.name) + '</b><span>' + esc(x.factors.slice(0, 2).map(function (f) { return f.label + ' (' + f.n + ')'; }).join(' · ') || 'لا توجد عوامل خطر') + '</span></div></li>'; }).join('') + '</ol></div></section>' +
       '<section class="rep-recs"><h3>' + icon('check') + ' التوصيات</h3><ol>' + r.recs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol></section>' +
       (c.repeat.length ? '<section class="rep-recs"><h3>' + icon('user') + ' تكرار محاولات الدخول المخالفة</h3><ol>' + c.repeat.map(function (x) { return '<li>' + esc(x.name) + ' · ' + x.n + ' محاولات</li>'; }).join('') + '</ol></section>' : '') +
@@ -2249,6 +2250,9 @@
     };
   }
   function shortName(n, sector) { return String(n || '').replace('منطقة ', '').replace(' - ' + sector, '').replace(' ' + sector, '').trim(); }
+  /* v29.12: اسم مختصر لعناوين الخريطة الحية (بدون الأقواس و«نقطة» واللاحقة بعد الشرطة)، وقص بالنقاط لو أطول من المساحة */
+  function mapName(n, sector) { var s = shortName(n, sector); return s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/^نقطة\s+/, '').replace(/\s+-\s+.*$/, '').replace(/\s+(للقطاع|بالقطاع)$/, '').trim() || s; }
+  function fitTxt(t, n) { t = String(t || ''); n = Math.max(4, Math.floor(n)); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; }
   function drawMap(d) {
     var body = $('mapBody'); if (!body) return;
     if ($('mapTime')) $('mapTime').textContent = fmt(d.now);
@@ -2279,22 +2283,32 @@
     });
   }
   function sectorMap(sec, cps, recent) {
-    var W = 1000, stations = [], core = [];
-    sec.sites.forEach(function (s) { var m = String(s.name).match(/محطة\s*(\d+)/); if (m) stations.push(Object.assign({ num: m[1] }, s)); else core.push(s); });
+    var W = 1000, stations = [], core = [], isHub = {};
+    cps.forEach(function (c) { isHub[c.id] = 1; }); // v29.12: منطقة التطهير اللي مسجلة كموقع ما تتكررش كمربع
+    sec.sites.forEach(function (s) { if (isHub[s.id]) return; var m = String(s.name).match(/محطة\s*(\d+)/); if (m) stations.push(Object.assign({ num: m[1] }, s)); else core.push(s); });
     var H = stations.length ? 470 : 300, yCore = 62, yHub = 205, ySt = 395;
     var pos = {}, out = [];
     var spread = function (list, y, w, h) { list.forEach(function (s, i) { pos[s.id] = { x: W - (W / list.length) * (i + 0.5), y: y, w: w, h: h }; }); };
     spread(core, yCore, Math.min(190, W / Math.max(core.length, 1) - 24), 70);
     spread(stations, ySt, Math.min(84, W / Math.max(stations.length, 1) - 12), 70);
     cps.forEach(function (c, i) { pos[c.id] = { x: W - (W / cps.length) * (i + 0.5), y: yHub }; });
-    var edges = {};
+    var edges = {}, lanes = 0, lane = {};
+    /* v29.12: خطوط المحطات «باص» مجمّع: كل منطقة تطهير تنزل في حارة أفقية خاصة بيها ثم تتفرع لمحطاتها بزوايا مدورة، بدل المنحنيات المتقاطعة */
+    cps.forEach(function (c) { if (c.serves.some(function (sid) { return pos[sid] && pos[sid].y > yHub; })) lane[c.id] = lanes++; });
     cps.forEach(function (c) {
       c.serves.forEach(function (sid) {
         var a = pos[c.id], b = pos[sid]; if (!b) return;
-        var ey = b.y > a.y ? b.y - b.h / 2 : b.y + b.h / 2, my = (a.y + ey) / 2;
-        var id = 'e-' + c.id + '-' + sid;
+        var id = 'e-' + c.id + '-' + sid, d;
         edges[c.name + '|' + sid] = id; edges['*|' + sid] = edges['*|' + sid] || id;
-        out.push('<path id="' + id + '" class="edge" d="M' + a.x + ' ' + a.y + ' C' + a.x + ' ' + my + ' ' + b.x + ' ' + my + ' ' + b.x + ' ' + ey + '"/>');
+        if (b.y > a.y) {
+          var y0 = a.y + 66, yl = a.y + 82 + 14 * lane[c.id], y1 = b.y - b.h / 2, r = 10, dx = b.x - a.x, sg = dx > 0 ? 1 : -1;
+          d = Math.abs(dx) < 2 * r ? 'M' + a.x + ' ' + y0 + ' V' + yl + ' H' + b.x + ' V' + y1
+            : 'M' + a.x + ' ' + y0 + ' V' + (yl - r) + ' Q' + a.x + ' ' + yl + ' ' + (a.x + sg * r) + ' ' + yl + ' H' + (b.x - sg * r) + ' Q' + b.x + ' ' + yl + ' ' + b.x + ' ' + (yl + r) + ' V' + y1;
+          out.push('<path id="' + id + '" class="edge bus" d="' + d + '"/>');
+        } else {
+          var ey = b.y + b.h / 2, sy = a.y - 34, my = (sy + ey) / 2;
+          out.push('<path id="' + id + '" class="edge" d="M' + a.x + ' ' + sy + ' C' + a.x + ' ' + my + ' ' + b.x + ' ' + my + ' ' + b.x + ' ' + ey + '"/>');
+        }
       });
     });
     var svg = '<g class="edges">' + out.join('') + '</g>';
@@ -2312,11 +2326,11 @@
     }).join('');
     svg += cps.map(function (c) {
       var p = pos[c.id];
-      return '<g class="hub" transform="translate(' + p.x + ' ' + p.y + ')"><circle r="34" class="hub-ring"/><circle r="26"/><path transform="translate(-11 -11) scale(.92)" d="' + ICONS.gate + '"/><text y="56" class="hub-t">' + esc(shortName(c.name, sec.name)) + '</text></g>';
+      return '<g class="hub" transform="translate(' + p.x + ' ' + p.y + ')"><circle r="34" class="hub-ring"/><circle r="26"/><path transform="translate(-11 -11) scale(.92)" d="' + ICONS.gate + '"/><text y="56" class="hub-t">' + esc(fitTxt(mapName(c.name, sec.name), (W / Math.max(cps.length, 1) - 24) / 8.6)) + '</text><title>' + esc(c.name) + '</title></g>';
     }).join('');
     svg += core.concat(stations).map(function (s) {
       var p = pos[s.id], st = s.status === 'إنذار' ? 'warn' : s.status === 'مغلق' ? 'bad' : 'ok', small = !!s.num;
-      var label = small ? '<text class="st-k" y="-10">محطة</text><text class="st-n" y="18">' + esc(s.num) + '</text>' : '<text class="cs-n" y="-6">' + esc(shortName(s.name, sec.name)) + '</text><text class="cs-k" y="18">مستوى ' + esc(s.level) + ' · ' + esc(s.type || '') + '</text>';
+      var label = small ? '<text class="st-k" y="-10">محطة</text><text class="st-n" y="18">' + esc(s.num) + '</text>' : '<text class="cs-n" y="-6">' + esc(fitTxt(mapName(s.name, sec.name), (p.w - 20) / 9.4)) + '</text><text class="cs-k" y="18">' + esc(fitTxt('مستوى ' + s.level + (s.type ? ' · ' + String(s.type).replace(/^منطقة\s+/, '') : ''), (p.w - 24) / 8.4)) + '</text>';
       return '<g class="node ' + st + (s.inside ? ' occ' : '') + '" transform="translate(' + p.x + ' ' + p.y + ')" data-site="' + esc(s.id) + '" tabindex="0" role="button" aria-label="' + esc(s.name + ' · ' + s.status + ' · ' + s.inside + ' بالداخل') + '">' +
         '<title>' + esc(s.name + ' · ' + s.status + ' · ' + s.inside + ' بالداخل') + '</title>' +
         (st !== 'ok' ? '<rect class="pulse" x="' + (-p.w / 2 - 6) + '" y="' + (-p.h / 2 - 6) + '" width="' + (p.w + 12) + '" height="' + (p.h + 12) + '" rx="22"/>' : '') +
@@ -3028,6 +3042,7 @@
     if (!isAdmin()) return go('dash');
     var c = null, prev = null, cards = null, grp = '';
     $('main').innerHTML = '<section class="view cd-view"><div class="viewhead no-print"><div><a href="#users" class="crumb">' + icon('back') + ' المستخدمون</a><h1>' + icon('key') + ' نظام الأكواد الموحد</h1><p>كود لكل مستوى ومكان، ورقم سري خاص لكل حساب. حدد العدد لكل قطاع، راجع الخطة، ثم طبّقها واطبع كروت الدخول ووزعها على أماكنها.</p></div></div>' +
+      '<div id="cdRestore" class="no-print"></div>' +
       '<div class="card no-print"><div class="card-head"><h2>' + icon('book') + ' دليل الأكواد</h2><span class="sub">حرف القطاع من أكواد مواقعه: W الواحات، R ريجوا</span></div><div class="cd-legend">' +
       [['HQ-MD01', 'MD', 'مدير إدارة الأمن الحيوي', 'كل القطاعات، النظام والتقارير (اعتماد)'], ['HQ-EX01', 'EX', 'الإدارة العليا', 'متابعة واطلاع على التقارير'], ['W-SM01', 'SM', 'مدير قطاع', 'إدارة القطاع كاملاً'], ['W-OF01', 'OF', 'مسؤول أمن حيوي', 'مراجعة التقارير وتعديلها + بلاغات القطاع'],
         ['W-SV01', 'SV', 'مشرف أمن حيوي', 'تحرير التقارير + متابعة محطاته'], ['W-AS01', 'AS', 'معاون أمن حيوي', 'تحرير التقارير فقط'], ['W-GT-CP1', 'GT', 'نقطة بوابة', 'منطقة تطهير أو بوابة محطة: تسجيل الدخول والخروج'], ['W-ST-F05', 'ST', 'مدير محطة', 'طلبات وبلاغات محطته + الاطلاع على تقاريرها']].map(function (x) {
@@ -3066,7 +3081,9 @@
             rows.filter(function (r) { return r.group === g; }).map(function (r) { return '<tr><td class="mono" dir="ltr">' + esc(r.id) + '</td><td>' + esc(r.name) + (r.me ? ' <span class="pill p-n">أنت</span>' : '') + '</td><td>' + esc(r.roleLabel) + '</td><td class="small">' + esc(r.place) + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
         }).join('') +
         '<div class="warnbox">' + icon('alert') + ' عند التطبيق تتوقف كل الأكواد والأرقام السرية القديمة فوراً، وتتولد أرقام جديدة لكل الحسابات. رقمك السري أنت لا يتغير، وكودك يصبح HQ-MD01.</div>' +
-        '<button class="btn primary big" id="cdApply">' + icon('check') + ' <span>تطبيق نظام الأكواد (' + rows.length + ' حساب)</span></button></div>';
+        '<div class="field"><label for="cdSure">لتوليد أكواد وأرقام جديدة لكل الحسابات اكتب «تطبيق»</label><input id="cdSure" autocomplete="off"></div>' +
+        '<button class="btn primary big" id="cdApply" disabled>' + icon('check') + ' <span>تطبيق نظام الأكواد (' + rows.length + ' حساب)</span></button></div>';
+      $('cdSure').oninput = function () { $('cdApply').disabled = this.value.trim() !== 'تطبيق'; }; // v29.13: منع التطبيق بالغلط
       $('cdApply').onclick = function () {
         var b = this;
         if (!b.dataset.sure) { b.dataset.sure = '1'; b.classList.add('bad'); b.querySelector('span').textContent = 'اضغط مرة أخرى للتأكيد: الأكواد القديمة ستتوقف'; return; }
@@ -3074,10 +3091,29 @@
         remote('codesApply', [S.session.pin, c, 'تطبيق']).then(function (r) {
           toast('تم: ' + r.created + ' حساب جديد بالأكواد الموحدة');
           b.querySelector('span').textContent = 'تم التطبيق. اطبع الكروت بالأسفل';
-          loadCards(true);
+          loadCards(true); drawRestore();
         }).catch(function (e) { b.disabled = false; toast(errText(e)); });
       };
     }
+    /* v29.13: استرجاع التكويد السابق بنفس الأكواد والأرقام السرية اللي اتوزعت */
+    function drawRestore() {
+      remote('codesRestoreInfo', [S.session.pin]).then(function (r) {
+        var box = $('cdRestore'); if (!box) return;
+        if (!r) { box.innerHTML = ''; return; }
+        box.innerHTML = '<div class="card cd-restore"><div class="card-head"><h2>' + icon('history') + ' استرجاع التكويد السابق</h2><span class="sub">آخر أرشفة: ' + esc(fmt(r.at)) + '</span></div>' +
+          '<p class="small">ترجع الـ <b class="num">' + r.n + '</b> حساب اللي اتأرشفوا (' + esc(r.sample.map(function (x) { return x.id + ' ' + (x.name || ''); }).join('، ')) + (r.n > 4 ? '، ...' : '') + ') <b>بنفس الأكواد والأرقام السرية اللي اتوزعت على الناس</b>، والشاشات وصلاحية الطباعة من آخر نسخة احتياطية قبلها. الـ ' + r.current + ' حساب الحاليين يتأرشفوا، فتقدر ترجع لهم بنفس الزرار لو احتجت.</p>' +
+          '<div class="row wrap"><div class="field grow"><label for="cdRsSure">اكتب «استرجاع» للتأكيد</label><input id="cdRsSure" autocomplete="off"></div><button class="btn primary" id="cdRsGo" disabled>' + icon('history') + ' <span>استرجاع التكويد السابق</span></button></div></div>';
+        $('cdRsSure').oninput = function () { $('cdRsGo').disabled = this.value.trim() !== 'استرجاع'; };
+        $('cdRsGo').onclick = function () {
+          var b = this; b.disabled = true;
+          remote('codesRestore', [S.session.pin, 'استرجاع']).then(function (x) {
+            toast('تم: رجع ' + x.restored + ' حساب بأكوادهم وأرقامهم السرية السابقة' + (x.extras ? '' : ' (الشاشات وصلاحية الطباعة محتاجة مراجعة من «المستخدمون»)'), 7000);
+            drawRestore(); preview(); loadCards(false);
+          }).catch(function (e) { b.disabled = false; toast(errText(e)); });
+        };
+      }).catch(function () { });
+    }
+    drawRestore();
     function loadCards(scroll) {
       $('cdCards').innerHTML = '<p class="empty"><span class="spin"></span></p>';
       remote('codesCards', [S.session.pin]).then(function (r) {
@@ -4452,7 +4488,7 @@
     if (p === 'state') {
       var T0 = m.days[6], rd = m.readiness, pc = m.posture >= 85 ? 'var(--r-low)' : m.posture >= 70 ? 'var(--r-mid)' : m.posture >= 55 ? 'var(--r-high)' : 'var(--r-crit)';
       h = '<div class="tv-state"><div class="tv-ring">' + ring(m.posture, 260, 18, pc, 'مؤشر الجاهزية') + '<div><b class="mono">' + m.posture + '</b><span>مؤشر الجاهزية</span></div></div><div class="tv-st st-' + rd.k + '"><span>حالة الجاهزية</span><b>' + esc(rd.label) + '</b><p>' + esc(rd.note) + '</p></div></div>' +
-        '<div class="tv-kpis">' + [['الالتزام اليوم', pctTxt(T0.compliance)], ['دخول مسموح', T0.allowed], ['محاولات مرفوضة', T0.denied], ['داخل المواقع الآن', d.onSite.length], ['طلبات تنتظر القرار', d.stats.pending], ['نافق اليوم', x.deadToday || 0]].map(function (k) { return '<div><span>' + k[0] + '</span><b class="mono">' + k[1] + '</b></div>'; }).join('') + '</div>' +
+        '<div class="tv-kpis">' + [['الالتزام اليوم', pct1Txt(T0.compliance)], ['دخول مسموح', T0.allowed], ['محاولات مرفوضة', T0.denied], ['داخل المواقع الآن', d.onSite.length], ['طلبات تنتظر القرار', d.stats.pending], ['نافق اليوم', x.deadToday || 0]].map(function (k) { return '<div><span>' + k[0] + '</span><b class="mono">' + k[1] + '</b></div>'; }).join('') + '</div>' +
         '<div class="tv-feed">' + (d.alerts.slice(0, 4).map(function (a) { return '<div class="fe fe-' + a.level + '"><i></i><div><b>' + esc(a.title) + '</b><span>' + esc(a.body) + ' · ' + esc(ago(a.time)) + '</span></div></div>'; }).join('') || '<div class="fe"><i></i><div><b>لا توجد إنذارات · الوضع طبيعي</b></div></div>') + '</div>';
     } else if (p === 'birds') {
       var b = T.b;
@@ -4540,7 +4576,7 @@
     $('twInbox').innerHTML = ib.length ? ib.slice(0, 7).map(function (o) { return '<div class="tw-ib" style="--sv:' + TL_C[o.s] + '"><span>' + icon(o.ic) + '</span><div><b>' + esc(o.title) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</div></div>'; }).join('') + (ib.length > 7 ? '<p class="tw-more">و' + (ib.length - 7) + ' بنود أخرى على لوحة غرفة القرار</p>' : '')
       : '<div class="tw-calm">' + icon('check') + '<b>لا شيء ينتظر قراراً</b><small>لا إنذارات نافق ولا بلاغات أو طلبات مفتوحة</small></div>';
     var mort = ((d.cmp && d.cmp.kpis) || []).filter(function (k) { return /mort|نافق|نفوق/.test(k.k + ' ' + k.label); })[0];
-    $('twKpis').innerHTML = [['الالتزام اليوم', pctTxt(D0.compliance), D0.compliance != null && D0.compliance < 90], ['محاولات مرفوضة', D0.denied, D0.denied > 0], ['داخل المواقع', d.onSite.length], ['في فترة عزل', d.isolation.length], mort ? ['نسبة النافق', num19(mort.today, 2) + (mort.unit || ''), mort.target != null && mort.today > mort.target] : ['نافق اليوم', x.deadToday || 0], ['طلبات وبلاغات', d.stats.pending + (d.reports ? d.reports.open.length : 0), d.stats.pending + (d.reports ? d.reports.open.length : 0) > 0]]
+    $('twKpis').innerHTML = [['الالتزام اليوم', pct1Txt(D0.compliance), D0.compliance != null && D0.compliance < 90], ['محاولات مرفوضة', D0.denied, D0.denied > 0], ['داخل المواقع', d.onSite.length], ['في فترة عزل', d.isolation.length], mort ? ['نسبة النافق', num19(mort.today, 2) + (mort.unit || ''), mort.target != null && mort.today > mort.target] : ['نافق اليوم', x.deadToday || 0], ['طلبات وبلاغات', d.stats.pending + (d.reports ? d.reports.open.length : 0), d.stats.pending + (d.reports ? d.reports.open.length : 0) > 0]]
       .map(function (k) { return '<div class="' + (k[2] ? 'hot' : '') + '"><span>' + k[0] + '</span><b class="mono">' + k[1] + '</b></div>'; }).join('');
     $('twRisk').innerHTML = m.risk.slice(0, 6).map(function (r) { return '<div class="tw-rk"><b>' + esc(shortSite(r.name)) + '</b><span><i style="width:' + Math.max(3, r.score) + '%;background:' + BAND_C[r.bk] + '"></i></span><em class="mono" style="color:' + BAND_C[r.bk] + '">' + r.score + '</em><small>' + esc(r.status !== 'نشط' ? r.status : r.factors.length ? r.factors[0].label : 'لا عوامل خطر') + '</small></div>'; }).join('');
     var mv = d.recent.slice(0, 14).map(function (v) { return '<span class="tw-mv ' + (v.dir !== B.OUT && [B.ALLOW, B.OVERRIDE, B.PENDING, B.CANCELLED].indexOf(v.decision) < 0 ? 'no' : '') + '"><b class="mono">' + esc(fmt(v.time, false)) + '</b> ' + esc(v.itemName) + ' · ' + esc(v.dir) + ' · ' + esc(shortSite(v.siteName)) + (v.decision ? ' · ' + esc(v.decision) : '') + '</span>'; }).join('');
@@ -7018,7 +7054,7 @@
     return '<svg class="spark19" viewBox="0 0 120 36" preserveAspectRatio="none" aria-hidden="true">' + (target != null ? '<line x1="0" x2="120" y1="' + Y(target).toFixed(1) + '" y2="' + Y(target).toFixed(1) + '" class="sp-t"/>' : '') +
       '<path d="' + d + ' L' + last[0].toFixed(1) + ' 36 L' + pts[0][0].toFixed(1) + ' 36 Z" fill="' + color + '" opacity=".12"/><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/><circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3" fill="' + color + '"/></svg>';
   }
-  function cmpDelta(now, then, better, unit, label) {
+  function dashDelta(now, then, better, unit, label) {
     if (now == null || then == null) return '<span class="cd cd-n">' + label + ' —</span>';
     var df = Math.round((now - then) * 100) / 100; if (!df) return '<span class="cd cd-n">' + label + ' = ' + num19(then, 2) + (unit || '') + '</span>';
     var good = better === 'none' ? null : better === 'up' ? df > 0 : df < 0;
@@ -7032,7 +7068,7 @@
         var col = hit === false ? 'var(--r-crit)' : hit ? 'var(--r-low)' : 'var(--s-1)';
         return '<div class="cmp" data-k="' + esc(k.k) + '"><div class="spread"><span class="cmp-l">' + esc(k.label) + '</span>' + (hit == null ? '' : '<span class="pill ' + (hit ? 'p-ok' : 'p-bad') + '">' + (hit ? 'ضمن الهدف' : 'خارج الهدف') + '</span>') + '</div>' +
           '<div class="cmp-v"><b class="mono">' + num19(k.today, 2) + '<small>' + esc(k.unit) + '</small></b>' + (k.target != null ? '<span class="xs muted">الهدف ' + (k.better === 'up' ? '≥ ' : '≤ ') + num19(k.target, 2) + esc(k.unit) + '</span>' : '') + '</div>' +
-          (k.series && k.series.length ? sparkT(k.series, k.target, col) : '') + '<div class="cmp-d">' + cmpDelta(k.today, k.yesterday, k.better, k.unit, 'أمس') + cmpDelta(k.today, k.lastWeek, k.better, k.unit, 'الأسبوع الماضي') + '</div></div>';
+          (k.series && k.series.length ? sparkT(k.series, k.target, col) : '') + '<div class="cmp-d">' + dashDelta(k.today, k.yesterday, k.better, k.unit, 'أمس') + dashDelta(k.today, k.lastWeek, k.better, k.unit, 'الأسبوع الماضي') + '</div></div>';
       }).join('') + '</div></div>';
     if (d.dis && !hiddenScr('dis')) {
       var x = d.dis.kpi;
