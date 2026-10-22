@@ -117,7 +117,7 @@
   var DemoNet = { offline: false };
   /* v27: ذاكرة فورية للشاشات. أي شاشة اتفتحت قبل كده تظهر في الحال من آخر بيانات محفوظة على الجهاز،
      وفي الخلفية يتجاب الجديد من الخادم ويتحدث المعروض لو اتغير. أي حفظ أو تعديل يمسح الذاكرة فوراً علشان مايظهرش رقم قديم. */
-  var RC_FN = { gateLog: 1, dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
+  var RC_FN = { userCards: 1, gateLog: 1, dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
   var RC_FREE = { login: 1, sync: 1, ping: 1, presence: 1, threads: 1, myQuality: 1, gateAccess: 1, approvalStatus: 1, selfPointInfo: 1, selfMissionInfo: 1, tripInfo: 1, history: 1, trace: 1, passport: 1, stationHistory: 1, cardReport: 1, reportOpen: 1, settlePreview: 1, isoPreview: 1, tourPreview: 1, codesPreview: 1, farmMetaX: 1, myAwards: 1, adminList: 1, audit: 1, cardLog: 1, changes: 1, chat: 1, planVisits: 1, noticeAcks: 1, simulate: 1, containPlan: 1, registerDevice: 1, vrOpen: 1, tripPing: 1, disProgram: 1, purgeList: 1 };
   var RC = { m: {}, n: 0, flight: {} }, RC_FRESH = 20000;
   function rcKey(fn, args) { return (S.session && S.session.user ? S.session.user.id : '') + '|' + fn + '|' + JSON.stringify((args || []).slice(1)); }
@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 29.13</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 29.14</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -496,6 +496,8 @@
   /* ============================ الإطار والتنقل ============================ */
   /** صلاحيات المستخدم الحالي (الحسابات القديمة بدون صلاحيات = مدير كامل) */
   function can(p) { var u = S.session && S.session.user; if (!u || !u.isManager) return false; if (!u.perms) return true; return u.perms.indexOf(p) >= 0; }
+  /** v29.14: كروت الدخول: مدير الأمن الحيوي والمسؤول والمشرف */
+  function canCards() { var u = S.session && S.session.user; return !!(u && u.isManager && (isAdmin() || u.role === 'مسؤول أمن حيوي' || u.role === 'مشرف أمن حيوي')); }
   function isAdmin() { var u = S.session && S.session.user; return !!(u && u.isManager && (u.isAdmin || !u.perms)); }
   /** تقارير الأمن الحيوي: صلاحيات المستخدم عليها، وهل حسابه للتقارير فقط */
   function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
@@ -505,12 +507,12 @@
   function navItems0() {
     if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'خريطة العمليات', 'map'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'خريطة العمليات', 'map'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
   }
   /** الشريط السفلي للموبايل: خمسة أزرار بحد أقصى بأسماء قصيرة، والباقي في «المزيد» */
-  var NAV_SHORT = { gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
+  var NAV_SHORT = { ucards: 'الكروت', gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
   function bottomItems() {
     var all = navItems(), pick = vrOnly() ? ['vr', 'calc', 'more'] : S.session.user.isManager ? (isAdmin() ? ['dash', 'twin', 'requests', 'stations', 'comms', 'missions', 'notices', 'more'] : ['dash', 'stations', 'store', 'calc', 'more']) : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
     var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
@@ -528,7 +530,7 @@
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
     ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
     ['people', 'HR إدارة الأمن الحيوي', 'user', ['evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
-    ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'purge']]
+    ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'ucards', 'purge']]
   ];
   function navGroupedOn() { return !!(S.session && S.session.user.isManager && !vrOnly()); }
   function navKey() { var u = S.session && S.session.user; return 'bio-nav-' + (u ? u.id || u.name || '' : ''); }
@@ -660,7 +662,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOps21, twin: viewTwin, iso: viewIso, gates: viewGates, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOps21, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -3130,7 +3132,8 @@
       var list = cards.cards.filter(function (x) { return x.active && (!grp || x.group === grp); }), groups = [], url = cards.appUrl || appLink();
       list.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
       $('cdCards').innerHTML = groups.map(function (g) {
-        return '<div class="cd-pgrp"><h3 class="cd-gh">' + icon('pin') + ' ' + esc(g) + '</h3><div class="cd-cards">' + list.filter(function (x) { return x.group === g; }).map(function (x) {
+        var inG = list.filter(function (x) { return x.group === g; }), off = n && !inG.some(function (x) { return pick[x.id]; });
+        return '<div class="cd-pgrp' + (off ? ' uc-off' : '') + '"><h3 class="cd-gh">' + icon('pin') + ' ' + esc(g) + '</h3><div class="cd-cards">' + inG.map(function (x) {
           var lv = CODE_LV[x.lvl] || ['حساب', 'user'];
           return '<div class="cd-card lv-' + esc(x.lvl || 'X') + '"><div class="cd-top"><img src="' + esc(logoSrc()) + '" alt=""><span><b>منصة الأمن الحيوي</b><span>' + esc(S.session.company) + '</span></span><span class="cd-lv">' + icon(lv[1]) + ' ' + esc(x.roleLabel) + '</span></div>' +
             '<div class="cd-mid"><div class="cd-info"><b class="cd-name">' + esc(x.name) + '</b><span class="cd-place">' + icon('pin') + ' ' + esc(x.place) + '</span>' +
@@ -3147,10 +3150,58 @@
     preview();
     loadCards(false);
   }
+  /* ============================ v29.14: كروت الدخول للطباعة ============================
+     كارت لكل حساب: الاسم، الدور، المكان، الكود، الرقم السري، ورمز QR لرابط التطبيق. للمدير والمسؤول والمشرف كل واحد في حدود نطاقه */
+  function loginCardHtml(x, url) {
+    var lv = CODE_LV[x.lvl] || ['حساب', 'user'];
+    return '<div class="cd-card lv-' + esc(x.lvl || 'X') + '"><div class="cd-top"><img src="' + esc(logoSrc()) + '" alt=""><span><b>منظومة الأمن الحيوي</b><span>' + esc(S.session.company) + '</span></span><span class="cd-lv">' + icon(lv[1]) + ' ' + esc(x.roleLabel) + '</span></div>' +
+      '<div class="cd-mid"><div class="cd-info"><b class="cd-name">' + esc(x.name) + '</b><span class="cd-place">' + icon('pin') + ' ' + esc(x.place) + '</span>' +
+      '<div class="cd-kv"><span>الكود</span><b class="mono" dir="ltr">' + esc(x.id) + '</b></div><div class="cd-kv pin"><span>الرقم السري</span><b class="num" dir="ltr">' + esc(x.pin) + '</b></div><span class="cd-acc">' + icon('key') + ' يدخل على: ' + esc(x.access) + '</span></div>' +
+      '<div class="cd-qr" data-url="' + esc(url) + '"></div></div><div class="cd-foot">امسح الرمز أو افتح رابط التطبيق، ثبّته على الموبايل، وادخل بالرقم السري. الرقم شخصي ولا يُشارك.</div>' +
+      (x.phone ? '<a class="btn sm wa no-print" target="_blank" rel="noopener" href="' + esc(waTo(x.phone, codeAccessMsg(x, url))) + '">' + icon('wa') + ' إرسال على واتساب</a>' : '') + '</div>';
+  }
+  function paintQr(root) { if (window.QRCode) root.querySelectorAll('.cd-qr').forEach(function (el) { if (el.childNodes.length) return; new QRCode(el, { text: el.dataset.url, width: 92, height: 92, correctLevel: QRCode.CorrectLevel.L }); }); }
+  function viewUcards() {
+    if (!canCards()) return go('dash');
+    var R = null, grp = '', q = '', pick = {};
+    $('main').innerHTML = '<section class="view cd-view uc-view"><div class="viewhead no-print"><div><h1>' + icon('card') + ' كروت الدخول</h1><p>كارت لكل مستخدم فيه اسمه ودوره ومكانه والكود والرقم السري ورمز QR لفتح التطبيق. اختار المكان أو الأشخاص واطبع، أو ابعت الكارت على واتساب. كل عرض للكروت بيتسجل في سجل التعديلات.</p></div>' +
+      (isAdmin() ? '<div class="row"><a class="btn" href="#codes">' + icon('key') + ' نظام الأكواد</a><a class="btn" href="#users">' + icon('user') + ' المستخدمون</a></div>' : '') + '</div>' +
+      '<div class="card no-print uc-bar"><div class="gl-f"><div class="field"><label for="ucGrp">المكان</label><select id="ucGrp"><option value="">كل الأماكن</option></select></div>' +
+      '<div class="field grow"><label for="ucQ">بحث</label><input id="ucQ" placeholder="اسم أو كود أو دور" autocomplete="off"></div>' +
+      '<div class="row uc-acts"><button class="btn sm ghost" id="ucAll">' + icon('check') + ' تحديد الظاهر</button><button class="btn sm ghost" id="ucNone">إلغاء التحديد</button><button class="btn primary" id="ucPrint" disabled>' + icon('printer') + ' <span>طباعة</span></button></div></div>' +
+      '<p class="xs muted" id="ucNote"></p></div><div id="ucOut"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
+    function shown() { var t = q.toLowerCase(); return R.cards.filter(function (x) { return x.active && (!grp || x.group === grp) && (!t || (x.name + ' ' + x.id + ' ' + x.roleLabel + ' ' + x.place).toLowerCase().indexOf(t) >= 0); }); }
+    function draw() {
+      var url = R.appUrl || appLink(), list = shown(), groups = [], n = Object.keys(pick).length;
+      list.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+      document.querySelector('.uc-view').classList.toggle('uc-sel', n > 0);
+      $('ucNote').textContent = list.length + ' كارت ظاهر' + (n ? ' · محدد ' + n + ' للطباعة' : ' · الطباعة هتطلع كل الظاهر') + ' · نطاقك: ' + (R.scope || '');
+      $('ucPrint').disabled = !list.length;
+      $('ucOut').innerHTML = groups.map(function (g) {
+        var inG = list.filter(function (x) { return x.group === g; }), off = n && !inG.some(function (x) { return pick[x.id]; });
+        return '<div class="cd-pgrp' + (off ? ' uc-off' : '') + '"><h3 class="cd-gh">' + icon('pin') + ' ' + esc(g) + '</h3><div class="cd-cards">' + inG.map(function (x) {
+          return '<div class="uc-item' + (n && !pick[x.id] ? ' uc-off' : '') + '"><label class="uc-pick no-print"><input type="checkbox" data-id="' + esc(x.id) + '"' + (pick[x.id] ? ' checked' : '') + '> للطباعة</label>' + loginCardHtml(x, url) + '</div>';
+        }).join('') + '</div></div>';
+      }).join('') || '<div class="card"><p class="empty">لا توجد كروت في نطاقك بالفلاتر دي</p></div>';
+      $('ucOut').querySelectorAll('[data-id]').forEach(function (c) { c.onchange = function () { if (c.checked) pick[c.dataset.id] = 1; else delete pick[c.dataset.id]; draw(); }; });
+      paintQr($('ucOut'));
+    }
+    remote('userCards', [S.session.pin]).then(function (r) {
+      R = r; var groups = []; r.cards.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+      $('ucGrp').innerHTML = '<option value="">كل الأماكن (' + r.cards.length + ')</option>' + groups.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('');
+      draw();
+    }).catch(function (e) { $('ucOut').innerHTML = '<div class="card">' + (e.net ? offlineCard('كروت الدخول') : '<p class="empty">' + esc(errText(e)) + '</p>') + '</div>'; });
+    var tq = 0;
+    $('ucGrp').onchange = function () { grp = this.value; if (R) draw(); };
+    $('ucQ').oninput = function () { var v = this.value; clearTimeout(tq); tq = setTimeout(function () { q = v.trim(); if (R) draw(); }, 250); };
+    $('ucAll').onclick = function () { if (!R) return; shown().forEach(function (x) { pick[x.id] = 1; }); draw(); };
+    $('ucNone').onclick = function () { pick = {}; if (R) draw(); };
+    $('ucPrint').onclick = function () { window.print(); };
+  }
   function viewUsers() {
     if (!isAdmin()) return go('dash');
     $('main').innerHTML = '<section class="view"><div class="viewhead"><div><a href="#data" class="crumb">' + icon('back') + ' البيانات</a><h1>' + icon('user') + ' المستخدمون والصلاحيات</h1><p>أضف أمن البوابات ومديري المواقع والقطاعات، وحدد لكل واحد ما يراه وما يستطيع فعله. كل مستخدم يدخل برقمه السري الخاص.</p></div>' +
-      '<div class="row"><a class="btn" href="#codes">' + icon('key') + ' نظام الأكواد وكروت الدخول</a><button class="btn primary" id="uAdd">' + icon('plus') + ' إضافة مستخدم</button></div></div><div id="uBody"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
+      '<div class="row"><a class="btn" href="#ucards">' + icon('card') + ' طباعة كروت الدخول</a><a class="btn" href="#codes">' + icon('key') + ' نظام الأكواد</a><button class="btn primary" id="uAdd">' + icon('plus') + ' إضافة مستخدم</button></div></div><div id="uBody"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
     var meta = null, filter = '';
     function draw() {
       var users = meta.users, roles = meta.roles;

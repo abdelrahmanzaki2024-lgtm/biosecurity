@@ -3351,6 +3351,38 @@ function BIO_codes(api, H) {
     if (api._log) api._log(me, 'users', '*', 'استرجاع التكويد السابق', { count: cur.length }, { count: objs.length, from: b.at });
     return { ok: true, restored: objs.length, archived: cur.length, myId: mine ? mine.id : me.id, extras: src };
   };
+  /* v29.14: «كروت الدخول» لمدير الأمن الحيوي والمسؤول والمشرف: الاسم والكود والرقم السري ورمز QR للتطبيق.
+     المدير: كل الحسابات. المسؤول: حسابات قطاعه الأقل منه (مشرفين، معاونين، بوابات، مديري مواقع) وكارته هو.
+     المشرف: بوابات مواقعه ومناطق التطهير اللي بتخدمها، ومديري مواقعه، ومعاوني قطاعه، وكارته هو. كل عرض بيتسجل في سجل التعديلات */
+  var CARD_ROLES = {}; CARD_ROLES[BIO.ROLE_OFFICER] = [BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_GUARD, BIO.ROLE_SITE]; CARD_ROLES[BIO.ROLE_SUPERVISOR] = [BIO.ROLE_INSPECTOR, BIO.ROLE_GUARD, BIO.ROLE_SITE];
+  function cardsAllowed(u) { return !!u && (u.isAdmin || !!CARD_ROLES[u.role]); }
+  api.userCards = function (pin) {
+    var u = H.auth(pin, true); if (!cardsAllowed(u)) throw new Error('كروت الدخول لمدير الأمن الحيوي والمسؤول والمشرف');
+    var sites = H.sitesById(), cps = {}; store.all('checkpoints').forEach(function (c) { cps[BIO_norm(c.id)] = { sector: String(c.sector || '').trim(), serves: BIO_list(c.serves).map(BIO_norm) }; });
+    var sc = u.scope || { all: true, sectors: [], sites: [] }, mySecs = (sc.sectors || []).slice();
+    (sc.sites || []).forEach(function (id) { var x = sites[BIO_norm(id)]; if (x && mySecs.indexOf(x.sector) < 0) mySecs.push(x.sector); });
+    function where(x) { // قطاعات ومواقع الحساب
+      var secs = [], ids = [], g = BIO_norm(x.gate);
+      if (g) { if (sites[g]) { secs.push(sites[g].sector); ids.push(g); } else if (cps[g]) { secs.push(cps[g].sector); ids = ids.concat(cps[g].serves); } }
+      BIO_list(x.scope).forEach(function (v) { var id = BIO_norm(v); if (sites[id]) { secs.push(sites[id].sector); ids.push(id); } else secs.push(String(v).trim()); });
+      return { secs: secs, ids: ids };
+    }
+    var list = store.all('users').filter(function (x) { return x.id !== '' && x.id != null; }).filter(function (x) {
+      if (u.isAdmin || BIO_norm(x.id) === u.id) return true;
+      var r = BIO_role(x.role); if (!r || CARD_ROLES[u.role].indexOf(r.k) < 0) return false;
+      if (sc.all) return true;
+      var w = where(x);
+      if (u.role === BIO.ROLE_SUPERVISOR && (sc.sites || []).length) {
+        if (r.k === BIO.ROLE_INSPECTOR) return w.secs.some(function (s) { return mySecs.indexOf(s) >= 0; });
+        return w.ids.some(function (id) { return (sc.sites || []).map(BIO_norm).indexOf(id) >= 0; });
+      }
+      return w.secs.some(function (s) { return mySecs.indexOf(s) >= 0; }) || w.ids.some(function (id) { return sites[id] && mySecs.indexOf(sites[id].sector) >= 0; });
+    }).map(function (x) { return cardOf(x, sites); });
+    var order = {}; BIO_CODE_LEVELS.forEach(function (l, i) { order[l.k] = i; });
+    list.sort(function (a, b) { return (a.group === 'الإدارة العامة' ? -1 : 0) - (b.group === 'الإدارة العامة' ? -1 : 0) || a.group.localeCompare(b.group, 'ar') || (order[a.lvl] == null ? 99 : order[a.lvl]) - (order[b.lvl] == null ? 99 : order[b.lvl]) || a.id.localeCompare(b.id); });
+    if (api._log) try { api._log(u, 'users', 'cards', 'عرض كروت الدخول للطباعة', null, { count: list.length }); } catch (e) { }
+    return { appUrl: H.settings().APP_URL || '', cards: list, scope: sc.all ? 'كل القطاعات' : (sc.label || mySecs.join('، ')) };
+  };
   /** كروت الدخول للطباعة والتوزيع: الكود والرقم السري والمكان لكل حساب */
   api.codesCards = function (pin) {
     H.auth(pin, 'admin');
@@ -5312,7 +5344,7 @@ function BIO_v18(api, H) {
    4) مؤشرات مقارنة بالأمس والأسبوع الماضي مع خط الهدف، والترتيب الشهري للمحطات
    5) خريطة العمليات الحية */
 var BIO_SCREENS = [
-  { k: 'board', label: 'غرفة الإدارة العليا', g: 'القيادة والمتابعة' }, { k: 'shield', label: 'درع الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'integ', label: 'رادار صدق البيانات', g: 'القيادة والمتابعة' }, { k: 'iso', label: 'معادلات العزل', g: 'الحركة والمركبات' }, { k: 'gates', label: 'سجل البوابات', g: 'الحركة والمركبات' },
+  { k: 'board', label: 'غرفة الإدارة العليا', g: 'القيادة والمتابعة' }, { k: 'shield', label: 'درع الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'integ', label: 'رادار صدق البيانات', g: 'القيادة والمتابعة' }, { k: 'iso', label: 'معادلات العزل', g: 'الحركة والمركبات' }, { k: 'gates', label: 'سجل البوابات', g: 'الحركة والمركبات' }, { k: 'ucards', label: 'كروت الدخول', g: 'البيانات' },
   { k: 'ops', label: 'خريطة العمليات الحية', g: 'القيادة والمتابعة' }, { k: 'stations', label: 'حالة المحطات', g: 'القيادة والمتابعة' },
   { k: 'ews', label: 'الإنذار المبكر', g: 'القيادة والمتابعة' }, { k: 'farm', label: 'بيانات المزارع', g: 'القيادة والمتابعة' }, { k: 'cams', label: 'حائط الكاميرات', g: 'القيادة والمتابعة' },
   { k: 'report', label: 'التقرير التنفيذي', g: 'القيادة والمتابعة' }, { k: 'sim', label: 'محاكاة التفشي', g: 'القيادة والمتابعة' }, { k: 'map', label: 'الخريطة الحية', g: 'القيادة والمتابعة' },
@@ -5919,6 +5951,7 @@ var BIO_EPI_PLAN = {
 TABLES.epi = { sheet: 'الرصد الوبائي', key: 'id', cols: { id: 'الرقم', source: 'المصدر', fetched: 'وقت الجلب', reportId: 'رقم التقرير', disease: 'المرض', kind: 'التصنيف', agent: 'المسبب (العترة)', country: 'الدولة', place: 'المكان', lat: 'خط العرض', lng: 'خط الطول', start: 'تاريخ البدء', end: 'تاريخ الانتهاء', status: 'الحالة', species: 'النوع', cases: 'الحالات', deaths: 'النافق', killed: 'الإعدام', by: 'سجّلها', note: 'ملاحظات', notified: 'تم التنبيه' } };
 BIO_SCREENS.splice(1, 0, { k: 'epi', label: 'رادار الوبائيات', g: 'القيادة والمتابعة' });
 BIO_SCREEN_API.gates = ['gateLog'];
+BIO_SCREEN_API.ucards = ['userCards'];
 BIO_SCREEN_API.epi = ['epiData', 'epiReport', 'epiDelete', 'epiRefresh', 'epiLab', 'epiImport', 'epiVerify', 'epiFeeds'];
 function BIO_epiKind(name, agent) {
   var s = String(name || '') + ' ' + String(agent || '');

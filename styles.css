@@ -4551,3 +4551,14 @@ polyline.tn-road, polyline.tn-rc { fill: none; stroke-linejoin: round; stroke-li
   .gl-m { grid-column: 3; align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: 6px; text-align: start; }
   .gl-gates { grid-template-columns: 1fr; }
 }
+
+/* v29.14: كروت الدخول للطباعة */
+.uc-bar .uc-acts { gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.uc-item { display: grid; gap: 6px; min-width: 0; }
+.uc-pick { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.uc-off { opacity: .45; }
+@media print {
+  .uc-view .uc-off { display: none !important; }
+  .uc-view.uc-sel .cd-pgrp { break-before: auto; }
+  .uc-view .uc-item { break-inside: avoid; page-break-inside: avoid; }
+}
