@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.3</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -508,12 +508,12 @@
     if (pcOnly()) return [['pc', 'مكافحة الآفات', 'bug'], ['more', 'المزيد', 'menu']];
     if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'غرفة العمليات', 'radar'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], canPc() && ['pc', 'مكافحة الآفات', 'bug'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'غرفة العمليات', 'radar'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], ['academy', 'أخبار ومعلومات الأمن الحيوي', 'grad'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], canPc() && ['pc', 'مكافحة الآفات', 'bug'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
   }
   /** الشريط السفلي للموبايل: خمسة أزرار بحد أقصى بأسماء قصيرة، والباقي في «المزيد» */
-  var NAV_SHORT = { pc: 'المكافحة', ucards: 'الكروت', gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
+  var NAV_SHORT = { academy: 'المعلومات', pc: 'المكافحة', ucards: 'الكروت', gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
   function bottomItems() {
     var all = navItems(), pick = pcOnly() ? ['pc', 'more'] : vrOnly() ? ['vr', 'calc', 'more'] : S.session.user.isManager ? (isAdmin() ? ['dash', 'twin', 'requests', 'stations', 'comms', 'missions', 'notices', 'more'] : ['dash', 'stations', 'store', 'calc', 'more']) : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
     var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
@@ -526,7 +526,7 @@
   var NAV_GROUPS = [
     ['now', 'القيادة', 'dash', ['dash', 'board', 'shield', 'cmp', 'requests', 'comms', 'report', 'notices', 'prints']],
     ['map', 'الخريطة', 'map', ['twin', 'ops', 'map']],
-    ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'ews', 'integ', 'sim', 'trace', 'insights']],
+    ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'academy', 'ews', 'integ', 'sim', 'trace', 'insights']],
     ['sites', 'المواقع', 'layers', ['stations', 'farm', 'pc', 'disposal', 'inspect', 'cams']],
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
     ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
@@ -664,7 +664,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -4374,21 +4374,92 @@
   }
 
   /* ============================ أكاديمية الأمن الحيوي ============================ */
-  function viewAcademy() {
-    $('main').innerHTML = '<section class="view">' + v5Head('أكاديمية الأمن الحيوي', 'grad', 'تأهيل إلزامي قصير للموظف الجديد من موبايله قبل تفعيل كارته، واختبار، وشهادة تظهر في جواز الأمن الحيوي، وتجديد كل 3 شهور، وسؤال أسبوعي للجميع.') + '<div id="v5Out">' + v5Spin() + '</div></section>';
-    v5Load('academy', [], drawAcademy, 'الأكاديمية');
+  /* =====================================================================
+     v32.3: أكاديمية ومركز معلومات الأمن الحيوي
+     أخبار اليوم · النشرة اليومية · دليل الإنذار المبكر · المراجع الرسمية · التدريب والتأهيل
+     ===================================================================== */
+  var KN_TABS = [['news', 'أخبار الأمن الحيوي اليوم', 'rss'], ['brief', 'النشرة اليومية', 'clip'], ['watch', 'مؤشرات الإنذار المبكر', 'pulse'], ['lib', 'المراجع الرسمية', 'book'], ['train', 'التدريب والتأهيل', 'grad']];
+  var KN_SCOPE = { eg: ['مصر', 'kn-eg'], region: ['الإقليم', 'kn-rg'], world: ['العالم', 'kn-wd'] };
+  var KN_TC = { outbreak: '#dc2626', bio: '#0f766e', policy: '#7c3aed', science: '#2563eb', wild: '#a16207', human: '#db2777', market: '#64748b' };
+  function viewAcademy(args) {
+    var tab = (args && args[0]) || (S.kn && S.kn.tab) || 'news'; if (!KN_TABS.some(function (t) { return t[0] === tab; })) tab = 'news';
+    S.kn = Object.assign({ topic: '', scope: '', q: '' }, S.kn || {}, { tab: tab });
+    $('main').innerHTML = '<section class="view kn-view"><div class="kn-hero"><div class="kn-ht"><span class="kn-k">' + icon('grad') + ' أكاديمية الأمن الحيوي · مركز المعلومات</span><h1>أخبار ومعلومات الأمن الحيوي اليوم</h1><p>كل ما يتداول محلياً وعالمياً عن أمراض الدواجن والأمن الحيوي والقرارات الرسمية والطيور البرية، مصنفاً ومرتباً حسب أهميته لقطاعاتنا، مع نشرة يومية ودليل للإنذار المبكر ومراجع رسمية.</p></div><div class="kn-hs" id="knHs"></div></div>' +
+      '<div class="kn-tabs" role="tablist">' + KN_TABS.map(function (t) { return '<button type="button" role="tab" data-knt="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + icon(t[2]) + '<span>' + t[1] + '</span></button>'; }).join('') + '</div><div id="v5Out">' + v5Spin() + '</div></section>';
+    document.querySelectorAll('[data-knt]').forEach(function (b) { b.onclick = function () { go('academy/' + b.dataset.knt); }; });
+    if (tab === 'train') return v5Load('academy', [], function (d) { drawAcademy(d); knHero(S.knD); }, 'الأكاديمية');
+    if (S.knD && Date.now() - S.knAt < 5 * 60e3) return knDraw(S.knD);
+    v5Load('knowHub', [], function (d) { S.knD = d; S.knAt = Date.now(); knDraw(d); }, 'مركز المعلومات');
+  }
+  function knHero(d) {
+    var h = $('knHs'); if (!h || !d) return;
+    var today = d.items.filter(function (x) { return Date.now() - x.at <= 864e5; }).length, eg = d.items.filter(function (x) { return x.scope === 'eg'; }).length, ob = d.items.filter(function (x) { return x.topics.indexOf('outbreak') >= 0 && Date.now() - x.at <= 7 * 864e5; }).length;
+    h.innerHTML = '<div><b class="mono">' + today + '</b><span>خبر خلال 24 ساعة</span></div><div><b class="mono">' + ob + '</b><span>خبر بؤر وأمراض · 7 أيام</span></div><div><b class="mono">' + eg + '</b><span>خبر من مصر</span></div><div class="kn-upd"><span>' + (d.demo ? 'نسخة العرض: أمثلة' : 'آخر تحديث ' + esc(ago(d.at))) + '</span>' + (d.canRefresh && !d.demo ? '<button type="button" class="btn sm" id="knRef">' + icon('refresh') + ' تحديث الآن</button>' : '') + '</div>';
+    if ($('knRef')) $('knRef').onclick = function () { var b = this; b.disabled = true; b.innerHTML = '<span class="spin"></span> جاري الجلب'; remote('knowRefresh', [S.session.pin]).then(function (x) { S.knD = x; S.knAt = Date.now(); toast('اتحدثت الأخبار: ' + x.items.length + ' خبر'); viewAcademy([S.kn.tab]); }).catch(function (e) { b.disabled = false; b.innerHTML = icon('refresh') + ' تحديث الآن'; toast(errText(e), 6000); }); };
+  }
+  function knItem(x, big) {
+    var tp = x.topics.map(function (k) { var t = (S.knD && S.knD.topics || []).filter(function (z) { return z.k === k; })[0]; return '<span class="kn-tp" style="--c:' + (KN_TC[k] || '#64748b') + '">' + esc(t ? t.label : k) + '</span>'; }).join(''), sc = KN_SCOPE[x.scope] || KN_SCOPE.world;
+    var share = waLink('📰 ' + x.t + (x.link ? '\n' + x.link : '') + '\n— أخبار الأمن الحيوي · ' + (CFG.COMPANY || 'كايرو ثري إيه'));
+    return '<article class="kn-it' + (big ? ' big' : '') + '" style="--c:' + (KN_TC[x.topics[0]] || '#64748b') + '"><div class="kn-im"><span class="kn-sc ' + sc[1] + '">' + sc[0] + (x.place && x.place !== sc[0] ? ' · ' + esc(x.place) : '') + '</span>' + tp + '<span class="kn-sv" title="درجة الأهمية لقطاعاتنا"><i style="width:' + Math.min(100, x.score * 5) + '%"></i></span></div>' +
+      '<a class="kn-t" href="' + esc(x.link || '#') + '" target="_blank" rel="noopener" dir="auto">' + esc(x.t) + '</a>' +
+      '<div class="kn-mt"><span>' + esc(x.src || '') + '</span><span>' + esc(ago(x.at)) + '</span>' + (x.why && x.why.length ? '<span class="kn-why">' + icon('alert') + esc(x.why.join(' · ')) + '</span>' : '') + '<a class="kn-sh" href="' + esc(share) + '" target="_blank" rel="noopener" title="مشاركة على واتساب">' + icon('wa') + '</a></div></article>';
+  }
+  function knDraw(d) {
+    var out = $('v5Out'); if (!out) return; knHero(d);
+    var K = S.kn, h = '';
+    if (K.tab === 'news') {
+      var L = d.items.filter(function (x) { return (!K.topic || x.topics.indexOf(K.topic) >= 0) && (!K.scope || x.scope === K.scope) && (!K.q || (x.t + ' ' + x.src + ' ' + x.place).toLowerCase().indexOf(K.q.toLowerCase()) >= 0); });
+      L.sort(function (a, b) { return K.sort === 'score' ? (b.score - a.score || b.at - a.at) : (b.at - a.at); });
+      h += '<div class="card kn-bar"><div class="kn-chips"><button type="button" class="chip' + (!K.topic ? ' on' : '') + '" data-kt="">كل الموضوعات <span>' + d.items.length + '</span></button>' + d.topics.filter(function (t) { return t.n; }).map(function (t) { return '<button type="button" class="chip' + (K.topic === t.k ? ' on' : '') + '" data-kt="' + t.k + '" style="--k:' + KN_TC[t.k] + '"><i class="kn-dot"></i>' + esc(t.label) + ' <span>' + t.n + '</span></button>'; }).join('') + '</div>' +
+        '<div class="kn-row"><div class="kn-seg" role="group">' + [['', 'الكل'], ['eg', 'مصر'], ['region', 'الإقليم'], ['world', 'العالم']].map(function (s) { return '<button type="button" data-ks="' + s[0] + '" class="' + (K.scope === s[0] ? 'on' : '') + '">' + s[1] + (s[0] ? ' <span>' + (d.scopes[s[0]] || 0) + '</span>' : '') + '</button>'; }).join('') + '</div>' +
+        '<div class="kn-seg" role="group"><button type="button" data-kso="" class="' + (K.sort !== 'score' ? 'on' : '') + '">الأحدث</button><button type="button" data-kso="score" class="' + (K.sort === 'score' ? 'on' : '') + '">الأهم لنا</button></div>' +
+        '<label class="kn-q">' + icon('search') + '<input type="search" id="knQ" placeholder="ابحث: H5N1، الشرقية، لقاح…" value="' + esc(K.q) + '"></label></div></div>';
+      h += L.length ? '<div class="kn-list">' + L.slice(0, 120).map(function (x) { return knItem(x); }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('rss') + ' لا توجد أخبار بهذا الاختيار</p></div>';
+      var ok = d.feeds.filter(function (f) { return f.ok; }).length;
+      h += '<p class="xs muted kn-foot">' + icon('book') + ' المصادر: ' + (d.demo ? 'نسخة العرض تعرض أمثلة توضيحية فقط.' : ok + ' من ' + d.feeds.length + ' مصدر اتقرأ في آخر تحديث (Google News بالعربي والإنجليزي، CIDRAP، Avian Flu Diary، Meat+Poultry). التحديث تلقائي كل 6 ساعات.') + ' مكان كل خبر = مكان الحدث وليس مكان الجريدة. الأخبار إشارات للمتابعة، والبؤر المؤكدة في رادار الوبائيات.</p>';
+    }
+    if (K.tab === 'brief') {
+      var o = d.ops, dt = new Date().toLocaleDateString('ar-EG', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, TZ));
+      var LV = { 1: '#16a34a', 2: '#65a30d', 3: '#f59e0b', 4: '#ea580c', 5: '#dc2626' };
+      h += '<div class="card kn-brief" id="knBrief"><div class="kn-bh"><div><span class="kick">نشرة الأمن الحيوي اليومية · ' + esc(dt) + '</span><h2>' + icon('clip') + ' الموقف اليوم في دقيقة</h2></div><div class="row no-print"><button type="button" class="btn sm" id="knCopy">' + icon('copy') + ' نسخ</button><a class="btn sm wa" id="knWa" target="_blank" rel="noopener">' + icon('wa') + ' إرسال</a><button type="button" class="btn sm ghost" id="knPrint">' + icon('printer') + ' طباعة</button></div></div>';
+      if (o) {
+        h += '<h3 class="kn-h3">' + icon('shield') + ' مستوى التهديد في القطاعات</h3><div class="kn-secs">' + o.sectors.map(function (s) { return '<div class="kn-sec" style="--c:' + (LV[s.level] || '#64748b') + '"><b>قطاع ' + esc(s.name) + '</b><span class="kn-lv">' + esc(s.label) + ' · ' + s.level + ' من 5</span>' + (s.why.length ? '<ul>' + s.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '<p class="xs muted">لا توجد مؤشرات خطر</p>') + '</div>'; }).join('') + '</div>';
+        h += '<h3 class="kn-h3">' + icon('alert') + ' القرارات المطلوبة اليوم</h3>' + (o.actions.length ? '<ol class="kn-acts">' + o.actions.map(function (a) { return '<li class="lv-' + a.lv + '"><b>' + esc(a.t) + '</b><span>' + esc(a.do) + (a.who ? ' · <i>' + esc(a.who) + '</i>' : '') + '</span>' + (a.link ? '<a class="no-print" href="' + esc(a.link) + '">فتح ←</a>' : '') + '</li>'; }).join('') + '</ol>' : '<p class="small muted">لا توجد قرارات مفتوحة.</p>') +
+          '<p class="xs muted">' + esc(o.season || '') + '</p>';
+      }
+      h += '<h3 class="kn-h3">' + icon('rss') + ' أهم أخبار الأمن الحيوي خلال 48 ساعة</h3>' + (d.today.length ? '<div class="kn-list">' + d.today.map(function (x) { return knItem(x, true); }).join('') + '</div>' : '<p class="small muted">لا توجد أخبار جديدة مهمة خلال 48 ساعة.</p>') + '</div>';
+      h += '<div class="infobox small">' + icon('bell') + ' <span>النشرة بتوصل كإشعار للمديرين كل يوم الصبح بأهم 5 أخبار. ولو عايزها توصل كمان على واتساب والإيميل لجهات التنبيه، اكتب في الإعدادات <b dir="ltr">KNOW_DIGEST_SEND = نعم</b>.</span></div>';
+    }
+    if (K.tab === 'watch') {
+      h += '<div class="card"><div class="card-head"><div><span class="kick">عشرة مؤشرات بتسبق المشكلة بأيام · متى نتحرك وإيه الإجراء</span><h2>' + icon('pulse') + ' دليل الإنذار المبكر وحماية القطاع</h2></div></div><div class="kn-watch">' + d.watch.map(function (w, i) { return '<div class="kn-w"><span class="kn-wi">' + icon(w.ic) + '<b class="mono">' + (i + 1) + '</b></span><div><b>' + esc(w.t) + '</b><p><i>تحرك لما:</i> ' + esc(w.when) + '</p><p><i>الإجراء:</i> ' + esc(w.act) + '</p></div>' + (hiddenScr(w.link.slice(1)) ? '' : '<a class="btn sm" href="' + esc(w.link) + '">افتح ←</a>') + '</div>'; }).join('') + '</div></div>';
+    }
+    if (K.tab === 'lib') {
+      h += d.lib.map(function (g) { return '<div class="card"><div class="card-head"><h2>' + icon('book') + ' ' + esc(g.g) + '</h2><span class="badge">' + g.items.length + '</span></div><div class="kn-lib">' + g.items.map(function (x) { return '<a class="kn-lb" href="' + esc(x.u) + '" target="_blank" rel="noopener"><span class="kn-tag">' + esc(x.tag) + '</span><b dir="auto">' + esc(x.t) + '</b><span>' + esc(x.d) + '</span><small dir="ltr">' + esc(x.u.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]) + ' ↗</small></a>'; }).join('') + '</div></div>'; }).join('');
+    }
+    out.innerHTML = h;
+    out.querySelectorAll('[data-kt]').forEach(function (b) { b.onclick = function () { K.topic = b.dataset.kt; knDraw(d); }; });
+    out.querySelectorAll('[data-ks]').forEach(function (b) { b.onclick = function () { K.scope = b.dataset.ks; knDraw(d); }; });
+    out.querySelectorAll('[data-kso]').forEach(function (b) { b.onclick = function () { K.sort = b.dataset.kso; knDraw(d); }; });
+    if ($('knQ')) { var qi = $('knQ'); qi.oninput = function () { var p = this.selectionStart; K.q = this.value; knDraw(d); var n = $('knQ'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (e) {} } }; }
+    if (K.tab === 'brief') {
+      var txt = '📋 نشرة الأمن الحيوي اليومية · ' + new Date().toLocaleDateString('ar-EG', TZ) + '\n' + (d.ops ? d.ops.sectors.map(function (s) { return '• قطاع ' + s.name + ': ' + s.label + ' (' + s.level + ' من 5)' + (s.why[0] ? ' – ' + s.why[0] : ''); }).join('\n') + (d.ops.actions.length ? '\n\nالقرارات المطلوبة:\n' + d.ops.actions.slice(0, 4).map(function (a, i) { return (i + 1) + '. ' + a.t + ' ← ' + a.do; }).join('\n') : '') : '') +
+        (d.today.length ? '\n\nأهم الأخبار:\n' + d.today.slice(0, 5).map(function (x, i) { return (i + 1) + '. ' + x.t + (x.link ? '\n' + x.link : ''); }).join('\n') : '');
+      $('knWa').href = waLink(txt);
+      $('knCopy').onclick = function () { copyText(txt); };
+      $('knPrint').onclick = function () { window.print(); };
+    }
   }
   function drawAcademy(d) {
     var out = $('v5Out'); if (!out) return;
     var s = d.stats, link = d.selfUrl;
-    var html = kpiRow([['k-ok', 'grad', s.pct + '%', 'أتموا التأهيل الإلزامي (' + s.done + ' من ' + s.staff + ')'], ['k-bad', 'lock', s.blocked, 'موظفون جدد ممنوعون حتى التدريب'], ['k-warn', 'refresh', s.refreshDue, 'يحتاجون التجديد ربع السنوي'], ['k-ok', 'check', s.avg30 == null ? '—' : s.avg30 + '%', 'متوسط درجات الاختبار · 30 يوماً']]);
-    html += '<div class="cc-alert ' + (d.required ? 'a-warn' : 'a-bad') + '">' + icon(d.required ? 'shield' : 'alert') + '<span>' + (d.required ? '<b>التأهيل الإلزامي مفعّل</b>: أي موظف أو عامل أو سائق يُضاف من الآن لا تُدخله البوابات قبل اجتياز الاختبار بـ ' + d.passMark + '%، ولا يتأثر الموظفون المسجلون قبل التفعيل.' : '<b>التأهيل الإلزامي غير مفعّل</b>. فعّله من الإعدادات: ACADEMY_REQUIRED = نعم') + '</span></div>';
+    var html = kpiRow([['k-ok', 'grad', s.pct + '%', 'أتموا التأهيل الإلزامي (' + s.done + ' من ' + s.staff + ')'], ['k-bad', 'lock', s.blocked, d.required ? 'موظفون جدد ممنوعون حتى التدريب' : 'موظفون جدد لم يتدربوا بعد'], ['k-warn', 'refresh', s.refreshDue, 'يحتاجون التجديد ربع السنوي'], ['k-ok', 'check', s.avg30 == null ? '—' : s.avg30 + '%', 'متوسط درجات الاختبار · 30 يوماً']]);
+    html += '<div class="cc-alert ' + (d.required ? 'a-warn' : 'a-bad') + '">' + icon(d.required ? 'shield' : 'alert') + '<span>' + (d.required ? '<b>التأهيل الإلزامي مفعّل</b>: أي موظف أو عامل أو سائق يُضاف من الآن لا تُدخله البوابات قبل اجتياز الاختبار بـ ' + d.passMark + '%، ولا يتأثر الموظفون المسجلون قبل التفعيل.' : '<b>التدريب متاح اختيارياً، ومنع الدخول قبل التدريب متوقف حالياً</b>. لتفعيل المنع على البوابات: ACADEMY_ON = نعم و ACADEMY_REQUIRED = نعم في الإعدادات') + '</span></div>';
     var w = d.weekly;
     html += '<div class="grid-2"><div class="card ac-link"><div class="card-head"><div><span class="kick">بدون رقم سري · من موبايل الموظف</span><h2>' + icon('link') + ' رابط التدريب للموظفين</h2></div></div>' +
       (link ? '<div class="ac-url mono" dir="ltr">' + esc(link) + '</div><div class="row"><button class="btn" type="button" id="acCopy">' + icon('copy') + ' نسخ</button><a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink('🎓 أكاديمية الأمن الحيوي · ' + (CFG.COMPANY || 'كايرو ثري إيه') + '\nالتأهيل الإلزامي قبل تفعيل كارتك (12 دقيقة):\n' + link + '\nادخل بكودك ورقم هاتفك.')) + '">' + icon('wa') + ' إرسال على واتساب</a></div>' : '<div class="warnbox">أضف رابط التطبيق في الإعدادات (APP_URL) ليظهر الرابط هنا.</div>') +
       '<p class="small muted">الموظف يدخل بكوده ورقم هاتفه، يقرأ الدروس القصيرة، ويجتاز الاختبار، فيتفعل كارته على البوابات فوراً ويصل إشعار للمدير.</p>' + (MODE === 'demo' ? '<button class="btn primary" type="button" id="acTry">' + icon('grad') + ' جرّب صفحة الموظف (E007)</button>' : '') + '</div>' +
       '<div class="card ac-week"><div class="card-head"><div><span class="kick">سؤال الأسبوع · يظهر لكل البوابات</span><h2>' + icon('book') + ' هل يعرف فريقك الإجابة؟</h2></div></div><b class="ac-q">' + esc(w.q) + '</b><div class="ac-opts">' + w.a.map(function (o, i) { return '<button type="button" class="ac-opt" data-i="' + i + '">' + esc(o) + '</button>'; }).join('') + '</div><p class="small muted" id="acWhy" hidden>' + esc(w.why) + '</p></div></div>';
-    html += '<div class="grid-2"><div class="card"><div class="card-head"><div><span class="kick">أُضيفوا ولم يجتازوا التأهيل</span><h2>' + icon('lock') + ' ممنوعون من البوابات حتى التدريب</h2></div></div><div class="list">' +
+    html += '<div class="grid-2"><div class="card"><div class="card-head"><div><span class="kick">أُضيفوا ولم يجتازوا التأهيل</span><h2>' + icon('lock') + (d.required ? ' ممنوعون من البوابات حتى التدريب' : ' لم يتدربوا بعد') + '</h2></div></div><div class="list">' +
       (d.blocked.length ? d.blocked.map(function (b) { return '<div class="li"><span class="av" style="background:var(--bad-soft);color:var(--bad)">' + icon('user') + '</span><div class="t"><b>' + esc(b.name) + ' <span class="mono xs">' + esc(b.id) + '</span></b><span>' + esc([b.kind, b.dept].filter(Boolean).join(' · ')) + ' · أُضيف ' + esc(ago(b.added)) + '</span></div><div class="meta row" style="gap:6px">' + (link ? '<a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink('مرحباً ' + b.name + '، كارتك سيتفعل بعد التأهيل الإلزامي للأمن الحيوي (12 دقيقة) من هذا الرابط:\n' + link + '\nالكود: ' + b.id)) + '">' + icon('wa') + '</a>' : '') + (d.canRecord ? '<button class="btn sm" type="button" data-rec="' + esc(b.id) + '">تدريب حضوري</button>' : '') + '</div></div>'; }).join('') : '<p class="empty">' + icon('check') + 'كل الموظفين الجدد اجتازوا التأهيل</p>') + '</div></div>' +
       '<div class="card"><div class="card-head"><h2>' + icon('user') + ' الإتمام حسب الإدارة</h2></div>' + d.depts.map(function (x) { var p = x.total ? Math.round(100 * x.done / x.total) : 0; return '<div class="dp-m"><span>' + esc(x.name) + '</span>' + bar(p, p >= 90 ? 'var(--r-low)' : p >= 70 ? 'var(--r-mid)' : 'var(--r-crit)') + '<b class="mono">' + p + '%</b></div>'; }).join('') + '</div></div>';
     html += '<div class="card"><div class="card-head"><h2>' + icon('grad') + ' البرامج التدريبية</h2></div><div class="ac-mods">' + d.modules.map(function (m) {
@@ -7079,7 +7150,7 @@
     S.poll = setInterval(function () { if (!document.hidden && S.route === 'online' && !$('sheetWrap')) remote('presence', [S.session.pin]).then(draw).catch(function () {}); }, MODE === 'demo' ? 8000 : 30000);
   }
   /** v22: شاشات أُلغيت بقرار المستخدم (دوري الأمن الحيوي، الأكاديمية لحين تطويرها لاحقاً) */
-  function removedScr(k) { return k === 'league' || k === 'academy'; }
+  function removedScr(k) { return k === 'league'; }
   function hiddenScr(k) { if (removedScr(k)) return true; if (k === 'calc' || k === 'prints') return false; var u = S.session && S.session.user; return !!(u && u.hide && u.hide.length && !isAdmin() && u.hide.indexOf(k) >= 0); }
   function arDay(ms) { try { return new Date(ms).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) { return fmt(ms); } }
   function num19(v, d) { return v == null || v === '' || isNaN(v) ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d }); }
@@ -8509,7 +8580,7 @@
    * الإصدار 30: غرفة عمليات الأمن الحيوي
    * شاشة قرار مش خريطة: مستوى التهديد لكل قطاع (داخلي + خارجي)، رادار التهديد حول القطاع
    * (المسافة والاتجاه لكل بؤرة وطائر نافق وجراد والرياح)، قائمة القرارات المطلوبة الآن،
-   * توقعات 72 ساعة، نشرة الاستخبارات من كل المصادر، ونبض الهجرة، وصحة كل مصدر.
+   * توقعات 72 ساعة، أخبار ومعلومات الأمن الحيوي من كل المصادر، ونبض الهجرة، وصحة كل مصدر.
    * ====================================================================== */
   ICONS.thermo = 'M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z';
   ICONS.rain = 'M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2';
@@ -9175,7 +9246,7 @@
       '<section class="or-panel or-acts-p"><div class="or-ph"><h2>' + icon('siren') + ' القرارات المطلوبة الآن</h2><div class="or-kpi">' + kpi + '</div></div>' + acts + '</section>' +
       '</div>' +
       '<section class="or-panel"><div class="or-ph"><h2>' + icon('clock') + ' توقعات 72 ساعة · ' + esc(sec.name) + '</h2><span class="or-note">Open-Meteo + نموذج جودة الهواء CAMS' + (d.wxAt ? ' · ' + ago(d.wxAt) : '') + '</span></div><div id="orWx"></div></section>' +
-      '<section class="or-panel"><div class="or-ph"><h2>' + icon('rss') + ' نشرة الاستخبارات</h2><div class="or-filt" id="orFilt"></div></div><div id="orFeed"></div></section>' +
+      '<section class="or-panel"><div class="or-ph"><h2>' + icon('rss') + ' أخبار ومعلومات الأمن الحيوي اليوم</h2><div class="or-filt" id="orFilt"></div></div><div id="orFeed"></div>' + (hiddenScr('academy') ? '' : '<a class="or-more" href="#academy">' + icon('grad') + ' كل الأخبار والنشرة اليومية والمراجع ←</a>') + '</section>' +
       '<div class="or-grid2"><section class="or-panel"><div class="or-ph"><h2>' + icon('bird') + ' نبض الهجرة</h2><span class="or-note">iNaturalist · مشاهدات موثقة بالصور</span></div><div id="orMig"></div></section>' +
       '<section class="or-panel"><div class="or-ph"><h2>' + icon('wifi') + ' صحة مصادر المعلومات</h2></div><div id="orSrc"></div></section></div>';
     $('orOut').querySelectorAll('[data-sec]').forEach(function (b) { b.onclick = function () { O.sec = b.dataset.sec; O.pick = null; orDraw(O); }; });

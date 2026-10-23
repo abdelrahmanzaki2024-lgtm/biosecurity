@@ -5156,3 +5156,86 @@ body.rk-lock { overflow: hidden; }
 .rk-mk + .rk-body { margin-top: 12px; border-top: 1px solid var(--rk-ln); }
 @media (max-width: 860px) { .rk-mk { padding: 10px 12px 0; } .rk-mk .rk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; } }
 @media (max-width: 860px) { .rk-leg { inset-inline-start: 52px; inset-inline-end: 8px; } }
+/* ===================== v32.3: أخبار ومعلومات الأمن الحيوي (الأكاديمية) ===================== */
+.or-more { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 9px; border-radius: 10px; border: 1px dashed rgba(148, 163, 184, .4); color: #7dd3fc; font: 700 .8rem var(--font-body); text-decoration: none; }
+.or-more .ico { width: 16px; height: 16px; }
+.kn-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; padding: 22px 24px; border-radius: 22px; margin-bottom: 14px; color: #fff; overflow: hidden;
+  background: radial-gradient(110% 140% at 100% 0%, rgba(34, 211, 238, .22), transparent 55%), radial-gradient(90% 120% at 0% 100%, rgba(200, 22, 30, .35), transparent 60%), linear-gradient(135deg, #0b1220, #111827 60%, #1f0a0d); box-shadow: 0 18px 44px -20px rgba(2, 6, 23, .6); }
+.kn-hero::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px); background-size: 16px 16px; pointer-events: none; }
+.kn-ht, .kn-hs { position: relative; z-index: 1; }
+.kn-k { display: inline-flex; align-items: center; gap: 6px; font: 800 .78rem var(--font-body); color: #fca5a5; letter-spacing: 0; }
+.kn-k .ico { width: 16px; height: 16px; }
+.kn-hero h1 { margin: 6px 0 6px; font-size: 1.6rem; color: #fff; }
+.kn-hero p { margin: 0; color: #cbd5e1; font-size: .88rem; line-height: 1.7; max-width: 720px; }
+.kn-hs { display: grid; grid-template-columns: repeat(3, auto); gap: 10px; align-items: stretch; }
+.kn-hs > div { padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12); min-width: 96px; }
+.kn-hs b { display: block; font-size: 1.5rem; line-height: 1.1; }
+.kn-hs span { display: block; font-size: .72rem; color: #cbd5e1; margin-top: 2px; }
+.kn-hs .kn-upd { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; }
+.kn-upd .btn { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .25); }
+.kn-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 14px; }
+.kn-tabs::-webkit-scrollbar { display: none; }
+.kn-tabs button { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: 700 .86rem var(--font-body); cursor: pointer; }
+.kn-tabs button.on { background: var(--graphite, #2b2a2c); color: #fff; border-color: var(--graphite, #2b2a2c); }
+.kn-tabs .ico { width: 16px; height: 16px; }
+.kn-bar { display: grid; gap: 10px; }
+.kn-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.kn-chips .chip .kn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--k); display: inline-block; }
+.kn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.kn-seg { display: inline-flex; padding: 3px; border-radius: 11px; background: color-mix(in srgb, var(--ink) 6%, transparent); gap: 2px; }
+.kn-seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 9px; font: 700 .8rem var(--font-body); color: var(--muted); cursor: pointer; }
+.kn-seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.kn-seg button span { font-family: var(--font-mono); opacity: .7; }
+.kn-q { flex: 1 1 200px; display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 11px; padding: 0 10px; background: var(--surface); }
+.kn-q .ico { width: 16px; height: 16px; color: var(--muted); }
+.kn-q input { border: 0; outline: 0; background: transparent; min-height: 38px; width: 100%; font: inherit; color: var(--ink); }
+.kn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.kn-it { position: relative; display: grid; gap: 8px; align-content: start; padding: 14px 16px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); overflow: hidden; }
+.kn-it::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; background: var(--c); }
+.kn-im { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.kn-sc, .kn-tp { font: 800 .68rem var(--font-body); padding: 2px 8px; border-radius: 999px; }
+.kn-tp { color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.kn-sc.kn-eg { background: #c8182a; color: #fff; } .kn-sc.kn-rg { background: #f59e0b; color: #1f1300; } .kn-sc.kn-wd { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink); }
+.kn-sv { margin-inline-start: auto; width: 46px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
+.kn-sv i { display: block; height: 100%; background: linear-gradient(90deg, #22c55e, #f59e0b, #dc2626); }
+.kn-t { font: 700 .95rem/1.55 var(--font-body); color: var(--ink); text-decoration: none; }
+.kn-t:hover { color: var(--red, #c8182a); text-decoration: underline; }
+.kn-it.big .kn-t { font-size: 1rem; }
+.kn-mt { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: .74rem; color: var(--muted); }
+.kn-why { display: inline-flex; align-items: center; gap: 4px; color: #b45309; font-weight: 700; }
+.kn-why .ico { width: 13px; height: 13px; }
+.kn-sh { margin-inline-start: auto; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #16a34a; background: color-mix(in srgb, #16a34a 10%, transparent); }
+.kn-sh .ico { width: 16px; height: 16px; }
+.kn-foot { margin: 4px 2px 16px; line-height: 1.7; }
+.kn-brief .kn-bh { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 6px; }
+.kn-h3 { display: flex; align-items: center; gap: 7px; font-size: .98rem; margin: 16px 0 8px; }
+.kn-h3 .ico { width: 18px; height: 18px; color: var(--red, #c8182a); }
+.kn-secs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.kn-sec { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); border-top: 4px solid var(--c); background: color-mix(in srgb, var(--c) 6%, var(--surface)); }
+.kn-sec b { display: block; } .kn-lv { display: inline-block; margin-top: 3px; font: 800 .74rem var(--font-body); color: var(--c); }
+.kn-sec ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: .78rem; color: var(--muted); display: grid; gap: 3px; }
+.kn-acts { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: ka; }
+.kn-acts li { position: relative; display: grid; gap: 2px; padding: 10px 14px 10px 14px; padding-inline-start: 44px; border-radius: 12px; border: 1px solid var(--line); counter-increment: ka; }
+.kn-acts li::before { content: counter(ka); position: absolute; inset-inline-start: 12px; top: 11px; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font: 800 .78rem var(--font-mono); color: #fff; background: #64748b; }
+.kn-acts li.lv-crit::before { background: #dc2626; } .kn-acts li.lv-high::before { background: #ea580c; } .kn-acts li.lv-mid::before { background: #f59e0b; }
+.kn-acts li span { font-size: .8rem; color: var(--muted); } .kn-acts li a { justify-self: start; font-size: .78rem; font-weight: 700; }
+.kn-watch { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.kn-w { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.kn-wi { position: relative; width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: color-mix(in srgb, var(--red, #c8182a) 10%, transparent); color: var(--red, #c8182a); }
+.kn-wi .ico { width: 22px; height: 22px; } .kn-wi b { position: absolute; top: -6px; inset-inline-end: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--graphite, #2b2a2c); color: #fff; font-size: .7rem; display: grid; place-items: center; }
+.kn-w p { margin: 4px 0 0; font-size: .8rem; color: var(--muted); line-height: 1.6; } .kn-w p i { font-style: normal; font-weight: 800; color: var(--ink); }
+.kn-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.kn-lb { display: grid; gap: 4px; align-content: start; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--ink); transition: border-color .15s, transform .15s; }
+.kn-lb:hover { border-color: var(--red, #c8182a); transform: translateY(-1px); }
+.kn-lb b { font-size: .9rem; } .kn-lb span:not(.kn-tag) { font-size: .78rem; color: var(--muted); line-height: 1.6; } .kn-lb small { color: #2563eb; font-family: var(--font-mono); font-size: .7rem; text-align: end; }
+.kn-tag { justify-self: start; font: 800 .66rem var(--font-body); padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, #2563eb 12%, transparent); color: #2563eb; }
+@media (max-width: 760px) {
+  .kn-hero { grid-template-columns: 1fr; padding: 18px 16px; }
+  .kn-hero h1 { font-size: 1.25rem; }
+  .kn-hs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kn-hs > div { min-width: 0; padding: 8px 10px; } .kn-hs b { font-size: 1.2rem; }
+  .kn-list, .kn-watch, .kn-lib { grid-template-columns: 1fr; }
+  .kn-w { grid-template-columns: 40px minmax(0, 1fr); } .kn-w .btn { grid-column: 2; justify-self: start; }
+}
+@media print { .kn-hero, .kn-tabs, .no-print, .kn-sh { display: none !important; } }
+.kn-chips .chip { font-family: var(--font-body); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; } .kn-chips .chip span { font-family: var(--font-mono); opacity: .75; }

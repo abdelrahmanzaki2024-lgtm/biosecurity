@@ -2169,6 +2169,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v2913 === 'function') BIO_v2913(api, H_);
   if (typeof BIO_v30 === 'function') BIO_v30(api, H_);
   if (typeof BIO_v31pc === 'function') BIO_v31pc(api, H_);
+  if (typeof BIO_v32know === 'function') BIO_v32know(api, H_);
   return api;
 }
 
@@ -2991,7 +2992,7 @@ function BIO_ext(api, H) {
     var blocked = staff.filter(function (i) { return i.added && !(passed[i.id] && passed[i.id].IND); }).map(function (i) { return { id: i.id, name: i.name, kind: i.kind, dept: i.dept, added: i.added }; });
     var due = staff.filter(function (i) { var r = passed[i.id] && passed[i.id].REF, ind = passed[i.id] && passed[i.id].IND; return ind && (!r || r.time < now - 90 * D) && ind.time < now - 90 * D; }).length;
     var done = staff.filter(function (i) { return passed[i.id] && passed[i.id].IND; }).length;
-    return { now: now, required: BIO_isYes(s.ACADEMY_REQUIRED), passMark: num(s.ACADEMY_PASS, 80), video: s.ACADEMY_VIDEO_URL || '', modules: BIO_ACADEMY,
+    return { now: now, required: BIO_isYes(s.ACADEMY_REQUIRED) && BIO_isYes(s.ACADEMY_ON), passMark: num(s.ACADEMY_PASS, 80), video: s.ACADEMY_VIDEO_URL || '', modules: BIO_ACADEMY,
       stats: { staff: staff.length, done: done, pct: staff.length ? Math.round(100 * done / staff.length) : 0, blocked: blocked.length, refreshDue: due, attempts30: tr.filter(function (r) { return r.time >= now - 30 * D; }).length, avg30: (function () { var x = tr.filter(function (r) { return r.time >= now - 30 * D; }); return x.length ? Math.round(x.reduce(function (a, r) { return a + r.score; }, 0) / x.length) : null; })() },
       depts: Object.keys(depts).map(function (k) { return depts[k]; }).sort(function (a, b) { return b.total - a.total; }).slice(0, 12), blocked: blocked.slice(0, 40),
       recent: tr.sort(function (a, b) { return b.time - a.time; }).slice(0, 15).map(function (r) { return Object.assign(r, { title: modTitle(r.module) }); }), weekly: weekly(now), selfUrl: s.APP_URL ? String(s.APP_URL) + '?p=mission#train' : '', canRecord: u.perms.indexOf('data') >= 0 };
@@ -5376,13 +5377,13 @@ var BIO_SCREENS = [
   { k: 'missions', label: 'المأموريات والزيارات', g: 'الحركة والمركبات' }, { k: 'fleet', label: 'المركبات والمعدات', g: 'الحركة والمركبات' }, { k: 'trips', label: 'رحلات المركبات', g: 'الحركة والمركبات' },
   { k: 'tours', label: 'جولات المحطات', g: 'الحركة والمركبات' }, { k: 'routes', label: 'خطوط السير', g: 'الحركة والمركبات' }, { k: 'contractors', label: 'المقاولون', g: 'الحركة والمركبات' }, { k: 'companies', label: 'شركات النقل', g: 'الحركة والمركبات' },
   { k: 'cmp', label: 'مقارنة الدورات وقياس الأداء', g: 'القيادة والمتابعة' }, { k: 'store', label: 'المخازن والأرصدة وطلبات الصرف', g: 'الأمن الحيوي والتشغيل' }, { k: 'evals', label: 'تقييمات موظفي الإدارة', g: 'البيانات' },
-  { k: 'attend', label: 'الحضور والانصراف', g: 'البيانات' }, { k: 'data', label: 'البيانات', g: 'البيانات' }, { k: 'log', label: 'سجل اليوم (البوابة)', g: 'البوابة' }
+  { k: 'attend', label: 'الحضور والانصراف', g: 'البيانات' }, { k: 'academy', label: 'أخبار ومعلومات الأمن الحيوي والأكاديمية', g: 'القيادة والمتابعة' }, { k: 'data', label: 'البيانات', g: 'البيانات' }, { k: 'log', label: 'سجل اليوم (البوابة)', g: 'البوابة' }
 ];
 var BIO_SCREEN_API = {
   ops: ['opsMap'], stations: ['stationStatus', 'stationHistory', 'setPhase'], league: ['league'], ews: ['ews', 'ewsAct'], farm: ['farmMeta', 'farmImport', 'farmData'],
   cams: ['cams', 'camSave', 'camEnable', 'camDelete'], report: ['execReport'], sim: ['simulate', 'containPlan'], trace: ['trace'], dis: ['disData', 'disProductSave', 'disMove', 'disCheck', 'disDelete', 'disSettings'],
   birds: ['birds', 'birdsRefresh', 'birdsActivate', 'ebirdStatus', 'setEbirdKey'], inspect: ['inspections', 'inspectionSave', 'actionUpdate'], disposal: ['disposals'],
-  academy: ['academy', 'academyRecord'], passport: ['passport'], missions: ['missions', 'createMission', 'decideMission'], fleet: ['fleet', 'setTrack'],
+  academy: ['academy', 'academyRecord', 'knowHub', 'knowRefresh'], passport: ['passport'], missions: ['missions', 'createMission', 'decideMission'], fleet: ['fleet', 'setTrack'],
   trips: ['trips', 'tripStart', 'tripStop', 'tripDetail'], tours: ['tours', 'tourPreview', 'tourSave', 'tourDecide'], routes: ['routes', 'routeSave', 'routeDelete', 'guideStart'],
   contractors: ['contractors', 'contractorAdd', 'contractorMember'], companies: ['companies', 'setCompanyStatus', 'companyReportNow'], attend: ['attMeta', 'attImport', 'attData']
 };
@@ -6169,6 +6170,16 @@ function BIO_newsGeo(text, eg) {
   if (egypt || eg) return { country: 'مصر', place: 'مصر – غير محدد', lat: '', lng: '', q: 'غير محدد' };
   return null;
 }
+/** v32.2: أي شاشة بتقرا البؤر تصحح مكان أخبار الرصد الإعلامي فوراً (حتى قبل ما التحديث الدوري يعدّل الشيت)،
+ * وتشيل أخبار النفي والأسعار. يرجع نسخة جديدة من الصف أو null لو الخبر مش بؤرة */
+function BIO_epiFix(x) {
+  if (!x || !/إعلامي/.test(String(x.source || ''))) return x;
+  var t = String(x.disease || ''); if (BIO_NEWS_NOT.test(t)) return null;
+  var g = BIO_newsGeo(BIO_newsClean(t, x.note), true); if (!g) return x;
+  var o = {}; for (var k in x) o[k] = x[k];
+  o.country = g.country; o.place = g.place; o.lat = g.lat; o.lng = g.lng; o.geoq = g.q; return o;
+}
+function BIO_epiRead(list) { return (list || []).map(BIO_epiFix).filter(Boolean); }
 function BIO_ctryOf(t) { t = String(t || ''); for (var i = 0; i < BIO_EPI_CTRY.length; i++) if (BIO_EPI_CTRY[i][1].test(t)) return BIO_EPI_CTRY[i]; return null; }
 /** تاريخ بأي صيغة شائعة إلى yyyy-mm-dd */
 function BIO_isoDate(v) {
@@ -6315,7 +6326,7 @@ function BIO_v19epi(api, H) {
   function model(u, days, opt) {
     opt = opt || {};
     var now = deps.now(), sites = H.sitesById(), from = now - days * D;
-    var all = rows('epi').map(evOut).filter(function (e) { return !e.neg; });
+    var all = BIO_epiRead(rows('epi')).map(evOut).filter(function (e) { return !e.neg; });
     var ev = all.filter(function (e) { return e.lat != null && e.lng != null && (e.start || now) >= from; });
     var st = stations(u, sites), base = endemic(now), inn = internal(now);
     var fa = flyAlerts(all.filter(function (e) { return (e.start || now) >= now - 45 * D; }), st, now);
@@ -6403,7 +6414,7 @@ function BIO_v19epi(api, H) {
     var m = model(u, days, { full: true }), status = deps.epiStatus ? deps.epiStatus() : null, w0 = deps.birdWx ? deps.birdWx() : null;
     var kinds = {}; m.events.forEach(function (e) { kinds[e.kind] = (kinds[e.kind] || 0) + 1; });
     var srcN = {}; Object.keys(BIO_EPI_SRC).forEach(function (k) { srcN[k] = { n: 0, act: 0, last: 0 }; });
-    rows('epi').forEach(function (x) { var e = evOut(x), c = srcN[e.src]; if (!c) return; c.n++; if (!resolved(e) && !e.neg) c.act++; c.last = Math.max(c.last, BIO_ms(x.fetched) || e.start || 0); });
+    BIO_epiRead(rows('epi')).forEach(function (x) { var e = evOut(x), c = srcN[e.src]; if (!c) return; c.n++; if (!resolved(e) && !e.neg) c.act++; c.last = Math.max(c.last, BIO_ms(x.fetched) || e.start || 0); });
     var inn = internal(now), set = H.settings ? H.settings() : {}, pend = rows('epi').filter(function (x) { return BIO_epiSrcKey(x.source) === 'net' && !/تم التحقق/.test(String(x.status)); }).length;
     return { now: now, days: days, sites: m.sites, events: m.events, base: m.base, diseases: BIO_EPI_D, plans: BIO_EPI_PLAN, kinds: kinds,
       status: status || { ok: null, source: 'WOAH WAHIS', note: 'لم يتم الجلب بعد' }, windLive: !!(w0 && w0.sites), season: aiSeason(now) > 1 ? 'موسم الهجرة (خطر إنفلونزا الطيور أعلى)' : 'خارج ذروة موسم الهجرة',
@@ -6964,7 +6975,7 @@ function BIO_v21(api, H) {
     d.moves = moves.sort(function (a, b) { return a[0] - b[0]; }).slice(-1500);
     // البؤر الوبائية القريبة (150 كم)
     var home = d.sites.filter(function (s) { return s.lat != null; }), c0 = home.length ? [home.reduce(function (a, s) { return a + s.lat; }, 0) / home.length, home.reduce(function (a, s) { return a + s.lng; }, 0) / home.length] : null;
-    d.epi = c0 ? rows('epi').map(function (e) { var la = num(e.lat, null), lo = num(e.lng, null), t = BIO_ms(e.start) || Date.parse(String(e.start)); if (la == null || lo == null || !t || t < now - 60 * D) return null; var km = BIO_kmH(c0[0], c0[1], la, lo); if (km > 150) return null; return { lat: la, lng: lo, km: Math.round(km), kind: String(e.kind || ''), dis: String(e.disease || ''), place: String(e.place || ''), days: Math.round((now - t) / D), src: String(e.source || ''), status: String(e.status || '') }; }).filter(Boolean).slice(0, 40) : [];
+    d.epi = c0 ? BIO_epiRead(rows('epi')).map(function (e) { var la = num(e.lat, null), lo = num(e.lng, null), t = BIO_ms(e.start) || Date.parse(String(e.start)); if (la == null || lo == null || !t || t < now - 60 * D) return null; var km = BIO_kmH(c0[0], c0[1], la, lo); if (km > 150) return null; return { lat: la, lng: lo, km: Math.round(km), kind: String(e.kind || ''), dis: String(e.disease || ''), place: String(e.place || ''), days: Math.round((now - t) / D), src: String(e.source || ''), status: String(e.status || '') }; }).filter(Boolean).slice(0, 40) : [];
     // سيارات السبلة والنافق الممنوعة الآن
     d.blocked = []; try { var fl = api.fleet ? api.fleet(pin, 1) : null; if (fl) d.blocked = fl.list.filter(function (v) { return v.blockedUntil; }).map(function (v) { return { id: v.id, name: v.name, plate: v.plate, until: v.blockedUntil, at: v.track && v.track.inside ? v.track.inside.site : '' }; }).slice(0, 20); } catch (e) {}
     return d;
@@ -8214,7 +8225,7 @@ function BIO_v30(api, H) {
     var sig = [];
     function push(o) { o.id = o.id || ('S' + sig.length); sig.push(o); }
     // 1) البؤر الوبائية (رسمي WOAH + بلاغات محلية + رصد إعلامي) حتى 300 كم من أقرب موقع
-    rows('epi').forEach(function (e) {
+    BIO_epiRead(rows('epi')).forEach(function (e) {
       var la = num(e.lat, null), lo = num(e.lng, null), t = BIO_ms(e.start) || Date.parse(String(e.start || '')) || BIO_ms(e.fetched);
       if (la == null || lo == null || !t || t < now - 60 * D) return;
       var stx = String(e.status || ''); if (/resolved|منته|مغلق|سلبي|negative|مستبعد/i.test(stx)) return;
@@ -8438,6 +8449,120 @@ function BIO_pcStats(checks, active, start, end) {
   return r;
 }
 
+/* ============ v32.3: مركز معلومات الأمن الحيوي (الأكاديمية) ============
+   أخبار ومعلومات الأمن الحيوي المتداولة يومياً من مصادر مجانية (Google News بالعربي والإنجليزي، CIDRAP،
+   Avian Flu Diary، Meat+Poultry HPAI، WHO)، مصنفة حسب الموضوع والنطاق (مصر، الإقليم، العالم) ودرجة الأهمية،
+   + نشرة يومية للمدير + مكتبة مراجع رسمية + دليل مؤشرات الإنذار المبكر مربوط بشاشات المنظومة. */
+var BIO_KNOW_TOPICS = [
+  { k: 'outbreak', label: 'بؤر وأمراض الدواجن', ic: 'virus', w: 4, re: /بؤر|بؤرة|تفشي|تفش|إصاب|اصاب|نفوق|إعدام|اعدام|outbreak|detect|confirm|cull|depopul|HPAI|H5N\d|H7N\d|H9N2|نيوكاسل|newcastle|bird flu|avian (influenza|flu)|إنفلونزا الطيور|انفلونزا الطيور|جدري|الجمبورو|gumboro|salmonell|سالمونيلا|mycoplasma|ميكوبلازما|laryngotracheitis|bronchitis/i },
+  { k: 'bio', label: 'الأمن الحيوي والممارسات', ic: 'shield', w: 4, re: /أمن حيوي|الامن الحيوي|الأمن الحيوي|biosecur|تطهير|مطهر|disinfect|sanit|عزل|quarantin|hygien|ممارسات|best practice|footbath|حمام|زيارات|visitor|rodent|قوارض|ذباب|fly control|pest control/i },
+  { k: 'policy', label: 'قرارات ولوائح رسمية', ic: 'clip', w: 3, re: /وزار|وزير|قرار|حظر|منع|ban\b|banned|regulat|restrict|USDA|APHIS|EFSA|ECDC|WOAH|OIE|FAO|WHO|الخدمات البيطرية|الهيئة العامة|ministry|government|حكوم|import|استيراد|تصدير|export|zone|نطاق|compensation|تعويض/i },
+  { k: 'science', label: 'أبحاث ولقاحات', ic: 'flask', w: 2, re: /لقاح|تحصين|vaccin|study|research|بحث|دراسة|علماء|scientist|mutation|طفر|genom|جينوم|antiviral|surveillance|مسح|ترصد/i },
+  { k: 'wild', label: 'الطيور البرية والهجرة', ic: 'bird', w: 3, re: /طيور برية|الطيور البرية|مهاجر|هجرة|wild bird|migrat|waterfowl|بط بري|نوارس|gull|seabird|wetland|بحيرة/i },
+  { k: 'human', label: 'صحة الإنسان والثدييات', ic: 'user', w: 1, re: /بشري|إنسان|انسان|human|cattle|dairy|ماشية|أبقار|ابقار|mammal|ثدي|\bcats?\b|قطط|pig|خنازير/i },
+  { k: 'market', label: 'الصناعة والأسواق', ic: 'gauge', w: 0, re: /سعر|أسعار|اسعار|price|market|سوق|إنتاج|انتاج|production|\begg|بيض|supply|بورصة/i }
+];
+var BIO_KNOW_REL = /دواجن|دجاج|فراخ|طيور|طائر|بيض|كتاكيت|تسمين|أمهات|poultry|chicken|broiler|layer|flock|turkey|duck|bird|avian|biosecur|أمن حيوي|الأمن الحيوي|إنفلونزا|انفلونزا|نيوكاسل|هابرد|hubbard|H5N\d|H9N2|hatcher|تفريخ/i;
+var BIO_KNOW_MENA = ['السعودية', 'الإمارات', 'الأردن', 'ليبيا', 'السودان', 'فلسطين', 'إسرائيل', 'تركيا', 'إيران', 'العراق', 'سوريا', 'لبنان', 'الكويت', 'قطر', 'البحرين', 'عمان', 'سلطنة عمان', 'اليمن', 'المغرب', 'الجزائر', 'تونس', 'قبرص', 'اليونان', 'إثيوبيا', 'تشاد', 'النيجر'];
+/** المراجع الرسمية: كل رابط ومعه ليه يفيد الإدارة */
+var BIO_KNOW_LIB = [
+  { g: 'الرصد الرسمي العالمي (يومي)', items: [
+    { t: 'WAHIS – المنظمة العالمية لصحة الحيوان', d: 'كل بؤرة رسمية مبلّغ عنها في العالم بالإحداثيات والأنواع. المرجع الأول لأي قرار طوارئ.', u: 'https://wahis.woah.org/#/event-management', tag: 'رسمي' },
+    { t: 'إنفلونزا الطيور – صفحة WOAH وتقارير الموقف', d: 'تقارير الموقف الدورية للإنفلونزا عالمياً وإرشادات الوقاية والسيطرة.', u: 'https://www.woah.org/en/disease/avian-influenza/', tag: 'رسمي' },
+    { t: 'تحديث الفاو العالمي لفيروسات إنفلونزا الطيور', d: 'ملخص شهري لكل السلالات ذات الخطر الحيواني والبشري حسب الإقليم.', u: 'https://www.fao.org/animal-health/situation-updates/global-aiv-with-zoonotic-potential/en/', tag: 'رسمي' },
+    { t: 'EMPRES-i+ – قاعدة بيانات الفاو', d: 'خريطة وبيانات البؤر الحيوانية، وتصدير CSV يدخل المنظومة تلقائياً من مجلد Drive.', u: 'https://empres-i.apps.fao.org/', tag: 'رسمي' },
+    { t: 'EFSA – الهيئة الأوروبية لسلامة الغذاء', d: 'تقييمات الخطر الأوروبية الفصلية لإنفلونزا الطيور ومسارات الطيور البرية نحو المتوسط.', u: 'https://www.efsa.europa.eu/en/topics/topic/avian-influenza', tag: 'رسمي' },
+    { t: 'ECDC – المركز الأوروبي لمكافحة الأمراض', d: 'متابعة الخطر على الإنسان والعاملين في المزارع.', u: 'https://www.ecdc.europa.eu/en/avian-influenza', tag: 'رسمي' },
+    { t: 'CDC – الموقف الحالي لإنفلونزا H5', d: 'آخر الموقف في الطيور والثدييات والإنسان وإرشادات حماية العاملين.', u: 'https://www.cdc.gov/bird-flu/situation-summary/index.html', tag: 'رسمي' },
+    { t: 'USDA APHIS – بؤر المزارع التجارية', d: 'كل بؤرة HPAI مؤكدة في المزارع الأمريكية بالتاريخ والنوع والعدد: مقياس لشدة الموسم عالمياً.', u: 'https://www.aphis.usda.gov/livestock-poultry-disease/avian/avian-influenza/hpai-detections/commercial-backyard-flocks', tag: 'رسمي' }] },
+  { g: 'معايير وأدلة الأمن الحيوي', items: [
+    { t: 'الكود الصحي للحيوانات الأرضية – الأمن الحيوي في إنتاج الدواجن', d: 'الفصل المرجعي من WOAH لإجراءات الأمن الحيوي في المزارع والتفريخ والنقل (PDF).', u: 'https://www.woah.org/fileadmin/Home/eng/Health_standards/tahc/current/chapitre_biosecu_poul_production.pdf', tag: 'معيار' },
+    { t: 'مكتبة هابرد – أدلة الإدارة والأمن الحيوي', d: 'أدلة السلالة (Efficiency Plus) للتسمين والأمهات والتفريخ.', u: 'https://www.hubbardbreeders.com/library', tag: 'السلالة' },
+    { t: 'الفاو – صحة الحيوان', d: 'أدلة الوقاية والترصد والاستجابة للطوارئ ونهج «صحة واحدة».', u: 'https://www.fao.org/animal-health/en/', tag: 'دليل' }] },
+  { g: 'الأخبار والتحليل اليومي', items: [
+    { t: 'CIDRAP – إنفلونزا الطيور', d: 'أدق متابعة إخبارية يومية لـ H5N1 في الطيور والثدييات والإنسان.', u: 'https://www.cidrap.umn.edu/avian-influenza-bird-flu', tag: 'تحليل' },
+    { t: 'Avian Flu Diary', d: 'رصد يومي للتقارير الرسمية حول العالم بروابطها الأصلية.', u: 'https://afludiary.blogspot.com/', tag: 'تحليل' }] },
+  { g: 'الطيور البرية والهجرة والطقس', items: [
+    { t: 'eBird – مشاهدات مصر', d: 'آخر مشاهدات الطيور في مصر والبحيرات (نفس مصدر رادار الطيور).', u: 'https://ebird.org/region/EG', tag: 'علمي' },
+    { t: 'AEWA – اتفاقية الطيور المائية الإفريقية الأوراسية', d: 'مسارات الهجرة ومناطق التجمع وتقارير الطيور المائية.', u: 'https://www.unep-aewa.org/', tag: 'علمي' },
+    { t: 'Windy – الرياح والغبار لحظياً', d: 'عرض بصري للرياح والأمطار والغبار فوق مصر لدعم قرار النقل وفتح العنابر.', u: 'https://www.windy.com/?28.7,29.0,7', tag: 'طقس' }] }
+];
+/** دليل الإنذار المبكر: ماذا نتابع يومياً، ومتى نتحرك، ومن أين في المنظومة */
+var BIO_KNOW_WATCH = [
+  { k: 'mort', t: 'النافق اليومي فوق المعتاد', when: 'زيادة النافق عن متوسط آخر 3 أيام بأكثر من 50% أو عن 0.5% في اليوم', act: 'عزل العنبر، سحب عينات، إيقاف الحركة من المحطة', link: '#ews', ic: 'pulse' },
+  { k: 'feed', t: 'انخفاض استهلاك العلف أو المياه أو البيض', when: 'نقص 10% أو أكثر عن اليوم السابق بدون سبب تشغيلي', act: 'فحص بيطري فوري للعنبر', link: '#farm', ic: 'gauge' },
+  { k: 'epi', t: 'بؤرة جديدة قريبة', when: 'بؤرة مؤكدة داخل 10 كم (حماية) أو 50 كم (إنذار)', act: 'خطة الطوارئ: إيقاف الزيارات وتطهير مزدوج', link: '#epi', ic: 'virus' },
+  { k: 'birds', t: 'ذروة الهجرة وتجمعات البط في البحيرات', when: 'شدة الهجرة فوق 60% أو مشاهدات أنواع ناقلة حول المواقع', act: 'غلق الشبابيك وتغطية العلف والمياه', link: '#birds', ic: 'bird' },
+  { k: 'wind', t: 'رياح قادمة من بؤرة أو من البحيرات', when: 'الرياح من اتجاه بؤرة خلال 50 كم أو أكثر من 25 كم/س', act: 'غلق الفتحات المواجهة وتأجيل نقل السبلة', link: '#wx', ic: 'wind' },
+  { k: 'gate', t: 'مخالفات البوابات والعزل', when: 'أي رفض دخول متكرر أو تجاوز لفترة العزل', act: 'مراجعة البوابة وتدريب الأفراد', link: '#gates', ic: 'scan' },
+  { k: 'dis', t: 'تركيز المطهرات والأحواض', when: 'قراءة خارج المدى أو حوض فارغ', act: 'إيقاف الحركة حتى التصحيح', link: '#dis', ic: 'flask' },
+  { k: 'thi', t: 'الإجهاد الحراري (THI)', when: 'المؤشر 79 فأكثر لساعات', act: 'تشغيل التبريد وتقليل الكثافة والتحميل', link: '#wx', ic: 'sun' },
+  { k: 'pest', t: 'نشاط القوارض والذباب', when: 'استهلاك طُعم فوق 25% أو عدّ ذباب مرتفع', act: 'تكثيف برنامج المكافحة مع الشركة المنفذة', link: '#pc', ic: 'bug' },
+  { k: 'visit', t: 'الزيارات الخارجية والمأموريات', when: 'زيارة بدون تسجيل مسبق أو من موقع إنذار', act: 'رفض الدخول حتى انتهاء فترة العزل', link: '#missions', ic: 'calendar' }
+];
+function BIO_knowNorm(t) { return BIO_arN(String(t || '')).replace(/[^a-z0-9ء-ي ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70); }
+/** تصنيف خبر واحد: الموضوعات والنطاق والأهمية ولماذا يهمنا */
+function BIO_knowClassify(it, now) {
+  var raw = String(it.title || ''), src = String(it.src || ''), t = BIO_newsClean(raw, src);
+  if (t.length < 12 || !BIO_KNOW_REL.test(t)) return null;
+  var tops = BIO_KNOW_TOPICS.filter(function (x) { return x.re.test(t); }), w = tops.reduce(function (a, x) { return a + x.w; }, 0);
+  if (!tops.length) return null;
+  var g = BIO_newsGeo(t, !!it.eg), scope = 'world', place = '';
+  if (g) { place = g.place; scope = g.country === 'مصر' ? 'eg' : BIO_KNOW_MENA.indexOf(g.country) >= 0 ? 'region' : 'world'; }
+  else if (it.eg) scope = 'eg';
+  var at = Date.parse(it.date || '') || now, age = (now - at) / 864e5;
+  if (age > 30) return null;
+  var why = [];
+  if (scope === 'eg') why.push('في مصر'); else if (scope === 'region') why.push('في الإقليم');
+  if (/H5N1|HPAI|شديد(ة)? الضراوة/i.test(t)) { w += 2; why.push('سلالة شديدة الضراوة'); }
+  if (/مهاجر|هجرة|wild bird|migrat|طيور برية/i.test(t) && tops.some(function (x) { return x.k === 'outbreak'; })) { w += 2; why.push('مرتبط بالطيور البرية'); }
+  if (/قرار|حظر|ban|restrict|وزار/i.test(t) && scope === 'eg') { w += 2; why.push('قرار رسمي محلي'); }
+  var score = Math.round(w + (scope === 'eg' ? 5 : scope === 'region' ? 3 : 1) + (age <= 2 ? 3 : age <= 7 ? 1 : 0));
+  if (tops.every(function (x) { return x.k === 'market'; })) score = Math.max(1, score - 6);
+  if (place === 'مصر – غير محدد') place = 'مصر';
+  return { id: 'K' + BIO_hash(BIO_knowNorm(t)), t: t.slice(0, 220), link: String(it.link || '').slice(0, 500), src: src.replace(/\s+/g, ' ').slice(0, 60), at: at, lang: /[ء-ي]/.test(t) ? 'ar' : 'en',
+    topics: tops.map(function (x) { return x.k; }), scope: scope, place: place, score: score, why: why.slice(0, 3) };
+}
+/** دمج الأخبار الجديدة مع المحفوظة: بدون تكرار، آخر 30 يوم، أهم 260 */
+function BIO_knowMerge(prev, items, now) {
+  var by = {}, fresh = [];
+  (prev || []).forEach(function (x) { if (now - x.at <= 30 * 864e5) by[x.id] = x; });
+  (items || []).forEach(function (it) { var c = BIO_knowClassify(it, now); if (!c) return; if (!by[c.id]) { fresh.push(c); by[c.id] = c; } });
+  var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.at - a.at; }).slice(0, 260);
+  return { list: list, fresh: fresh };
+}
+/** أخبار نسخة العرض (أمثلة لشكل الشاشة فقط) */
+function BIO_demoKnow(now) {
+  var H = 36e5, L0 = [
+    ['الخدمات البيطرية ترفع درجة الاستعداد في مزارع الدواجن مع بدء موسم هجرة الطيور (مثال)', 'مثال', 3],
+    ['Poultry biosecurity: new guidance on footbaths and visitor control ahead of winter (example)', 'Example', 10],
+    ['Avian influenza H5N1 confirmed in commercial broiler farm in Europe (example)', 'Example', 20],
+    ['دراسة: تغطية خزانات المياه وشبك الشبابيك يخفض خطر انتقال إنفلونزا الطيور من الطيور البرية (مثال)', 'مثال', 30],
+    ['تركيا تعلن بؤرة إنفلونزا طيور في مزرعة بط وتفرض نطاق حماية (مثال)', 'مثال', 40],
+    ['New vaccine trial shows protection against HPAI in layers (example)', 'Example', 60],
+    ['Wild birds migration: waterfowl numbers rise at Mediterranean wetlands (example)', 'Example', 80],
+    ['نفوق طيور برية في بحيرة المنزلة والجهات المعنية تسحب عينات (مثال)', 'مثال', 100]];
+  return BIO_knowMerge([], L0.map(function (x) { return { title: x[0], src: x[1], link: 'https://www.cidrap.umn.edu/avian-influenza-bird-flu', date: new Date(now - x[2] * H).toUTCString(), eg: /[ء-ي]/.test(x[0]) }; }), now).list;
+}
+function BIO_v32know(api, H) {
+  var D = 864e5;
+  function data() { var k = null; try { k = deps0.knowGet ? deps0.knowGet() : null; } catch (e) {} return k; }
+  var deps0 = H.deps || {};
+  api.knowHub = function (pin) {
+    var u = H.auth(pin, true), now = (deps0.now || Date.now)(), k = data();
+    if (!k) k = { at: now, items: BIO_demoKnow(now), feeds: [], demo: true };
+    var items = k.items || [], cnt = { all: items.length }, sc = { eg: 0, region: 0, world: 0 };
+    BIO_KNOW_TOPICS.forEach(function (x) { cnt[x.k] = 0; }); items.forEach(function (x) { x.topics.forEach(function (t) { cnt[t] = (cnt[t] || 0) + 1; }); sc[x.scope] = (sc[x.scope] || 0) + 1; });
+    var day = items.filter(function (x) { return now - x.at <= 2 * D; }).sort(function (a, b) { return b.score - a.score || b.at - a.at; }).slice(0, 8);
+    var ops = null; try { var o = api.opsRoom(pin); ops = { season: o.season && typeof o.season === 'object' ? [o.season.label, o.season.note].filter(Boolean).join(' · ') : String(o.season || ''), sectors: o.sectors.map(function (s) { return { name: s.name, level: s.level, key: s.key, label: s.label, why: (s.why || []).slice(0, 2).map(function (w) { return w.text; }) }; }), actions: (o.actions || []).slice(0, 6).map(function (a) { return { lv: a.lv, t: a.t, do: a.do, who: a.who, link: a.link }; }), counts: o.counts }; } catch (e) { ops = null; }
+    return { now: now, at: k.at, demo: !!k.demo, items: items, feeds: k.feeds || [], topics: BIO_KNOW_TOPICS.map(function (x) { return { k: x.k, label: x.label, ic: x.ic, n: cnt[x.k] || 0 }; }), scopes: sc, today: day, lib: BIO_KNOW_LIB, watch: BIO_KNOW_WATCH, ops: ops, canRefresh: u.isAdmin || u.role === BIO.ROLE_MANAGER, me: u.name };
+  };
+  api.knowRefresh = function (pin) {
+    H.auth(pin, true);
+    if (deps0.knowNow) { try { deps0.knowNow(); } catch (e) { throw new Error('تعذر تحديث الأخبار الآن: ' + (e.message || e)); } }
+    return api.knowHub(pin);
+  };
+}
 function BIO_v31pc(api, H) {
   var store = H.store, deps = H.deps, D = 864e5;
   function rows(t) { try { return store.all(t); } catch (e) { return []; } }
