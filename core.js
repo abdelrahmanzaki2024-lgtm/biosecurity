@@ -2164,6 +2164,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v28 === 'function') BIO_v28(api, H_);
   if (typeof BIO_v292 === 'function') BIO_v292(api, H_);
   if (typeof BIO_v2913 === 'function') BIO_v2913(api, H_);
+  if (typeof BIO_v30 === 'function') BIO_v30(api, H_);
   return api;
 }
 
@@ -3039,6 +3040,7 @@ function BIO_ext(api, H) {
     return { now: now, season: season, alertLevel: num(s.BIRD_ALERT_LEVEL, 60), radius: num(s.BIRD_RADIUS_KM, 50), canEdit: u.perms.indexOf('admin') >= 0 || u.perms.indexOf('sites') >= 0,
       wx: run.wx ? { live: true, source: run.wx.source || 'Open-Meteo', fetchedAt: run.wx.fetchedAt, note: run.wx.note || '' } : { live: false, source: 'نموذج مناخي للرياح السائدة', note: 'لم تُجلب بيانات الرياح الحية بعد' },
       ebird: !!s.EBIRD_KEY,
+      inat: (function () { try { var I = deps.intel ? deps.intel() : null; return I && I.status && I.status.inat && I.status.inat.ok ? I.status.inat.at : 0; } catch (e) { return 0; } })(),
       flyways: BIO_FLYWAYS.map(function (f) { return { id: f.id, name: f.name, species: f.species, color: f.color, path: f.path, months: f.months, intensity: Math.round(BIO_monthly(f.months, now) * 100), bearing: f.bearing }; }),
       wetlands: BIO_WETLANDS.map(function (w) { return Object.assign({}, w, { intensity: Math.round(BIO_monthly(BIO_WETLAND_MONTHS, now) * w.w * 100) }); }), wetlandMonths: BIO_WETLAND_MONTHS,
       sites: model, missing: missing, sightings: run.obs.slice(0, 30), alerts: alerts };
@@ -5345,7 +5347,7 @@ function BIO_v18(api, H) {
    5) خريطة العمليات الحية */
 var BIO_SCREENS = [
   { k: 'board', label: 'غرفة الإدارة العليا', g: 'القيادة والمتابعة' }, { k: 'shield', label: 'درع الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'integ', label: 'رادار صدق البيانات', g: 'القيادة والمتابعة' }, { k: 'iso', label: 'معادلات العزل', g: 'الحركة والمركبات' }, { k: 'gates', label: 'سجل البوابات', g: 'الحركة والمركبات' }, { k: 'ucards', label: 'كروت الدخول', g: 'البيانات' },
-  { k: 'ops', label: 'خريطة العمليات الحية', g: 'القيادة والمتابعة' }, { k: 'stations', label: 'حالة المحطات', g: 'القيادة والمتابعة' },
+  { k: 'ops', label: 'غرفة عمليات الأمن الحيوي', g: 'القيادة والمتابعة' }, { k: 'stations', label: 'حالة المحطات', g: 'القيادة والمتابعة' },
   { k: 'ews', label: 'الإنذار المبكر', g: 'القيادة والمتابعة' }, { k: 'farm', label: 'بيانات المزارع', g: 'القيادة والمتابعة' }, { k: 'cams', label: 'حائط الكاميرات', g: 'القيادة والمتابعة' },
   { k: 'report', label: 'التقرير التنفيذي', g: 'القيادة والمتابعة' }, { k: 'sim', label: 'محاكاة التفشي', g: 'القيادة والمتابعة' }, { k: 'map', label: 'الخريطة الحية', g: 'القيادة والمتابعة' },
   { k: 'trace', label: 'تتبع العدوى', g: 'القيادة والمتابعة' }, { k: 'insights', label: 'التخطيط والتحليل', g: 'القيادة والمتابعة' }, { k: 'requests', label: 'الطلبات', g: 'القيادة والمتابعة' }, { k: 'comms', label: 'البلاغات والرسائل', g: 'القيادة والمتابعة' }, { k: 'tv', label: 'شاشة غرفة العمليات', g: 'القيادة والمتابعة' },
@@ -5815,6 +5817,8 @@ function BIO_v19(api, H) {
     var threat = null; try { threat = threatModel(u, now, sites, allM, null).map(function (t) { return { sector: t.sector, level: t.level, label: t.label, score: t.score }; }); } catch (e) {}
     return { now: now, sites: list, trips: trips, flyways: flyways, wind: wind, threat: threat, totals: { inside: list.reduce(function (a, s) { return a + s.inside.n; }, 0), trips: trips.length, high: list.filter(function (s) { return s.risk >= 50; }).length } };
   };
+  // v30: نموذج التهديد كامل (العوامل والأسباب) لغرفة العمليات
+  api._threatFull = function (u) { var now = deps.now(); return threatModel(u, now, H.sitesById(), H.allMoves(), null); };
   BIO_v19epi(api, H);
   // الخريطة والترتيب والمطهرات والوبائيات خاضعة لحجب الشاشات أيضاً
   ['opsMap', 'league', 'disData', 'disProductSave', 'disMove', 'disCheck', 'disDelete', 'disSettings', 'epiData', 'epiReport', 'epiDelete', 'epiRefresh', 'epiLab', 'epiImport', 'epiVerify', 'epiFeeds'].forEach(function (fn) {
@@ -7875,4 +7879,311 @@ function BIO_v2913(api, H) {
     rows = rows.slice(0, 1500).map(function (m) { var it = items[m.itemId] || {}; m.kind = it.kind || ''; m.vtype = it.vtype || ''; m.plate = it.plate ? String(it.plate) : ''; return m; });
     return { now: now, from: from, to: to, today: today, gate: gk, gates: gates.map(function (g) { delete g.ord; return g; }), rows: rows, total: total };
   };
+}
+
+/* ============================================================
+ * الإصدار 30: غرفة عمليات الأمن الحيوي (مركز دمج المعلومات)
+ * مصادر جديدة مجانية بدون مفتاح، تتحدث تلقائياً على الخادم:
+ *  - iNaturalist: مشاهدات الطيور البرية الحية حول كل قطاع، والطيور البرية النافقة (إنذار مبكر لإنفلونزا الطيور)
+ *  - منظمة الصحة العالمية (WHO Disease Outbreak News): إخطارات الإنفلونزا الحيوانية المنشأ
+ *  - الفاو (FAO DLIS - RAMSES): رصد الجراد الصحراوي الميداني في مصر والدول المحيطة
+ *  - Open-Meteo (الطقس وجودة الهواء): توقع 72 ساعة لكل قطاع: الإجهاد الحراري، الغبار، الأمطار، رياح الهجرة الليلية
+ * ============================================================ */
+var BIO_INTEL_SRC = {
+  wahis: { name: 'المنظمة العالمية لصحة الحيوان (WOAH-WAHIS)', conf: 'رسمي', url: 'https://wahis.woah.org/#/event-management', every: 'كل 6 ساعات' },
+  who: { name: 'منظمة الصحة العالمية: أخبار تفشي الأمراض', conf: 'رسمي', url: 'https://www.who.int/emergencies/disease-outbreak-news', every: 'كل 6 ساعات' },
+  locust: { name: 'الفاو: رصد الجراد الصحراوي (RAMSES)', conf: 'رسمي', url: 'https://www.fao.org/locust-watch', every: 'كل 6 ساعات' },
+  inat: { name: 'iNaturalist: مشاهدات الطيور البرية الموثقة بالصور', conf: 'علمي', url: 'https://www.inaturalist.org/observations?place_id=7055&iconic_taxa=Aves', every: 'كل 3 ساعات' },
+  wx: { name: 'Open-Meteo: الطقس وجودة الهواء (72 ساعة)', conf: 'نموذج', url: 'https://open-meteo.com', every: 'كل 3 ساعات' },
+  wind: { name: 'Open-Meteo: رياح ارتفاع الطيران (1500 م)', conf: 'نموذج', url: 'https://open-meteo.com', every: 'كل 3 ساعات' },
+  news: { name: 'الرصد الإعلامي (Google News وCIDRAP)', conf: 'إعلامي', url: 'https://news.google.com', every: 'كل 6 ساعات' },
+  ebird: { name: 'eBird (يحتاج مفتاح مجاني في الإعدادات)', conf: 'علمي', url: 'https://ebird.org/api/keygen', every: 'كل 3 ساعات' }
+};
+var BIO_LOCUST_NEAR = /^(Egypt|Sudan|Libya|Saudi Arabia|Eritrea|Ethiopia|Yemen|Chad|Jordan|Israel|Palestine|Oman|Djibouti|Somalia)$/i;
+var BIO_CTRY_AR = { Egypt: 'مصر', Sudan: 'السودان', Libya: 'ليبيا', 'Saudi Arabia': 'السعودية', Eritrea: 'إريتريا', Ethiopia: 'إثيوبيا', Yemen: 'اليمن', Chad: 'تشاد', Jordan: 'الأردن', Israel: 'فلسطين المحتلة', Palestine: 'فلسطين', Oman: 'عمان', Djibouti: 'جيبوتي', Somalia: 'الصومال', Mauritania: 'موريتانيا' };
+
+/** اتجاه من نقطة لأخرى بالدرجات (0 = شمال) */
+function BIO_brg(a, b) {
+  var r = Math.PI / 180, y = Math.sin((b[1] - a[1]) * r) * Math.cos(b[0] * r), x = Math.cos(a[0] * r) * Math.sin(b[0] * r) - Math.sin(a[0] * r) * Math.cos(b[0] * r) * Math.cos((b[1] - a[1]) * r);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+function BIO_dirAr(d) { if (d == null || isNaN(d)) return ''; return ['الشمال', 'الشمال الشرقي', 'الشرق', 'الجنوب الشرقي', 'الجنوب', 'الجنوب الغربي', 'الغرب', 'الشمال الغربي'][Math.round(((d % 360) + 360) % 360 / 45) % 8]; }
+/** مراكز القطاعات: متوسط إحداثيات مواقع كل قطاع ونصف قطره */
+function BIO_sectorCenters(sites) {
+  var by = {};
+  (sites || []).forEach(function (s) { if (s.external === true || BIO_isYes(s.external) || s.lat == null || s.lat === '' || s.lng == null || s.lng === '' || isNaN(s.lat) || isNaN(s.lng)) return; var k = String(s.sector || '').trim() || 'بدون قطاع'; (by[k] = by[k] || []).push(s); });
+  return Object.keys(by).map(function (k) {
+    var L = by[k], c = [L.reduce(function (a, s) { return a + Number(s.lat); }, 0) / L.length, L.reduce(function (a, s) { return a + Number(s.lng); }, 0) / L.length];
+    var rad = L.reduce(function (a, s) { return Math.max(a, BIO_kmH(c[0], c[1], Number(s.lat), Number(s.lng))); }, 0);
+    return { name: k, c: [Math.round(c[0] * 1e4) / 1e4, Math.round(c[1] * 1e4) / 1e4], r: Math.round(rad * 10) / 10, n: L.length };
+  });
+}
+/** درجة حرارة البصيلة الرطبة (Stull 2011) */
+function BIO_wetBulb(t, rh) { return t * Math.atan(0.151977 * Math.sqrt(rh + 8.313659)) + Math.atan(t + rh) - Math.atan(rh - 1.676331) + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 4.686035; }
+/** مؤشر الحرارة والرطوبة لدجاج التسمين (Tao & Xin 2003): 0.85 جاف + 0.15 رطب */
+function BIO_thi(t, rh) { if (t == null || rh == null) return null; return Math.round((0.85 * t + 0.15 * BIO_wetBulb(t, rh)) * 10) / 10; }
+function BIO_thiLvl(v) { return v == null ? null : v > 30 ? { k: 'emg', label: 'طوارئ حرارية' } : v >= 28.9 ? { k: 'danger', label: 'خطر حراري' } : v >= 27.8 ? { k: 'alert', label: 'تنبيه حراري' } : { k: 'ok', label: 'طبيعي' }; }
+/** مؤشر ليالي الهجرة: رياح ليلية مواتية على ارتفاع الطيران في اتجاه الهجرة الموسمي = موجات عبور أكبر وتوقف أكثر للطيور المائية */
+function BIO_migIdx(dirFrom, spd, month) {
+  if (dirFrom == null || spd == null) return 0;
+  var to = (dirFrom + 180) % 360, want = month >= 7 && month <= 10 ? 180 : month >= 1 && month <= 4 ? 0 : null;
+  if (want == null) return Math.min(20, Math.round(spd / 3));
+  var diff = Math.abs(((to - want) + 540) % 360 - 180), tail = Math.cos(diff * Math.PI / 180) * spd;
+  var peak = month === 8 || month === 9 || month === 2 || month === 3 ? 1 : 0.7;
+  return Math.max(0, Math.min(100, Math.round((35 + tail * 2.2) * peak * (tail > 0 ? 1 : 0.4))));
+}
+/** ملخص الطقس 72 ساعة لموقع من رد Open-Meteo (توقيت القاهرة) ورد جودة الهواء */
+function BIO_wxSum(fc, aq, nowMs) {
+  var h = (fc && fc.hourly) || {}, T = h.time || [], A = (aq && aq.hourly) || {}, AT = A.time || [], dIdx = {};
+  AT.forEach(function (t, i) { dIdx[t] = i; });
+  var OFF = ((fc && fc.utc_offset_seconds != null) ? fc.utc_offset_seconds : 10800) * 1000, nowKey = new Date(nowMs + OFF).toISOString().slice(0, 13) + ':00';
+  var days = {}, order = [], cur = null;
+  T.forEach(function (t, i) {
+    var day = t.slice(0, 10), hr = Number(t.slice(11, 13)), tc = h.temperature_2m ? h.temperature_2m[i] : null, rh = h.relative_humidity_2m ? h.relative_humidity_2m[i] : null, j = dIdx[t];
+    var dust = j != null && A.dust ? A.dust[j] : null, pm = j != null && A.pm10 ? A.pm10[j] : null;
+    var o = days[day]; if (!o) { o = days[day] = { d: day, tMax: -99, tMin: 99, rhMax: 0, thiMax: 0, dustMax: 0, pm10Max: 0, rain: 0, wMax: 0, gMax: 0, dirs: [0, 0], n8: [], hot: 0 }; order.push(day); }
+    if (tc != null) { o.tMax = Math.max(o.tMax, tc); o.tMin = Math.min(o.tMin, tc); }
+    if (rh != null) o.rhMax = Math.max(o.rhMax, rh);
+    var thi = BIO_thi(tc, rh); if (thi != null) { o.thiMax = Math.max(o.thiMax, thi); if (thi >= 27.8) o.hot++; }
+    if (dust != null) o.dustMax = Math.max(o.dustMax, dust); if (pm != null) o.pm10Max = Math.max(o.pm10Max, pm);
+    if (h.precipitation && h.precipitation[i] != null) o.rain += h.precipitation[i];
+    var ws = h.wind_speed_10m ? h.wind_speed_10m[i] : null, wd = h.wind_direction_10m ? h.wind_direction_10m[i] : null;
+    if (ws != null) { o.wMax = Math.max(o.wMax, ws); if (wd != null) { o.dirs[0] += Math.sin(wd * Math.PI / 180) * ws; o.dirs[1] += Math.cos(wd * Math.PI / 180) * ws; } }
+    if (h.wind_gusts_10m && h.wind_gusts_10m[i] != null) o.gMax = Math.max(o.gMax, h.wind_gusts_10m[i]);
+    if ((hr >= 19 || hr <= 4) && h.wind_speed_850hPa && h.wind_speed_850hPa[i] != null) o.n8.push([h.wind_direction_850hPa[i], h.wind_speed_850hPa[i]]);
+    if (t === nowKey || (!cur && t > nowKey)) cur = { t: tc, rh: rh, thi: thi, dust: dust, pm10: pm, w: ws, dir: wd, w8: h.wind_speed_850hPa ? h.wind_speed_850hPa[i] : null, dir8: h.wind_direction_850hPa ? h.wind_direction_850hPa[i] : null };
+  });
+  var month = new Date(nowMs + OFF).getUTCMonth(), today = new Date(nowMs + OFF).toISOString().slice(0, 10);
+  var out = order.filter(function (d) { return d >= today; }).slice(0, 3).map(function (d) {
+    var o = days[d], sx = 0, cx = 0; o.n8.forEach(function (w) { sx += Math.sin(w[0] * Math.PI / 180) * w[1]; cx += Math.cos(w[0] * Math.PI / 180) * w[1]; });
+    var n8dir = o.n8.length ? (Math.atan2(sx, cx) * 180 / Math.PI + 360) % 360 : null, n8spd = o.n8.length ? o.n8.reduce(function (a, w) { return a + w[1]; }, 0) / o.n8.length : null;
+    var dom = o.dirs[0] || o.dirs[1] ? (Math.atan2(o.dirs[0], o.dirs[1]) * 180 / Math.PI + 360) % 360 : null;
+    var r1 = function (x) { return x == null ? null : Math.round(x * 10) / 10; };
+    return { d: d, tMax: r1(o.tMax), tMin: r1(o.tMin), rhMax: Math.round(o.rhMax), thiMax: r1(o.thiMax), hotH: o.hot, heat: BIO_thiLvl(o.thiMax), dust: Math.round(o.dustMax), pm10: Math.round(o.pm10Max), rain: r1(o.rain), wMax: Math.round(o.wMax), gMax: Math.round(o.gMax), dir: dom == null ? null : Math.round(dom),
+      night: n8dir == null ? null : { dir: Math.round(n8dir), spd: Math.round(n8spd) }, mig: BIO_migIdx(n8dir, n8spd, month),
+      fly: Math.round(Math.max(0, Math.min(100, ((o.tMax + o.tMin) / 2 - 16) * 6 + (o.rhMax - 50) * 0.6))) };
+  });
+  if (cur) { cur.thiLvl = BIO_thiLvl(cur.thi); }
+  return { cur: cur, days: out };
+}
+/** iNaturalist: تحويل النتائج لمشاهدات مضغوطة */
+function BIO_inatRows(json, dead) {
+  return ((json && json.results) || []).map(function (r) {
+    var loc = String(r.location || '').split(','), tx = r.taxon || {};
+    if (loc.length !== 2) return null;
+    return { id: 'IN-' + r.id, t: Date.parse(r.time_observed_at || '') || Date.parse((r.observed_on || '') + 'T12:00:00+02:00') || null, lat: Number(loc[0]), lng: Number(loc[1]), sci: String(tx.name || ''), name: String(tx.preferred_common_name || tx.name || 'طائر'), q: r.quality_grade === 'research' ? 1 : 0,
+      dead: !!dead, place: String(r.place_guess || '').slice(0, 60), url: r.uri || ('https://www.inaturalist.org/observations/' + r.id), n: 1 };
+  }).filter(function (x) { return x && x.t && !isNaN(x.lat); });
+}
+/** منظمة الصحة العالمية: الإخطارات المتعلقة بالإنفلونزا الحيوانية المنشأ والأمراض الحيوانية */
+function BIO_whoRows(json, nowMs) {
+  return ((json && json.value) || []).map(function (x) {
+    var t = Date.parse(x.PublicationDate || ''), title = String(x.Title || x.OverrideTitle || '');
+    var flu = /avian|influenza a\s*\(h[579]|h5n\d|h7n\d|h9n2|h10n|h3n8/i.test(title) && !/seasonal/i.test(title), zoo = /mers|middle east respiratory|nipah|anthrax|rift valley|crimean/i.test(title);
+    if (!flu && !zoo) return null;
+    var c = title.split(/\s*[-–,]\s*/).pop();
+    return { t: t, title: title, flu: flu, country: c, url: 'https://www.who.int/emergencies/disease-outbreak-news/item/' + String(x.UrlName || x.DonId || '').replace(/^\//, '') };
+  }).filter(function (x) { return x && x.t && x.t > nowMs - 365 * 864e5; }).slice(0, 12);
+}
+/** الفاو RAMSES: أرصاد الجراد الموجودة (PRESENT) خلال آخر 60 يوماً */
+function BIO_locustRows(json) {
+  return ((json && json.features) || []).map(function (f) {
+    var a = f.attributes || {}; if (a.Latitude == null || a.Longitude == null) return null;
+    return { t: Number(a.Obs_Date), country: String(a.Country || ''), region: String(a.Region || ''), type: String(a.Locust_Type || ''), phase: String(a.Locust_Phase || ''), lat: Math.round(a.Latitude * 1e3) / 1e3, lng: Math.round(a.Longitude * 1e3) / 1e3, to: String(a.Swarm_Flying_To || '').replace(/^N\/A$/, '') };
+  }).filter(Boolean);
+}
+var BIO_LOCUST_AR = { ADULT: 'جراد بالغ', HOPPER: 'حوريات (نطاط)', BAND: 'أشرطة حوريات', SWARM: 'أسراب', 'NO LOCUST': 'لا يوجد' };
+
+/** بيانات تجريبية لنسخة العرض فقط (تظهر عليها علامة نسخة العرض) */
+function BIO_demoIntel(seed, now) {
+  var secs = BIO_sectorCenters(seed.sites || []), D = 864e5, M = new Date(now + 3 * 3600000).getUTCMonth();
+  var wx = {}; secs.forEach(function (s, k) {
+    var days = [0, 1, 2].map(function (i) { var t = 28 + i * 1.5 - k, rh = 62 - i * 4; var thi = BIO_thi(t, rh); return { d: new Date(now + i * D + 3 * 3600000).toISOString().slice(0, 10), tMax: t, tMin: 17 + i, rhMax: rh + 20, thiMax: thi, hotH: i === 1 ? 4 : 1, heat: BIO_thiLvl(thi), dust: [40, 180, 60][i], pm10: [70, 640, 90][i], rain: [0, 0, 3.2][i], wMax: [18, 32, 22][i], gMax: [28, 54, 30][i], dir: [320, 200, 340][i], night: { dir: [350, 10, 200][i], spd: [24, 30, 12][i] }, mig: BIO_migIdx([350, 10, 200][i], [24, 30, 12][i], M), fly: [55, 48, 62][i] }; });
+    wx[s.name] = { c: s.c, cur: { t: 27, rh: 57, thi: BIO_thi(27, 57), thiLvl: BIO_thiLvl(BIO_thi(27, 57)), dust: 52, pm10: 70, w: 23, dir: 315, w8: 34, dir8: 330 }, days: days };
+  });
+  var c0 = secs[0] ? secs[0].c : [30, 30.9], obs = [
+    ['Anas platyrhynchos', 'بط بري (مثال)', 0.12, -0.18, 2, 0], ['Ardea alba', 'بلشون أبيض كبير (مثال)', -0.05, 0.1, 1, 0], ['Corvus cornix', 'غراب بلدي نافق (مثال)', 0.08, 0.05, 3, 1], ['Bubulcus ibis', 'أبو قردان (مثال)', -0.15, -0.06, 1, 0], ['Fulica atra', 'غرة (مثال)', 0.3, 0.25, 4, 0]
+  ].map(function (o, i) { return { id: 'IN-DEMO' + i, t: now - (o[4] * 0.6 + 0.2) * D, lat: c0[0] + o[2], lng: c0[1] + o[3], sci: o[0], name: o[1], q: 1, dead: !!o[5], place: 'قرب ' + (secs[0] ? secs[0].name : 'القطاع') + ' (مثال)', url: 'https://www.inaturalist.org', n: 1 }; });
+  return {
+    demo: true,
+    status: { inat: { at: now - 40 * 6e4, ok: true, n: 37, dead: 1 }, who: { at: now - 2 * 3600000, ok: true, n: 2 }, locust: { at: now - 2 * 3600000, ok: true, n: 3 }, wx: { at: now - 40 * 6e4, ok: true, n: secs.length } },
+    inat: { obs: obs.filter(function (o) { return o.dead; }), sum: (function () { var o = {}; secs.forEach(function (s, i) { o[s.name] = { n: 14 - i * 5, risk: 6 - i * 2, last: now - D, sp: [['بلشون أبيض صغير (مثال)', 4], ['بط بري (مثال)', 2 - i], ['غرة (مثال)', 1]].filter(function (x) { return x[1] > 0; }) }; }); return o; })(),
+      eg: { n: 332, risk: 118, last: now - 3 * 3600000, sp: [['بلشون أبيض صغير', 19], ['غراب مقنع', 9], ['بلشون رمادي', 7], ['بط حديدي', 7], ['دجاجة الماء خضراء الأقدام', 7]], hot: [['أسوان (مثال)', 45], ['الجيزة (مثال)', 6], ['البحر الأحمر (مثال)', 5], ['القاهرة (مثال)', 5]] } }, who: [{ t: now - 12 * D, title: 'Avian Influenza A(H5N1) - (مثال لنسخة العرض)', flu: true, country: 'مثال', url: 'https://www.who.int/emergencies/disease-outbreak-news' }],
+    locust: [{ t: now - 20 * D, country: 'Egypt', region: 'Red Sea (مثال)', type: 'ADULT', phase: 'SOLITARIOUS', lat: 22.6, lng: 35.4, to: '' }, { t: now - 9 * D, country: 'Sudan', region: 'Red Sea (مثال)', type: 'HOPPER', phase: 'TRANSIENS', lat: 19.6, lng: 37.2, to: '' }],
+    wx: { at: now - 40 * 6e4, sectors: wx }
+  };
+}
+
+function BIO_v30(api, H) {
+  var store = H.store, deps = H.deps, D = 864e5;
+  function rows(t) { try { return store.all(t); } catch (e) { return []; } }
+  function num(v, d) { var n = Number(v); return v === '' || v == null || isNaN(n) ? d : n; }
+  function intel() { try { return deps.intel ? deps.intel() || {} : {}; } catch (e) { return {}; } }
+
+  /** iNaturalist → جدول مشاهدات الطيور: الأجناس الخطرة فقط، والطيور النافقة كلها */
+  api._inatIngest = function (list) {
+    var have = {}; rows('birdobs').forEach(function (o) { have[String(o.id)] = 1; });
+    var sites = H.sitesList(H.sitesById()).filter(function (x) { return !x.external && x.lat != null; }), add = [];
+    (list || []).forEach(function (r) {
+      if (have[r.id]) return; var genus = String(r.sci || '').split(' ')[0];
+      if (!r.dead && BIO_RISK_GENERA.indexOf(genus) < 0) return;
+      var near = null; sites.forEach(function (s) { var d = BIO_km([s.lat, s.lng], [r.lat, r.lng]); if (!near || d < near.d) near = { d: d, id: s.id }; });
+      if (!near || near.d > 60) return; have[r.id] = 1;
+      add.push({ id: r.id, time: r.t, lat: r.lat, lng: r.lng, siteId: near.id, species: r.name + ' (' + r.sci + ')', count: r.n || 1, source: 'iNaturalist', note: (r.dead ? 'طائر بري نافق · ' : '') + (r.place || '') + (r.q ? ' · موثقة' : ''), by: 'iNaturalist' });
+    });
+    if (add.length) deps.lock(function () { if (store.appendMany) store.appendMany('birdobs', add); else add.forEach(function (o) { store.append('birdobs', o); }); });
+    return add.length;
+  };
+
+  var ACT = {
+    mort: ['النافق والإنذار المبكر', 'زيارة بيطرية للمحطة خلال 6 ساعات، وسحب عينات، ووقف خروج أي طيور أو سبلة منها لحين النتيجة', 'مسؤول القطاع والطبيب البيطري', '#ews'],
+    gate: ['مخالفات البوابات', 'مراجعة سجل البوابة مع مشرف الأمن اليوم، وتأكيد تسجيل الخروج، ومنع أي استثناء جديد بدون موافقة المدير', 'مشرف الأمن الحيوي', '#gates'],
+    sites: ['حالة المواقع', 'تطبيق إجراءات الإغلاق الكاملة على الموقع ومراجعة كل الحركة الخارجة منه آخر 72 ساعة', 'مدير القطاع', '#stations'],
+    reports: ['البلاغات العاجلة', 'فتح البلاغات العاجلة والرد عليها وتكليف مسؤول بالمتابعة', 'مسؤول القطاع', '#comms'],
+    dis: ['المطهرات', 'تغيير محلول المغاطس وقياس التركيز في النقاط المنبهة قبل نهاية الوردية', 'مشرف نقاط التطهير', '#dis'],
+    birds: ['الطيور المهاجرة', 'تشديد منع الطيور البرية: شباك العنابر، تجفيف المياه الراكدة، وتغطية العلف والمياه', 'مدير المحطة', '#birds'],
+    epi: null
+  };
+
+  api.opsRoom = function (pin) {
+    var u = H.auth(pin, true), now = deps.now(), sites = H.sitesById(), I = intel(), set = H.settings ? H.settings() : {};
+    var my = H.sitesList(sites).filter(function (s) { return !s.external && H.inScope(u, s.id, sites) && s.lat != null && s.lng != null; });
+    var secs = BIO_sectorCenters(my), threat = [];
+    try { threat = api._threatFull ? api._threatFull(u) : []; } catch (e) { threat = []; }
+    var ss = null; try { ss = (deps.cached && deps.cached('stationStatus', [pin])) || api.stationStatus(pin); } catch (e) { }
+    var risk = {}; (ss ? ss.rows : []).forEach(function (r) { risk[r.id] = { risk: r.risk || 0, why: (r.why || []).slice(0, 2), phase: r.phase || '' }; });
+    function near(lat, lng) { var b = null; my.forEach(function (s) { var d = BIO_kmH(s.lat, s.lng, lat, lng); if (!b || d < b.km) b = { km: d, s: s }; }); return b; }
+    function secOf(name) { return secs.filter(function (x) { return x.name === name; })[0]; }
+    var sig = [];
+    function push(o) { o.id = o.id || ('S' + sig.length); sig.push(o); }
+    // 1) البؤر الوبائية (رسمي WOAH + بلاغات محلية + رصد إعلامي) حتى 300 كم من أقرب موقع
+    rows('epi').forEach(function (e) {
+      var la = num(e.lat, null), lo = num(e.lng, null), t = BIO_ms(e.start) || Date.parse(String(e.start || '')) || BIO_ms(e.fetched);
+      if (la == null || lo == null || !t || t < now - 60 * D) return;
+      var stx = String(e.status || ''); if (/resolved|منته|مغلق|سلبي|negative|مستبعد/i.test(stx)) return;
+      var n = near(la, lo); if (!n || n.km > 300) return;
+      var src = String(e.source || ''), off = /WAHIS|WOAH|FAO/i.test(src), news = /إعلامي/.test(src), km = Math.round(n.km);
+      var kind = String(e.kind || ''), lv = km <= 10 ? 'crit' : km <= 50 ? 'high' : km <= 150 ? 'mid' : 'info';
+      if (news && lv === 'crit') lv = 'high';
+      var DL = typeof BIO_EPI_D !== 'undefined' && BIO_EPI_D[kind] ? BIO_EPI_D[kind].label : '', ag = String(e.agent || '').trim();
+      push({ cat: 'epi', conf: off ? 'رسمي' : news ? 'إعلامي' : 'داخلي', lv: lv, title: (news || !DL ? String(e.disease || '') || kind : DL + (/^H\d+N\d+$/i.test(ag) && DL.indexOf(ag) < 0 ? ' ' + ag.toUpperCase() : '')).slice(0, 110), sub: [String(e.place || ''), String(e.country || '')].filter(Boolean).join('، ') + (e.species ? ' · ' + e.species : '') + (!news && DL && e.disease && String(e.disease) !== DL ? ' · ' + String(e.disease).slice(0, 60) : ''), at: t, km: km, brg: Math.round(BIO_brg([n.s.lat, n.s.lng], [la, lo])), site: n.s.name, sector: n.s.sector, lat: la, lng: lo, src: src, url: /^https?:/.test(String(e.reportId)) ? String(e.reportId) : (off ? 'https://wahis.woah.org/#/in-review/' + String(e.reportId || '') : ''), kind: kind });
+    });
+    // 2) الطيور البرية: iNaturalist (حي) + مشاهدات eBird والمشاهدات اليدوية من جدول المشاهدات
+    var seenIn = {}, iobs = (I.inat && I.inat.obs) || [];
+    rows('birdobs').forEach(function (o) {
+      var t = BIO_ms(o.time); if (!t || t < now - 14 * D) return; var la = num(o.lat, null), lo = num(o.lng, null);
+      var s0 = sites[BIO_norm(o.siteId)]; if (la == null && s0) { la = s0.lat; lo = s0.lng; } if (la == null) return;
+      var n = near(la, lo); if (!n || n.km > 80) return; seenIn[String(o.id)] = 1;
+      var dead = /نافق|dead/i.test(String(o.note || '') + String(o.species || '')), src = String(o.source || 'مشاهدة ميدانية');
+      push({ cat: dead ? 'dead' : 'bird', conf: /iNat|eBird/i.test(src) ? 'علمي' : 'داخلي', lv: dead ? (n.km <= 25 ? 'crit' : 'high') : n.km <= 5 ? 'mid' : 'info', title: String(o.species || 'طيور برية').replace(/\s*\([^)]*\)\s*$/, '') + (num(o.count, 1) > 1 ? ' × ' + num(o.count, 1) : ''), sub: (dead ? 'طائر بري نافق · ' : '') + src + (o.note ? ' · ' + String(o.note).replace(/^طائر بري نافق · /, '').slice(0, 60) : ''), at: t, km: Math.round(n.km * 10) / 10, brg: Math.round(BIO_brg([n.s.lat, n.s.lng], [la, lo])), site: n.s.name, sector: n.s.sector, lat: la, lng: lo, src: src });
+    });
+    iobs.forEach(function (o) {
+      if (seenIn[o.id] || o.t < now - (o.dead ? 120 : 14) * D) return; var n = near(o.lat, o.lng); if (!n || n.km > (o.dead ? 600 : 80)) return;
+      push({ cat: o.dead ? 'dead' : 'bird', conf: 'علمي', lv: o.dead ? (n.km <= 25 && o.t > now - 30 * D ? 'crit' : n.km <= 100 ? 'high' : n.km <= 250 ? 'mid' : 'info') : 'info', title: o.name, sub: (o.dead ? 'طائر بري نافق · ' : '') + 'iNaturalist' + (o.q ? ' · موثقة' : '') + (o.place ? ' · ' + o.place : ''), at: o.t, km: Math.round(n.km * 10) / 10, brg: Math.round(BIO_brg([n.s.lat, n.s.lng], [o.lat, o.lng])), site: n.s.name, sector: n.s.sector, lat: o.lat, lng: o.lng, src: 'iNaturalist', url: o.url });
+    });
+    // 3) منظمة الصحة العالمية
+    ((I.who) || []).forEach(function (w) { if (w.t < now - 120 * D) return; push({ cat: 'who', conf: 'رسمي', lv: w.flu && w.t > now - 30 * D ? 'mid' : 'info', title: w.title, sub: 'منظمة الصحة العالمية' + (w.flu ? ' · إنفلونزا حيوانية المنشأ' : ''), at: w.t, src: 'WHO', url: w.url }); });
+    // 4) الجراد الصحراوي
+    var locByC = {};
+    ((I.locust) || []).forEach(function (l) {
+      if (l.t < now - 60 * D || !BIO_LOCUST_NEAR.test(l.country)) return; var n = near(l.lat, l.lng); if (!n) return;
+      var k = l.country + '|' + l.type + '|' + Math.round(l.lat) + ',' + Math.round(l.lng), g = locByC[k];
+      if (g) { g.n++; if (l.t > g.at) g.at = l.t; return; }
+      locByC[k] = g = { cat: 'locust', conf: 'رسمي', lv: /SWARM|BAND/i.test(l.type) && n.km < 400 ? 'high' : n.km < 300 ? 'mid' : 'info', title: (BIO_LOCUST_AR[l.type] || l.type) + ' · ' + (BIO_CTRY_AR[l.country] || l.country), sub: 'الفاو RAMSES' + (l.region ? ' · ' + l.region : '') + (l.to ? ' · متجه ' + l.to : ''), at: l.t, km: Math.round(n.km), brg: Math.round(BIO_brg([n.s.lat, n.s.lng], [l.lat, l.lng])), site: n.s.name, sector: n.s.sector, lat: l.lat, lng: l.lng, src: 'FAO', url: 'https://www.fao.org/locust-watch', n: 1 };
+      push(g);
+    });
+    // 5) الطقس والتوقعات لكل قطاع
+    var wxS = (I.wx && I.wx.sectors) || {}, out72 = [];
+    secs.forEach(function (sc) {
+      var w = wxS[sc.name]; if (!w) { var best = null; Object.keys(wxS).forEach(function (k) { var c = wxS[k].c; if (!c) return; var d = BIO_kmH(sc.c[0], sc.c[1], c[0], c[1]); if (d < 40 && (!best || d < best.d)) best = { d: d, w: wxS[k] }; }); w = best ? best.w : null; }
+      out72.push({ sector: sc.name, c: sc.c, cur: w ? w.cur : null, days: w ? w.days : [] });
+      var ds = w ? w.days : [], WHEN = ['اليوم', 'بكرة', 'بعد بكرة'], pick = function (f) { var L = []; ds.forEach(function (d, i) { if (f(d)) L.push(i); }); return L; };
+      var whenTxt = function (L) { return L.map(function (i) { return WHEN[i]; }).join(' و'); }, worst = function (L, f) { return L.reduce(function (a, i) { return f(ds[i]) > f(ds[a]) ? i : a; }, L[0]); };
+      var hot = pick(function (d) { return d.heat && (d.heat.k === 'danger' || d.heat.k === 'emg'); });
+      if (hot.length) { var hw = ds[worst(hot, function (d) { return d.thiMax; })]; push({ cat: 'wx', conf: 'نموذج', lv: hw.heat.k === 'emg' ? 'high' : 'mid', title: hw.heat.label + ' ' + whenTxt(hot) + ' في ' + sc.name, sub: 'أعلى مؤشر حرارة ورطوبة ' + hw.thiMax + ' (الخطر من 28.9) · العظمى ' + hw.tMax + '° · ' + hw.hotH + ' ساعة فوق حد التنبيه', at: now, sector: sc.name, src: 'Open-Meteo', wx: 'heat', days: hot }); }
+      var dus = pick(function (d) { return d.pm10 >= 500; });
+      if (dus.length) { var dw = ds[worst(dus, function (d) { return d.pm10; })]; push({ cat: 'wx', conf: 'نموذج', lv: dw.pm10 >= 1000 ? 'high' : 'mid', title: 'غبار عالق ' + whenTxt(dus) + ' في ' + sc.name, sub: 'الجسيمات العالقة PM10 حتى ' + dw.pm10 + ' ميكروجرام/م³ (الطبيعي أقل من 150) · رياح حتى ' + dw.gMax + ' كم/س' + (dw.dir != null ? ' من ' + BIO_dirAr(dw.dir) : ''), at: now, sector: sc.name, src: 'Open-Meteo (CAMS)', wx: 'dust', days: dus }); }
+      var rns = pick(function (d) { return d.rain >= 2; });
+      if (rns.length) push({ cat: 'wx', conf: 'نموذج', lv: 'mid', title: 'أمطار ' + whenTxt(rns) + ' في ' + sc.name, sub: rns.map(function (i) { return WHEN[i] + ' ' + ds[i].rain + ' مم'; }).join('، ') + ' · برك المياه بتجذب الطيور البرية وتزود الذباب بعد 5 أيام', at: now, sector: sc.name, src: 'Open-Meteo', wx: 'rain', days: rns });
+      var mgs = pick(function (d) { return d.mig >= 70; });
+      if (mgs.length) { var mw = ds[worst(mgs, function (d) { return d.mig; })]; push({ cat: 'wx', conf: 'نموذج', lv: 'mid', title: 'ليالي هجرة قوية ' + whenTxt(mgs) + ' فوق ' + sc.name, sub: 'رياح ليلية مواتية ' + (mw.night ? mw.night.spd + ' كم/س من ' + BIO_dirAr(mw.night.dir) : '') + ' على ارتفاع الطيران · المؤشر ' + mw.mig + ' من 100', at: now, sector: sc.name, src: 'Open-Meteo', wx: 'mig', days: mgs }); }
+    });
+    // 6) رياح تحمل الخطر: بؤرة خلال 50 كم والرياح المتوقعة جاية من اتجاهها (إشارة واحدة لكل بؤرة)
+    sig.filter(function (x) { return x.cat === 'epi' && x.km <= 50; }).forEach(function (e) {
+      var o = out72.filter(function (x) { return x.sector === e.sector; })[0]; if (!o) return;
+      var L = [], mx = 0; o.days.forEach(function (d, i) { if (d.dir == null) return; var diff = Math.abs(((d.dir - e.brg) + 540) % 360 - 180); if (diff <= 30 && d.wMax >= 12) { L.push(i); mx = Math.max(mx, d.wMax); } });
+      if (L.length) push({ cat: 'wind', conf: 'نموذج', lv: e.km <= 20 ? 'crit' : 'high', title: 'الرياح ' + L.map(function (i) { return ['اليوم', 'بكرة', 'بعد بكرة'][i]; }).join(' و') + ' جاية من ناحية بؤرة على بعد ' + e.km + ' كم', sub: e.title + ' · ' + e.site + ' · رياح حتى ' + mx + ' كم/س من ' + BIO_dirAr(e.brg), at: now, km: e.km, brg: e.brg, site: e.site, sector: e.sector, src: 'Open-Meteo + ' + e.src, days: L });
+    });
+    var W = { crit: 0, high: 1, mid: 2, info: 3 };
+    sig.sort(function (a, b) { return W[a.lv] - W[b.lv] || (a.km == null ? 9999 : a.km) - (b.km == null ? 9999 : b.km) || b.at - a.at; });
+
+    // الضغط الخارجي لكل قطاع (0-100) من المعلومات الخارجية، بجانب التهديد الداخلي من نموذج الدرع
+    var ext = {}; secs.forEach(function (s) { ext[s.name] = { v: 0, why: [] }; });
+    function bump(sec, v, why) { var e = ext[sec]; if (!e) return; if (v > e.v) e.v = v; if (why && e.why.length < 4) e.why.push(why); }
+    sig.forEach(function (x) {
+      if (!x.sector) { if (x.cat === 'who' && x.lv === 'mid') secs.forEach(function (s) { bump(s.name, 25, 'إخطار دولي بإنفلونزا الطيور'); }); return; }
+      if (x.cat === 'epi') bump(x.sector, x.km <= 10 ? 100 : x.km <= 50 ? 75 : x.km <= 150 ? 45 : 20, x.km <= 150 ? 'بؤرة ' + x.km + ' كم ' + BIO_dirAr(x.brg) + ' ' + x.site : null);
+      else if (x.cat === 'dead') bump(x.sector, x.km <= 25 ? 80 : x.km <= 100 ? 55 : x.km <= 250 ? 25 : 5, x.km <= 250 ? 'طائر بري نافق على بعد ' + x.km + ' كم' : null);
+      else if (x.cat === 'wind') bump(x.sector, x.lv === 'crit' ? 90 : 70, 'رياح من ناحية بؤرة');
+      else if (x.cat === 'wx') bump(x.sector, x.lv === 'high' ? 50 : 35, x.title);
+      else if (x.cat === 'bird') bump(x.sector, x.km <= 5 ? 35 : 20, null);
+      else if (x.cat === 'locust') bump(x.sector, x.lv === 'high' ? 30 : 10, null);
+    });
+    var tm = {}; threat.forEach(function (t) { tm[t.sector] = t; });
+    var sectors = secs.map(function (s) {
+      var t = tm[s.name] || { score: 0, level: 1, key: 'low', label: 'منخفض', factors: [], why: [], acts: [] }, e = ext[s.name];
+      var mine = my.filter(function (x) { return String(x.sector || '').trim() === s.name; });
+      var combined = Math.round(Math.max(t.score, e.v * 0.8, t.score * 0.6 + e.v * 0.5));
+      return { name: s.name, c: s.c, r: s.r, n: s.n, inner: t.score, level: t.level, key: t.key, label: t.label, factors: t.factors, why: t.why, acts: t.acts, ext: Math.round(e.v), extWhy: e.why, score: Math.min(100, combined),
+        sites: mine.map(function (x) { var r = risk[x.id] || {}; return { id: x.id, name: x.name, level: x.level, risk: r.risk || 0, phase: r.phase || '', why: r.why || [], km: Math.round(BIO_kmH(s.c[0], s.c[1], x.lat, x.lng) * 10) / 10, brg: Math.round(BIO_brg(s.c, [x.lat, x.lng])), status: x.status, infra: x.infra || '' }; }) };
+    }).sort(function (a, b) { return b.score - a.score; });
+
+    // قائمة القرارات: كل بند فيه الإجراء المطلوب والمسؤول ورابط الشاشة
+    var acts = [], have = {};
+    function act(o) { var k = o.k; if (have[k]) return; have[k] = 1; acts.push(o); }
+    sig.forEach(function (x) {
+      if (x.cat === 'epi' && x.km <= 10) act({ k: 'epi10' + x.sector, lv: 'crit', t: 'بؤرة داخل 10 كم من ' + x.site, do: 'إيقاف الزيارات والتحميل في المحطات داخل 10 كم، تطهير مزدوج لكل مركبة، وإبلاغ الطبيب البيطري والإدارة العليا الآن', who: 'مدير الأمن الحيوي', link: '#epi', sector: x.sector, sig: x.id });
+      else if (x.cat === 'epi' && x.km <= 50 && x.conf !== 'إعلامي') act({ k: 'epi50' + x.sector, lv: 'high', t: 'بؤرة على بعد ' + x.km + ' كم ' + BIO_dirAr(x.brg) + ' ' + x.site, do: 'رفع مستوى الأمن الحيوي في ' + x.sector + '، منع الزيارات غير الضرورية، وتشديد تطهير المركبات القادمة من ناحية ' + BIO_dirAr(x.brg), who: 'مسؤول القطاع', link: '#epi', sector: x.sector, sig: x.id });
+      else if (x.cat === 'epi' && x.km <= 50) act({ k: 'news' + x.sector, lv: 'mid', t: 'خبر غير مؤكد عن بؤرة قرب ' + x.site, do: 'التحقق من الخبر مع مديرية الطب البيطري، وتأكيده أو استبعاده من شاشة رادار الوبائيات', who: 'مسؤول القطاع', link: '#epi', sector: x.sector, sig: x.id });
+      else if (x.cat === 'dead' && x.lv === 'crit') act({ k: 'dead' + x.sector, lv: 'high', t: 'طائر بري نافق على بعد ' + x.km + ' كم من ' + x.site, do: 'إرسال فريق للتأكد خلال 24 ساعة، جمع الطائر بإشراف بيطري لفحص إنفلونزا الطيور، ومنع اقتراب العمال من المكان', who: 'مشرف الأمن الحيوي', link: '#birds', sector: x.sector, sig: x.id });
+      else if (x.cat === 'wind') act({ k: 'wind' + x.sector, lv: x.lv, t: x.title, do: 'غلق الفتحات المواجهة لاتجاه الريح في ' + x.site + '، تأجيل نقل السبلة والطيور، ورش محيط العنابر', who: 'مدير المحطة', link: '#wx', sector: x.sector, sig: x.id });
+      else if (x.cat === 'wx' && x.wx === 'heat' && x.lv === 'high') act({ k: 'heat' + x.sector, lv: 'high', t: x.title, do: 'تشغيل التبريد بدري، منع الحركة والوزن والتحميل من 11 الصبح لـ 5 العصر، ومتابعة النافق كل ساعتين', who: 'مدير المحطة', link: '#wx', sector: x.sector, sig: x.id });
+      else if (x.cat === 'wx' && x.wx === 'dust') act({ k: 'dust' + x.sector, lv: x.lv, t: x.title, do: 'تأجيل نقل السبلة، غلق الشبابيك الجانبية وقت الذروة، وتغيير فلاتر المداخل بعد العاصفة', who: 'مدير المحطة', link: '#wx', sector: x.sector, sig: x.id });
+      else if (x.cat === 'wx' && x.wx === 'rain') act({ k: 'rain' + x.sector, lv: 'mid', t: x.title, do: 'شفط تجمعات المياه حول العنابر خلال 24 ساعة، ورش مبيد يرقات بعد 3 أيام', who: 'مدير المحطة', link: '#wx', sector: x.sector, sig: x.id });
+      else if (x.cat === 'wx' && x.wx === 'mig') act({ k: 'mig' + x.sector, lv: 'mid', t: x.title, do: 'مراجعة شباك العنابر وتغطية خزانات المياه والعلف، وتجفيف أي مياه مكشوفة قبل الليل', who: 'مدير المحطة', link: '#birds', sector: x.sector, sig: x.id });
+    });
+    sectors.forEach(function (s) { (s.factors || []).filter(function (f) { return f.v >= 50 && ACT[f.k] && !(f.k === 'birds' && have['mig' + s.name]); }).forEach(function (f) { var a = ACT[f.k], w = (s.why || []).filter(function (y) { return y.f === f.k; })[0]; act({ k: 'in' + f.k + s.name, lv: f.v >= 80 ? 'crit' : 'high', t: (w ? w.text : a[0] + ' في ' + s.name), do: a[1], who: a[2], link: a[3], sector: s.name }); }); });
+    acts.sort(function (a, b) { return W[a.lv] - W[b.lv]; });
+
+    // صحة المصادر
+    var es = deps.epiStatus ? deps.epiStatus() : null, bw = deps.birdWx ? deps.birdWx() : null, ist = I.status || {};
+    var hsrc = [
+      { k: 'wahis', at: es && (es.lastOk || (es.ok ? es.at : null)), ok: es ? !!es.ok : null, n: es ? es.outbreaks : null, err: es && !es.ok ? es.error : '' },
+      { k: 'who', at: ist.who && ist.who.at, ok: ist.who ? ist.who.ok : null, n: ist.who ? ist.who.n : null, err: ist.who && ist.who.err },
+      { k: 'locust', at: ist.locust && ist.locust.at, ok: ist.locust ? ist.locust.ok : null, n: ist.locust ? ist.locust.n : null, err: ist.locust && ist.locust.err },
+      { k: 'inat', at: ist.inat && ist.inat.at, ok: ist.inat ? ist.inat.ok : null, n: ist.inat ? ist.inat.n : null, err: ist.inat && ist.inat.err, extra: ist.inat && ist.inat.dead ? ist.inat.dead + ' نافق' : '' },
+      { k: 'wx', at: ist.wx && ist.wx.at, ok: ist.wx ? ist.wx.ok : null, n: ist.wx ? ist.wx.n : null, err: ist.wx && ist.wx.err },
+      { k: 'wind', at: bw && bw.fetchedAt, ok: bw ? true : null, n: bw && bw.sites ? Object.keys(bw.sites).length : null },
+      { k: 'news', at: es && es.news && es.news.at, ok: es && es.news ? true : null, n: es && es.news ? es.news.items : null },
+      { k: 'ebird', at: null, ok: set.EBIRD_KEY ? true : null, n: null, off: !set.EBIRD_KEY }
+    ].map(function (x) { var m = BIO_INTEL_SRC[x.k]; x.name = m.name; x.conf = m.conf; x.url = m.url; x.every = m.every; x.age = x.at ? Math.round((now - x.at) / 6e4) : null; x.state = x.off ? 'off' : x.ok === false ? 'bad' : x.at == null ? 'none' : x.age > 26 * 60 ? 'stale' : 'live'; return x; });
+
+    var cnt = { crit: 0, high: 0, mid: 0, info: 0 }; sig.forEach(function (x) { cnt[x.lv]++; });
+    var ip = I.inat || {};
+    return { now: now, demo: !!I.demo, season: BIO_season(now), birdsPulse: { eg: ip.eg || null, sec: ip.sum || {} }, sectors: sectors, signals: sig.slice(0, 160), counts: cnt, actions: acts.slice(0, 20), outlook: out72, sources: hsrc, wxAt: I.wx ? I.wx.at : null,
+      canRefresh: !!deps.intelNow, migMonth: new Date(now + 3 * 3600000).getUTCMonth() };
+  };
+  api.opsRoomRefresh = function (pin) {
+    var u = H.auth(pin, true);
+    if (!deps.intelNow) throw new Error('التحديث المباشر يعمل في النظام الحقيقي فقط. نسخة العرض فيها بيانات أمثلة');
+    if (deps.throttle && !deps.throttle('intel_now', 120)) throw new Error('تم التحديث منذ أقل من دقيقتين');
+    var r = deps.intelNow(); if (api._log) try { api._log(u, 'intel', 'refresh', 'تحديث مصادر غرفة العمليات', null, r); } catch (e) { }
+    return r;
+  };
+  // تخضع لحجب الشاشات زي باقي العمليات
+  ['opsRoom', 'opsRoomRefresh'].forEach(function (fn) {
+    var orig = api[fn];
+    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf('ops') >= 0) throw new Error('شاشة «غرفة العمليات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
+    api[fn].__scr = 'ops';
+  });
 }

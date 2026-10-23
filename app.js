@@ -117,7 +117,7 @@
   var DemoNet = { offline: false };
   /* v27: ذاكرة فورية للشاشات. أي شاشة اتفتحت قبل كده تظهر في الحال من آخر بيانات محفوظة على الجهاز،
      وفي الخلفية يتجاب الجديد من الخادم ويتحدث المعروض لو اتغير. أي حفظ أو تعديل يمسح الذاكرة فوراً علشان مايظهرش رقم قديم. */
-  var RC_FN = { userCards: 1, gateLog: 1, dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
+  var RC_FN = { opsRoom: 1, userCards: 1, gateLog: 1, dashboard: 1, shield: 1, boardroom: 1, opsMap: 1, stationStatus: 1, fleet: 1, companies: 1, network: 1, execReport: 1, ews: 1, epiData: 1, trips: 1, storeData: 1, evalData: 1, farmMeta: 1, farmData: 1, birds: 1, attData: 1, cams: 1, contractors: 1, disData: 1, disposals: 1, inspections: 1, isoGet: 1, league: 1, routes: 1, tours: 1, missions: 1, reports: 1, usersList: 1, listApprovals: 1, cycleData: 1, selfPoints: 1, ebirdStatus: 1, backups: 1 };
   var RC_FREE = { login: 1, sync: 1, ping: 1, presence: 1, threads: 1, myQuality: 1, gateAccess: 1, approvalStatus: 1, selfPointInfo: 1, selfMissionInfo: 1, tripInfo: 1, history: 1, trace: 1, passport: 1, stationHistory: 1, cardReport: 1, reportOpen: 1, settlePreview: 1, isoPreview: 1, tourPreview: 1, codesPreview: 1, farmMetaX: 1, myAwards: 1, adminList: 1, audit: 1, cardLog: 1, changes: 1, chat: 1, planVisits: 1, noticeAcks: 1, simulate: 1, containPlan: 1, registerDevice: 1, vrOpen: 1, tripPing: 1, disProgram: 1, purgeList: 1 };
   var RC = { m: {}, n: 0, flight: {} }, RC_FRESH = 20000;
   function rcKey(fn, args) { return (S.session && S.session.user ? S.session.user.id : '') + '|' + fn + '|' + JSON.stringify((args || []).slice(1)); }
@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 29.14</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 30</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -507,7 +507,7 @@
   function navItems0() {
     if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'خريطة العمليات', 'map'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'غرفة العمليات', 'radar'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
     return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
   }
@@ -650,6 +650,7 @@
     if (base !== 'gate') stopCam();
     if (base !== 'tv') tvStop();
     if (base !== 'birds') birdLiveStop();
+    if (base !== 'ops') { clearInterval(S.p30); clearInterval(S.orRot); document.body.classList.remove('or-tv-on'); }
     if (base !== 'ops') { clearInterval(S.p19); if (S.oc) { ocTourStop(); ocReplayStop(); } }
     if (base !== 'epi') S.epi = null;
     if (base !== 'wx') { clearInterval(S.airAnim); clearInterval(S.airPlay); S.airPlay = null; }
@@ -662,7 +663,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOps21, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -1542,7 +1543,7 @@
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
       '<button class="btn" id="syncBtn">' + icon('refresh') + ' مزامنة الآن</button></div>' +
       (me.user.isManager && (can('analytics') || isAdmin()) ? '<div class="card"><h2>' + icon('network') + ' أدوات الإدارة</h2><div class="tool-links">' + (isAdmin() ? [['users', 'user', 'المستخدمون والصلاحيات']] : []).concat(can('analytics') ? [['map', 'map', 'الخريطة الحية'], ['trace', 'trace', 'تتبع العدوى'], ['plan', 'calendar', 'مخطط الزيارات الذكي'], ['network', 'network', 'شبكة المخالطة'], ['audit', 'shield', 'ملف اعتماد المنشأة المعزولة']] : []).filter(function (t) { return !hiddenScr(t[0]); }).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '') +
-      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['ops', 'map', 'خريطة العمليات الحية'], ['epi', 'virus', 'رادار الوبائيات ومحيط البؤر'], ['dis', 'drop', 'المطهرات: المخزون والاستهلاك'], ['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['ews', 'pulse', 'الإنذار المبكر للنافق'], ['farm', 'sheet', 'بيانات المزارع اليومية (رفع ملف الإكسيل)'], ['cams', 'video', 'حائط الكاميرات'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['trips', 'route', 'رحلات المركبات وتتبع السائق'], ['tours', 'truck', 'جولات المركبات على أكثر من محطة'], ['routes', 'nav', 'خطوط السير المعتمدة وإرشاد المركبات'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(can('data') || isAdmin() ? [['attend', 'clock', 'الحضور والانصراف']] : [], isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات'], ['purge', 'trash', 'حذف البيانات وإعادة التهيئة']] : []).filter(function (t) { return !hiddenScr(t[0]); }).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links">' + [['tours', 'truck', 'جولات المحطات'], ['routes', 'nav', 'إرسال خط سير لمركبة'], ['dis', 'drop', 'المطهرات: المغاطس والتركيز'], ['disposal', 'box', 'النافق والسبلة']].filter(function (t) { return !hiddenScr(t[0]); }).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>') +
+      (me.user.isManager ? '<div class="card"><h2>' + icon('shield') + ' أدوات الأمن الحيوي المتقدمة</h2><div class="tool-links">' + [['ops', 'radar', 'غرفة عمليات الأمن الحيوي'], ['epi', 'virus', 'رادار الوبائيات ومحيط البؤر'], ['dis', 'drop', 'المطهرات: المخزون والاستهلاك'], ['stations', 'layers', 'حالة المحطات حتى تاريخه'], ['ews', 'pulse', 'الإنذار المبكر للنافق'], ['farm', 'sheet', 'بيانات المزارع اليومية (رفع ملف الإكسيل)'], ['cams', 'video', 'حائط الكاميرات'], ['fleet', 'truck', 'المركبات والمعدات وتتبعها'], ['trips', 'route', 'رحلات المركبات وتتبع السائق'], ['tours', 'truck', 'جولات المركبات على أكثر من محطة'], ['routes', 'nav', 'خطوط السير المعتمدة وإرشاد المركبات'], ['contractors', 'tool', 'المقاولون ومعداتهم'], ['birds', 'bird', 'رادار الطيور المهاجرة'], ['wx', 'wind', 'الأرصاد الجوية والآفات والإجهاد الحراري'], ['inspect', 'clip', 'التدقيق الداخلي والإجراءات التصحيحية'], ['disposal', 'box', 'النافق والسبلة'], ['companies', 'truck', 'شركات النقل والمقاولون'], ['tv', 'tv', 'شاشة غرفة العمليات']].concat(can('data') || isAdmin() ? [['attend', 'clock', 'الحضور والانصراف']] : [], isAdmin() ? [['backup', 'history', 'النسخ الاحتياطي وسجل التعديلات'], ['purge', 'trash', 'حذف البيانات وإعادة التهيئة']] : []).filter(function (t) { return !hiddenScr(t[0]); }).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>' : '<div class="card"><h2>' + icon('box') + ' أدوات البوابة</h2><div class="tool-links">' + [['tours', 'truck', 'جولات المحطات'], ['routes', 'nav', 'إرسال خط سير لمركبة'], ['dis', 'drop', 'المطهرات: المغاطس والتركيز'], ['disposal', 'box', 'النافق والسبلة']].filter(function (t) { return !hiddenScr(t[0]); }).map(function (t) { return '<a class="btn" href="#' + t[0] + '">' + icon(t[1]) + ' ' + t[2] + '</a>'; }).join('') + '</div></div>') +
       '<a class="card" href="#ref" style="text-decoration:none;color:inherit"><h2>' + icon('book') + ' مرجع قواعد الأمن الحيوي</h2><p class="small muted">فترات العزل المعتمدة وإجراءات هابرد إفيشنسي بلس.</p></a>' +
       '</div></section>';
     $('logoutBtn').onclick = function () { logout(); };
@@ -3958,7 +3959,7 @@
     var dir = d.season.k === 'spring' ? 'الطيور تتجه شمالاً' : d.season.k === 'autumn' ? 'الطيور تتجه جنوباً' : d.season.dir;
     var html = '<div class="bd-hero"><div class="bd-ht"><span class="cc-kick">' + icon('bird') + ' رادار الطيور المهاجرة · الإنذار المبكر لإنفلونزا الطيور</span><h1>مسارات الهجرة وخطرها على مواقع الشركة</h1>' +
       '<div class="cc-meta"><span class="live"><i></i> ' + esc(d.season.label) + '</span><span>' + esc(dir) + '</span><span>آخر حساب ' + esc(fmt(d.now)) + '</span></div>' +
-      '<div class="bd-src"><span class="' + (live ? 'on' : 'mod') + '">' + icon('wind') + (live ? ' رياح حية: ' + esc(d.wx.source) : /محاكاة/.test(d.wx.source || '') ? ' رياح محاكاة (نسخة العرض)' : ' رياح: نموذج مناخي حتى أول تحديث') + '</span><span class="' + (d.ebird ? 'on' : 'off') + '">' + icon('eye') + (d.ebird ? ' مشاهدات eBird مفعلة' : ' eBird غير مفعل') + '</span><span class="on">' + icon('pin') + ' ' + d.sightings.length + ' مشاهدة خلال 7 أيام</span><span class="mod">' + icon('map') + ' مسارات الهجرة: نموذج علمي</span></div></div>' +
+      '<div class="bd-src"><span class="' + (live ? 'on' : 'mod') + '">' + icon('wind') + (live ? ' رياح حية: ' + esc(d.wx.source) : /محاكاة/.test(d.wx.source || '') ? ' رياح محاكاة (نسخة العرض)' : ' رياح: نموذج مناخي حتى أول تحديث') + '</span><span class="' + (d.ebird ? 'on' : 'off') + '">' + icon('eye') + (d.ebird ? ' مشاهدات eBird مفعلة' : ' eBird غير مفعل') + '</span><span class="' + (d.inat ? 'on' : 'off') + '">' + icon('bird') + (d.inat ? ' iNaturalist حي (' + ago(d.inat) + ')' : ' iNaturalist: أول جلب خلال 3 ساعات') + '</span><span class="on">' + icon('pin') + ' ' + d.sightings.length + ' مشاهدة خلال 7 أيام</span><span class="mod">' + icon('map') + ' مسارات الهجرة: نموذج علمي</span></div></div>' +
       '<div class="bd-hs"><div class="bd-big" style="--c:' + (top ? LVL_C[top.lvl.k] : 'var(--r-low)') + '"><b class="mono">' + (top ? top.score : 0) + '</b><span>أعلى خطر الآن</span><small>' + esc(top ? shortSite(top.name) : '—') + '</small></div>' +
       '<div class="bd-big" style="--c:' + (hi.length ? 'var(--r-crit)' : 'var(--r-low)') + '"><b class="mono">' + hi.length + '</b><span>فوق حد التنبيه</span><small>الحد ' + d.alertLevel + ' من 100</small></div></div>' +
       '<div class="cc-acts"><button class="btn cc-btn" type="button" id="bdSight">' + icon('plus') + ' إبلاغ عن مشاهدة</button><button class="btn cc-btn" type="button" id="bdRef">' + icon('refresh') + ' تحديث الرياح والمشاهدات</button>' +
@@ -8224,10 +8225,219 @@
     d.sites.filter(function (s) { return s.gt && s.gt.state === 'prep' && s.gt.day > s.gt.total; }).forEach(function (s) { A.push({ lv: 'mid', ic: 'calendar', t: nm(s.id) + ': تجاوز موعد التسكين المحسوب', s: 'اليوم ' + s.gt.day + ' بعد البيع', at: s.id, lens: 'cycle' }); });
     var w = { crit: 0, high: 1, mid: 2 }; return A.sort(function (a, b) { return w[a.lv] - w[b.lv]; });
   }
+  /* ======================================================================
+   * الإصدار 30: غرفة عمليات الأمن الحيوي
+   * شاشة قرار مش خريطة: مستوى التهديد لكل قطاع (داخلي + خارجي)، رادار التهديد حول القطاع
+   * (المسافة والاتجاه لكل بؤرة وطائر نافق وجراد والرياح)، قائمة القرارات المطلوبة الآن،
+   * توقعات 72 ساعة، نشرة الاستخبارات من كل المصادر، ونبض الهجرة، وصحة كل مصدر.
+   * ====================================================================== */
+  ICONS.thermo = 'M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z';
+  ICONS.rain = 'M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2';
+  ICONS.bug = 'M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6 13H2M22 13h-4M6.5 9C4.6 8.8 3 7.1 3 5M21 5c0 2.1-1.6 3.8-3.5 4M3 21c0-2.1 1.7-3.9 3.8-4M17.2 17c2.1.1 3.8 1.9 3.8 4';
+  ICONS.globe = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z';
+  var OR_LV = { crit: ['حرج', 'or-crit'], high: ['عالي', 'or-high'], mid: ['متوسط', 'or-mid'], info: ['للعلم', 'or-info'] };
+  var OR_CAT = { epi: ['بؤرة وبائية', 'virus'], dead: ['طائر بري نافق', 'bird'], bird: ['طيور برية', 'bird'], wind: ['رياح من بؤرة', 'wind'], wx: ['طقس', 'sun'], locust: ['جراد صحراوي', 'bug'], who: ['إخطار دولي', 'globe'] };
+  var OR_FILT = [['all', 'الكل'], ['epi', 'الوبائيات'], ['birds', 'الطيور البرية'], ['wx', 'الطقس والرياح'], ['locust', 'الجراد'], ['who', 'الإخطارات الدولية']];
+  var OR_CONF = { 'رسمي': 'or-c-off', 'علمي': 'or-c-sci', 'إعلامي': 'or-c-news', 'داخلي': 'or-c-in', 'نموذج': 'or-c-mod' };
+  var OR_SRC_ST = { live: ['مباشر', 'ok'], stale: ['متأخر', 'warn'], bad: ['عطل', 'bad'], none: ['لم يُجلب بعد', 'mute'], off: ['غير مفعل', 'mute'] };
+  var OR_ZOOM = { 25: [2, 5, 10, 25], 100: [10, 25, 50, 100], 320: [10, 50, 150, 300] };
+  function orKmR(km, R, mx) { mx = mx || 320; return R * Math.sqrt(Math.min(km, mx) / mx); }
+  function orDir(b) { return b == null ? '' : ['شمال', 'شمال شرق', 'شرق', 'جنوب شرق', 'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب'][Math.round(((b % 360) + 360) % 360 / 45) % 8]; }
+  function orAgo(t) { if (!t) return ''; var d = t - Date.now(); if (d > 3600000) { var n = Math.round(d / 864e5); return n <= 0 ? 'اليوم' : n === 1 ? 'بكرة' : 'خلال ' + n + ' يوم'; } return ago(t); }
+  function orAckKey() { var u = S.session && S.session.user; return 'bio-or-ack-' + (u ? u.id : '') + '-' + new Date().toDateString(); }
+  function orAcks() { try { return JSON.parse(localStorage.getItem(orAckKey()) || '{}'); } catch (e) { return {}; } }
+  function orAckSet(k, v) { var a = orAcks(); if (v) a[k] = Date.now(); else delete a[k]; try { localStorage.setItem(orAckKey(), JSON.stringify(a)); } catch (e) { } }
+  function orGauge(v, lv) {
+    var r = 34, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, v)) / 100;
+    return '<svg class="or-gauge" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="' + r + '" class="tr"/><circle cx="42" cy="42" r="' + r + '" class="vl or-s' + lv + '" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 42 42)"/><text x="42" y="40" text-anchor="middle" class="n">' + lv + '</text><text x="42" y="56" text-anchor="middle" class="s">من 5</text></svg>';
+  }
+  function orLvOf(score) { return score >= 80 ? 5 : score >= 60 ? 4 : score >= 40 ? 3 : score >= 20 ? 2 : 1; }
+  var OR_LVN = { 1: 'منخفض', 2: 'حذر', 3: 'مرتفع', 4: 'خطير', 5: 'حرج' };
+
+  function viewOpsRoom() {
+    if (S.route === 'ops/map') return viewOps21();
+    var O = S.or = { d: null, sec: (S.or && S.or.sec) || '', filt: (S.or && S.or.filt) || 'all', lay: { epi: 1, dead: 1, bird: 1, locust: 1, wind: 1 }, zoom: (S.or && S.or.zoom) || 'auto', pick: null, tv: false };
+    $('main').innerHTML = '<section class="view or-view" id="orView">' +
+      '<header class="or-top"><div class="or-ttl"><span class="or-live"><i></i> مباشر</span><h1>' + icon('radar') + ' غرفة عمليات الأمن الحيوي</h1><p id="orSub">مستوى التهديد الداخلي والخارجي لكل قطاع، وكل المصادر في مكان واحد، والقرار المطلوب الآن</p></div>' +
+      '<div class="or-tools"><span class="or-clock mono" id="orClk"></span><button class="btn sm" type="button" id="orRef">' + icon('refresh') + ' <span>تحديث المصادر</span></button><button class="btn sm" type="button" id="orTv">' + icon('tv') + ' <span>وضع شاشة العرض</span></button><a class="btn sm ghost" href="#ops/map">' + icon('map') + ' <span>الخريطة الجغرافية</span></a></div></header>' +
+      '<div id="orOut"><div class="or-panel"><p class="empty"><span class="spin"></span> جاري تجميع المصادر…</p></div></div></section>';
+    var tick = function () { if ($('orClk')) $('orClk').textContent = new Date().toLocaleTimeString('ar-EG', Object.assign({ hour: 'numeric', minute: '2-digit', second: '2-digit' }, TZ)); };
+    tick(); clearInterval(S.orClk); S.orClk = setInterval(function () { if (!$('orClk')) return clearInterval(S.orClk); tick(); }, 1000);
+    var load = function (quiet) {
+      return remote('opsRoom', [S.session.pin]).then(function (d) { if (S.or !== O || !$('orOut')) return; O.d = d; if (!O.sec || !d.sectors.some(function (s) { return s.name === O.sec; })) O.sec = d.sectors[0] ? d.sectors[0].name : ''; orDraw(O); })
+        .catch(function (e) { if (quiet || !$('orOut')) return; $('orOut').innerHTML = e.net ? offlineCard('غرفة العمليات') : '<div class="or-panel"><p class="empty">' + icon('alert') + ' ' + esc(errText(e)) + '</p></div>'; });
+    };
+    load();
+    clearInterval(S.p30); S.p30 = setInterval(function () { if (S.route !== 'ops') return clearInterval(S.p30); if (!document.hidden) load(true); }, MODE === 'demo' ? 60000 : 300000);
+    $('orRef').onclick = function () {
+      var b = this; b.disabled = true; toast('جاري تحديث المصادر… ممكن ياخد دقيقة');
+      remote('opsRoomRefresh', [S.session.pin]).then(function (r) { var bad = Object.keys(r || {}).filter(function (k) { return r[k] && r[k].ok === false; }); toast(bad.length ? 'اتحدثت المصادر، ومصدر ' + bad.length + ' فيه عطل (شوف صحة المصادر)' : 'اتحدثت كل المصادر'); return load(); })
+        .catch(function (e) { toast(errText(e)); }).then(function () { b.disabled = false; });
+    };
+    $('orTv').onclick = function () { orTv(O, !O.tv); };
+  }
+  function orTv(O, on) {
+    O.tv = on; var v = $('orView'); if (!v) return; v.classList.toggle('or-tv', on); document.body.classList.toggle('or-tv-on', on);
+    clearInterval(S.orRot);
+    if (on) {
+      try { if (v.requestFullscreen) v.requestFullscreen().catch(function () { }); } catch (e) { }
+      S.orRot = setInterval(function () { if (!O.d || !$('orView') || !O.tv) return clearInterval(S.orRot); var L = O.d.sectors; if (L.length < 2) return; var i = L.map(function (s) { return s.name; }).indexOf(O.sec); O.sec = L[(i + 1) % L.length].name; O.pick = null; orDraw(O); }, 25000);
+    } else { try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } }
+    var b = $('orTv'); if (b) b.querySelector('span').textContent = on ? 'إنهاء وضع العرض' : 'وضع شاشة العرض';
+  }
+  function orDraw(O) {
+    var d = O.d, sec = d.sectors.filter(function (s) { return s.name === O.sec; })[0] || d.sectors[0], acks = orAcks();
+    if (!sec) { $('orOut').innerHTML = '<div class="or-panel"><p class="empty">لا توجد مواقع بإحداثيات في نطاقك. أضف إحداثيات المواقع من جدول المواقع.</p></div>'; return; }
+    $('orSub').textContent = d.season.label + ' · آخر تجميع ' + fmt(d.now, false) + (d.demo ? ' · نسخة العرض: بيانات المصادر الخارجية أمثلة' : '');
+    var top = d.sectors.map(function (s) {
+      var lv = orLvOf(s.score), why = (s.extWhy || []).concat((s.why || []).map(function (w) { return w.text; })).filter(Boolean).slice(0, 2);
+      return '<button type="button" class="or-sec' + (s.name === sec.name ? ' on' : '') + ' or-l' + lv + '" data-sec="' + esc(s.name) + '">' + orGauge(s.score, lv) +
+        '<div class="or-sec-b"><b>قطاع ' + esc(s.name) + '</b><span class="or-lvl">' + OR_LVN[lv] + ' · ' + s.score + '</span>' +
+        '<div class="or-bar"><span>داخلي</span><i><em style="width:' + s.inner + '%"></em></i><b class="mono">' + s.inner + '</b></div>' +
+        '<div class="or-bar ext"><span>خارجي</span><i><em style="width:' + s.ext + '%"></em></i><b class="mono">' + s.ext + '</b></div>' +
+        (why.length ? '<ul>' + why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '<ul><li class="ok">لا توجد مؤشرات خطر الآن</li></ul>') + '</div></button>';
+    }).join('');
+    var cnt = d.counts, kpi = [['crit', cnt.crit], ['high', cnt.high], ['mid', cnt.mid]].map(function (k) { return '<span class="or-k ' + OR_LV[k[0]][1] + '"><b class="mono">' + k[1] + '</b> ' + OR_LV[k[0]][0] + '</span>'; }).join('');
+    var open = d.actions.filter(function (a) { return !acks[a.k]; }), done = d.actions.filter(function (a) { return acks[a.k]; });
+    var actHtml = function (a, isDone) {
+      return '<li class="or-act ' + OR_LV[a.lv][1] + (isDone ? ' done' : '') + '"><div class="or-act-h"><span class="or-pill ' + OR_LV[a.lv][1] + '">' + OR_LV[a.lv][0] + '</span><b>' + esc(a.t) + '</b></div>' +
+        (isDone ? '' : '<p>' + esc(a.do) + '</p>') + '<div class="or-act-f"><span class="or-who">' + icon('user') + ' ' + esc(a.who) + '</span>' + (a.sector ? '<span class="or-who">' + icon('layers') + ' ' + esc(a.sector) + '</span>' : '') +
+        '<span class="grow"></span><a class="btn xs ghost" href="' + esc(a.link) + '">افتح</a>' + (isDone ? '' : '<a class="btn xs ghost" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('غرفة عمليات الأمن الحيوي\n' + a.t + '\nالمطلوب: ' + a.do + '\nالمسؤول: ' + a.who) + '">' + icon('wa') + '</a>') +
+        '<button type="button" class="btn xs ' + (isDone ? 'ghost' : 'primary') + '" data-ack="' + esc(a.k) + '">' + (isDone ? 'رجّعها' : icon('check') + ' تم') + '</button></div></li>';
+    };
+    var acts = '<ol class="or-acts">' + (open.length ? open.map(function (a) { return actHtml(a, false); }).join('') : '<li class="or-empty">' + icon('check') + ' مفيش قرارات مفتوحة دلوقتي</li>') + '</ol>' +
+      (done.length ? '<details class="or-done"><summary>اتنفذ النهارده (' + done.length + ')</summary><ol class="or-acts">' + done.map(function (a) { return actHtml(a, true); }).join('') + '</ol></details>' : '');
+    $('orOut').innerHTML =
+      '<div class="or-secs">' + top + '</div>' +
+      '<div class="or-grid">' +
+      '<section class="or-panel or-radar-p"><div class="or-ph"><h2>' + icon('radar') + ' رادار التهديد حول قطاع ' + esc(sec.name) + '</h2><div class="or-lay" id="orLay"></div></div>' +
+      '<div class="or-radar-w"><div class="or-radar" id="orRadar"></div><aside class="or-pick" id="orPick"></aside></div></section>' +
+      '<section class="or-panel or-acts-p"><div class="or-ph"><h2>' + icon('siren') + ' القرارات المطلوبة الآن</h2><div class="or-kpi">' + kpi + '</div></div>' + acts + '</section>' +
+      '</div>' +
+      '<section class="or-panel"><div class="or-ph"><h2>' + icon('clock') + ' توقعات 72 ساعة · ' + esc(sec.name) + '</h2><span class="or-note">Open-Meteo + نموذج جودة الهواء CAMS' + (d.wxAt ? ' · ' + ago(d.wxAt) : '') + '</span></div><div id="orWx"></div></section>' +
+      '<section class="or-panel"><div class="or-ph"><h2>' + icon('rss') + ' نشرة الاستخبارات</h2><div class="or-filt" id="orFilt"></div></div><div id="orFeed"></div></section>' +
+      '<div class="or-grid2"><section class="or-panel"><div class="or-ph"><h2>' + icon('bird') + ' نبض الهجرة</h2><span class="or-note">iNaturalist · مشاهدات موثقة بالصور</span></div><div id="orMig"></div></section>' +
+      '<section class="or-panel"><div class="or-ph"><h2>' + icon('wifi') + ' صحة مصادر المعلومات</h2></div><div id="orSrc"></div></section></div>';
+    $('orOut').querySelectorAll('[data-sec]').forEach(function (b) { b.onclick = function () { O.sec = b.dataset.sec; O.pick = null; orDraw(O); }; });
+    $('orOut').querySelectorAll('[data-ack]').forEach(function (b) { b.onclick = function () { var k = b.dataset.ack; orAckSet(k, !orAcks()[k]); orDraw(O); }; });
+    orLayers(O); orRadar(O, sec); orWx(O, sec); orFeed(O); orMig(O, sec); orSrc(O);
+  }
+  function orLayers(O) {
+    var L = [['epi', 'البؤر'], ['dead', 'طيور نافقة'], ['bird', 'طيور برية'], ['locust', 'جراد'], ['wind', 'الرياح']], Z = [['auto', 'تلقائي'], ['25', '25 كم'], ['100', '100 كم'], ['320', '300 كم']];
+    $('orLay').innerHTML = L.map(function (x) { return '<button type="button" class="chip' + (O.lay[x[0]] ? ' on' : '') + ' or-dot-' + x[0] + '" data-lay="' + x[0] + '"><i></i>' + x[1] + '</button>'; }).join('') +
+      '<span class="or-zoom" role="group" aria-label="مدى الرادار">' + Z.map(function (z) { return '<button type="button" class="chip' + (String(O.zoom) === z[0] ? ' on' : '') + '" data-zoom="' + z[0] + '">' + z[1] + '</button>'; }).join('') + '</span>';
+    $('orLay').querySelectorAll('[data-zoom]').forEach(function (b) { b.onclick = function () { O.zoom = b.dataset.zoom; orLayers(O); orRadar(O, O.d.sectors.filter(function (s) { return s.name === O.sec; })[0]); }; });
+    $('orLay').querySelectorAll('[data-lay]').forEach(function (b) { b.onclick = function () { O.lay[b.dataset.lay] = O.lay[b.dataset.lay] ? 0 : 1; orLayers(O); orRadar(O, O.d.sectors.filter(function (s) { return s.name === O.sec; })[0]); }; });
+  }
+  function orRadar(O, sec) {
+    var d = O.d, S0 = 520, C = S0 / 2, R = C - 34, sv = [], all = d.signals.filter(function (x) { return x.km != null && x.brg != null && (x.sector === sec.name || x.cat === 'locust') && x.km <= 320; });
+    var MX = O.zoom !== 'auto' ? +O.zoom : all.some(function (x) { return (x.lv === 'crit' || x.lv === 'high') && x.km <= 25; }) ? 25 : all.some(function (x) { return (x.lv === 'crit' || x.lv === 'high') && x.km <= 100; }) ? 100 : 320;
+    MX = Math.max(MX, sec.sites.reduce(function (a, s) { return Math.max(a, s.km); }, 0) > 20 ? 100 : MX);
+    var sig = all.filter(function (x) { return x.km <= MX; }), outN = all.length - sig.length;
+    var pt = function (km, b) { var r = orKmR(km, R, MX), a = (b - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+    sv.push('<svg viewBox="0 0 ' + S0 + ' ' + S0 + '" class="or-svg" role="img" aria-label="رادار التهديد حول قطاع ' + esc(sec.name) + '"><defs><radialGradient id="orG" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#16314f"/><stop offset="1" stop-color="#0a1424"/></radialGradient>' +
+      '<linearGradient id="orSw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2ed39a" stop-opacity="0"/><stop offset="1" stop-color="#2ed39a" stop-opacity=".35"/></linearGradient></defs>');
+    sv.push('<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="url(#orG)" stroke="#29425f"/>');
+    OR_ZOOM[MX].forEach(function (k) { var r = orKmR(k, R, MX); sv.push('<circle cx="' + C + '" cy="' + C + '" r="' + r.toFixed(1) + '" class="or-ring' + (k === 10 ? ' r10' : k === 50 ? ' r50' : '') + '"/><text x="' + pt(k, 28)[0].toFixed(1) + '" y="' + (pt(k, 28)[1] + 4).toFixed(1) + '" class="or-rl">' + k + ' كم</text>'); });
+    for (var a = 0; a < 360; a += 45) { var p = pt(MX, a); sv.push('<line x1="' + C + '" y1="' + C + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" class="or-spoke"/>'); }
+    [['ش', 0], ['ق', 90], ['ج', 180], ['غ', 270]].forEach(function (x) { var p = pt(MX * 1.13, x[1]); sv.push('<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + 5).toFixed(1) + '" text-anchor="middle" class="or-card">' + x[0] + '</text>'); });
+    sv.push('<g class="or-sweep"><path d="M' + C + ' ' + C + ' L' + (C + R) + ' ' + C + ' A' + R + ' ' + R + ' 0 0 0 ' + (C + R * Math.cos(-0.6)).toFixed(1) + ' ' + (C + R * Math.sin(-0.6)).toFixed(1) + ' Z" fill="url(#orSw)"/></g>');
+    // الرياح الحالية: سهم اتجاه حركة الهواء + مخاريط هبوب من البؤر القريبة
+    var ow = (d.outlook.filter(function (x) { return x.sector === sec.name; })[0] || {}).cur;
+    if (O.lay.wind && ow && ow.dir != null) {
+      var to = (ow.dir + 180) % 360, p1 = pt(MX * 0.78, ow.dir), p2 = pt(MX * 0.78, to);
+      sv.push('<g class="or-wind"><line x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '" marker-end="url(#orArr)"/><text x="' + (p1[0]).toFixed(1) + '" y="' + (p1[1] - 8).toFixed(1) + '" text-anchor="middle">رياح ' + Math.round(ow.w || 0) + ' كم/س</text></g>');
+      sv.splice(1, 0, '<defs><marker id="orArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7cc4ff"/></marker></defs>');
+      sig.filter(function (x) { return x.cat === 'epi'; }).forEach(function (e) {
+        var diff = Math.abs(((ow.dir - e.brg) + 540) % 360 - 180); if (diff > 35) return;
+        var s0 = pt(e.km, e.brg), s1 = pt(Math.max(0, e.km - MX * 0.2), e.brg - 18), s2 = pt(Math.max(0, e.km - MX * 0.2), e.brg + 18);
+        sv.push('<path class="or-plume" d="M' + s0[0].toFixed(1) + ' ' + s0[1].toFixed(1) + ' L' + s1[0].toFixed(1) + ' ' + s1[1].toFixed(1) + ' L' + s2[0].toFixed(1) + ' ' + s2[1].toFixed(1) + ' Z"/>');
+      });
+    }
+    // المواقع
+    sec.sites.forEach(function (s) { var p = pt(Math.max(0.3, s.km), s.brg), cls = s.risk >= 75 ? 'crit' : s.risk >= 50 ? 'high' : s.risk >= 25 ? 'mid' : 'ok'; sv.push('<rect x="' + (p[0] - 4).toFixed(1) + '" y="' + (p[1] - 4).toFixed(1) + '" width="8" height="8" rx="2" class="or-site or-' + cls + '" data-site="' + esc(s.id) + '"><title>' + esc(s.name) + ' · مؤشر الخطر ' + s.risk + '</title></rect>'); });
+    sv.push('<circle cx="' + C + '" cy="' + C + '" r="3" fill="#e6edf7"/>');
+    // الإشارات
+    var shown = 0;
+    sig.forEach(function (x, i) {
+      var lay = x.cat === 'wind' || x.cat === 'wx' ? 'wind' : x.cat; if (!O.lay[lay] || x.cat === 'wind' || x.cat === 'wx') return;
+      var p = pt(x.km, x.brg), sz = x.lv === 'crit' ? 9 : x.lv === 'high' ? 7.5 : x.lv === 'mid' ? 6 : 4.5, id = d.signals.indexOf(x), sh;
+      if (x.cat === 'epi') sh = '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + sz + '" class="or-b or-b-epi or-' + x.lv + '"/>' + (x.lv === 'crit' || x.lv === 'high' ? '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + sz + '" class="or-pulse"/>' : '');
+      else if (x.cat === 'dead') sh = '<path d="M' + (p[0] - sz) + ' ' + (p[1] - sz) + 'L' + (p[0] + sz) + ' ' + (p[1] + sz) + 'M' + (p[0] + sz) + ' ' + (p[1] - sz) + 'L' + (p[0] - sz) + ' ' + (p[1] + sz) + '" class="or-b or-b-dead"/>';
+      else if (x.cat === 'locust') sh = '<path d="M' + p[0].toFixed(1) + ' ' + (p[1] - sz) + 'L' + (p[0] + sz) + ' ' + (p[1] + sz * 0.8) + 'L' + (p[0] - sz) + ' ' + (p[1] + sz * 0.8) + 'Z" class="or-b or-b-loc"/>';
+      else sh = '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + Math.max(3.5, sz - 2) + '" class="or-b or-b-bird"/>';
+      sv.push('<g class="or-hit" data-sig="' + id + '" tabindex="0" role="button" aria-label="' + esc(x.title) + '">' + sh + '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="14" fill="transparent"/></g>'); shown++;
+    });
+    sv.push('</svg>');
+    $('orRadar').innerHTML = sv.join('') + '<div class="or-rleg"><span><i class="lg-site"></i> محطاتنا</span><span><i class="lg-epi"></i> بؤرة</span><span><i class="lg-dead">✕</i> طائر نافق</span><span><i class="lg-bird"></i> طيور برية</span><span><i class="lg-loc"></i> جراد</span><span><i class="lg-plume"></i> هبوب من بؤرة</span></div>' + (outN ? '<p class="or-hint" style="text-align:center">' + outN + ' إشارة خارج مدى ' + (MX === 320 ? 300 : MX) + ' كم. غيّر المدى لعرضها.</p>' : '');
+    var showPick = function (x) {
+      O.pick = x; if (!x) { $('orPick').innerHTML = orPickDefault(O, sec, all, shown); return; }
+      var c = OR_CAT[x.cat] || ['', 'alert'];
+      $('orPick').innerHTML = '<div class="or-pk ' + OR_LV[x.lv][1] + '"><div class="or-pk-h">' + icon(c[1]) + '<span>' + c[0] + '</span><span class="or-conf ' + (OR_CONF[x.conf] || '') + '">' + esc(x.conf) + '</span></div><b>' + esc(x.title) + '</b><p>' + esc(x.sub || '') + '</p>' +
+        '<dl>' + (x.km != null ? '<dt>المسافة</dt><dd><b class="mono">' + x.km + '</b> كم ' + orDir(x.brg) + ' ' + esc(x.site || '') + '</dd>' : '') + '<dt>الوقت</dt><dd>' + esc(orAgo(x.at)) + '</dd><dt>المصدر</dt><dd>' + esc(x.src || '') + '</dd></dl>' +
+        (x.url ? '<a class="btn xs ghost" target="_blank" rel="noopener" href="' + esc(x.url) + '">' + icon('link') + ' المصدر الأصلي</a>' : '') + '<button type="button" class="btn xs ghost" id="orPkX">رجوع للملخص</button></div>';
+      $('orPkX').onclick = function () { showPick(null); };
+    };
+    $('orRadar').querySelectorAll('[data-sig]').forEach(function (g) { var f = function () { showPick(d.signals[+g.dataset.sig]); }; g.onclick = f; g.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+    $('orRadar').querySelectorAll('[data-site]').forEach(function (r) { r.onclick = function () { var s = sec.sites.filter(function (x) { return x.id === r.dataset.site; })[0]; if (!s) return; $('orPick').innerHTML = '<div class="or-pk"><div class="or-pk-h">' + icon('layers') + '<span>محطة</span></div><b>' + esc(s.name) + '</b><p>' + esc(s.phase || '') + '</p><dl><dt>مؤشر الخطر</dt><dd><b class="mono">' + s.risk + '</b></dd>' + (s.why.length ? '<dt>الأسباب</dt><dd>' + esc(s.why.join(' · ')) + '</dd>' : '') + '</dl><a class="btn xs ghost" href="#stations">حالة المحطات</a> <button type="button" class="btn xs ghost" id="orPkX">رجوع للملخص</button></div>'; $('orPkX').onclick = function () { showPick(null); }; }; });
+    showPick(O.pick && d.signals.indexOf(O.pick) >= 0 ? O.pick : null);
+  }
+  function orPickDefault(O, sec, sig, shown) {
+    var n10 = sig.filter(function (x) { return x.cat === 'epi' && x.km <= 10; }).length, n50 = sig.filter(function (x) { return x.cat === 'epi' && x.km <= 50; }).length, nd = sig.filter(function (x) { return x.cat === 'dead'; }).length;
+    var near = sig.filter(function (x) { return x.cat === 'epi'; }).sort(function (a, b) { return a.km - b.km; })[0], cur = (O.d.outlook.filter(function (x) { return x.sector === sec.name; })[0] || {}).cur;
+    return '<div class="or-pk"><div class="or-pk-h">' + icon('radar') + '<span>ملخص الرادار</span></div>' +
+      '<div class="or-stats"><div><b class="mono' + (n10 ? ' t-crit' : '') + '">' + n10 + '</b><span>بؤرة داخل 10 كم</span></div><div><b class="mono' + (n50 ? ' t-high' : '') + '">' + n50 + '</b><span>داخل 50 كم</span></div><div><b class="mono' + (nd ? ' t-high' : '') + '">' + nd + '</b><span>طائر بري نافق</span></div><div><b class="mono">' + sec.sites.length + '</b><span>موقع في القطاع</span></div></div>' +
+      (near ? '<p class="or-near">أقرب بؤرة: <b>' + esc(near.title) + '</b> على بعد <b class="mono">' + near.km + '</b> كم ' + orDir(near.brg) + ' ' + esc(near.site) + ' (' + esc(near.conf) + ')</p>' : '<p class="or-near ok">مفيش بؤر وبائية مسجلة خلال 300 كم آخر 60 يوم.</p>') +
+      (cur ? '<p class="or-near">الهواء الآن: ' + (cur.t != null ? Math.round(cur.t) + '° · ' : '') + 'رياح ' + Math.round(cur.w || 0) + ' كم/س من ' + orDir(cur.dir) + (cur.pm10 != null ? ' · PM10 ' + Math.round(cur.pm10) : '') + '</p>' : '') +
+      '<p class="or-hint">اضغط على أي علامة في الرادار لتفاصيلها. المسافات بمقياس جذري علشان القريب يبان بوضوح.</p></div>';
+  }
+  function orWx(O, sec) {
+    var o = O.d.outlook.filter(function (x) { return x.sector === sec.name; })[0];
+    if (!o || !o.days || !o.days.length) { $('orWx').innerHTML = '<p class="empty">لم يتم جلب توقعات الطقس بعد. اضغط «تحديث المصادر» أو انتظر التحديث التلقائي كل 3 ساعات.</p>'; return; }
+    var W = ['اليوم', 'بكرة', 'بعد بكرة'], cls = function (k) { return k === 'emg' || k === 'high' ? 'or-crit' : k === 'danger' ? 'or-high' : k === 'alert' || k === 'mid' ? 'or-mid' : 'or-okc'; };
+    var rows = [
+      ['thermo', 'الإجهاد الحراري (مؤشر الحرارة والرطوبة)', function (x) { return '<b class="mono">' + x.thiMax + '</b><span class="or-tag ' + cls(x.heat && x.heat.k) + '">' + esc(x.heat ? x.heat.label : '') + '</span><small>' + x.tMin + '° — ' + x.tMax + '°</small>'; }],
+      ['wind', 'الغبار العالق PM10 (ميكروجرام/م³)', function (x) { var k = x.pm10 >= 1000 ? 'high' : x.pm10 >= 500 ? 'mid' : 'ok'; return '<b class="mono">' + x.pm10 + '</b><span class="or-tag ' + cls(k) + '">' + (k === 'high' ? 'عاصفة ترابية' : k === 'mid' ? 'غبار' : 'مقبول') + '</span>'; }],
+      ['rain', 'الأمطار (مم)', function (x) { return '<b class="mono">' + x.rain + '</b><span class="or-tag ' + (x.rain >= 2 ? 'or-mid' : 'or-okc') + '">' + (x.rain >= 2 ? 'تجمعات مياه' : x.rain > 0 ? 'رذاذ' : 'جاف') + '</span>'; }],
+      ['wind', 'رياح السطح (أقصى سرعة · الاتجاه)', function (x) { return '<b class="mono">' + x.wMax + '</b><small>هبات ' + x.gMax + ' كم/س</small>' + (x.dir != null ? '<span class="or-arr" style="transform:rotate(' + ((x.dir + 180) % 360) + 'deg)">↑</span><small>من ' + orDir(x.dir) + '</small>' : ''); }],
+      ['bird', 'ليلة الهجرة (رياح الطيران الليلية)', function (x) { return '<div class="or-meter"><i style="width:' + x.mig + '%" class="' + (x.mig >= 70 ? 'hi' : x.mig >= 45 ? 'md' : '') + '"></i></div><small>' + x.mig + ' من 100' + (x.night ? ' · ' + x.night.spd + ' كم/س من ' + orDir(x.night.dir) : '') + '</small>'; }],
+      ['bug', 'نشاط الذباب والحشرات', function (x) { return '<div class="or-meter"><i style="width:' + x.fly + '%" class="' + (x.fly >= 70 ? 'hi' : x.fly >= 45 ? 'md' : '') + '"></i></div><small>' + x.fly + ' من 100</small>'; }]
+    ];
+    $('orWx').innerHTML = '<div class="or-wx" style="--n:' + o.days.length + '"><div class="or-wx-h"></div>' + o.days.map(function (x, i) { return '<div class="or-wx-h">' + W[i] + '<small>' + esc(new Date(x.d + 'T12:00:00').toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'short' })) + '</small></div>'; }).join('') +
+      rows.map(function (r) { return '<div class="or-wx-l">' + icon(r[0]) + '<span>' + r[1] + '</span></div>' + o.days.map(function (x) { return '<div class="or-wx-c">' + r[2](x) + '</div>'; }).join(''); }).join('') + '</div>';
+  }
+  function orFeed(O) {
+    var d = O.d, m = { birds: ['dead', 'bird'], wx: ['wx', 'wind'] };
+    $('orFilt').innerHTML = OR_FILT.map(function (f) { var n = d.signals.filter(function (x) { return f[0] === 'all' || (m[f[0]] || [f[0]]).indexOf(x.cat) >= 0; }).length; return '<button type="button" class="chip' + (O.filt === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + ' <b class="mono">' + n + '</b></button>'; }).join('');
+    $('orFilt').querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { O.filt = b.dataset.f; orFeed(O); }; });
+    var L = d.signals.filter(function (x) { return O.filt === 'all' || (m[O.filt] || [O.filt]).indexOf(x.cat) >= 0; }).slice(0, 60);
+    $('orFeed').innerHTML = L.length ? '<ul class="or-feed">' + L.map(function (x) {
+      var c = OR_CAT[x.cat] || ['', 'alert'];
+      return '<li class="' + OR_LV[x.lv][1] + '"><span class="or-fi">' + icon(c[1]) + '</span><div class="or-fb"><b>' + esc(x.title) + '</b><p>' + esc(x.sub || '') + '</p><div class="or-fm"><span class="or-conf ' + (OR_CONF[x.conf] || '') + '">' + esc(x.conf) + '</span>' +
+        (x.km != null ? '<span class="mono">' + x.km + ' كم ' + orDir(x.brg) + '</span>' : '') + (x.sector ? '<span>' + esc(x.sector) + '</span>' : '') + '<span>' + esc(orAgo(x.at)) + '</span>' + (x.url ? '<a target="_blank" rel="noopener" href="' + esc(x.url) + '">المصدر ' + icon('link') + '</a>' : '') + '</div></div><span class="or-pill ' + OR_LV[x.lv][1] + '">' + OR_LV[x.lv][0] + '</span></li>';
+    }).join('') + '</ul>' : '<p class="empty">لا توجد إشارات في هذا التصنيف</p>';
+  }
+  function orMig(O, sec) {
+    var b = O.d.birdsPulse || {}, eg = b.eg, s = (b.sec || {})[sec.name], se = O.d.season;
+    var bars = function (L) { var mx = Math.max.apply(null, (L || []).map(function (x) { return x[1]; }).concat([1])); return (L || []).map(function (x) { return '<div class="or-hb"><span>' + esc(x[0]) + '</span><i><em style="width:' + Math.round(x[1] / mx * 100) + '%"></em></i><b class="mono">' + x[1] + '</b></div>'; }).join(''); };
+    $('orMig').innerHTML = '<p class="or-season"><b>' + esc(se.label) + '</b> · الطيور متجهة ' + esc(se.dir) + '. ' + esc(se.note || '') + '</p>' +
+      (eg ? '<div class="or-stats"><div><b class="mono">' + eg.n + '</b><span>مشاهدة طيور في مصر آخر 14 يوم</span></div><div><b class="mono">' + eg.risk + '</b><span>منها طيور مائية وأنواع ناقلة</span></div><div><b class="mono">' + (s ? s.n : 0) + '</b><span>حول ' + esc(sec.name) + ' (150 كم، 30 يوم)</span></div></div>' +
+        (eg.sp && eg.sp.length ? '<h3>أكثر الأنواع الناقلة ظهوراً</h3>' + bars(eg.sp) : '') + (eg.hot && eg.hot.length ? '<h3>أماكن التجمع الأنشط</h3>' + bars(eg.hot) : '') +
+        (s && s.sp && s.sp.length ? '<h3>حول ' + esc(sec.name) + '</h3>' + bars(s.sp) : '<p class="or-note">مفيش مشاهدات منشورة لأنواع ناقلة حول ' + esc(sec.name) + ' آخر 30 يوم. ده طبيعي في المناطق الصحراوية، وده سبب أهمية مشاهدات فريقكم من شاشة رادار الطيور.</p>')
+        : '<p class="empty">لم يتم جلب بيانات iNaturalist بعد. اضغط «تحديث المصادر».</p>') +
+      '<a class="btn xs ghost" href="#birds">' + icon('bird') + ' رادار الطيور وتسجيل مشاهدة</a>';
+  }
+  function orSrc(O) {
+    $('orSrc').innerHTML = '<ul class="or-src">' + O.d.sources.map(function (s) {
+      var st = OR_SRC_ST[s.state] || OR_SRC_ST.none;
+      return '<li><span class="or-dot ' + st[1] + '"></span><div><b>' + esc(s.name) + '</b><small>' + esc(s.conf) + ' · ' + esc(s.every) + (s.at ? ' · آخر جلب ' + ago(s.at) : '') + (s.n != null ? ' · ' + s.n + ' سجل' : '') + (s.extra ? ' · ' + esc(s.extra) : '') + (s.err ? ' · ' + esc(s.err) : '') + '</small></div><span class="or-st ' + st[1] + '">' + st[0] + '</span>' +
+        (s.url ? '<a class="or-sl" target="_blank" rel="noopener" href="' + esc(s.url) + '" aria-label="فتح المصدر">' + icon('link') + '</a>' : '') + '</li>';
+    }).join('') + '</ul><p class="or-note">كل المصادر مجانية. الرسمي = إخطارات حكومية ودولية، العلمي = مشاهدات موثقة بالصور، النموذج = توقعات رقمية، الإعلامي = أخبار تحتاج تأكيد.</p>';
+  }
   function viewOps21() {
     S.oc = S.oc || { lens: 'risk', lay: { trips: 1, birds: 0, epi: 1, names: 1 }, replay: null };
     var o = S.oc; o.map = null; o.data = null; o.fit = true;
-    $('main').innerHTML = '<section class="view oc-view">' + v5Head('مركز قيادة العمليات', 'map', 'غرفة عمليات الأمن الحيوي على خريطة واحدة: أربع عدسات (الخطر، الدورة الإنتاجية، الحركة بين المواقع، الهواء والرياح)، وإعادة تشغيل حركة آخر 24 ساعة، ومخاريط الرياح من مواقع السبلة والبيع، وتنبيهات مرتبة حسب الخطورة تنقلك لمكانها.', '<button class="btn" type="button" id="ocTour">' + icon('play') + ' جولة تلقائية</button><button class="btn" type="button" id="ocFull">' + icon('full') + ' ملء الشاشة</button><button class="btn" type="button" id="ocRef">' + icon('refresh') + ' تحديث</button>') +
+    $('main').innerHTML = '<section class="view oc-view"><a href="#ops" class="crumb">' + icon('back') + ' غرفة العمليات</a>' + v5Head('الخريطة الجغرافية للعمليات', 'map', 'غرفة عمليات الأمن الحيوي على خريطة واحدة: أربع عدسات (الخطر، الدورة الإنتاجية، الحركة بين المواقع، الهواء والرياح)، وإعادة تشغيل حركة آخر 24 ساعة، ومخاريط الرياح من مواقع السبلة والبيع، وتنبيهات مرتبة حسب الخطورة تنقلك لمكانها.', '<button class="btn" type="button" id="ocTour">' + icon('play') + ' جولة تلقائية</button><button class="btn" type="button" id="ocFull">' + icon('full') + ' ملء الشاشة</button><button class="btn" type="button" id="ocRef">' + icon('refresh') + ' تحديث</button>') +
       '<div class="oc"><div class="oc-stage" id="ocStage"><div class="oc-hud"><span class="live"><i></i> مباشر</span><div class="oc-kpi" id="ocKpi"></div><span class="oc-clock mono" id="ocClk"></span></div>' +
       '<div class="oc-lens" id="ocLens" role="tablist"></div><div class="oc-tools"><div class="oc-lay" id="ocLay"></div><div class="oc-lay oc-sec" id="ocSec"></div></div><div class="oc-map" id="ocMap" dir="ltr"></div><div class="oc-legend" id="ocLeg"></div>' +
       '<div class="oc-replay" id="ocReplay" hidden><button type="button" class="oc-play" id="ocPlay" aria-label="تشغيل">' + icon('play') + '</button><input type="range" id="ocT" min="0" max="1440" value="1440" aria-label="الوقت"><span class="mono" id="ocTL"></span><span class="xs" id="ocTN"></span></div>' +
@@ -8248,7 +8458,7 @@
     $('ocT').oninput = function () { ocReplayStop(); ocReplayAt(+this.value); };
     birdLeaflet().then(function () { if (S.oc !== o || !$('ocMap')) return; o.map = sitesMapBase($('ocMap'), { scrollWheelZoom: true }); if (o.data) ocPaint(); else o.map.setView([28.73, 29.05], 12); }).catch(function () { $('ocMap').innerHTML = '<p class="empty">تعذر تحميل الخريطة</p>'; });
     load();
-    clearInterval(S.p19); S.p19 = setInterval(function () { if (!document.hidden && S.route === 'ops' && !o.tour && !o.playing) load(); else if (S.route !== 'ops') { clearInterval(S.p19); ocTourStop(); ocReplayStop(); } }, MODE === 'demo' ? 20000 : 30000);
+    clearInterval(S.p19); S.p19 = setInterval(function () { if (!document.hidden && /^ops(\/|$)/.test(S.route) && !o.tour && !o.playing) load(); else if (!/^ops(\/|$)/.test(S.route)) { clearInterval(S.p19); ocTourStop(); ocReplayStop(); } }, MODE === 'demo' ? 20000 : 30000);
   }
   function ocMarker(s, o) {
     var lens = o.lens, n = s.inside ? s.inside.n : 0, g = s.gt || {}, html, size;
@@ -8395,7 +8605,7 @@
     if ($('ocTL')) $('ocTL').textContent = min >= 1440 ? 'الآن' : new Date(t).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' });
     if ($('ocTN')) $('ocTN').textContent = tot + ' دخول حتى هذا الوقت · ' + n + ' في الطريق بين المواقع';
   }
-  function ocReplayToggle() { var o = S.oc; if (o.playing) return ocReplayStop(); o.playing = setInterval(function () { var r = $('ocT'); if (!r || S.route !== 'ops') return ocReplayStop(); var v = +r.value + 12; if (v > 1440) v = 0; r.value = v; ocReplayAt(v); }, 120); if ($('ocPlay')) $('ocPlay').innerHTML = icon('pause'); if (+$('ocT').value >= 1440) $('ocT').value = 0; }
+  function ocReplayToggle() { var o = S.oc; if (o.playing) return ocReplayStop(); o.playing = setInterval(function () { var r = $('ocT'); if (!r || !/^ops(\/|$)/.test(S.route)) return ocReplayStop(); var v = +r.value + 12; if (v > 1440) v = 0; r.value = v; ocReplayAt(v); }, 120); if ($('ocPlay')) $('ocPlay').innerHTML = icon('pause'); if (+$('ocT').value >= 1440) $('ocT').value = 0; }
   function ocReplayStop() { var o = S.oc; if (o && o.playing) { clearInterval(o.playing); o.playing = null; } if ($('ocPlay')) $('ocPlay').innerHTML = icon('play'); }
   /* جولة العرض: تمر على التنبيهات واحداً واحداً (لشاشة غرفة العمليات أو العرض على الإدارة) */
   function ocTourStart() {
@@ -8405,7 +8615,7 @@
     o.tour = setInterval(step, 6500); step();
     if ($('ocTour')) $('ocTour').innerHTML = icon('stop') + ' إيقاف الجولة';
     function step() {
-      if (S.route !== 'ops' || !$('ocTourBox')) return ocTourStop();
+      if (!/^ops(\/|$)/.test(S.route) || !$('ocTourBox')) return ocTourStop();
       var a = A[i % A.length]; i++;
       if (a.lens && a.lens !== o.lens) { o.lens = a.lens; $('ocLens').querySelectorAll('[data-lens]').forEach(function (x) { x.classList.toggle('on', x.dataset.lens === o.lens); }); ocPaint(); }
       ocFly(a); box.hidden = false;
