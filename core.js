@@ -8343,8 +8343,8 @@ function BIO_v31pc(api, H) {
     var plan = rows('pcPlan').filter(function (p) { var d = String(p.day); return inMine(p.siteId) && (d.slice(0, 7) === M || (d >= dayStr(now - 7 * D) && d <= dayStr(now + 14 * D))); }).map(function (p) { return { id: String(p.id), day: String(p.day), siteId: BIO_norm(p.siteId), siteName: String(p.siteName || ''), kind: String(p.kind || 'روتينية'), order: num(p.order, 1), age: num(p.age, null), note: String(p.note || ''), team: json(p.team, []), teamBy: String(p.teamBy || ''), status: String(p.status || 'مخطط'), visitId: String(p.visitId || ''), complaintId: String(p.complaintId || '') }; })
       .sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : a.order - b.order; });
     var visits = rows('pcVisits').filter(function (v) { return inMine(v.siteId) && (String(v.day).slice(0, 7) === M || String(v.status) === 'مرسل' || String(v.status) === 'مرتجع'); }).map(function (v) { return visitOut(v, false); }).sort(function (a, b) { return b.time - a.time; });
-    var comps = rows('pcComplaints').filter(function (c) { return inMine(c.siteId) && (String(c.status) !== 'مغلقة' || monthOf(BIO_ms(c.time)) === M); }).map(function (c) { var due = BIO_ms(c.due), resp = BIO_ms(c.respAt); return { id: String(c.id), time: BIO_ms(c.time), siteId: BIO_norm(c.siteId), siteName: String(c.siteName || ''), place: String(c.place || ''), pest: String(c.pest || ''), text: String(c.text || ''), photo: String(c.photo || ''), by: String(c.by || ''), due: due, status: String(c.status || 'مفتوحة'), respAt: resp, respBy: String(c.respBy || ''), respNote: String(c.respNote || ''), respPhoto: String(c.respPhoto || ''), visitId: String(c.visitId || ''), closedAt: BIO_ms(c.closedAt), closeNote: String(c.closeNote || ''), late: resp ? resp > due : now > due, left: due - now }; }).sort(function (a, b) { return b.time - a.time; });
-    var srcs = rows('pcSources').filter(function (x) { return inMine(x.siteId) && (String(x.status) !== 'تم الحل' || monthOf(BIO_ms(x.time)) === M); }).map(function (x) { return { id: String(x.id), time: BIO_ms(x.time), siteId: BIO_norm(x.siteId), siteName: String(x.siteName || ''), kind: String(x.kind || ''), text: String(x.text || ''), sev: String(x.sev || 'متوسطة'), photo: String(x.photo || ''), by: String(x.by || ''), visitId: String(x.visitId || ''), status: String(x.status || 'جديد'), dept: String(x.dept || ''), fwdBy: String(x.fwdBy || ''), fwdAt: BIO_ms(x.fwdAt), fwdNote: String(x.fwdNote || ''), doneAt: BIO_ms(x.doneAt), doneNote: String(x.doneNote || ''), donePhoto: String(x.donePhoto || '') }; }).sort(function (a, b) { return b.time - a.time; });
+    var comps = rows('pcComplaints').filter(function (c) { return inMine(c.siteId) && ((String(c.status) !== 'مغلقة' && String(c.status) !== 'ملغاة') || monthOf(BIO_ms(c.time)) === M); }).map(function (c) { var due = BIO_ms(c.due), resp = BIO_ms(c.respAt); return { id: String(c.id), time: BIO_ms(c.time), siteId: BIO_norm(c.siteId), siteName: String(c.siteName || ''), place: String(c.place || ''), pest: String(c.pest || ''), text: String(c.text || ''), photo: String(c.photo || ''), by: String(c.by || ''), due: due, status: String(c.status || 'مفتوحة'), respAt: resp, respBy: String(c.respBy || ''), respNote: String(c.respNote || ''), respPhoto: String(c.respPhoto || ''), visitId: String(c.visitId || ''), closedAt: BIO_ms(c.closedAt), closeNote: String(c.closeNote || ''), late: resp ? resp > due : now > due, left: due - now }; }).sort(function (a, b) { return b.time - a.time; });
+    var srcs = rows('pcSources').filter(function (x) { return inMine(x.siteId) && ((String(x.status) !== 'تم الحل' && String(x.status) !== 'ملغى') || monthOf(BIO_ms(x.time)) === M); }).map(function (x) { return { id: String(x.id), time: BIO_ms(x.time), siteId: BIO_norm(x.siteId), siteName: String(x.siteName || ''), kind: String(x.kind || ''), text: String(x.text || ''), sev: String(x.sev || 'متوسطة'), photo: String(x.photo || ''), by: String(x.by || ''), visitId: String(x.visitId || ''), status: String(x.status || 'جديد'), dept: String(x.dept || ''), fwdBy: String(x.fwdBy || ''), fwdAt: BIO_ms(x.fwdAt), fwdNote: String(x.fwdNote || ''), doneAt: BIO_ms(x.doneAt), doneNote: String(x.doneNote || ''), donePhoto: String(x.donePhoto || '') }; }).sort(function (a, b) { return b.time - a.time; });
     var chems = rows('pcChems').map(function (c) { return chemOut(c, now); }).sort(function (a, b) { return a.name.localeCompare(b.name, 'ar'); });
     var team = pcUsers(), att = rows('pcAttend').filter(function (a) { return String(a.day).slice(0, 7) === M || String(a.day) === today; }).map(function (a) { return { id: String(a.id), day: String(a.day), time: BIO_ms(a.time), userId: BIO_norm(a.userId), userName: String(a.userName || ''), role: String(a.role || ''), place: String(a.place || '') }; });
     // أماكن تواجد كل فرد يومياً: من الحضور + الزيارات اللي شارك فيها + توزيعه في الجدول
@@ -8356,7 +8356,7 @@ function BIO_v31pc(api, H) {
     rows('pcVisits').forEach(function (v) { var d = String(v.day); if (d.slice(0, 7) !== M && d !== today) return; json(v.team, []).concat([BIO_norm(v.by)]).forEach(function (uid) { var t = tm[uid]; if (t) put(d, uid, t.name, String(v.siteName || '')); }); });
     var presence = Object.keys(where).map(function (k) { var o = where[k], t = tm[o.userId]; o.roleLabel = t ? t.roleLabel : ''; o.lvl = t ? t.lvl : 0; return o; }).sort(function (a, b) { return a.day < b.day ? 1 : a.day > b.day ? -1 : b.lvl - a.lvl; });
     var evals = rows('pcEvals').map(function (e) { return { id: String(e.id), month: String(e.month), time: BIO_ms(e.time), by: String(e.by || ''), scores: json(e.scores, {}), total: num(e.total, 0), pay: num(e.pay, 0), deduct: num(e.deduct, 0), value: num(e.value, null), note: String(e.note || ''), status: String(e.status || 'معتمد') }; }).sort(function (a, b) { return a.month < b.month ? 1 : -1; });
-    var res = { now: now, month: M, today: today, company: company(), me: { id: u.id, name: u.name, lvl: L, isPc: !!L, isBio: isBio(u), canApprove: canApprove(u), canPlan: canApprove(u) || u.role === BIO.ROLE_SECTOR, canEval: canEval(u), canTeam: L >= 2, canChem: L >= 2 || u.isAdmin, canVisit: !!L, canSettings: !!u.isAdmin, checkedIn: att.some(function (a) { return a.day === today && a.userId === u.id; }) },
+    var res = { now: now, month: M, today: today, company: company(), me: { id: u.id, name: u.name, lvl: L, isPc: !!L, isBio: isBio(u), canApprove: canApprove(u), canDoc: canApprove(u), canMembers: canMembers(u), canPlan: canApprove(u) || u.role === BIO.ROLE_SECTOR, canEval: canEval(u), canTeam: L >= 2, canChem: L >= 2 || u.isAdmin, canVisit: !!L, canSettings: !!u.isAdmin, checkedIn: att.some(function (a) { return a.day === today && a.userId === u.id; }) },
       sites: sites.map(function (s) { var a = ag[s.id] || {}; return { id: s.id, name: s.name, sector: s.sector, type: s.type || '', level: s.level, age: a.age, phase: a.phase || '', lat: s.lat, lng: s.lng }; }),
       points: points, plan: plan, visits: visits, complaints: comps, sources: srcs, chems: chems, team: team, presence: presence, evals: L ? evals.filter(function (e) { return e.status === 'معتمد'; }) : evals,
       axes: BIO_PC_AXES, kinds: BIO_PC_KINDS, places: BIO_PC_PLACES, vkinds: BIO_PC_VKINDS, signs: BIO_PC_SIGNS, others: BIO_PC_OTHERS, srcKinds: BIO_PC_SRC_KINDS, depts: BIO_PC_DEPTS };
@@ -8366,28 +8366,28 @@ function BIO_v31pc(api, H) {
   };
   /** مؤشرات الشهر لكل موقع وللشركة */
   function summary(M, d, now) {
-    var bySite = {}, vs = rows('pcVisits').filter(function (v) { return String(v.day).slice(0, 7) === M && String(v.status) !== 'مرتجع'; }).map(function (v) { return visitOut(v, false); });
+    var bySite = {}, vs = rows('pcVisits').filter(function (v) { return String(v.day).slice(0, 7) === M && String(v.status) !== 'مرتجع' && String(v.status) !== 'ملغى'; }).map(function (v) { return visitOut(v, false); });
     d.sites.forEach(function (s) { bySite[s.id] = { id: s.id, name: s.name, sector: s.sector, planned: 0, done: 0, approved: 0, pts: 0, cover: [], cons: [], rodPct: [], fly: [], crawl: [], last: 0, comp: 0, src: 0 }; });
     d.points.forEach(function (p) { if (bySite[p.siteId] && p.status !== 'مرفوعة') bySite[p.siteId].pts++; });
     d.plan.forEach(function (p) { if (p.day.slice(0, 7) === M && bySite[p.siteId] && p.status !== 'ملغاة') bySite[p.siteId].planned++; });
     vs.forEach(function (v) { var b = bySite[v.siteId]; if (!b) return; b.done++; if (v.status === 'معتمد') b.approved++; var s = v.stats || {}; if (s.cover != null) b.cover.push(s.cover); if (s.consAvg != null) b.cons.push(s.consAvg); if (s.rodPct != null) b.rodPct.push(s.rodPct); if (s.flyAvg != null) b.fly.push(s.flyAvg); if (s.crawlAvg != null) b.crawl.push(s.crawlAvg); b.last = Math.max(b.last, v.time); });
-    d.complaints.forEach(function (c) { if (bySite[c.siteId] && monthOf(c.time) === M) bySite[c.siteId].comp++; });
-    d.sources.forEach(function (x) { if (bySite[x.siteId] && x.status !== 'تم الحل') bySite[x.siteId].src++; });
+    d.complaints.forEach(function (c) { if (bySite[c.siteId] && monthOf(c.time) === M && c.status !== 'ملغاة') bySite[c.siteId].comp++; });
+    d.sources.forEach(function (x) { if (bySite[x.siteId] && (x.status === 'جديد' || x.status === 'موجه للإدارة')) bySite[x.siteId].src++; });
     var avg = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length * 10) / 10 : null; };
     var list = Object.keys(bySite).map(function (k) { var b = bySite[k]; return { id: b.id, name: b.name, sector: b.sector, planned: b.planned, done: b.done, approved: b.approved, pts: b.pts, cover: avg(b.cover), cons: avg(b.cons), rodPct: avg(b.rodPct), fly: avg(b.fly), crawl: avg(b.crawl), last: b.last, comp: b.comp, src: b.src }; }).filter(function (b) { return b.planned || b.done || b.pts || b.comp || b.src; });
     var P = d.plan.filter(function (p) { return p.day.slice(0, 7) === M && p.status !== 'ملغاة' && p.day <= d.today; }), Pdone = P.filter(function (p) { return p.visitId; }).length;
-    var cm = d.complaints.filter(function (c) { return monthOf(c.time) === M && (c.respAt || c.late); }), cmOk = cm.filter(function (c) { return c.respAt && !c.late; }).length;
+    var cm = d.complaints.filter(function (c) { return monthOf(c.time) === M && c.status !== 'ملغاة' && (c.respAt || c.late); }), cmOk = cm.filter(function (c) { return c.respAt && !c.late; }).length;
     var all = vs.map(function (v) { return v.stats || {}; });
     return { sites: list, planned: P.length, plannedDone: Pdone, visits: vs.length, approved: vs.filter(function (v) { return v.status === 'معتمد'; }).length, pending: d.visits.filter(function (v) { return v.status === 'مرسل'; }).length, returned: d.visits.filter(function (v) { return v.status === 'مرتجع'; }).length,
       cover: avg(all.filter(function (s) { return s.cover != null; }).map(function (s) { return s.cover; })), cons: avg(all.filter(function (s) { return s.consAvg != null; }).map(function (s) { return s.consAvg; })), rodPct: avg(all.filter(function (s) { return s.rodPct != null; }).map(function (s) { return s.rodPct; })),
       fly: avg(all.filter(function (s) { return s.flyAvg != null; }).map(function (s) { return s.flyAvg; })), crawl: avg(all.filter(function (s) { return s.crawlAvg != null; }).map(function (s) { return s.crawlAvg; })), mins: avg(all.filter(function (s) { return s.mins != null; }).map(function (s) { return s.mins; })),
-      comp: cm.length, compOk: cmOk, compOpen: d.complaints.filter(function (c) { return c.status !== 'مغلقة' && !c.respAt; }).length, compLate: d.complaints.filter(function (c) { return c.status !== 'مغلقة' && c.late; }).length,
-      srcOpen: d.sources.filter(function (x) { return x.status !== 'تم الحل'; }).length, srcNew: d.sources.filter(function (x) { return x.status === 'جديد'; }).length,
+      comp: cm.length, compOk: cmOk, compOpen: d.complaints.filter(function (c) { return c.status === 'مفتوحة'; }).length, compLate: d.complaints.filter(function (c) { return c.status === 'مفتوحة' && c.late; }).length,
+      srcOpen: d.sources.filter(function (x) { return x.status === 'جديد' || x.status === 'موجه للإدارة'; }).length, srcNew: d.sources.filter(function (x) { return x.status === 'جديد'; }).length,
       chemsBad: d.chems.filter(function (c) { return !c.usable && c.status !== 'موقوف'; }).length, pointsBad: d.points.filter(function (p) { return p.status === 'تالفة' || p.status === 'مفقودة'; }).length };
   }
   /** درجات مقترحة من البيانات لكل محور (المقيّم يعدلها) */
   function suggest(M, d, now) {
-    var s = d.summary, vs = rows('pcVisits').filter(function (v) { return String(v.day).slice(0, 7) === M && String(v.status) !== 'مرتجع'; }).map(function (v) { return visitOut(v, true); });
+    var s = d.summary, vs = rows('pcVisits').filter(function (v) { return String(v.day).slice(0, 7) === M && String(v.status) !== 'مرتجع' && String(v.status) !== 'ملغى'; }).map(function (v) { return visitOut(v, true); });
     var why = {}, sc = {};
     if (!vs.length) { BIO_PC_AXES.forEach(function (a) { sc[a.k] = null; why[a.k] = 'لا توجد زيارات مسجلة في الشهر'; }); return { scores: sc, why: why }; }
     var onPlan = s.planned ? s.plannedDone / s.planned : 1, durOk = vs.filter(function (v) { return v.stats.mins == null || v.stats.mins >= 30; }).length / vs.length, cov = s.cover != null ? s.cover / 100 : 1;
@@ -8483,7 +8483,8 @@ function BIO_v31pc(api, H) {
     var u = me(pin); if (!lvl(u)) throw new Error('تقرير الزيارة يرفعه فريق شركة المكافحة');
     v = v || {}; var now = deps.now(), sites = H.sitesById();
     var ex = v.id ? store.find('pcVisits', v.id) : null;
-    if (ex && String(ex.status) !== 'مرتجع') throw new Error('التقرير ده اتبعت قبل كده. التعديل بيكون لما الأمن الحيوي يرجعه');
+    if (ex && String(ex.status) !== 'مرتجع' && String(ex.status) !== 'مرسل') throw new Error('التقرير ده ' + ex.status + '، والتعديل بيكون قبل الاعتماد أو لما الأمن الحيوي يرجعه');
+    if (ex && BIO_norm(ex.by) !== u.id && lvl(u) < 2) throw new Error('تعديل التقرير لكاتبه أو لمدير ومهندس ومشرفين المكافحة');
     var plan = v.planId ? store.find('pcPlan', v.planId) : null, kind = BIO_PC_VKINDS.indexOf(v.kind) >= 0 ? v.kind : 'روتينية';
     var s = sites[BIO_norm(v.siteId || (plan && plan.siteId))];
     if (!plan && kind !== 'تفتيش مشرف') throw new Error('الزيارة لازم تكون في جدول الأمن الحيوي. اطلب من الأمن الحيوي يضيفها للجدول');
@@ -8618,7 +8619,7 @@ function BIO_v31pc(api, H) {
   /** ملخص لباقي الشاشات: غرفة العمليات والأرصاد */
   api._pcSignals = function (u, now) {
     var sites = H.sitesById(), out = [], last = {};
-    rows('pcVisits').forEach(function (v) { if (String(v.status) === 'مرتجع') return; var t = BIO_ms(v.time), id = BIO_norm(v.siteId); if (!id || now - t > 21 * D || !H.inScope(u, id, sites)) return; if (!last[id] || t > last[id].t) last[id] = { t: t, s: json(v.stats, {}), name: String(v.siteName) }; });
+    rows('pcVisits').forEach(function (v) { if (String(v.status) === 'مرتجع' || String(v.status) === 'ملغى') return; var t = BIO_ms(v.time), id = BIO_norm(v.siteId); if (!id || now - t > 21 * D || !H.inScope(u, id, sites)) return; if (!last[id] || t > last[id].t) last[id] = { t: t, s: json(v.stats, {}), name: String(v.siteName) }; });
     Object.keys(last).forEach(function (id) { var x = last[id], s = sites[id]; if (!s) return; if (x.s.rodPct >= 30 || x.s.consAvg >= 50) out.push({ cat: 'pest', conf: 'داخلي', lv: x.s.rodPct >= 50 ? 'high' : 'mid', title: 'نشاط قوارض ' + x.s.rodPct + '% من محطات الطعوم في ' + x.name, sub: 'آخر زيارة مكافحة ' + dayStr(x.t) + ' · متوسط استهلاك الطعم ' + x.s.consAvg + '%', at: x.t, site: x.name, sector: s.sector, src: 'فريق المكافحة' }); if (x.s.flyAvg >= 25) out.push({ cat: 'pest', conf: 'داخلي', lv: x.s.flyAvg >= 40 ? 'high' : 'mid', title: 'ذباب مرتفع في ' + x.name + ' (' + x.s.flyAvg + ' للكارت)', sub: 'آخر زيارة مكافحة ' + dayStr(x.t), at: x.t, site: x.name, sector: s.sector, src: 'فريق المكافحة' }); });
     rows('pcComplaints').forEach(function (c) { if (String(c.status) !== 'مفتوحة' || BIO_ms(c.due) > now) return; var s = sites[BIO_norm(c.siteId)]; if (!s || !H.inScope(u, s.id, sites)) return; out.push({ cat: 'pest', conf: 'داخلي', lv: 'high', title: 'شكوى مكافحة عدّت 48 ساعة من غير رد: ' + c.siteName, sub: String(c.text || '').slice(0, 100), at: BIO_ms(c.time), site: s.name, sector: s.sector, src: 'شكاوى المكافحة' }); });
     var nS = rows('pcSources').filter(function (x) { return String(x.status) === 'جديد' && now - BIO_ms(x.time) > 2 * D; }).length;
@@ -8627,13 +8628,108 @@ function BIO_v31pc(api, H) {
   };
   api._pcBrief = function (u) {
     var now = deps.now(), sites = H.sitesById(), sec = {};
-    rows('pcVisits').forEach(function (v) { if (String(v.status) === 'مرتجع') return; var t = BIO_ms(v.time), s = sites[BIO_norm(v.siteId)]; if (!s || now - t > 30 * D || !H.inScope(u, s.id, sites)) return; var st = json(v.stats, {}), o = sec[s.sector] = sec[s.sector] || { visits: 0, rod: [], fly: [], crawl: [], last: 0 }; o.visits++; if (st.rodPct != null) o.rod.push(st.rodPct); if (st.flyAvg != null) o.fly.push(st.flyAvg); if (st.crawlAvg != null) o.crawl.push(st.crawlAvg); o.last = Math.max(o.last, t); });
+    rows('pcVisits').forEach(function (v) { if (String(v.status) === 'مرتجع' || String(v.status) === 'ملغى') return; var t = BIO_ms(v.time), s = sites[BIO_norm(v.siteId)]; if (!s || now - t > 30 * D || !H.inScope(u, s.id, sites)) return; var st = json(v.stats, {}), o = sec[s.sector] = sec[s.sector] || { visits: 0, rod: [], fly: [], crawl: [], last: 0 }; o.visits++; if (st.rodPct != null) o.rod.push(st.rodPct); if (st.flyAvg != null) o.fly.push(st.flyAvg); if (st.crawlAvg != null) o.crawl.push(st.crawlAvg); o.last = Math.max(o.last, t); });
     var avg = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length * 10) / 10 : null; };
     var o = {}; Object.keys(sec).forEach(function (k) { var x = sec[k]; o[k] = { visits: x.visits, rodPct: avg(x.rod), fly: avg(x.fly), crawl: avg(x.crawl), last: x.last }; });
     return { company: company().name, sectors: o };
   };
+  /* ---------- v31.1: حسابات شركة المكافحة منفصلة عن الموظفين (بدون كود وظيفي: الكود يتولد QX تلقائياً) ---------- */
+  function canMembers(u) { return !!u && (u.isAdmin || u.role === BIO.ROLE_OFFICER); }
+  var PC_PREFIX = {}; PC_PREFIX[BIO.ROLE_PC_MGR] = 'MG'; PC_PREFIX[BIO.ROLE_PC_ENG] = 'EN'; PC_PREFIX[BIO.ROLE_PC_SUP] = 'SV'; PC_PREFIX[BIO.ROLE_PC_TECH] = 'TC';
+  function memberOut(x) { var r = BIO_role(String(x.role).trim()) || {}; return { id: BIO_norm(x.id), name: String(x.name || ''), role: r.k, roleLabel: r.label, phone: String(x.phone || ''), active: String(x.active).trim() !== BIO.NO, perms: [], scopeLabel: 'مواقع عقد المكافحة', gateName: '' }; }
+  api.pcMembers = function (pin) {
+    var u = me(pin); if (!canMembers(u) && !lvl(u)) throw new Error('غير مسموح');
+    return { list: rows('users').filter(function (x) { return x.id !== '' && x.id != null && BIO_isPc(String(x.role).trim()); }).map(memberOut).sort(function (a, b) { return a.id.localeCompare(b.id); }),
+      roles: BIO_ROLES.filter(function (r) { return r.pestOnly; }).map(function (r) { return { k: r.k, label: r.label, desc: r.desc }; }), company: company().name, canEdit: canMembers(u) };
+  };
+  api.pcMemberSave = function (pin, row, oldId) {
+    var u = me(pin); if (!canMembers(u)) throw new Error('حسابات شركة المكافحة يضيفها ويعدلها مدير أو مسؤول الأمن الحيوي');
+    row = row || {}; var name = clean(row.name, 80), r = BIO_role(row.role);
+    if (!name) throw new Error('اكتب الاسم'); if (!r || !r.pestOnly) throw new Error('اختار الوظيفة في شركة المكافحة');
+    var ex = oldId ? store.find('users', oldId) : null; if (oldId && !ex) throw new Error('الحساب غير موجود');
+    if (ex && !BIO_isPc(String(ex.role).trim())) throw new Error('الحساب ده لموظف في الشركة وبيتعدل من شاشة المستخدمين');
+    var pins = {}; rows('users').forEach(function (x) { pins[String(x.pin).trim()] = 1; });
+    var weak = /^(\d)\1+$|^(012345|123456|234567|345678|456789|987654|876543|765432|654321|543210)$/, newPin = '';
+    if (!ex || row.newPin) { do { newPin = String(100000 + Math.floor(Math.random() * 900000)); } while (pins[newPin] || weak.test(newPin)); }
+    var id = ex ? BIO_norm(ex.id) : '';
+    if (!ex) { var pre = 'QX-' + PC_PREFIX[r.k], mx = 0; rows('users').forEach(function (x) { var m = BIO_norm(x.id).match(new RegExp('^' + pre + '(\\d+)$')); if (m) mx = Math.max(mx, Number(m[1])); }); id = pre + ('0' + (mx + 1)).slice(-2); }
+    var obj = { name: name, role: r.k, phone: String(row.phone || '').replace(/[^\d+]/g, ''), active: row.active === false ? BIO.NO : BIO.YES, gate: '', scope: '', perms: '', hide: '' };
+    if (newPin) obj.pin = newPin;
+    deps.lock(function () { if (ex) store.update('users', ex.id, obj); else store.append('users', Object.assign({ id: id }, obj)); store.append('cardlog', { id: deps.id('K'), time: deps.now(), itemId: id, itemName: name, action: (ex ? 'تعديل حساب' : 'حساب جديد') + ' شركة المكافحة: ' + r.label + (newPin && ex ? ' ورقم سري جديد' : ''), card: '', by: u.name, note: '' }); });
+    log(u, 'users', id, ex ? 'تعديل حساب شركة المكافحة' : 'إضافة حساب شركة المكافحة', ex ? { name: ex.name, role: ex.role, active: ex.active } : null, { name: name, role: r.k, active: obj.active });
+    return { ok: true, pin: newPin, user: memberOut(store.find('users', id)), appUrl: H.settings().APP_URL || '' };
+  };
+  api.pcMemberDelete = function (pin, id) {
+    var u = me(pin); if (!canMembers(u)) throw new Error('حذف حسابات شركة المكافحة لمدير أو مسؤول الأمن الحيوي');
+    var x = store.find('users', id); if (!x || !BIO_isPc(String(x.role).trim())) throw new Error('الحساب غير موجود');
+    deps.lock(function () { store.remove('users', x.id); store.append('cardlog', { id: deps.id('K'), time: deps.now(), itemId: BIO_norm(x.id), itemName: x.name, action: 'حذف حساب شركة المكافحة', card: '', by: u.name, note: '' }); });
+    log(u, 'users', x.id, 'حذف حساب شركة المكافحة', { name: x.name, role: x.role }, null);
+    return { ok: true };
+  };
+  var ulPc = api.usersList;
+  if (ulPc) api.usersList = function (pin) { var d = ulPc(pin); d.pcRoles = d.roles.filter(function (r) { return r.pestOnly; }); d.roles = d.roles.filter(function (r) { return !r.pestOnly; }); d.users.forEach(function (x) { x.pc = BIO_isPc(x.role); }); return d; };
+  var usPc = api.userSave;
+  if (usPc) api.userSave = function (pin, row, oldKey) { var r = BIO_role(row && row.role), ex = oldKey ? store.find('users', oldKey) : null; if ((r && r.pestOnly) || (ex && BIO_isPc(String(ex.role).trim()))) throw new Error('حسابات شركة المكافحة بتتعمل وتتعدل من «إضافة فرد من شركة المكافحة»'); return usPc.apply(null, arguments); };
+
+  /* ---------- v31.1: التعديل والإلغاء حسب الصلاحيات ---------- */
+  function usedPoint(id) { return rows('pcVisits').some(function (v) { return String(v.checks || '').indexOf('"' + id + '"') >= 0; }); }
+  api.pcPointDelete = function (pin, id) {
+    var u = me(pin); if (lvl(u) < 2 && !canApprove(u)) throw new Error('حذف النقاط لمشرفين المكافحة والأمن الحيوي');
+    var p = store.find('pcPoints', id); if (!p) throw new Error('النقطة غير موجودة');
+    if (usedPoint(String(p.id))) { store.update('pcPoints', p.id, { status: 'مرفوعة', note: clean('اترفعت · ' + (p.note || ''), 200), updatedAt: deps.now() }); log(u, 'pcPoints', p.id, 'رفع نقطة مكافحة (ليها سجل فحص)', { status: p.status }, { status: 'مرفوعة' }); return { ok: true, retired: true }; }
+    store.remove('pcPoints', p.id); log(u, 'pcPoints', p.id, 'حذف نقطة مكافحة', { site: p.siteName }, null);
+    return { ok: true, deleted: true };
+  };
+  api.pcChemDelete = function (pin, id) {
+    var u = me(pin); if (lvl(u) < 2 && !u.isAdmin) throw new Error('حذف المبيدات لمدير ومهندس ومشرفين المكافحة');
+    var c = store.find('pcChems', id); if (!c) throw new Error('المبيد غير موجود');
+    var used = rows('pcVisits').some(function (v) { return String(v.treats || '').indexOf('"' + c.id + '"') >= 0; });
+    if (used) { store.update('pcChems', c.id, { status: 'موقوف', by: who(u), updatedAt: deps.now() }); log(u, 'pcChems', c.id, 'إيقاف مبيد (مستخدم في تقارير)', null, { name: c.name }); return { ok: true, stopped: true }; }
+    store.remove('pcChems', c.id); log(u, 'pcChems', c.id, 'حذف مبيد', { name: c.name }, null);
+    return { ok: true, deleted: true };
+  };
+  api.pcPlanCancel = function (pin, id) {
+    var u = me(pin); if (!canApprove(u) && u.role !== BIO.ROLE_SECTOR) throw new Error('إلغاء الزيارات من الجدول للأمن الحيوي');
+    var p = store.find('pcPlan', id); if (!p) throw new Error('الزيارة غير موجودة');
+    if (p.visitId) store.update('pcPlan', p.id, { status: 'ملغاة' }); else store.remove('pcPlan', p.id);
+    log(u, 'pcPlan', p.id, 'إلغاء زيارة مكافحة من الجدول', { site: p.siteName, day: p.day }, null);
+    return { ok: true };
+  };
+  api.pcVisitCancel = function (pin, id, reason) {
+    var u = me(pin), v = store.find('pcVisits', id); if (!v) throw new Error('التقرير غير موجود');
+    var mine = BIO_norm(v.by) === u.id || lvl(u) >= 2;
+    if (lvl(u) && !(mine && String(v.status) === 'مرسل')) throw new Error('سحب التقرير مسموح لكاتبه أو لمشرفين الشركة قبل الاعتماد بس');
+    if (!lvl(u) && !canApprove(u)) throw new Error('إلغاء التقارير لمشرف ومسؤول ومدير الأمن الحيوي');
+    if (!clean(reason)) throw new Error('اكتب سبب الإلغاء');
+    deps.lock(function () { store.update('pcVisits', v.id, { status: 'ملغى', reviewBy: who(u), reviewAt: deps.now(), reviewNote: clean('ملغى: ' + reason, 400) }); if (v.planId) { var p = store.find('pcPlan', v.planId); if (p && String(p.visitId) === String(v.id)) store.update('pcPlan', p.id, { status: 'مخطط', visitId: '' }); } });
+    log(u, 'pcVisits', v.id, lvl(u) ? 'سحب تقرير مكافحة' : 'إلغاء تقرير مكافحة', { status: v.status }, { status: 'ملغى', reason: clean(reason, 200) });
+    return { ok: true };
+  };
+  api.pcComplaintEdit = function (pin, id, c, cancel) {
+    var u = me(pin); if (!isBio(u)) throw new Error('تعديل الشكاوى للأمن الحيوي');
+    var x = store.find('pcComplaints', id); if (!x) throw new Error('الشكوى غير موجودة');
+    if (cancel) { if (!clean(c && c.reason)) throw new Error('اكتب سبب الإلغاء'); store.update('pcComplaints', x.id, { status: 'ملغاة', closedAt: deps.now(), closedBy: who(u), closeNote: clean('ملغاة: ' + c.reason, 300) }); log(u, 'pcComplaints', x.id, 'إلغاء شكوى مكافحة', null, null); return { ok: true }; }
+    var o = {}; if (c.text != null) { if (!clean(c.text)) throw new Error('اكتب الوصف'); o.text = clean(c.text, 600); } if (c.place != null) o.place = clean(c.place, 80); if (c.pest != null) o.pest = clean(c.pest, 60);
+    store.update('pcComplaints', x.id, o); log(u, 'pcComplaints', x.id, 'تعديل شكوى مكافحة', { text: x.text }, o);
+    return { ok: true };
+  };
+  api.pcSourceEdit = function (pin, id, x, cancel) {
+    var u = me(pin), s0 = store.find('pcSources', id); if (!s0) throw new Error('غير موجود');
+    var pcMine = lvl(u) && String(s0.status) === 'جديد' && (lvl(u) >= 2 || String(s0.by).indexOf(u.name) === 0);
+    if (!isBio(u) && !pcMine) throw new Error(lvl(u) ? 'تعديل البلاغ مسموح قبل ما الأمن الحيوي يوجهه' : 'غير مسموح');
+    if (cancel) { if (!clean(x && x.reason)) throw new Error('اكتب سبب الإلغاء'); store.update('pcSources', s0.id, { status: 'ملغى', doneAt: deps.now(), doneBy: who(u), doneNote: clean('ملغى: ' + x.reason, 300) }); log(u, 'pcSources', s0.id, 'إلغاء مصدر مؤثر', null, null); return { ok: true }; }
+    var o = {}; if (x.kind && BIO_PC_SRC_KINDS.indexOf(x.kind) >= 0) o.kind = x.kind; if (x.sev && ['منخفضة', 'متوسطة', 'عالية'].indexOf(x.sev) >= 0) o.sev = x.sev; if (x.text != null) { if (!clean(x.text)) throw new Error('اكتب الوصف'); o.text = clean(x.text, 400); }
+    store.update('pcSources', s0.id, o); log(u, 'pcSources', s0.id, 'تعديل مصدر مؤثر', { text: s0.text }, o);
+    return { ok: true };
+  };
+  api.pcEvalDelete = function (pin, month) {
+    var u = me(pin); if (!canEval(u)) throw new Error('غير مسموح');
+    var e = rows('pcEvals').filter(function (x) { return String(x.month) === String(month); })[0]; if (!e) throw new Error('مفيش تقييم للشهر ده');
+    store.remove('pcEvals', e.id); log(u, 'pcEvals', month, 'حذف تقييم شركة المكافحة', { total: e.total, status: e.status }, null);
+    return { ok: true };
+  };
   // شاشة «مكافحة الآفات» تخضع لحجب الشاشات لحسابات الأمن الحيوي (حسابات شركة المكافحة مقصورة عليها أصلاً)
-  ['pcData', 'pcPlanSave', 'pcTeamSet', 'pcPointsAdd', 'pcPointSet', 'pcChemSave', 'pcCheckin', 'pcVisitSave', 'pcVisit', 'pcVisitReview', 'pcComplaintAdd', 'pcComplaintResp', 'pcComplaintClose', 'pcSourceAdd', 'pcSourceFwd', 'pcSourceDone', 'pcEvalSave', 'pcSettings', 'pcAccounts'].forEach(function (fn) {
+  ['pcData', 'pcPlanSave', 'pcTeamSet', 'pcPointsAdd', 'pcPointSet', 'pcChemSave', 'pcCheckin', 'pcVisitSave', 'pcVisit', 'pcVisitReview', 'pcComplaintAdd', 'pcComplaintResp', 'pcComplaintClose', 'pcSourceAdd', 'pcSourceFwd', 'pcSourceDone', 'pcEvalSave', 'pcSettings', 'pcAccounts', 'pcMembers', 'pcMemberSave', 'pcMemberDelete', 'pcPointDelete', 'pcChemDelete', 'pcPlanCancel', 'pcVisitCancel', 'pcComplaintEdit', 'pcSourceEdit', 'pcEvalDelete'].forEach(function (fn) {
     var orig = api[fn];
     api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && !BIO_isPc(String(x.role).trim()) && BIO_list(x.hide).indexOf('pc') >= 0) throw new Error('شاشة «مكافحة الآفات» غير متاحة لحسابك'); return orig.apply(null, arguments); };
     api[fn].__scr = 'pc';

@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 31</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 31.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -3207,7 +3207,7 @@
       '<div class="row"><a class="btn" href="#ucards">' + icon('card') + ' طباعة كروت الدخول</a><a class="btn" href="#codes">' + icon('key') + ' نظام الأكواد</a><button class="btn primary" id="uAdd">' + icon('plus') + ' إضافة مستخدم</button></div></div><div id="uBody"><div class="card"><p class="empty"><span class="spin"></span></p></div></div></section>';
     var meta = null, filter = '';
     function draw() {
-      var users = meta.users, roles = meta.roles;
+      var all = meta.users, users = all.filter(function (x) { return !x.pc; }), pcs = all.filter(function (x) { return x.pc; }), roles = meta.roles;
       var demo = users.filter(function (x) { return x.demoPin; }).length;
       var list = users.filter(function (x) { return !filter || x.role === filter; });
       $('uBody').innerHTML = (demo ? '<div class="warnbox">' + icon('alert') + ' ' + demo + ' حساب ما زال برقم سري تجريبي معروف (1111، 9999…). افتح كل حساب واختر «إصدار رقم سري جديد»، أو شغّل startProduction عند بدء التشغيل.</div>' : '') +
@@ -3223,6 +3223,8 @@
             (x.role === 'أمن بوابة' ? '' : '<span class="u-tags">' + (x.role === 'مدير' ? '<i class="all">كل الصلاحيات</i>' : x.perms.map(function (k) { return '<i>' + esc(PERM_SHORT[k] || k) + '</i>'; }).join('') + (x.custom ? '<i class="cu">مخصصة</i>' : '') + (x.hide && x.hide.length ? '<i class="cu">' + x.hide.length + ' شاشة محجوبة</i>' : '')) + '</span>') + '</span>' +
             '<span class="u-end">' + (x.demoPin ? '<span class="pill p-warn">رقم تجريبي</span>' : '') + (x.phone ? '<span class="xs muted mono">' + esc(x.phone) + '</span>' : '<span class="xs muted">بدون هاتف</span>') + '</span></button>';
         }).join('') || '<p class="empty">' + icon('user') + '<b>لا يوجد مستخدمون بهذا الدور</b></p>') + '</div></div>' +
+        '<div class="card u-pc"><div class="spread"><h2>' + icon('bug') + ' شركة مكافحة الآفات <span class="xs muted">' + pcs.length + ' · حسابات شركة خارجية بدون كود وظيفي، الكود بيتولد QX تلقائياً</span></h2><button class="btn sm primary" type="button" id="uPcAdd">' + icon('plus') + ' إضافة فرد من شركة المكافحة</button></div>' +
+        '<div class="u-list">' + (pcs.map(function (x) { return '<button type="button" class="u-row' + (x.active ? '' : ' off') + '" data-pcu="' + esc(x.id) + '"><span class="u-av" style="background:#1e3a8a;color:#fff">' + esc((x.name || '؟').replace(/^(م|د|أ)\s*[\/.]\s*/, '').trim().charAt(0)) + '</span><span class="u-main"><b>' + esc(x.name) + (x.active ? '' : ' <span class="pill p-bad">موقوف</span>') + '</b><span class="u-sub"><span class="mono">' + esc(x.id) + '</span> · ' + esc(x.roleLabel) + '</span></span><span class="u-end">' + (x.phone ? '<span class="xs muted mono">' + esc(x.phone) + '</span>' : '<span class="xs muted">بدون هاتف</span>') + '</span></button>'; }).join('') || '<p class="empty">لا يوجد حسابات لشركة المكافحة</p>') + '</div></div>' +
         '<details class="card u-matrix"><summary><h2>' + icon('shield') + ' جدول الصلاحيات حسب الدور</h2></summary><div class="tbl"><table><thead><tr><th>الصلاحية</th>' + roles.map(function (r) { return '<th>' + esc(r.label) + '</th>'; }).join('') + '</tr></thead><tbody>' +
         [{ short: 'تسجيل الدخول والخروج على البوابة', k: '_gate' }].concat(meta.perms).map(function (p) {
           return '<tr><td><b>' + esc(p.short) + '</b>' + (p.label ? '<span class="xs muted" style="display:block">' + esc(p.label) + '</span>' : '') + '</td>' + roles.map(function (r) {
@@ -3233,6 +3235,8 @@
         '<p class="xs muted">الصلاحيات الافتراضية لكل دور قابلة للتعديل لكل مستخدم على حدة، فمثلاً يمكن منح مدير موقع صلاحية إصدار القرارات لبوابات موقعه.</p></details>';
       $('uBody').querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { filter = filter === b.dataset.f ? '' : b.dataset.f; draw(); }; });
       $('uBody').querySelectorAll('[data-u]').forEach(function (b) { b.onclick = function () { userSheet(meta, users.filter(function (x) { return x.id === b.dataset.u; })[0], load); }; });
+      $('uBody').querySelectorAll('[data-pcu]').forEach(function (b) { b.onclick = function () { pcMemberSheet(meta.pcRoles || [], pcs.filter(function (x) { return x.id === b.dataset.pcu; })[0], load); }; });
+      if ($('uPcAdd')) $('uPcAdd').onclick = function () { pcMemberSheet(meta.pcRoles || [], null, load); };
     }
     function load() { remote('usersList', [S.session.pin]).then(function (m) { meta = m; draw(); }).catch(function (e) { $('uBody').innerHTML = e.net ? offlineCard('إدارة المستخدمين') : '<p class="empty">' + esc(errText(e)) + '</p>'; }); }
     $('uAdd').onclick = function () { if (meta) userSheet(meta, null, load); };
@@ -8317,7 +8321,7 @@
   function pcOnly() { var u = S.session && S.session.user; return !!(u && u.pestOnly); }
   function liteOnly() { return vrOnly() || pcOnly(); }
   function canPc() { var u = S.session && S.session.user; return !!u && (pcOnly() || isAdmin() || ['مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مدير قطاع', 'متابعة فقط'].indexOf(u.role) >= 0); }
-  var PC_ST = { 'مرسل': 'p-warn', 'معتمد': 'p-ok', 'مرتجع': 'p-bad', 'مخطط': '', 'تم التنفيذ': 'p-ok', 'ملغاة': 'p-bad', 'مفتوحة': 'p-warn', 'تم الرد': 'p-ok', 'مغلقة': '', 'جديد': 'p-bad', 'موجه للإدارة': 'p-warn', 'تم الحل': 'p-ok' };
+  var PC_ST = { 'ملغى': 'p-bad', 'ملغاة': 'p-bad', 'مرسل': 'p-warn', 'معتمد': 'p-ok', 'مرتجع': 'p-bad', 'مخطط': '', 'تم التنفيذ': 'p-ok', 'ملغاة': 'p-bad', 'مفتوحة': 'p-warn', 'تم الرد': 'p-ok', 'مغلقة': '', 'جديد': 'p-bad', 'موجه للإدارة': 'p-warn', 'تم الحل': 'p-ok' };
   var PC_K = { R: ['قوارض', '#b45309'], F: ['ذباب', '#2563eb'], B: ['زاحفة', '#7c3aed'], L: ['ضوئية', '#0891b2'] };
   function pcPill(s) { return '<span class="pill ' + (PC_ST[s] || '') + '">' + esc(s) + '</span>'; }
   function pcLogo(d) { return (d && d.company && d.company.logo) || PC_LOGO0; }
@@ -8341,7 +8345,8 @@
   function viewPc(args) {
     if (!canPc()) return go('dash');
     if (args && args[0] === 'visit') return pcVisitForm(args[1] || '');
-    if (args && args[0] === 'report') return pcMonthReport();
+    if (args && args[0] === 'report') return go('pc/doc/month');
+    if (args && args[0] === 'doc') return pcDoc(args);
     var P = S.pc = S.pc || { tab: '', month: '' };
     $('main').innerHTML = '<section class="view pc-view"><div id="pcOut">' + v5Spin() + '</div></section>';
     remote('pcData', [S.session.pin, P.month || '']).then(function (d) { S.pcD = d; if (S.route.split('/')[0] === 'pc') pcDraw(d); })
@@ -8351,7 +8356,7 @@
   function pcTabs(d) {
     var m = d.me;
     if (m.isPc) return [['today', 'اليوم', 'calendar'], ['visits', 'التقارير', 'file'], ['comp', 'الشكاوى', 'siren'], ['src', 'المصادر المؤثرة', 'alert'], ['chem', 'المبيدات', 'flask'], ['points', 'نقاط المكافحة', 'pin'], ['eval', 'التقييم', 'award']];
-    return [['dash', 'اللوحة', 'dash'], ['plan', 'جدول الزيارات', 'calendar'], ['visits', 'التقارير والاعتماد', 'file'], ['comp', 'الشكاوى', 'siren'], ['src', 'المصادر المؤثرة', 'alert'], ['chem', 'المبيدات', 'flask'], ['points', 'نقاط المكافحة', 'pin'], ['eval', 'التقييم الشهري', 'award']].concat(m.canSettings ? [['set', 'الإعدادات', 'tool']] : []);
+    return [['dash', 'اللوحة', 'dash'], ['plan', 'جدول الزيارات', 'calendar'], ['visits', 'التقارير والاعتماد', 'file'], ['comp', 'الشكاوى', 'siren'], ['src', 'المصادر المؤثرة', 'alert'], ['chem', 'المبيدات', 'flask'], ['points', 'نقاط المكافحة', 'pin'], ['eval', 'التقييم الشهري', 'award']].concat(m.canMembers ? [['team', 'فريق الشركة', 'user']] : [], m.canSettings ? [['set', 'الإعدادات', 'tool']] : []);
   }
   function pcDraw(d) {
     var out = $('pcOut'); if (!out) return;
@@ -8361,12 +8366,12 @@
     var h = '<div class="pc-hero"><img class="pc-logo" src="' + esc(pcLogo(d)) + '" alt="شعار ' + esc(d.company.name) + '"><div class="pc-ht"><span class="kick">مكافحة الآفات · شركة منفذة تحت إشراف الأمن الحيوي</span><h1>' + esc(d.company.name) + '</h1>' +
       '<p>' + (d.me.isPc ? 'أهلاً ' + esc(d.me.name) + ' · ' + esc(pcDayTxt(d.today)) : 'شغل الفريق المقيم وتقاريره وتقييمه الشهري في مكان واحد') + '</p></div>' +
       '<div class="pc-hk"><div><b class="mono">' + s.visits + '</b><span>تقرير زيارة في ' + esc(pcMonthTxt(d.month)) + '</span></div><div><b class="mono">' + (s.planned ? Math.round(s.plannedDone / s.planned * 100) + '%' : '—') + '</b><span>تنفيذ الجدول حتى اليوم</span></div><div class="' + (s.rodPct >= 30 ? 'warn' : '') + '"><b class="mono">' + (s.rodPct == null ? '—' : s.rodPct + '%') + '</b><span>نقاط قوارض نشطة</span></div><div class="' + (s.compLate ? 'bad' : '') + '"><b class="mono">' + s.compOpen + '</b><span>شكوى مفتوحة' + (s.compLate ? ' · ' + s.compLate + ' متأخرة' : '') + '</span></div></div>' +
-      '<div class="pc-hm"><label class="xs muted" for="pcMonth">الشهر</label><input type="month" id="pcMonth" value="' + esc(d.month) + '">' + (d.me.isPc ? '' : '<a class="btn sm" href="#pc/report">' + icon('printer') + ' التقرير الشهري</a>') + '</div></div>';
+      '<div class="pc-hm"><label class="xs muted" for="pcMonth">الشهر</label><input type="month" id="pcMonth" value="' + esc(d.month) + '">' + (d.me.canDoc ? '<a class="btn sm" href="#pc/doc/month/' + esc(d.month) + '">' + icon('download') + ' التقرير الشهري PDF</a><a class="btn sm" href="#pc/doc/eval/' + esc(d.month) + '">' + icon('award') + ' نموذج التقييم PDF</a>' : '') + '</div></div>';
     h += '<div class="pc-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-pct="' + t[0] + '" class="' + (P.tab === t[0] ? 'on' : '') + '">' + icon(t[2]) + '<span>' + t[1] + '</span>' + (badge[t[0]] ? '<b class="pc-b">' + badge[t[0]] + '</b>' : '') + '</button>'; }).join('') + '</div><div id="pcTab"></div>';
     out.innerHTML = h;
     out.querySelectorAll('[data-pct]').forEach(function (b) { b.onclick = function () { P.tab = b.dataset.pct; pcDraw(d); }; });
     $('pcMonth').onchange = function () { P.month = this.value; $('pcTab').innerHTML = v5Spin(); pcReload().catch(function (e) { toast(errText(e)); }); };
-    ({ today: pcToday, dash: pcDash, plan: pcPlan, visits: pcVisits, comp: pcComp, src: pcSrc, chem: pcChem, points: pcPoints, eval: pcEval, set: pcSet })[P.tab](d, $('pcTab'));
+    ({ today: pcToday, dash: pcDash, plan: pcPlan, visits: pcVisits, comp: pcComp, src: pcSrc, chem: pcChem, points: pcPoints, eval: pcEval, team: pcTeam, set: pcSet })[P.tab](d, $('pcTab'));
   }
 
   /* ---------- فريق الشركة: اليوم ---------- */
@@ -8484,11 +8489,16 @@
         (v.photos.length ? '<h3 class="pc-h3">صور الزيارة</h3><div class="pc-thumbs big">' + v.photos.map(function (p) { return '<a href="' + esc(p) + '" target="_blank" rel="noopener"><img src="' + esc(p) + '" alt=""></a>'; }).join('') + '</div>' : '') +
         (v.reviewBy ? '<p class="small muted">' + esc(v.status === 'مرتجع' ? 'أرجعه' : 'اعتمده') + ' ' + esc(v.reviewBy) + ' · ' + esc(fmt(v.reviewAt)) + (v.reviewNote ? ' · ' + esc(v.reviewNote) : '') + '</p>' : '') +
         (d.me.canApprove && v.status === 'مرسل' ? '<div class="field"><label for="pcRvN">ملاحظة المراجعة</label><textarea id="pcRvN" rows="2" placeholder="مطلوبة لو هترجع التقرير"></textarea></div><div class="row"><button type="button" class="btn primary" data-a="ok">' + icon('check') + ' اعتماد</button><button type="button" class="btn" data-a="ret">' + icon('back') + ' إرجاع للتصحيح</button></div>' : '') +
-        (d.me.isPc && v.status === 'مرتجع' && v.planId ? '<button type="button" class="btn primary" data-a="fix">' + icon('edit') + ' تصحيح وإعادة الإرسال</button>' : '') +
+        (d.me.isPc && v.planId && (v.status === 'مرتجع' || (v.status === 'مرسل' && (v.by === d.me.id || d.me.lvl >= 2))) ? '<button type="button" class="btn primary" data-a="fix">' + icon('edit') + (v.status === 'مرتجع' ? ' تصحيح وإعادة الإرسال' : ' تعديل قبل الاعتماد') + '</button>' : '') +
+        (d.me.isPc && v.status === 'مرسل' && (v.by === d.me.id || d.me.lvl >= 2) ? '<button type="button" class="btn" data-a="wd">' + icon('back') + ' سحب التقرير</button>' : '') +
+        (d.me.canDoc && v.status !== 'ملغى' ? '<button type="button" class="btn" data-a="pdf">' + icon('download') + ' PDF / إرسال</button>' : '') +
+        (d.me.canApprove && v.status !== 'ملغى' ? '<button type="button" class="btn bad" data-a="void">' + icon('trash') + ' إلغاء التقرير</button>' : '') +
         '<button type="button" class="btn ghost" data-a="close">إغلاق</button></div>';
       openSheet(h, function (a, b) {
         if (a === 'close') return closeSheet();
         if (a === 'fix') { closeSheet(); S.pcFix = v; return go('pc/visit/' + v.planId); }
+        if (a === 'pdf') { closeSheet(); return go('pc/doc/visit/' + v.id); }
+        if (a === 'wd' || a === 'void') return pcReasonSheet(a === 'wd' ? 'سحب التقرير (الزيارة ترجع للجدول وتقدر تعمل تقرير جديد)' : 'إلغاء التقرير (الزيارة ترجع للجدول)', function (r, fail) { remote('pcVisitCancel', [S.session.pin, v.id, r]).then(function () { closeSheet(); toast(a === 'wd' ? 'اتسحب التقرير' : 'اتلغى التقرير'); pcReload(); }).catch(function (e) { fail(); toast(errText(e)); }); });
         if (a === 'ok' || a === 'ret') { b.disabled = true; remote('pcVisitReview', [S.session.pin, v.id, a === 'ok', ($('pcRvN') || {}).value || '']).then(function () { closeSheet(); toast(a === 'ok' ? 'اتعتمد التقرير' : 'اترجع التقرير للفريق'); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }
       });
     }).catch(function (e) { closeSheet(); toast(errText(e)); });
@@ -8508,7 +8518,7 @@
       var L = pts(), byK = {}; L.forEach(function (x) { (byK[x.kind] = byK[x.kind] || []).push(x); });
       var done = L.filter(function (x) { return V.checks[x.id]; }).length, chems = d.chems.filter(function (c) { return c.usable; });
       var tm = {}; d.team.forEach(function (t) { tm[t.id] = t; });
-      var h = '<section class="view pc-form"><a class="crumb" href="#pc">' + icon('back') + ' مكافحة الآفات</a><div class="viewhead"><div><h1>' + icon('file') + ' ' + (insp ? 'تقرير تفتيش مشرف' : esc(p.siteName)) + '</h1><p>' + (p ? esc(pcDayTxt(p.day)) + ' · ' + esc(p.kind) + (p.note ? ' · توجيه الأمن الحيوي: ' + esc(p.note) : '') : 'تفتيش على شغل الفنيين') + (fix ? ' · <b>تصحيح تقرير مرتجع: ' + esc(fix.reviewNote) + '</b>' : '') + '</p></div></div>';
+      var h = '<section class="view pc-form"><a class="crumb" href="#pc">' + icon('back') + ' مكافحة الآفات</a><div class="viewhead"><div><h1>' + icon('file') + ' ' + (insp ? 'تقرير تفتيش مشرف' : esc(p.siteName)) + '</h1><p>' + (p ? esc(pcDayTxt(p.day)) + ' · ' + esc(p.kind) + (p.note ? ' · توجيه الأمن الحيوي: ' + esc(p.note) : '') : 'تفتيش على شغل الفنيين') + (fix ? ' · <b>' + (fix.status === 'مرتجع' ? 'تصحيح تقرير مرتجع: ' + esc(fix.reviewNote) : 'تعديل التقرير قبل الاعتماد') + '</b>' : '') + '</p></div></div>';
       if (insp) h += '<div class="card"><div class="field"><label for="pcSite">الموقع</label><select id="pcSite"><option value="">اختار</option>' + d.sites.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === V.siteId ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></div></div>';
       h += '<div class="card"><h2>' + icon('shield') + ' قبل الدخول</h2><label class="pc-ck"><input type="checkbox" id="pcDis"' + (V.safety.dis ? ' checked' : '') + '> تعقيم الأفراد والمعدات قبل الدخول</label><label class="pc-ck"><input type="checkbox" id="pcPpe"' + (V.safety.ppe ? ' checked' : '') + '> ملابس الوقاية كاملة</label><p class="small muted">' + icon('check') + ' الشغل كله خارج العنابر (صالات الخدمة فقط من جوه) ومفيش احتكاك بالطيور</p>' +
         '<div class="pc-team">' + icon('user') + ' الفريق: ' + (V.team.length ? esc(V.team.map(function (id) { return tm[id] ? tm[id].name : id; }).join('، ')) : 'لم يوزع') + '</div></div>';
@@ -8583,7 +8593,7 @@
       (d.complaints.length ? '<div class="list">' + d.complaints.map(function (c) { var hrs = Math.round(c.left / 36e5); return '<div class="li pc-cp' + (c.late && c.status === 'مفتوحة' ? ' late' : '') + '"><span class="av">' + icon('siren') + '</span><div class="t"><b>' + esc(c.siteName) + (c.place ? ' · ' + esc(c.place) : '') + (c.pest ? ' · ' + esc(c.pest) : '') + '</b><span>' + esc(c.text) + '</span><span class="small muted">' + esc(fmt(c.time)) + ' · ' + esc(c.by) + '</span>' +
         (c.respAt ? '<span class="pc-resp">' + icon('chat') + ' ' + esc(c.respNote) + ' · ' + esc(c.respBy.split(' (')[0]) + ' · ' + esc(ago(c.respAt)) + (c.late ? ' · متأخر عن 48 ساعة' : '') + '</span>' : '') + (c.photo ? '<a href="' + esc(c.photo) + '" target="_blank" rel="noopener" class="small">' + icon('image') + ' الصورة</a>' : '') + '</div>' +
         '<div class="meta">' + pcPill(c.status) + (c.status === 'مفتوحة' ? '<span class="pill ' + (c.late ? 'p-bad' : 'p-warn') + '">' + (c.late ? 'متأخرة ' + Math.abs(hrs) + ' س' : 'باقي ' + hrs + ' س') + '</span>' : '') +
-        (d.me.lvl >= 2 && c.status !== 'مغلقة' ? '<button type="button" class="btn sm" data-cr="' + esc(c.id) + '">' + icon('chat') + ' رد</button>' : '') + (d.me.isBio && c.status !== 'مغلقة' ? '<button type="button" class="btn sm" data-cc="' + esc(c.id) + '">' + icon('check') + ' إغلاق</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد شكاوى</p>') + '</div>';
+        (d.me.lvl >= 2 && c.status !== 'مغلقة' && c.status !== 'ملغاة' ? '<button type="button" class="btn sm" data-cr="' + esc(c.id) + '">' + icon('chat') + ' رد</button>' : '') + (d.me.isBio && c.status !== 'مغلقة' && c.status !== 'ملغاة' ? '<button type="button" class="btn sm" data-cc="' + esc(c.id) + '">' + icon('check') + ' إغلاق</button><button type="button" class="btn sm ghost" data-ce="' + esc(c.id) + '">' + icon('edit') + ' تعديل</button><button type="button" class="btn sm ghost" data-cx="' + esc(c.id) + '">' + icon('x') + ' إلغاء</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد شكاوى</p>') + '</div>';
     box.innerHTML = h;
     if ($('pcCA')) $('pcCA').onclick = function () {
       var ph = {};
@@ -8596,6 +8606,8 @@
       pcBindPhoto('cPh', ph, false);
     };
     box.querySelectorAll('[data-cr]').forEach(function (b) { b.onclick = function () { var ph = {}; openSheet('<div class="sheet-head"><h2>' + icon('chat') + ' الرد على الشكوى</h2></div><div class="sheet-body"><div class="field"><label for="rT">الإجراء اللي اتعمل</label><textarea id="rT" rows="3"></textarea></div><div class="field">' + pcPhotoIn('rPh', 'صورة بعد الإجراء') + '</div><button type="button" class="btn primary big" data-a="ok">' + icon('send') + ' إرسال الرد</button></div>', function (a, x) { if (a !== 'ok') return; x.disabled = true; remote('pcComplaintResp', [S.session.pin, b.dataset.cr, $('rT').value, ph.one || '']).then(function () { closeSheet(); toast('اتبعت الرد'); pcReload(); }).catch(function (e) { x.disabled = false; toast(errText(e)); }); }); pcBindPhoto('rPh', ph, false); }; });
+    box.querySelectorAll('[data-ce]').forEach(function (b) { b.onclick = function () { var c = d.complaints.filter(function (x) { return x.id === b.dataset.ce; })[0]; openSheet('<div class="sheet-head"><h2>' + icon('edit') + ' تعديل الشكوى</h2></div><div class="sheet-body"><div class="field"><label for="ceP">المكان</label><input id="ceP" value="' + esc(c.place) + '"></div><div class="field"><label for="ceK">الآفة</label><input id="ceK" value="' + esc(c.pest) + '"></div><div class="field"><label for="ceT">الوصف</label><textarea id="ceT" rows="3">' + esc(c.text) + '</textarea></div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' حفظ</button></div>', function (a2, x) { if (a2 !== 'ok') return; x.disabled = true; remote('pcComplaintEdit', [S.session.pin, c.id, { place: $('ceP').value, pest: $('ceK').value, text: $('ceT').value }]).then(function () { closeSheet(); toast('اتعدلت الشكوى'); pcReload(); }).catch(function (e) { x.disabled = false; toast(errText(e)); }); }); }; });
+    box.querySelectorAll('[data-cx]').forEach(function (b) { b.onclick = function () { pcReasonSheet('إلغاء الشكوى', function (r, fail) { remote('pcComplaintEdit', [S.session.pin, b.dataset.cx, { reason: r }, true]).then(function () { closeSheet(); toast('اتلغت الشكوى'); pcReload(); }).catch(function (e) { fail(); toast(errText(e)); }); }); }; });
     box.querySelectorAll('[data-cc]').forEach(function (b) { b.onclick = function () { openSheet('<div class="sheet-head"><h2>' + icon('check') + ' إغلاق الشكوى</h2></div><div class="sheet-body"><div class="field"><label for="ccN">ملاحظة الإغلاق (اختياري)</label><input id="ccN"></div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' إغلاق</button></div>', function (a, x) { if (a !== 'ok') return; x.disabled = true; remote('pcComplaintClose', [S.session.pin, b.dataset.cc, $('ccN').value]).then(function () { closeSheet(); toast('اتقفلت الشكوى'); pcReload(); }).catch(function (e) { x.disabled = false; toast(errText(e)); }); }); }; });
   }
   /* ---------- المصادر المؤثرة ---------- */
@@ -8603,7 +8615,7 @@
     var h = '<div class="card"><div class="card-head"><div><span class="kick">الشركة تحدد المصدر وتبلغ · الأمن الحيوي يوجهه للإدارة المعنية ويتابع لحد الحل</span><h2>' + icon('alert') + ' المصادر المؤثرة</h2></div>' + (d.me.isPc ? '<button type="button" class="btn sm primary" id="pcSA">' + icon('plus') + ' إبلاغ عن مصدر</button>' : '') + '</div>' +
       (d.sources.length ? '<div class="list">' + d.sources.map(function (x) { return '<div class="li"><span class="av pc-sev-' + (x.sev === 'عالية' ? 'h' : x.sev === 'منخفضة' ? 'l' : 'm') + '">' + icon('alert') + '</span><div class="t"><b>' + esc(x.siteName) + ' · ' + esc(x.kind) + ' · خطورة ' + esc(x.sev) + '</b><span>' + esc(x.text) + '</span><span class="small muted">' + esc(fmt(x.time)) + ' · ' + esc(x.by.split(' (')[0]) + '</span>' +
         (x.dept ? '<span class="pc-resp">' + icon('send') + ' موجه إلى ' + esc(x.dept) + (x.fwdNote ? ': ' + esc(x.fwdNote) : '') + ' · ' + esc(ago(x.fwdAt)) + '</span>' : '') + (x.doneNote ? '<span class="pc-resp ok">' + icon('check') + ' ' + esc(x.doneNote) + '</span>' : '') + (x.photo ? '<a href="' + esc(x.photo) + '" target="_blank" rel="noopener" class="small">' + icon('image') + ' الصورة</a>' : '') + '</div>' +
-        '<div class="meta">' + pcPill(x.status) + (d.me.isBio && x.status === 'جديد' ? '<button type="button" class="btn sm" data-sf="' + esc(x.id) + '">' + icon('send') + ' توجيه</button>' : '') + (d.me.isBio && x.status !== 'تم الحل' ? '<button type="button" class="btn sm" data-sd="' + esc(x.id) + '">' + icon('check') + ' تم الحل</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد مصادر مبلغ عنها</p>') + '</div>';
+        '<div class="meta">' + pcPill(x.status) + (d.me.isBio && x.status === 'جديد' ? '<button type="button" class="btn sm" data-sf="' + esc(x.id) + '">' + icon('send') + ' توجيه</button>' : '') + (d.me.isBio && x.status !== 'تم الحل' && x.status !== 'ملغى' ? '<button type="button" class="btn sm" data-sd="' + esc(x.id) + '">' + icon('check') + ' تم الحل</button>' : '') + (((d.me.isBio && x.status !== 'تم الحل' && x.status !== 'ملغى') || (d.me.isPc && x.status === 'جديد' && (d.me.lvl >= 2 || x.by.indexOf(d.me.name) === 0))) ? '<button type="button" class="btn sm ghost" data-se="' + esc(x.id) + '">' + icon('edit') + ' تعديل</button><button type="button" class="btn sm ghost" data-sx="' + esc(x.id) + '">' + icon('x') + ' إلغاء</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد مصادر مبلغ عنها</p>') + '</div>';
     box.innerHTML = h;
     if ($('pcSA')) $('pcSA').onclick = function () {
       var ph = {};
@@ -8613,6 +8625,8 @@
       });
       pcBindPhoto('sPh', ph, false);
     };
+    box.querySelectorAll('[data-se]').forEach(function (b) { b.onclick = function () { var x0 = d.sources.filter(function (x) { return x.id === b.dataset.se; })[0]; openSheet('<div class="sheet-head"><h2>' + icon('edit') + ' تعديل المصدر</h2></div><div class="sheet-body"><div class="field"><label for="seK">النوع</label><select id="seK">' + d.srcKinds.map(function (k) { return '<option' + (k === x0.kind ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select></div><div class="field"><label for="seV">الخطورة</label><select id="seV">' + ['منخفضة', 'متوسطة', 'عالية'].map(function (k) { return '<option' + (k === x0.sev ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div><div class="field"><label for="seT">الوصف</label><textarea id="seT" rows="3">' + esc(x0.text) + '</textarea></div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' حفظ</button></div>', function (a2, y) { if (a2 !== 'ok') return; y.disabled = true; remote('pcSourceEdit', [S.session.pin, x0.id, { kind: $('seK').value, sev: $('seV').value, text: $('seT').value }]).then(function () { closeSheet(); toast('اتعدل'); pcReload(); }).catch(function (e) { y.disabled = false; toast(errText(e)); }); }); }; });
+    box.querySelectorAll('[data-sx]').forEach(function (b) { b.onclick = function () { pcReasonSheet('إلغاء البلاغ', function (r, fail) { remote('pcSourceEdit', [S.session.pin, b.dataset.sx, { reason: r }, true]).then(function () { closeSheet(); toast('اتلغى البلاغ'); pcReload(); }).catch(function (e) { fail(); toast(errText(e)); }); }); }; });
     box.querySelectorAll('[data-sf]').forEach(function (b) { b.onclick = function () { openSheet('<div class="sheet-head"><h2>' + icon('send') + ' توجيه للإدارة المعنية</h2></div><div class="sheet-body"><div class="field"><label for="fD">الإدارة</label><select id="fD">' + d.depts.map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('') + '</select></div><div class="field"><label for="fN">المطلوب</label><textarea id="fN" rows="2"></textarea></div><button type="button" class="btn primary big" data-a="ok">' + icon('send') + ' توجيه</button></div>', function (a, x) { if (a !== 'ok') return; x.disabled = true; remote('pcSourceFwd', [S.session.pin, b.dataset.sf, $('fD').value, $('fN').value]).then(function () { closeSheet(); toast('اتوجه للإدارة'); pcReload(); }).catch(function (e) { x.disabled = false; toast(errText(e)); }); }); }; });
     box.querySelectorAll('[data-sd]').forEach(function (b) { b.onclick = function () { var ph = {}; openSheet('<div class="sheet-head"><h2>' + icon('check') + ' تم حل المصدر</h2></div><div class="sheet-body"><div class="field"><label for="dN">إيه اللي اتعمل</label><textarea id="dN" rows="2"></textarea></div><div class="field">' + pcPhotoIn('dPh', 'صورة بعد الحل') + '</div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' إغلاق</button></div>', function (a, x) { if (a !== 'ok') return; x.disabled = true; remote('pcSourceDone', [S.session.pin, b.dataset.sd, $('dN').value, ph.one || '']).then(function () { closeSheet(); toast('اتقفل المصدر'); pcReload(); }).catch(function (e) { x.disabled = false; toast(errText(e)); }); }); pcBindPhoto('dPh', ph, false); }; });
   }
@@ -8621,9 +8635,10 @@
     var h = '<div class="card"><div class="card-head"><div><span class="kick">بيحدثها مدير ومهندس ومشرفين الشركة · كل البيانات ظاهرة للأمن الحيوي · المبيد الناقص أو المنتهي ما يتستخدمش</span><h2>' + icon('flask') + ' قائمة المبيدات المعتمدة</h2></div>' + (d.me.canChem ? '<button type="button" class="btn sm primary" data-ch="">' + icon('plus') + ' مبيد</button>' : '') + '</div>' +
       (d.chems.length ? '<div class="pc-chs">' + d.chems.map(function (c) { return '<div class="pc-ch' + (c.usable ? '' : ' bad') + '"><div class="pc-chh"><b>' + esc(c.name) + '</b>' + (c.status === 'موقوف' ? pcPill('موقوف') : c.usable ? '<span class="pill p-ok">مسموح</span>' : '<span class="pill p-bad">' + (c.expired ? 'منتهي' : 'ناقص بيانات') + '</span>') + (c.soon ? '<span class="pill p-warn">ينتهي قريباً</span>' : '') + '</div>' +
         '<dl><dt>المادة الفعالة</dt><dd>' + esc(c.ai || '—') + (c.conc ? ' ' + esc(c.conc) : '') + '</dd><dt>التجهيز</dt><dd>' + esc(c.form || '—') + '</dd><dt>التسجيل</dt><dd>' + esc(c.reg || '—') + '</dd><dt>الآفة</dt><dd>' + esc(c.target || '—') + '</dd><dt>الجرعة</dt><dd>' + esc(c.dose || '—') + '</dd><dt>الطريقة</dt><dd>' + esc(c.method || '—') + '</dd><dt>الأمان</dt><dd>' + esc(c.safety || '—') + '</dd><dt>الترياق</dt><dd>' + esc(c.antidote || '—') + '</dd><dt>الصلاحية</dt><dd>' + esc(c.expiry || '—') + '</dd></dl>' +
-        (c.missing.length ? '<p class="small pc-warn">' + icon('alert') + ' ناقص: ' + esc(c.missing.join('، ')) + '</p>' : '') + '<div class="row">' + (c.sds ? '<a class="btn sm" href="' + esc(c.sds) + '" target="_blank" rel="noopener">' + icon('file') + ' نشرة الأمان</a>' : '') + (c.label ? '<a class="btn sm" href="' + esc(c.label) + '" target="_blank" rel="noopener">' + icon('image') + ' العبوة</a>' : '') + (d.me.canChem ? '<button type="button" class="btn sm" data-ch="' + esc(c.id) + '">' + icon('edit') + ' تعديل</button>' : '') + '</div><small class="muted">' + esc(c.by) + (c.updatedAt ? ' · ' + esc(ago(c.updatedAt)) : '') + '</small></div>'; }).join('') + '</div>' : '<p class="empty">القائمة فاضية. شركة المكافحة تضيف المبيدات المستخدمة.</p>') + '</div>';
+        (c.missing.length ? '<p class="small pc-warn">' + icon('alert') + ' ناقص: ' + esc(c.missing.join('، ')) + '</p>' : '') + '<div class="row">' + (c.sds ? '<a class="btn sm" href="' + esc(c.sds) + '" target="_blank" rel="noopener">' + icon('file') + ' نشرة الأمان</a>' : '') + (c.label ? '<a class="btn sm" href="' + esc(c.label) + '" target="_blank" rel="noopener">' + icon('image') + ' العبوة</a>' : '') + (d.me.canChem ? '<button type="button" class="btn sm" data-ch="' + esc(c.id) + '">' + icon('edit') + ' تعديل</button><button type="button" class="btn sm ghost" data-chd="' + esc(c.id) + '">' + icon('trash') + ' حذف</button>' : '') + '</div><small class="muted">' + esc(c.by) + (c.updatedAt ? ' · ' + esc(ago(c.updatedAt)) : '') + '</small></div>'; }).join('') + '</div>' : '<p class="empty">القائمة فاضية. شركة المكافحة تضيف المبيدات المستخدمة.</p>') + '</div>';
     box.innerHTML = h;
     box.querySelectorAll('[data-ch]').forEach(function (b) { b.onclick = function () { pcChemSheet(d, b.dataset.ch); }; });
+    box.querySelectorAll('[data-chd]').forEach(function (b) { b.onclick = function () { if (!b.dataset.sure) { b.dataset.sure = '1'; b.lastChild.textContent = ' تأكيد الحذف'; return; } b.disabled = true; remote('pcChemDelete', [S.session.pin, b.dataset.chd]).then(function (r) { toast(r.stopped ? 'المبيد مستخدم في تقارير، فاتوقف بدل ما يتمسح' : 'اتحذف المبيد'); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }; });
   }
   function pcChemSheet(d, id) {
     var c = d.chems.filter(function (x) { return x.id === id; })[0] || { status: 'معتمد' }, sds = {}, lab = {};
@@ -8651,7 +8666,7 @@
     if ($('ptAdd')) $('ptAdd').onclick = function () { var b = this; b.disabled = true; remote('pcPointsAdd', [S.session.pin, P.ptSite, $('ptK').value, $('ptN').value, $('ptP').value]).then(function (r) { toast('اتضافت ' + r.ids.length + ' نقطة: ' + r.ids[0] + (r.ids.length > 1 ? ' لـ ' + r.ids[r.ids.length - 1] : '')); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
     $('ptPrint').onclick = function () { document.body.classList.add('pc-print-labels'); window.print(); setTimeout(function () { document.body.classList.remove('pc-print-labels'); }, 800); };
     if (window.QRCode) box.querySelectorAll('[data-q]').forEach(function (el) { new QRCode(el, { text: el.dataset.q, width: 84, height: 84, correctLevel: QRCode.CorrectLevel.M }); });
-    box.querySelectorAll('[data-ptx]').forEach(function (b) { b.onclick = function () { if (!can) return; var x = d.points.filter(function (q) { return q.id === b.dataset.ptx; })[0]; openSheet('<div class="sheet-head"><h2>' + icon('pin') + ' ' + esc(x.id) + '</h2></div><div class="sheet-body"><div class="field"><label for="pxS">الحالة</label><select id="pxS">' + ['سليمة', 'تالفة', 'مفقودة', 'مرفوعة'].map(function (s) { return '<option' + (s === x.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></div><div class="field"><label for="pxP">المكان</label><select id="pxP">' + d.places.map(function (p) { return '<option' + (p === x.place ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></div><div class="field"><label for="pxN">ملاحظة (محضر التسليم والاستلام لو تالفة أو مفقودة)</label><input id="pxN" value="' + esc(x.note) + '"></div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' حفظ</button></div>', function (a, y) { if (a !== 'ok') return; y.disabled = true; remote('pcPointSet', [S.session.pin, x.id, { status: $('pxS').value, place: $('pxP').value, note: $('pxN').value }]).then(function () { closeSheet(); toast('اتحفظ'); pcReload(); }).catch(function (e) { y.disabled = false; toast(errText(e)); }); }); }; });
+    box.querySelectorAll('[data-ptx]').forEach(function (b) { b.onclick = function () { if (!can) return; var x = d.points.filter(function (q) { return q.id === b.dataset.ptx; })[0]; openSheet('<div class="sheet-head"><h2>' + icon('pin') + ' ' + esc(x.id) + '</h2></div><div class="sheet-body"><div class="field"><label for="pxS">الحالة</label><select id="pxS">' + ['سليمة', 'تالفة', 'مفقودة', 'مرفوعة'].map(function (s) { return '<option' + (s === x.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></div><div class="field"><label for="pxP">المكان</label><select id="pxP">' + d.places.map(function (p) { return '<option' + (p === x.place ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></div><div class="field"><label for="pxN">ملاحظة (محضر التسليم والاستلام لو تالفة أو مفقودة)</label><input id="pxN" value="' + esc(x.note) + '"></div><button type="button" class="btn primary big" data-a="ok">' + icon('check') + ' حفظ</button><button type="button" class="btn bad" data-a="del">' + icon('trash') + ' <span>حذف النقطة</span></button><p class="xs muted">النقطة اللي ليها سجل فحص ما بتتمسحش: بتترفع (مرفوعة) علشان سجلها يفضل محفوظ.</p></div>', function (a, y) { if (a === 'del') { if (!y.dataset.sure) { y.dataset.sure = '1'; y.querySelector('span').textContent = 'اضغط تاني للتأكيد'; return; } y.disabled = true; return remote('pcPointDelete', [S.session.pin, x.id]).then(function (r) { closeSheet(); toast(r.retired ? 'النقطة ليها سجل فحص، فاترفعت بدل ما تتمسح' : 'اتحذفت النقطة'); pcReload(); }).catch(function (e) { y.disabled = false; toast(errText(e)); }); } if (a !== 'ok') return; y.disabled = true; remote('pcPointSet', [S.session.pin, x.id, { status: $('pxS').value, place: $('pxP').value, note: $('pxN').value }]).then(function () { closeSheet(); toast('اتحفظ'); pcReload(); }).catch(function (e) { y.disabled = false; toast(errText(e)); }); }); }; });
   }
   /* ---------- التقييم الشهري ---------- */
   function pcPayTxt(t) { t = Math.round(Number(t) || 0); if (t >= 85) return ['كامل المستحقات', 100, 0]; if (t >= 75) return ['خصم 1% لكل نقطة أقل من 85', 100 - (85 - t), 85 - t]; if (t >= 70) { var dd = 10 + (75 - t) * 2; return ['خصم 2% لكل نقطة أقل من 75', 100 - dd, dd]; } return ['أقل من 70%: يصرف 50% من الفاتورة', 50, 50]; }
@@ -8662,7 +8677,7 @@
     var draw = function () {
       var t = tot(), p = pcPayTxt(t), val = ev && ev.value != null ? ev.value : d.company.value;
       var edit = d.me.canEval && !(ev && ev.status === 'معتمد' && !S.pc.evEdit);
-      box.innerHTML = '<div class="card"><div class="card-head"><div><span class="kick">' + esc(pcMonthTxt(d.month)) + (ev ? ' · ' + esc(ev.status) + ' · ' + esc(ev.by) : d.me.canEval ? ' · الدرجات المقترحة محسوبة من بيانات الشهر وتقدر تعدلها' : '') + '</span><h2>' + icon('award') + ' التقييم الشهري لأداء الشركة</h2></div>' + (d.me.canEval && ev && ev.status === 'معتمد' && !S.pc.evEdit ? '<button type="button" class="btn sm" id="evEd">' + icon('edit') + ' تعديل</button>' : '') + '</div>' +
+      box.innerHTML = '<div class="card"><div class="card-head"><div><span class="kick">' + esc(pcMonthTxt(d.month)) + (ev ? ' · ' + esc(ev.status) + ' · ' + esc(ev.by) : d.me.canEval ? ' · الدرجات المقترحة محسوبة من بيانات الشهر وتقدر تعدلها' : '') + '</span><h2>' + icon('award') + ' التقييم الشهري لأداء الشركة</h2></div>' + '<div class="row">' + (d.me.canDoc ? '<a class="btn sm" href="#pc/doc/eval/' + esc(d.month) + '">' + icon('download') + ' PDF / إرسال</a>' : '') + (d.me.canEval && ev && ev.status === 'معتمد' && !S.pc.evEdit ? '<button type="button" class="btn sm" id="evEd">' + icon('edit') + ' تعديل</button>' : '') + (d.me.canEval && ev ? '<button type="button" class="btn sm ghost" id="evDel">' + icon('trash') + ' <span>حذف التقييم</span></button>' : '') + '</div>' + '</div>' +
         (!ev && !d.me.canEval ? '<p class="empty">لم يعتمد تقييم الشهر ده بعد</p>' : '<div class="tbl"><table class="pc-ev"><thead><tr><th>#</th><th>المحور</th><th>الوزن</th><th>ما يقاس</th><th>الدرجة</th></tr></thead><tbody>' +
           d.axes.map(function (a, i) { return '<tr><td class="mono">' + (i + 1) + '</td><th>' + esc(a.label) + '</th><td class="mono">' + a.w + '</td><td class="small">' + esc(a.what) + (edit && sg && sg.why[a.k] ? '<br><span class="pc-why">' + icon('pulse') + ' ' + esc(sg.why[a.k]) + (sg.scores[a.k] != null ? ' ← مقترح ' + sg.scores[a.k] : '') + '</span>' : '') + '</td><td>' + (edit ? '<input class="pc-sc" type="number" step="0.5" min="0" max="' + a.w + '" data-sc="' + a.k + '" value="' + esc(sc[a.k]) + '">' : '<b class="mono">' + esc(sc[a.k]) + '</b>') + '</td></tr>'; }).join('') +
           '<tr class="pc-tot"><td></td><th>المجموع</th><td class="mono">100</td><td></td><td><b class="mono">' + t + '</b></td></tr></tbody></table></div>' +
@@ -8671,6 +8686,7 @@
         (d.evals.length ? '<div class="card"><h2>' + icon('history') + ' التقييمات السابقة</h2><div class="tbl"><table><thead><tr><th>الشهر</th><th>الإجمالي</th><th>الصرف</th><th>الحالة</th></tr></thead><tbody>' + d.evals.map(function (e) { return '<tr><td>' + esc(pcMonthTxt(e.month)) + '</td><td class="mono">' + e.total + '</td><td class="mono">' + e.pay + '%</td><td>' + pcPill(e.status === 'معتمد' ? 'معتمد' : 'مرسل') + '</td></tr>'; }).join('') + '</tbody></table></div></div>' : '');
       box.querySelectorAll('[data-sc]').forEach(function (el) { el.oninput = function () { sc[el.dataset.sc] = el.value; var t2 = tot(); box.querySelector('.pc-tot b').textContent = t2; }; el.onchange = draw; });
       if ($('evEd')) $('evEd').onclick = function () { S.pc.evEdit = true; draw(); };
+      if ($('evDel')) $('evDel').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = '1'; b.querySelector('span').textContent = 'اضغط تاني لتأكيد الحذف'; return; } b.disabled = true; remote('pcEvalDelete', [S.session.pin, d.month]).then(function () { toast('اتحذف تقييم الشهر'); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
       var save = function (final) { var b = $(final ? 'evFinal' : 'evDraft'); b.disabled = true; remote('pcEvalSave', [S.session.pin, d.month, sc, $('evN').value, $('evV').value, final]).then(function (r) { S.pc.evEdit = false; toast((final ? 'اتعتمد التقييم: ' : 'اتحفظت المسودة: ') + r.total + ' · صرف ' + r.pay + '%'); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
       if ($('evDraft')) { $('evDraft').onclick = function () { save(false); }; $('evFinal').onclick = function () { save(true); }; }
     };
@@ -8689,18 +8705,156 @@
     if ($('stR')) $('stR').onclick = function () { remote('pcSettings', [S.session.pin, { logo: 'reset' }]).then(function () { toast('رجع شعار كويكس'); pcReload(); }).catch(function (e) { toast(errText(e)); }); };
     $('acGo').onclick = function () { var b = this; b.disabled = true; remote('pcAccounts', [S.session.pin, { mgrName: $('acM').value, eng: $('acE').value, sup: $('acS').value, tech: $('acT').value }]).then(function (r) { toast(r.added.length ? 'اتعمل ' + r.added.length + ' حساب. اطبع كروتهم من «كروت الدخول»' : 'كل الحسابات موجودة'); pcReload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
   }
-  /* ---------- التقرير الشهري للطباعة ---------- */
-  function pcMonthReport() {
-    var d = S.pcD; if (!d) return go('pc');
-    var s = d.summary, ev = d.evals.filter(function (e) { return e.month === d.month; })[0], p = ev ? pcPayTxt(ev.total) : null;
-    $('main').innerHTML = '<section class="view pc-rep"><div class="no-print row"><a class="btn" href="#pc">' + icon('back') + ' رجوع</a><button type="button" class="btn primary" onclick="window.print()">' + icon('printer') + ' طباعة / PDF</button></div>' +
-      '<div class="pc-rh"><img src="' + esc(logoSrc()) + '" alt=""><div><h1>تقرير أعمال مكافحة الآفات</h1><p>' + esc(pcMonthTxt(d.month)) + ' · إدارة الأمن الحيوي · ' + esc(S.session.company || '') + '</p></div><img src="' + esc(pcLogo(d)) + '" alt=""></div>' +
-      '<h2>1. ملخص الشهر</h2><div class="pc-kpis">' + [['تقارير الزيارات', s.visits], ['المعتمد منها', s.approved], ['تنفيذ الجدول', s.planned ? Math.round(s.plannedDone / s.planned * 100) + '%' : '—'], ['تغطية النقاط', s.cover == null ? '—' : s.cover + '%'], ['نقاط قوارض نشطة', s.rodPct == null ? '—' : s.rodPct + '%'], ['ذباب / كارت', s.fly == null ? '—' : s.fly], ['الشكاوى', s.comp + ' (' + s.compOk + ' خلال 48 س)'], ['مصادر مؤثرة مفتوحة', s.srcOpen]].map(function (k) { return '<div class="pc-k"><b class="mono">' + k[1] + '</b><span>' + k[0] + '</span></div>'; }).join('') + '</div>' +
-      '<h2>2. المؤشرات لكل موقع</h2><div class="tbl"><table><thead><tr><th>الموقع</th><th>مخطط</th><th>منفذ</th><th>معتمد</th><th>تغطية</th><th>قوارض نشطة</th><th>استهلاك الطعم</th><th>ذباب</th><th>زاحفة</th><th>شكاوى</th></tr></thead><tbody>' + s.sites.map(function (x) { return '<tr><th>' + esc(x.name) + '</th><td>' + x.planned + '</td><td>' + x.done + '</td><td>' + x.approved + '</td><td>' + (x.cover == null ? '—' : x.cover + '%') + '</td><td>' + (x.rodPct == null ? '—' : x.rodPct + '%') + '</td><td>' + (x.cons == null ? '—' : x.cons + '%') + '</td><td>' + (x.fly == null ? '—' : x.fly) + '</td><td>' + (x.crawl == null ? '—' : x.crawl) + '</td><td>' + x.comp + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<h2>3. الشكاوى والمصادر المؤثرة</h2>' + (d.complaints.length ? '<ul>' + d.complaints.map(function (c) { return '<li>' + esc(c.siteName) + ': ' + esc(c.text) + ' · ' + esc(c.status) + (c.late ? ' (متأخر عن 48 ساعة)' : '') + '</li>'; }).join('') + '</ul>' : '<p>لا توجد شكاوى.</p>') + (d.sources.length ? '<ul>' + d.sources.map(function (x) { return '<li>' + esc(x.siteName) + ' · ' + esc(x.kind) + ': ' + esc(x.text) + ' · ' + esc(x.status) + (x.dept ? ' (' + esc(x.dept) + ')' : '') + '</li>'; }).join('') + '</ul>' : '') +
-      '<h2>4. المبيدات المستخدمة والمعتمدة</h2><ul>' + d.chems.map(function (c) { return '<li>' + esc(c.name) + ' (' + esc(c.ai) + ') · تسجيل ' + esc(c.reg || 'غير مسجل') + ' · ' + (c.usable ? 'مستوفي' : 'ناقص: ' + esc(c.missing.join('، '))) + '</li>'; }).join('') + '</ul>' +
-      '<h2>5. التقييم الشهري</h2>' + (ev ? '<table class="pc-ev"><tbody>' + d.axes.map(function (a) { return '<tr><th>' + esc(a.label) + '</th><td>' + ev.scores[a.k] + ' من ' + a.w + '</td></tr>'; }).join('') + '<tr><th>الإجمالي</th><td><b>' + ev.total + ' من 100</b></td></tr><tr><th>المستحقات</th><td>' + esc(p[0]) + ' · صرف ' + p[1] + '%</td></tr></tbody></table>' + (ev.note ? '<p>' + esc(ev.note) + '</p>' : '') + '<p class="small">الحالة: ' + esc(ev.status) + ' · ' + esc(ev.by) + '</p>' : '<p>لم يعتمد التقييم بعد.</p>') +
-      '<div class="pc-sign"><div>مسؤول الأمن الحيوي<br><br>....................</div><div>مدير إدارة الأمن الحيوي<br><br>....................</div><div>مدير مكافحة الآفات (' + esc(d.company.name) + ')<br><br>....................</div></div></section>';
+  /* ---------- v31.1: حسابات شركة المكافحة (منفصلة عن الموظفين، بدون كود وظيفي) ---------- */
+  function pcMemberSheet(roles, u, reload) {
+    var isNew = !u, st = { role: u ? u.role : (roles[roles.length - 1] || {}).k, active: u ? u.active : true };
+    openSheet('<div class="sheet-head sh-brand" style="background:#1e3a8a"><h2>' + icon('bug') + ' ' + (isNew ? 'فرد جديد من شركة المكافحة' : 'تعديل: ' + esc(u.name)) + '</h2><span class="small">حساب شركة خارجية: مقصور على قسم مكافحة الآفات، والكود بيتولد تلقائياً' + (u ? ' (' + esc(u.id) + ')' : '') + '</span></div><div class="sheet-body">' +
+      '<div class="field"><label for="pmN">الاسم *</label><input id="pmN" value="' + esc(u ? u.name : '') + '" placeholder="مثال: م. محمد أحمد"></div>' +
+      '<div class="field"><label for="pmP">رقم الواتساب</label><input id="pmP" type="tel" dir="ltr" value="' + esc(u ? u.phone : '') + '" placeholder="201001234567"><span class="hint">يتبعت عليه رابط التطبيق والرقم السري.</span></div>' +
+      '<div class="field"><label>الوظيفة في الشركة *</label><div class="u-roles" id="pmR">' + roles.map(function (r) { return '<button type="button" class="u-role' + (r.k === st.role ? ' on' : '') + '" data-role="' + esc(r.k) + '"><span class="u-ri">' + icon('bug') + '</span><span><b>' + esc(r.label) + '</b><span>' + esc(r.desc) + '</span></span></button>'; }).join('') + '</div></div>' +
+      (isNew ? '<div class="infobox small">' + icon('key') + ' الكود (QX) والرقم السري بيتعملوا تلقائياً، والرقم بيظهر مرة واحدة علشان تبعته لصاحبه.</div>' :
+        '<label class="check" id="pmNew"><span class="box">' + icon('check') + '</span><span>إصدار رقم سري جديد (يُلغى الرقم الحالي فوراً)</span></label><label class="check' + (st.active ? '' : ' on') + '" id="pmStop"><span class="box">' + icon('check') + '</span><span>إيقاف الحساب (لا يستطيع الدخول)</span></label>') +
+      '<div class="login-err" id="pmErr" role="alert"></div><button class="btn primary big" data-a="save">' + icon('check') + (isNew ? ' إنشاء الحساب' : ' حفظ التعديلات') + '</button>' +
+      (isNew ? '' : '<button class="btn bad" data-a="del">' + icon('trash') + ' <span>حذف الحساب</span></button>') + '<button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, b) {
+        if (a === 'close') return closeSheet();
+        if (a === 'del') { if (!b.dataset.sure) { b.dataset.sure = '1'; b.querySelector('span').textContent = 'اضغط مرة تانية لتأكيد الحذف'; return; } b.disabled = true; remote('pcMemberDelete', [S.session.pin, u.id]).then(function () { closeSheet(); toast('اتحذف ' + u.name); reload(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); return; }
+        if (a === 'save') {
+          b.disabled = true; $('pmErr').textContent = '';
+          remote('pcMemberSave', [S.session.pin, { name: $('pmN').value, phone: $('pmP').value, role: st.role, active: $('pmStop') ? !$('pmStop').classList.contains('on') : true, newPin: $('pmNew') ? $('pmNew').classList.contains('on') : false }, u ? u.id : null]).then(function (r) { reload(); if (r.pin) userAccessSheet(r.user, r.pin, r.appUrl, isNew); else { closeSheet(); toast('اتحفظت بيانات ' + r.user.name); } }).catch(function (e) { b.disabled = false; $('pmErr').textContent = errText(e); });
+        }
+      });
+    document.querySelectorAll('#pmR [data-role]').forEach(function (x) { x.onclick = function () { st.role = x.dataset.role; document.querySelectorAll('#pmR [data-role]').forEach(function (y) { y.classList.toggle('on', y === x); }); }; });
+    ['pmNew', 'pmStop'].forEach(function (k) { if ($(k)) $(k).onclick = function () { this.classList.toggle('on'); }; });
+  }
+  function pcTeam(d, box) {
+    box.innerHTML = '<div class="card">' + v5Spin() + '</div>';
+    var load = function () {
+      remote('pcMembers', [S.session.pin]).then(function (m) {
+        var by = {}; m.list.forEach(function (x) { (by[x.role] = by[x.role] || []).push(x); });
+        box.innerHTML = '<div class="card"><div class="card-head"><div><span class="kick">شركة خارجية: بدون كود وظيفي · الكود QX بيتولد تلقائياً · الحسابات مقصورة على قسم المكافحة</span><h2>' + icon('user') + ' فريق ' + esc(m.company) + ' (' + m.list.length + ')</h2></div>' + (m.canEdit ? '<button type="button" class="btn sm primary" id="tmAdd">' + icon('plus') + ' فرد جديد</button>' : '') + '</div>' +
+          m.roles.map(function (r) { var L = by[r.k] || []; return '<h3 class="pc-h3">' + esc(r.label) + ' (' + L.length + ')</h3>' + (L.length ? '<div class="list">' + L.map(function (x) { return '<button type="button" class="li" data-tm="' + esc(x.id) + '"' + (m.canEdit ? '' : ' disabled') + '><span class="av">' + icon('user') + '</span><div class="t"><b>' + esc(x.name) + (x.active ? '' : ' <span class="pill p-bad">موقوف</span>') + '</b><span class="mono">' + esc(x.id) + (x.phone ? ' · ' + esc(x.phone) : '') + '</span></div>' + (m.canEdit ? '<div class="meta">' + icon('edit') + '</div>' : '') + '</button>'; }).join('') + '</div>' : '<p class="small muted">لا يوجد</p>'); }).join('') +
+          '<div class="row" style="margin-top:10px"><a class="btn" href="#ucards">' + icon('card') + ' طباعة كروت الفريق</a></div></div>';
+        if ($('tmAdd')) $('tmAdd').onclick = function () { pcMemberSheet(m.roles, null, load); };
+        box.querySelectorAll('[data-tm]').forEach(function (b) { b.onclick = function () { pcMemberSheet(m.roles, m.list.filter(function (x) { return x.id === b.dataset.tm; })[0], load); }; });
+      }).catch(function (e) { box.innerHTML = '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+    };
+    load();
+  }
+  function pcReasonSheet(title, cb) {
+    openSheet('<div class="sheet-head"><h2>' + icon('alert') + ' ' + esc(title) + '</h2></div><div class="sheet-body"><div class="field"><label for="rsN">السبب *</label><textarea id="rsN" rows="3"></textarea></div><button type="button" class="btn bad big" data-a="ok">' + icon('check') + ' تأكيد</button><button type="button" class="btn ghost" data-a="close">رجوع</button></div>', function (a, b) {
+      if (a === 'close') return closeSheet(); if (a !== 'ok') return;
+      var r = $('rsN').value.trim(); if (!r) return toast('اكتب السبب'); b.disabled = true; cb(r, function () { b.disabled = false; });
+    });
+  }
+
+  /* ---------- v31.1: مستندات PDF (التقرير الشهري، نموذج التقييم، تقرير الزيارة) للتنزيل أو الإرسال ---------- */
+  var PC_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
+  function pcLoadLibs() {
+    if (window.html2canvas && window.jspdf) return Promise.resolve();
+    return PC_LIBS.reduce(function (p, u) { return p.then(function () { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = function () { rej(new Error('تعذر تحميل أداة PDF. تأكد من الاتصال أو استخدم «طباعة» واختار حفظ PDF')); }; document.head.appendChild(s); }); }); }, Promise.resolve());
+  }
+  /** تقسيم المحتوى على صفحات A4 (الجداول الطويلة تتقسم صفوفها مع تكرار العنوان) */
+  function pcPaginate(src, host, head) {
+    host.style.zoom = 1; host.innerHTML = ''; var page = null, body = null, H = 1123 - 60;
+    var newPage = function () { page = document.createElement('div'); page.className = 'a4'; page.innerHTML = head; body = document.createElement('div'); body.className = 'a4-b'; page.appendChild(body); host.appendChild(page); };
+    var fits = function () { return body.getBoundingClientRect().bottom - page.getBoundingClientRect().top <= H; };
+    newPage();
+    [].slice.call(src.children).forEach(function (el) {
+      var n = el.cloneNode(true); body.appendChild(n);
+      if (fits()) return;
+      if (n.tagName === 'TABLE' && n.tBodies[0] && n.tBodies[0].rows.length > 1) {
+        body.removeChild(n);
+        var rowsL = [].slice.call(el.tBodies[0].rows), thead = el.tHead ? el.tHead.outerHTML : '', cur = null;
+        var start = function () { cur = document.createElement('table'); cur.className = el.className; cur.innerHTML = thead + '<tbody></tbody>'; body.appendChild(cur); };
+        start();
+        rowsL.forEach(function (r) { var rc = r.cloneNode(true); cur.tBodies[0].appendChild(rc); if (!fits()) { cur.tBodies[0].removeChild(rc); if (!cur.tBodies[0].rows.length) body.removeChild(cur); newPage(); start(); cur.tBodies[0].appendChild(rc); } });
+        return;
+      }
+      body.removeChild(n); newPage(); body.appendChild(n);
+    });
+    var pages = host.querySelectorAll('.a4'); pages.forEach(function (p, i) { var f = document.createElement('div'); f.className = 'a4-f'; f.textContent = 'صفحة ' + (i + 1) + ' من ' + pages.length; p.appendChild(f); });
+    pcDocZoom(host);
+    return pages.length;
+  }
+  function pcDocMake(host, name) {
+    toast('جاري تجهيز ملف PDF…');
+    return pcLoadLibs().then(function () {
+      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' }), pages = [].slice.call(host.querySelectorAll('.a4')); host.style.zoom = 1;
+      return pages.reduce(function (p, el, i) { return p.then(function () { return window.html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false }).then(function (c) { if (i) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297); }); }); }, Promise.resolve()).then(function () { pcDocZoom(host); return new File([pdf.output('blob')], name + '.pdf', { type: 'application/pdf' }); }, function (e) { pcDocZoom(host); throw e; });
+    });
+  }
+  function pcDocZoom(host) { var w = (host.parentNode && host.parentNode.clientWidth) || window.innerWidth; host.style.zoom = Math.min(1, Math.max(0.3, (w - 8) / 794)); }
+  function pcDocSave(file) { var a = document.createElement('a'), u = URL.createObjectURL(file); a.href = u; a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 4000); }
+  function pcDoc(args) {
+    var d = S.pcD, type = args[1] || 'month', key = args[2] || '';
+    if (!d) { $('main').innerHTML = v5Spin(); return remote('pcData', [S.session.pin, type === 'visit' ? '' : key]).then(function (x) { S.pcD = x; pcDoc(args); }).catch(function (e) { toast(errText(e)); go('pc'); }); }
+    if (!d.me.canDoc) { toast('تنزيل وإرسال تقارير المكافحة لمدير ومسؤول ومشرف الأمن الحيوي'); return go('pc'); }
+    if ((type === 'month' || type === 'eval') && key && key !== d.month) { S.pc.month = key; S.pcD = null; return pcDoc(args); }
+    var titles = { month: 'تقرير أعمال مكافحة الآفات الشهري', eval: 'نموذج التقييم الشهري لأداء شركة المكافحة', visit: 'تقرير زيارة مكافحة الآفات' };
+    $('main').innerHTML = '<section class="view pc-docv"><div class="row no-print pc-dtb"><a class="btn" href="#pc">' + icon('back') + ' رجوع</a><button type="button" class="btn primary" id="dPdf">' + icon('download') + ' تنزيل PDF</button><button type="button" class="btn" id="dShare">' + icon('share') + ' إرسال</button><button type="button" class="btn ghost" id="dPrint">' + icon('printer') + ' طباعة</button></div><div id="dSrc" class="a4-src"></div><div id="dOut" class="a4-host">' + v5Spin() + '</div></section>';
+    var build = function (html, fname) {
+      var src = $('dSrc'); src.innerHTML = html;
+      var head = '<div class="a4-h"><img src="' + esc(logoSrc()) + '" alt=""><div><b>' + esc(titles[type]) + '</b><span>' + esc(S.session.company || CFG.COMPANY || '') + ' · إدارة الأمن الحيوي</span></div><img src="' + esc(pcLogo(d)) + '" alt=""></div>';
+      var go2 = function () { pcPaginate(src, $('dOut'), head); src.innerHTML = ''; };
+      var imgs = [].slice.call(src.querySelectorAll('img')); Promise.all(imgs.map(function (im) { return im.complete ? 0 : new Promise(function (r) { im.onload = im.onerror = r; }); })).then(go2);
+      var file = null, get = function () { return file ? Promise.resolve(file) : pcDocMake($('dOut'), fname).then(function (f) { file = f; return f; }); };
+      $('dPrint').onclick = function () { var h = $('dOut'); h.style.zoom = 1; document.body.classList.add('pc-printing'); window.print(); setTimeout(function () { document.body.classList.remove('pc-printing'); pcDocZoom(h); }, 600); };
+      $('dPdf').onclick = function () { var b = this; b.disabled = true; get().then(function (f) { pcDocSave(f); toast('اتنزل الملف: ' + f.name); }).catch(function (e) { toast(errText(e), 6000); }).then(function () { b.disabled = false; }); };
+      $('dShare').onclick = function () {
+        var b = this; b.disabled = true;
+        get().then(function (f) {
+          if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: f.name, text: titles[type] + ' · ' + d.company.name }).catch(function () { });
+          pcDocSave(f); window.open('https://wa.me/?text=' + encodeURIComponent(titles[type] + ' · ' + d.company.name + '\n(الملف اتنزل على جهازك: ' + f.name + '، أرفقه في الرسالة)'), '_blank');
+        }).catch(function (e) { toast(errText(e), 6000); }).then(function () { b.disabled = false; });
+      };
+    };
+    if (type === 'visit') return remote('pcVisit', [S.session.pin, key]).then(function (v) { build(pcDocVisit(d, v), 'تقرير زيارة مكافحة ' + v.siteName.replace(/[\\/:*?"<>|]/g, '') + ' ' + v.day); }).catch(function (e) { toast(errText(e)); go('pc'); });
+    if (type === 'eval') return build(pcDocEval(d), 'نموذج تقييم شركة المكافحة ' + d.month);
+    build(pcDocMonth(d), 'تقرير مكافحة الآفات ' + d.month);
+  }
+  function pcDocMeta(rows) { return '<table class="d-meta"><tbody>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + r[1] + '</td></tr>'; }).join('') + '</tbody></table>'; }
+  function pcDocSign(L) { return '<div class="d-sign">' + L.map(function (x) { return '<div>' + esc(x) + '<br><br>..............................</div>'; }).join('') + '</div>'; }
+  function pcDocEvalTable(d, ev, sg) {
+    var sc = function (k) { return ev ? ev.scores[k] : sg && sg.scores[k] != null ? sg.scores[k] : ''; };
+    var tot = ev ? ev.total : Math.round(d.axes.reduce(function (s, a) { return s + (Number(sc(a.k)) || 0); }, 0) * 10) / 10, p = pcPayTxt(tot);
+    return '<table class="d-t"><thead><tr><th>#</th><th>المحور</th><th>الوزن</th><th>ما يُقاس</th><th>الدرجة</th></tr></thead><tbody>' + d.axes.map(function (a, i) { return '<tr><td>' + (i + 1) + '</td><th>' + esc(a.label) + '</th><td>' + a.w + '</td><td>' + esc(a.what) + (sg && sg.why[a.k] ? '<div class="d-why">' + esc(sg.why[a.k]) + '</div>' : '') + '</td><td class="d-sc">' + esc(sc(a.k)) + '</td></tr>'; }).join('') + '<tr class="d-tot"><td></td><th>المجموع</th><td>100</td><td></td><td class="d-sc">' + tot + '</td></tr></tbody></table>' +
+      '<div class="d-pay"><b>نسبة الصرف: ' + p[1] + '%</b><span>الخصم: ' + p[2] + '% · ' + esc(p[0]) + '</span>' + ((ev && ev.value) || d.company.value ? '<span>المستحق: ' + Math.round(((ev && ev.value) || d.company.value) * p[1] / 100).toLocaleString('en-US') + ' جنيه من ' + Number((ev && ev.value) || d.company.value).toLocaleString('en-US') + '</span>' : '') + '</div>';
+  }
+  function pcDocEval(d) {
+    var ev = d.evals.filter(function (e) { return e.month === d.month; })[0], s = d.summary;
+    return pcDocMeta([['الشركة المنفذة', esc(d.company.name)], ['الشهر', esc(pcMonthTxt(d.month))], ['حالة التقييم', ev ? esc(ev.status) + ' · ' + esc(ev.by) : 'مسودة مقترحة من بيانات الشهر (لم تعتمد)'], ['أساس التقييم', s.visits + ' تقرير زيارة · تنفيذ الجدول ' + (s.planned ? Math.round(s.plannedDone / s.planned * 100) + '%' : '—') + ' · ' + s.comp + ' شكوى']]) +
+      '<h2>درجات المحاور</h2>' + pcDocEvalTable(d, ev, ev ? null : d.suggest) +
+      '<h2>بند الصرف في العقد</h2><table class="d-t"><tbody><tr><th>85% فأكثر</th><td>المستحقات كاملة</td></tr><tr><th>من 84 إلى 75%</th><td>خصم 1% لكل 1% أقل من 85</td></tr><tr><th>من 74 إلى 70%</th><td>خصم 2% لكل 1% أقل من 75</td></tr><tr><th>أقل من 70%</th><td>يُصرف 50% من قيمة الفاتورة</td></tr></tbody></table>' +
+      '<h2>الملاحظات والتوصيات</h2><p class="d-note">' + esc(ev && ev.note ? ev.note : '......................................................................................................................') + '</p>' +
+      pcDocSign(['مشرف الأمن الحيوي', 'مسؤول الأمن الحيوي', 'مدير إدارة الأمن الحيوي', 'مدير مكافحة الآفات (' + d.company.name + ')']);
+  }
+  function pcDocMonth(d) {
+    var s = d.summary, ev = d.evals.filter(function (e) { return e.month === d.month; })[0], v = function (x, suf) { return x == null ? '—' : x + (suf || ''); };
+    var vs = d.visits.filter(function (x) { return x.day.slice(0, 7) === d.month; }).slice().sort(function (a, b) { return a.day < b.day ? -1 : 1; });
+    var h = pcDocMeta([['الشركة المنفذة', esc(d.company.name)], ['الشهر', esc(pcMonthTxt(d.month))], ['تاريخ الإصدار', esc(fmt(Date.now()))]]) +
+      '<h2>1. ملخص الشهر</h2><div class="d-k">' + [['تقارير الزيارات', s.visits], ['المعتمد', s.approved], ['تنفيذ الجدول', s.planned ? Math.round(s.plannedDone / s.planned * 100) + '%' : '—'], ['تغطية النقاط', v(s.cover, '%')], ['قوارض نشطة', v(s.rodPct, '%')], ['استهلاك الطعم', v(s.cons, '%')], ['ذباب / كارت', v(s.fly)], ['زاحفة / مصيدة', v(s.crawl)], ['متوسط مدة الزيارة', s.mins == null ? '—' : Math.round(s.mins) + ' د'], ['الشكاوى', s.comp + ' (' + s.compOk + ' خلال 48 س)'], ['مصادر مفتوحة', s.srcOpen], ['نقاط تالفة / مفقودة', s.pointsBad]].map(function (k) { return '<div><b>' + k[1] + '</b><span>' + k[0] + '</span></div>'; }).join('') + '</div>' +
+      '<h2>2. المؤشرات لكل موقع</h2><table class="d-t"><thead><tr><th>الموقع</th><th>مخطط</th><th>منفذ</th><th>معتمد</th><th>تغطية</th><th>قوارض نشطة</th><th>استهلاك الطعم</th><th>ذباب</th><th>زاحفة</th><th>شكاوى</th></tr></thead><tbody>' + (s.sites.map(function (x) { return '<tr><th>' + esc(x.name) + '</th><td>' + x.planned + '</td><td>' + x.done + '</td><td>' + x.approved + '</td><td>' + v(x.cover, '%') + '</td><td>' + v(x.rodPct, '%') + '</td><td>' + v(x.cons, '%') + '</td><td>' + v(x.fly) + '</td><td>' + v(x.crawl) + '</td><td>' + x.comp + '</td></tr>'; }).join('') || '<tr><td colspan="10">لا توجد بيانات</td></tr>') + '</tbody></table>' +
+      '<h2>3. سجل الزيارات</h2><table class="d-t"><thead><tr><th>اليوم</th><th>الموقع</th><th>النوع</th><th>كاتب التقرير</th><th>النقاط</th><th>قوارض</th><th>ذباب</th><th>الحالة</th></tr></thead><tbody>' + (vs.map(function (x) { var t = x.stats || {}; return '<tr><td>' + esc(x.day) + '</td><td>' + esc(x.siteName) + '</td><td>' + esc(x.kind) + '</td><td>' + esc(x.byName) + '</td><td>' + (t.done || 0) + (t.pts ? ' / ' + t.pts : '') + '</td><td>' + v(t.rodPct, '%') + '</td><td>' + v(t.flyAvg) + '</td><td>' + esc(x.status) + '</td></tr>'; }).join('') || '<tr><td colspan="8">لا توجد زيارات</td></tr>') + '</tbody></table>' +
+      '<h2>4. الشكاوى</h2><table class="d-t"><thead><tr><th>التاريخ</th><th>الموقع</th><th>الوصف</th><th>الرد</th><th>الحالة</th></tr></thead><tbody>' + (d.complaints.filter(function (c) { return pcMonthOf(c.time) === d.month; }).map(function (c) { return '<tr><td>' + esc(arDay(c.time)) + '</td><td>' + esc(c.siteName) + '</td><td>' + esc(c.text) + '</td><td>' + esc(c.respNote || '—') + (c.late ? ' (متأخر عن 48 ساعة)' : '') + '</td><td>' + esc(c.status) + '</td></tr>'; }).join('') || '<tr><td colspan="5">لا توجد شكاوى</td></tr>') + '</tbody></table>' +
+      '<h2>5. المصادر المؤثرة</h2><table class="d-t"><thead><tr><th>التاريخ</th><th>الموقع</th><th>النوع</th><th>الوصف</th><th>الإدارة المعنية</th><th>الحالة</th></tr></thead><tbody>' + (d.sources.map(function (x) { return '<tr><td>' + esc(arDay(x.time)) + '</td><td>' + esc(x.siteName) + '</td><td>' + esc(x.kind) + '</td><td>' + esc(x.text) + '</td><td>' + esc(x.dept || '—') + '</td><td>' + esc(x.status) + '</td></tr>'; }).join('') || '<tr><td colspan="6">لا توجد مصادر</td></tr>') + '</tbody></table>' +
+      '<h2>6. المبيدات</h2><table class="d-t"><thead><tr><th>المبيد</th><th>المادة الفعالة</th><th>التسجيل</th><th>الصلاحية</th><th>الحالة</th></tr></thead><tbody>' + (d.chems.map(function (c) { return '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.ai) + '</td><td>' + esc(c.reg || '—') + '</td><td>' + esc(c.expiry || '—') + '</td><td>' + (c.status === 'موقوف' ? 'موقوف' : c.usable ? 'مستوفي' : 'ناقص: ' + esc(c.missing.join('، '))) + '</td></tr>'; }).join('') || '<tr><td colspan="5">لا توجد</td></tr>') + '</tbody></table>' +
+      '<h2>7. التقييم الشهري</h2>' + (ev ? pcDocEvalTable(d, ev, null) + (ev.note ? '<p class="d-note">' + esc(ev.note) + '</p>' : '') : '<p class="d-note">لم يعتمد التقييم بعد.</p>') +
+      pcDocSign(['مسؤول الأمن الحيوي', 'مدير إدارة الأمن الحيوي', 'مدير مكافحة الآفات (' + d.company.name + ')']);
+    return h;
+  }
+  function pcMonthOf(t) { var x = new Date(t + 3 * 3600000); return x.toISOString().slice(0, 7); }
+  function pcDocVisit(d, v) {
+    var s = v.stats || {}, pi = v.pointsInfo || {}, byK = {}; v.checks.forEach(function (c) { (byK[c.k] = byK[c.k] || []).push(c); });
+    return pcDocMeta([['رقم التقرير', esc(v.id)], ['الموقع', esc(v.siteName)], ['اليوم', esc(pcDayTxt(v.day)) + ' · ' + esc(v.kind)], ['المدة', v.startAt ? esc(fmt(v.startAt, false)) + ' — ' + esc(fmt(v.endAt, false)) + (s.mins ? ' (' + s.mins + ' دقيقة)' : '') : '—'], ['كاتب التقرير', esc(v.byName)], ['الفريق', esc(v.teamNames.join('، ') || '—')], ['الحالة', esc(v.status) + (v.reviewBy ? ' · ' + esc(v.reviewBy) + (v.reviewNote ? ' · ' + esc(v.reviewNote) : '') : '')], ['إجراءات الدخول', (v.safety.dis ? '✓' : '✗') + ' تعقيم · ' + (v.safety.ppe ? '✓' : '✗') + ' ملابس وقاية · ✓ شغل خارجي بدون احتكاك بالطيور']]) +
+      '<h2>الملخص</h2><div class="d-k">' + [['النقاط المفحوصة', s.done + ' من ' + s.pts], ['قوارض نشطة', s.rodPct == null ? '—' : s.rodPct + '%'], ['استهلاك الطعم', s.consAvg == null ? '—' : s.consAvg + '%'], ['ذباب / كارت', s.flyAvg == null ? '—' : s.flyAvg], ['زاحفة / مصيدة', s.crawlAvg == null ? '—' : s.crawlAvg], ['نقاط تالفة أو مفقودة', s.bad || 0]].map(function (k) { return '<div><b>' + k[1] + '</b><span>' + k[0] + '</span></div>'; }).join('') + '</div>' +
+      '<h2>فحص النقاط</h2><table class="d-t"><thead><tr><th>النقطة</th><th>النوع</th><th>المكان</th><th>النتيجة</th><th>الحالة</th><th>ملاحظة</th></tr></thead><tbody>' + v.checks.map(function (c) { return '<tr><td dir="ltr">' + esc(c.p) + '</td><td>' + esc((PC_K[c.k] || [c.k])[0]) + '</td><td>' + esc((pi[c.p] || {}).place || '') + '</td><td>' + (c.k === 'R' ? c.cons + '%' + (c.sign && c.sign !== 'لا يوجد' ? ' · ' + esc(c.sign) : '') + (c.rep ? ' · تغيير الطعم' : '') : c.n) + '</td><td>' + esc(c.st) + '</td><td>' + esc(c.note || '') + '</td></tr>'; }).join('') + '</tbody></table>' +
+      (v.treats.length ? '<h2>المعالجات</h2><table class="d-t"><thead><tr><th>المبيد</th><th>الكمية</th><th>المكان</th><th>الطريقة</th></tr></thead><tbody>' + v.treats.map(function (t) { return '<tr><td>' + esc(t.name) + '</td><td>' + esc(t.qty + ' ' + (t.unit || '')) + '</td><td>' + esc(t.area) + '</td><td>' + esc(t.method) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      (v.others.length ? '<h2>مشاهدات أخرى</h2><p>' + v.others.map(function (o) { return esc(o.k) + ': ' + o.n + (o.note ? ' (' + esc(o.note) + ')' : ''); }).join(' · ') + '</p>' : '') +
+      (v.sources.length ? '<h2>المصادر المؤثرة</h2><table class="d-t"><thead><tr><th>النوع</th><th>الوصف</th><th>الخطورة</th><th>الحالة</th></tr></thead><tbody>' + v.sources.map(function (x) { return '<tr><td>' + esc(x.kind) + '</td><td>' + esc(x.text) + '</td><td>' + esc(x.sev) + '</td><td>' + esc(x.status) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      (v.note ? '<h2>ملاحظات الفريق</h2><p class="d-note">' + esc(v.note) + '</p>' : '') +
+      (v.paper ? '<h2>التقرير الورقي المختوم من المحطة</h2><img class="d-paper" src="' + esc(v.paper) + '" crossorigin="anonymous" alt="">' : '') +
+      (v.photos.length ? '<h2>صور الزيارة</h2><div class="d-ph">' + v.photos.slice(0, 8).map(function (p) { return '<img src="' + esc(p) + '" crossorigin="anonymous" alt="">'; }).join('') + '</div>' : '') +
+      pcDocSign(['كاتب التقرير (' + d.company.name + ')', 'مدير المحطة (الختم)', 'المراجِع من الأمن الحيوي']);
   }
   function viewOpsRoom() {
     if (S.route === 'ops/map') return viewOps21();

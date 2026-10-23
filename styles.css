@@ -4891,3 +4891,38 @@ td.pc-bad { color: var(--bad); font-weight: 800; } td.pc-warn { color: #b45309; 
   .pc-rep { padding: 0; } .pc-rep .pc-kpis { grid-template-columns: repeat(4, 1fr); }
 }
 .pc-hm input { width: auto; max-width: 190px; min-height: 0; }
+/* v31.1: مستندات المكافحة (A4) للتنزيل PDF أو الإرسال */
+.pc-dtb { position: sticky; top: 0; z-index: 4; background: var(--bg, #f6f2ef); padding: 8px 0; flex-wrap: wrap; gap: 8px; }
+.a4-src { position: absolute; right: -10000px; top: 0; width: 794px; }
+.a4-host { display: grid; gap: 18px; justify-content: center; padding: 6px 0 30px; }
+.a4 { width: 794px; height: 1123px; background: #fff; color: #161314; padding: 28px 34px 44px; position: relative; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.15); font-family: var(--font-body); font-size: 12.5px; line-height: 1.6; direction: rtl; }
+.a4-h { display: grid; grid-template-columns: 58px 1fr 58px; gap: 12px; align-items: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 12px; }
+.a4-h img { width: 58px; height: 58px; object-fit: contain; }
+.a4-h b { display: block; font: 700 17px var(--font-display); color: #111; } .a4-h span { font-size: 11px; color: #555; }
+.a4-f { position: absolute; bottom: 14px; left: 34px; right: 34px; border-top: 1px solid #ddd; padding-top: 5px; font-size: 10px; color: #777; text-align: center; }
+.a4 h2 { font: 700 14px var(--font-display); color: #1e3a8a; margin: 12px 0 6px; }
+.a4 p { margin: 0 0 6px; }
+.a4 table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+.a4 th, .a4 td { border: 1px solid #d9d4d1; padding: 4px 6px; text-align: right; vertical-align: top; font-size: 11.5px; }
+.a4 thead th { background: #1e3a8a; color: #fff; }
+.a4 tbody th { background: #f5f2f0; font-weight: 700; }
+.a4 .d-meta th { width: 130px; }
+.a4 .d-sc { text-align: center; font-weight: 800; font-size: 13px; } .a4 .d-tot td, .a4 .d-tot th { background: #eef1fa; }
+.a4 .d-why { color: #1e3a8a; font-size: 10.5px; margin-top: 2px; }
+.a4 .d-pay { display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; background: #eef1fa; border-radius: 8px; padding: 8px 12px; margin: 6px 0; }
+.a4 .d-pay b { font-size: 15px; }
+.a4 .d-k { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.a4 .d-k div { border: 1px solid #ddd; border-radius: 6px; padding: 5px 8px; display: grid; } .a4 .d-k b { font-size: 15px; } .a4 .d-k span { font-size: 10.5px; color: #555; }
+.a4 .d-note { border: 1px dashed #bbb; border-radius: 6px; padding: 6px 10px; min-height: 40px; }
+.a4 .d-sign { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 22px; text-align: center; font-size: 11.5px; }
+.a4 .d-paper { max-width: 100%; max-height: 420px; border: 1px solid #ddd; border-radius: 6px; }
+.a4 .d-ph { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; } .a4 .d-ph img { width: 100%; height: 130px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+@media print {
+  @page { size: A4; margin: 0; }
+  body.pc-printing * { visibility: hidden !important; }
+  body.pc-printing .a4-host, body.pc-printing .a4-host * { visibility: visible !important; }
+  body.pc-printing .a4-host { position: absolute; top: 0; right: 0; left: 0; display: block; padding: 0; zoom: 1 !important; }
+  body.pc-printing .a4 { box-shadow: none; page-break-after: always; break-after: page; margin: 0; }
+}
+.u-pc { border-right: 4px solid #1e3a8a; }
+.a4, .a4 * { letter-spacing: 0 !important; }
