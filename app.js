@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.3</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.4</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -4389,12 +4389,18 @@
     document.querySelectorAll('[data-knt]').forEach(function (b) { b.onclick = function () { go('academy/' + b.dataset.knt); }; });
     if (tab === 'train') return v5Load('academy', [], function (d) { drawAcademy(d); knHero(S.knD); }, 'الأكاديمية');
     if (S.knD && Date.now() - S.knAt < 5 * 60e3) return knDraw(S.knD);
-    v5Load('knowHub', [], function (d) { S.knD = d; S.knAt = Date.now(); knDraw(d); }, 'مركز المعلومات');
+    v5Load('knowHub', [], function (d) { S.knD = d; S.knAt = Date.now(); knDraw(d); knAutoRefresh(d); }, 'مركز المعلومات');
+  }
+  /** لو آخر جلب أقدم من ساعتين ونص، يتجدد في الخلفية والشاشة مفتوحة (مرة واحدة كل فتح) */
+  function knAutoRefresh(d) {
+    if (!d || d.demo || S.knBusy || (d.at && Date.now() - d.at < 150 * 60e3)) return;
+    S.knBusy = 1; var h = $('knHs'); if (h) { var u = h.querySelector('.kn-upd span'); if (u) u.innerHTML = '<span class="spin"></span> بيتحدث الآن…'; }
+    remote('knowRefresh', [S.session.pin]).then(function (x) { S.knBusy = 0; S.knD = x; S.knAt = Date.now(); if (S.route.split('/')[0] === 'academy' && S.kn.tab !== 'train') knDraw(x); }).catch(function () { S.knBusy = 0; knHero(S.knD); });
   }
   function knHero(d) {
     var h = $('knHs'); if (!h || !d) return;
     var today = d.items.filter(function (x) { return Date.now() - x.at <= 864e5; }).length, eg = d.items.filter(function (x) { return x.scope === 'eg'; }).length, ob = d.items.filter(function (x) { return x.topics.indexOf('outbreak') >= 0 && Date.now() - x.at <= 7 * 864e5; }).length;
-    h.innerHTML = '<div><b class="mono">' + today + '</b><span>خبر خلال 24 ساعة</span></div><div><b class="mono">' + ob + '</b><span>خبر بؤر وأمراض · 7 أيام</span></div><div><b class="mono">' + eg + '</b><span>خبر من مصر</span></div><div class="kn-upd"><span>' + (d.demo ? 'نسخة العرض: أمثلة' : 'آخر تحديث ' + esc(ago(d.at))) + '</span>' + (d.canRefresh && !d.demo ? '<button type="button" class="btn sm" id="knRef">' + icon('refresh') + ' تحديث الآن</button>' : '') + '</div>';
+    h.innerHTML = '<div><b class="mono">' + today + '</b><span>خبر خلال 24 ساعة</span></div><div><b class="mono">' + ob + '</b><span>خبر بؤر وأمراض · 7 أيام</span></div><div><b class="mono">' + eg + '</b><span>خبر من مصر</span></div><div class="kn-upd"><span>' + (d.demo ? 'نسخة العرض: أمثلة' : d.at ? 'آخر تحديث ' + esc(ago(d.at)) + ' · تلقائي كل ساعتين' : 'لسه ما اتجمعتش أخبار') + '</span>' + (!d.demo ? '<button type="button" class="btn sm" id="knRef">' + icon('refresh') + ' تحديث الآن</button>' : '') + '</div>';
     if ($('knRef')) $('knRef').onclick = function () { var b = this; b.disabled = true; b.innerHTML = '<span class="spin"></span> جاري الجلب'; remote('knowRefresh', [S.session.pin]).then(function (x) { S.knD = x; S.knAt = Date.now(); toast('اتحدثت الأخبار: ' + x.items.length + ' خبر'); viewAcademy([S.kn.tab]); }).catch(function (e) { b.disabled = false; b.innerHTML = icon('refresh') + ' تحديث الآن'; toast(errText(e), 6000); }); };
   }
   function knItem(x, big) {
@@ -4414,9 +4420,10 @@
         '<div class="kn-row"><div class="kn-seg" role="group">' + [['', 'الكل'], ['eg', 'مصر'], ['region', 'الإقليم'], ['world', 'العالم']].map(function (s) { return '<button type="button" data-ks="' + s[0] + '" class="' + (K.scope === s[0] ? 'on' : '') + '">' + s[1] + (s[0] ? ' <span>' + (d.scopes[s[0]] || 0) + '</span>' : '') + '</button>'; }).join('') + '</div>' +
         '<div class="kn-seg" role="group"><button type="button" data-kso="" class="' + (K.sort !== 'score' ? 'on' : '') + '">الأحدث</button><button type="button" data-kso="score" class="' + (K.sort === 'score' ? 'on' : '') + '">الأهم لنا</button></div>' +
         '<label class="kn-q">' + icon('search') + '<input type="search" id="knQ" placeholder="ابحث: H5N1، الشرقية، لقاح…" value="' + esc(K.q) + '"></label></div></div>';
-      h += L.length ? '<div class="kn-list">' + L.slice(0, 120).map(function (x) { return knItem(x); }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('rss') + ' لا توجد أخبار بهذا الاختيار</p></div>';
+      if (d.empty) h += '<div class="card"><p class="empty">' + icon('rss') + ' لسه ما اتجمعتش أخبار على الخادم. اضغط «تحديث الآن» فوق، والتحديث بعد كده تلقائي كل ساعتين.</p></div>';
+      else h += L.length ? '<div class="kn-list">' + L.slice(0, 120).map(function (x) { return knItem(x); }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('rss') + ' لا توجد أخبار بهذا الاختيار</p></div>';
       var ok = d.feeds.filter(function (f) { return f.ok; }).length;
-      h += '<p class="xs muted kn-foot">' + icon('book') + ' المصادر: ' + (d.demo ? 'نسخة العرض تعرض أمثلة توضيحية فقط.' : ok + ' من ' + d.feeds.length + ' مصدر اتقرأ في آخر تحديث (Google News بالعربي والإنجليزي، CIDRAP، Avian Flu Diary، Meat+Poultry). التحديث تلقائي كل 6 ساعات.') + ' مكان كل خبر = مكان الحدث وليس مكان الجريدة. الأخبار إشارات للمتابعة، والبؤر المؤكدة في رادار الوبائيات.</p>';
+      h += '<p class="xs muted kn-foot">' + icon('book') + ' المصادر: ' + (d.demo ? 'نسخة العرض تعرض أمثلة توضيحية فقط.' : ok + ' من ' + d.feeds.length + ' مصدر اتقرأ في آخر تحديث (Google News بالعربي والإنجليزي، CIDRAP، Avian Flu Diary، Meat+Poultry). التحديث تلقائي كل ساعتين، وكل خبر بيفتح المقال الأصلي بتاعه من موقع الجريدة.') + ' مكان كل خبر = مكان الحدث وليس مكان الجريدة. الأخبار إشارات للمتابعة، والبؤر المؤكدة في رادار الوبائيات.</p>';
     }
     if (K.tab === 'brief') {
       var o = d.ops, dt = new Date().toLocaleDateString('ar-EG', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, TZ));

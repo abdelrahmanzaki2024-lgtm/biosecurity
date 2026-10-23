@@ -8510,7 +8510,8 @@ function BIO_knowClassify(it, now) {
   var g = BIO_newsGeo(t, !!it.eg), scope = 'world', place = '';
   if (g) { place = g.place; scope = g.country === 'مصر' ? 'eg' : BIO_KNOW_MENA.indexOf(g.country) >= 0 ? 'region' : 'world'; }
   else if (it.eg) scope = 'eg';
-  var at = Date.parse(it.date || '') || now, age = (now - at) / 864e5;
+  var at = Date.parse(it.date || ''); if (isNaN(at)) return null; if (at > now + 36e5) at = now;
+  var age = (now - at) / 864e5;
   if (age > 30) return null;
   var why = [];
   if (scope === 'eg') why.push('في مصر'); else if (scope === 'region') why.push('في الإقليم');
@@ -8542,7 +8543,7 @@ function BIO_demoKnow(now) {
     ['New vaccine trial shows protection against HPAI in layers (example)', 'Example', 60],
     ['Wild birds migration: waterfowl numbers rise at Mediterranean wetlands (example)', 'Example', 80],
     ['نفوق طيور برية في بحيرة المنزلة والجهات المعنية تسحب عينات (مثال)', 'مثال', 100]];
-  return BIO_knowMerge([], L0.map(function (x) { return { title: x[0], src: x[1], link: 'https://www.cidrap.umn.edu/avian-influenza-bird-flu', date: new Date(now - x[2] * H).toUTCString(), eg: /[ء-ي]/.test(x[0]) }; }), now).list;
+  return BIO_knowMerge([], L0.map(function (x) { return { title: x[0], src: x[1], link: 'https://www.google.com/search?q=' + encodeURIComponent(x[0].replace(/\s*\((مثال|example)\)/i, '')), date: new Date(now - x[2] * H).toUTCString(), eg: /[ء-ي]/.test(x[0]) }; }), now).list;
 }
 function BIO_v32know(api, H) {
   var D = 864e5;
@@ -8550,12 +8551,14 @@ function BIO_v32know(api, H) {
   var deps0 = H.deps || {};
   api.knowHub = function (pin) {
     var u = H.auth(pin, true), now = (deps0.now || Date.now)(), k = data();
-    if (!k) k = { at: now, items: BIO_demoKnow(now), feeds: [], demo: true };
+    if (!k && !deps0.knowGet) k = { at: now, items: BIO_demoKnow(now), feeds: [], demo: true }; // نسخة العرض فقط
+    if (!k && deps0.knowNow) { try { deps0.knowNow(); } catch (e) {} k = data(); } // أول فتح على الخادم: جلب فوري بدل الأمثلة
+    if (!k) k = { at: null, items: [], feeds: [], empty: true };
     var items = k.items || [], cnt = { all: items.length }, sc = { eg: 0, region: 0, world: 0 };
     BIO_KNOW_TOPICS.forEach(function (x) { cnt[x.k] = 0; }); items.forEach(function (x) { x.topics.forEach(function (t) { cnt[t] = (cnt[t] || 0) + 1; }); sc[x.scope] = (sc[x.scope] || 0) + 1; });
     var day = items.filter(function (x) { return now - x.at <= 2 * D; }).sort(function (a, b) { return b.score - a.score || b.at - a.at; }).slice(0, 8);
     var ops = null; try { var o = api.opsRoom(pin); ops = { season: o.season && typeof o.season === 'object' ? [o.season.label, o.season.note].filter(Boolean).join(' · ') : String(o.season || ''), sectors: o.sectors.map(function (s) { return { name: s.name, level: s.level, key: s.key, label: s.label, why: (s.why || []).slice(0, 2).map(function (w) { return w.text; }) }; }), actions: (o.actions || []).slice(0, 6).map(function (a) { return { lv: a.lv, t: a.t, do: a.do, who: a.who, link: a.link }; }), counts: o.counts }; } catch (e) { ops = null; }
-    return { now: now, at: k.at, demo: !!k.demo, items: items, feeds: k.feeds || [], topics: BIO_KNOW_TOPICS.map(function (x) { return { k: x.k, label: x.label, ic: x.ic, n: cnt[x.k] || 0 }; }), scopes: sc, today: day, lib: BIO_KNOW_LIB, watch: BIO_KNOW_WATCH, ops: ops, canRefresh: u.isAdmin || u.role === BIO.ROLE_MANAGER, me: u.name };
+    return { now: now, at: k.at, demo: !!k.demo, empty: !!k.empty, every: 2, items: items, feeds: k.feeds || [], topics: BIO_KNOW_TOPICS.map(function (x) { return { k: x.k, label: x.label, ic: x.ic, n: cnt[x.k] || 0 }; }), scopes: sc, today: day, lib: BIO_KNOW_LIB, watch: BIO_KNOW_WATCH, ops: ops, canRefresh: u.isAdmin || u.role === BIO.ROLE_MANAGER, me: u.name };
   };
   api.knowRefresh = function (pin) {
     H.auth(pin, true);
