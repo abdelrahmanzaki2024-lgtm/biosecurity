@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -3562,7 +3562,7 @@
     var dwn = wxDownwind(sec.sites, cur.dir);
     var cw0 = WX_CODE(cur.code), thiNow = (function () { var hs = today.thiH || [], mx = hs.length ? Math.max.apply(null, hs) : wxTHI(today.tmax, Math.max(20, (today.rh || 40) - 15)); return Math.round(mx); })(), thiL = thiLvl(thiNow);
     if (S.wxWind == null) S.wxWind = 1; if (S.wxSweep == null) S.wxSweep = 1;
-    var html = rkStage({ id: 'wxRk', mapId: 'wxMap', ic: 'wind', title: 'رادار الطقس والرياح والآفات', sub: 'الطقس الحي واتجاه الهواء بين المحطات والإجهاد الحراري ونشاط الآفات الناقلة · قطاع ' + S.wxSec,
+    var html = rkStage({ id: 'wxRk', mapId: 'wxMap', ic: 'wind', rose: rkRose(cur.dir, cur.wind, cur.gust, 'الرياح الآن على 10 م'), title: 'رادار الطقس والرياح والآفات', sub: 'الطقس الحي واتجاه الهواء بين المحطات والإجهاد الحراري ونشاط الآفات الناقلة · قطاع ' + S.wxSec,
       live: W.live ? rkLive(w.at, 'آخر قراءة') : '<span class="rk-live off"><i></i><b>' + (MODE === 'demo' ? 'نسخة العرض' : 'تقدير مناخي') + '</b><span>' + esc(src) + '</span></span>',
       leds: rkLeds([['Open-Meteo', W.live ? (w.stale ? 'mid' : 'ok') : 'bad', src], ['الغبار CAMS', cur.dust != null ? 'ok' : 'off', 'جودة الهواء والغبار من CAMS'], ['توقع 7 أيام', W.days.length >= 7 ? 'ok' : 'mid', 'توقعات يومية وساعية'], ['الآفات', 'ok', 'نموذج نشاط من الحرارة والرطوبة']]),
       acts: '<button class="btn" type="button" id="wxRef">' + icon('refresh') + ' تحديث الطقس</button>',
@@ -3681,7 +3681,7 @@
         var m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'rk-farm wx-site', html: '<span class="f" style="--c:#38bdf8"><b>' + esc(String(shortSite(x.name)).replace(/[^\d]/g, '') || '•') + '</b></span><em>' + esc(shortSite(x.name)) + '</em>', iconSize: [0, 0] }) }).addTo(map);
         m.on('click', function () { draw(x.id); }); mk[x.id] = m;
       });
-      var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (cur.dir + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح الآن</b><span>من ' + esc(compassAr(cur.dir)) + ' · ' + cur.wind + ' كم/س</span></div>'; return el; }; wc.addTo(map);
+      // (v32.1) الرياح الآن بقت في بوصلة لوحة التحكم
       map.fitBounds(L.latLngBounds(sec.sites.map(function (x) { return [x.lat, x.lng]; })).pad(0.25), { maxZoom: 14 });
       box.classList.toggle('bm-far', map.getZoom() < 12); map.on('zoomend', function () { box.classList.toggle('bm-far', map.getZoom() < 12); });
       draw((dwn[0] && dwn[0].s.id) || sec.sites[0].id);
@@ -3785,9 +3785,10 @@
   }
   /* ---------- الخريطة التفاعلية لرادار الطيور (Leaflet + صور الأقمار الصناعية) ---------- */
   function birdLeaflet() {
-    if (window.L && L.map) return Promise.resolve();
-    if (!document.querySelector('link[data-leaflet]')) { var c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; c.setAttribute('data-leaflet', '1'); document.head.appendChild(c); }
-    return loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+    var hasCss = !!document.querySelector('link[data-leaflet]');
+    if (window.L && L.map && hasCss) return Promise.resolve();
+    if (!hasCss) { var c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; c.setAttribute('data-leaflet', '1'); document.head.appendChild(c); }
+    return window.L && L.map ? Promise.resolve() : loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
   }
   /* ---------- أنواع الطيور المتوقعة على كل مسار + بُعد المحطات عن المسارات ---------- */
   // m = أشهر المرور (1-12)، r = خطر نقل إنفلونزا الطيور (3 عالٍ، 2 متوسط، 1 منخفض)
@@ -3932,17 +3933,18 @@
       // الرياح على ارتفاع الطيران
       var tw = sites[0] && sites[0].wind;
       S.bFlow = rkWind(map, sites.map(function (x) { return { lat: +x.lat, lng: +x.lng, dir: ((x.wind.toward || 0) + 180) % 360, spd: x.wind.spd }; }), '850hPa', { speed: 0.7 }); if (!S.bWind) S.bFlow.toggle(false);
-      if (tw) { var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (tw.toward + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح على 1500 م</b><span>' + esc(tw.label) + ' · ' + tw.spd + ' كم/س</span></div>'; return el; }; wc.addTo(map); }
-      L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+      // (v32.1) بوصلة الرياح بقت في لوحة التحكم بدل عنصر فوق المؤشرات
       var now = L.control({ position: 'bottomright' }); now.onAdd = function () { var el = L.DomUtil.create('div', 'bm-now'); el.id = 'bmNow'; el.hidden = true; return el; }; now.addTo(map);
       // اللمس أو السحب يوقف الجولة التلقائية (تحكم يدوي)
       ['mousedown', 'touchstart', 'wheel'].forEach(function (ev) { box.addEventListener(ev, function () { if (S.bTour) birdTour(d, false); }, { passive: true }); });
       var far = function () { box.classList.toggle('bm-far', map.getZoom() < 12); };
       map.on('zoomend', far);
       map.invalidateSize(); birdFitSector(d, true); far(); placeLabs();
+      // أسراب متحركة على كل مسار في اتجاه الهجرة الحالي (عددها حسب شدة الهجرة هذا الشهر)
+      try { S.bTracks = rkTracks(map, d.flyways.filter(function (f) { return f.intensity >= 8; }).map(function (f) { return { pts: spring ? f.path.slice().reverse() : f.path, color: f.color, n: Math.max(1, Math.round(f.intensity / 16)), speed: 16 + f.intensity / 6 }; })); if (S.bBirdsOff) S.bTracks.toggle(false); } catch (e) { console.error(e); }
       setTimeout(function () { if (S.bmap !== map) return; map.invalidateSize(); if (!S.bTour) birdFitSector(d, true); }, 250);
       if (S.bTour) birdTour(d, true);
-    }).catch(function () {
+    }, function () {
       var b = $('bdLive'); if (b) { b.outerHTML = birdMap(d, 'near'); toast('تعذر تحميل الخريطة التفاعلية (تحتاج إنترنت). عُرضت الخريطة المبسطة'); }
     });
   }
@@ -3984,13 +3986,14 @@
     var ebN = d.sightings.filter(function (o) { return /eBird/i.test(o.source); }).length, inN = d.sightings.filter(function (o) { return /iNat/i.test(o.source); }).length;
     var feed = fls.slice(0, 8).map(function (o) { return rkItem({ t: 'سرب متوقع ← ' + shortSite(o.x.name), sub: 'من ' + esc(o.f.from) + ' · <b class="mono">' + o.f.d + ' كم</b> · ' + esc(o.f.species || ''), color: o.f.color, ic: 'bird', badge: '~' + BIO_eta(o.f.eta), bcls: o.f.eta <= 24 ? 'bad' : 'mid', data: ' data-bfocus="' + esc(o.x.id) + '"' }); }).join('') +
       d.sightings.slice(0, 30).map(function (o) { var src = /eBird/i.test(o.source) ? 'eBird' : /iNat/i.test(o.source) ? 'iNaturalist' : 'ميداني'; return rkItem({ t: String(o.species || 'طيور برية').replace(/\s*\([^)]*\)\s*$/, '') + ' · ' + (o.count || 1), sub: [esc(o.note || ''), esc(o.by || ''), '<span class="q">' + src + '</span>'].filter(Boolean).join(' · '), color: src === 'eBird' ? '#22d3ee' : src === 'iNaturalist' ? '#a3e635' : '#f59e0b', ic: 'eye', when: ago(o.time), data: o.lat != null && o.lat !== '' ? ' data-rkobs="' + o.lat + ',' + o.lng + '"' : '' }); }).join('');
-    var html = rkStage({ id: 'bdRk', mapId: 'bdLive', ic: 'bird', title: 'رادار الطيور المهاجرة', sub: 'مسارات الهجرة والرياح على ارتفاع الطيران ومشاهدات الطيور الحقيقية وخطر الأسراب على كل موقع · ' + d.season.label + ' · ' + dir,
+    var tw0 = (d.sites[0] || {}).wind;
+    var html = rkStage({ id: 'bdRk', mapId: 'bdLive', ic: 'bird', rose: mode === 'live' && tw0 ? rkRose(((tw0.toward || 0) + 180) % 360, tw0.spd, null, 'رياح 1500 م (ارتفاع الطيران)') : '', title: 'رادار الطيور المهاجرة', sub: 'مسارات الهجرة والرياح على ارتفاع الطيران ومشاهدات الطيور الحقيقية وخطر الأسراب على كل موقع · ' + d.season.label + ' · ' + dir,
       live: rkLive(d.now, 'آخر حساب'),
       leds: rkLeds([['رياح 1500م', live ? 'ok' : 'mid', live ? 'رياح حية: ' + (d.wx.source || '') : 'نموذج مناخي'], ['eBird', !d.ebird ? 'off' : eb && eb.ok ? 'ok' : eb && eb.ok === false ? 'bad' : 'mid', !d.ebird ? 'غير مفعل' : eb && eb.err ? eb.err : 'مفعل'], ['iNaturalist', d.inat ? 'ok' : 'off', 'مشاهدات علمية حية'], ['ميداني', d.sightings.length ? 'ok' : 'off', 'مشاهدات البوابات والعاملين'], ['المسارات', 'ok', 'نموذج BirdLife وAEWA']]),
       acts: '<button class="btn" type="button" id="bdSight">' + icon('plus') + ' مشاهدة</button><button class="btn" type="button" id="bdRef">' + icon('refresh') + ' تحديث</button><button class="btn' + (d.ebird ? '' : ' primary') + '" type="button" data-ebird="1">' + icon('key') + ' eBird</button>',
       seg: secs.concat(['*']).map(function (x) { return '<button type="button" data-bsec="' + esc(x) + '" class="' + (S.bSector === x ? 'on' : '') + '">' + icon('pin') + (x === '*' ? 'كل القطاعات' : 'قطاع ' + esc(x)) + '</button>'; }).join('') +
         [['live', 'خريطة حية', 'map'], ['near', 'المواقع عن قرب', 'target'], ['region', 'الدلتا والبحيرات', 'drop'], ['egypt', 'مصر كاملة', 'layers']].map(function (m) { return '<button type="button" data-mode="' + m[0] + '" class="' + (mode === m[0] ? 'on' : '') + '">' + icon(m[2]) + m[1] + '</button>'; }).join(''),
-      ctl: mode === 'live' ? '<div class="rk-lyr"><button type="button" data-bm="fit">' + icon('map') + 'القطاع</button><button type="button" data-bm="tour" class="' + (S.bTour ? 'on' : '') + '">' + icon(S.bTour ? 'pause' : 'play') + (S.bTour ? 'إيقاف' : 'جولة') + '</button><button type="button" data-bm="wind" class="' + (S.bWind ? 'on' : '') + '">' + icon('wind') + 'الرياح</button><button type="button" data-bm="sweep" class="' + (S.bSweep ? 'on' : '') + '">' + icon('radar') + 'المسح</button></div>' : '',
+      ctl: mode === 'live' ? '<div class="rk-lyr"><button type="button" data-bm="fit">' + icon('map') + 'القطاع</button><button type="button" data-bm="tour" class="' + (S.bTour ? 'on' : '') + '">' + icon(S.bTour ? 'pause' : 'play') + (S.bTour ? 'إيقاف' : 'جولة') + '</button><button type="button" data-bm="flocks" class="' + (S.bBirdsOff ? '' : 'on') + '">' + icon('bird') + 'الأسراب</button><button type="button" data-bm="wind" class="' + (S.bWind ? 'on' : '') + '">' + icon('wind') + 'الرياح</button><button type="button" data-bm="sweep" class="' + (S.bSweep ? 'on' : '') + '">' + icon('radar') + 'المسح</button></div>' : '',
       kpis: rkKpis([[top ? top.score : 0, 'أعلى خطر أسراب · ' + (top ? top.lvl.label : ''), top ? LVL_C[top.lvl.k] : '#22c55e', top ? shortSite(top.name) : ''],
         [hi.length, 'موقع فوق حد التنبيه', hi.length ? '#ef4444' : '#22c55e', 'الحد ' + d.alertLevel + ' من 100'],
         [fls[0] ? '~' + BIO_eta(fls[0].f.eta) : '—', 'أقرب سرب متوقع', fls[0] ? fls[0].f.color : '#22d3ee', fls[0] ? 'من ' + fls[0].f.from + ' ← ' + shortSite(fls[0].x.name) : 'لا أسراب متجهة لنا'],
@@ -4058,7 +4061,7 @@
     var bindFocus = function () { out.querySelectorAll('[data-bfocus]').forEach(function (b) { b.onclick = function () { if (S.birdMode && S.birdMode !== 'live') { birdSiteSheet(b.dataset.bfocus); return; } if (S.bTour) birdTour(d, false); var m = $('bdLive'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); birdFocus(d, b.dataset.bfocus, true); }; }); };
     bindFocus();
     out.querySelectorAll('[data-bsec]').forEach(function (b) { b.onclick = function () { S.bSector = b.dataset.bsec; out.querySelectorAll('[data-bsec]').forEach(function (c) { c.classList.toggle('on', c === b); }); $('bdSpecies').innerHTML = birdSpeciesCards(d); $('bdDistBox').innerHTML = birdDistTable(d); bindFocus(); if (S.bmap) birdLiveInit(d); }; });
-    out.querySelectorAll('[data-bm]').forEach(function (b) { b.onclick = function () { var a = b.dataset.bm; if (a === 'fit') { birdTour(d, false); birdFitSector(d); } else if (a === 'tour') birdTour(d, !S.bTour); else if (a === 'wind') { S.bWind = S.bWind ? 0 : 1; b.classList.toggle('on', !!S.bWind); if (S.bFlow) S.bFlow.toggle(!!S.bWind); } else if (a === 'sweep') { S.bSweep = S.bSweep ? 0 : 1; b.classList.toggle('on', !!S.bSweep); $('bdRk').classList.toggle('no-sweep', !S.bSweep); } }; });
+    out.querySelectorAll('[data-bm]').forEach(function (b) { b.onclick = function () { var a = b.dataset.bm; if (a === 'fit') { birdTour(d, false); birdFitSector(d); } else if (a === 'tour') birdTour(d, !S.bTour); else if (a === 'flocks') { S.bBirdsOff = !S.bBirdsOff; b.classList.toggle('on', !S.bBirdsOff); if (S.bTracks) S.bTracks.toggle(!S.bBirdsOff); } else if (a === 'wind') { S.bWind = S.bWind ? 0 : 1; b.classList.toggle('on', !!S.bWind); if (S.bFlow) S.bFlow.toggle(!!S.bWind); } else if (a === 'sweep') { S.bSweep = S.bSweep ? 0 : 1; b.classList.toggle('on', !!S.bSweep); $('bdRk').classList.toggle('no-sweep', !S.bSweep); } }; });
     out.querySelectorAll('[data-rkobs]').forEach(function (b) { b.onclick = function () { var q = b.dataset.rkobs.split(',').map(Number); if (!S.bmap) return; if (S.bTour) birdTour(d, false); S.bmap.flyTo(q, Math.max(S.bmap.getZoom(), 11), { duration: 0.8 }); if (window.innerWidth < 860) $('bdLive').scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
     var bRoot = $('bdRk'); bRoot.classList.toggle('no-sweep', !S.bSweep); rkBind(bRoot, function () { return S.bmap; });
     if (mode === 'live') birdLiveInit(d); else birdLiveStop();
@@ -7546,8 +7549,10 @@
   /** الخريطة الأساسية للكونسول */
   function rkBase(box, opts) {
     var map = L.map(box, Object.assign({ zoomSnap: 0.25, zoomDelta: 0.5, scrollWheelZoom: true, worldCopyJump: true, attributionControl: true, zoomControl: false }, opts || {}));
-    L.control.zoom({ position: 'bottomleft' }).addTo(map);
-    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+    // حماية: لو حركة التكبير اتعلقت (الصفحة في الخلفية أو المتصفح ما بعتش نهاية الحركة) الخريطة كانت بتقفل التكبير والسحب
+    map.on('zoomanim', function () { clearTimeout(map._rkZt); map._rkZt = setTimeout(function () { if (map._animatingZoom && map._onZoomTransitionEnd) map._onZoomTransitionEnd(); var c = map.getContainer(); if (c) L.DomUtil.removeClass(c, 'leaflet-zoom-anim'); }, 450); });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.scale({ metric: true, imperial: false, position: 'bottomright' }).addTo(map);
     var k = rkPref('base') || 'sat'; if (!RK_BASE[k]) k = 'sat';
     map._rkKey = k; map._rkBase = RK_BASE[k].mk().addTo(map); box.setAttribute('data-base', k);
     return map;
@@ -7573,55 +7578,115 @@
       if (!v.length) throw new Error('empty'); S.rkWind[key] = { at: Date.now(), v: v }; return v;
     });
   }
-  /** طبقة رياح متحركة (جزيئات) فوق الخريطة. samples: [{lat,lng,dir (اتجاه الهبوب من),spd كم/س}] */
+  /** طبقة اتجاه الرياح: أسهم أرصاد جوية على شبكة منتظمة، طول السهم ولونه حسب السرعة،
+   * مع موجة إضاءة خفيفة تمشي في اتجاه الهبوب (توضح الحركة من غير ما تبان زي المطر).
+   * samples: [{lat,lng,dir (اتجاه الهبوب من، درجات),spd كم/س}] */
   function rkFlow(map, samples, o) {
     o = o || {};
     var host = map.getContainer(), cv = document.createElement('canvas'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.className = 'rk-flow'; var pane = map.getPane('rkflow') || map.createPane('rkflow'); pane.style.zIndex = 450; pane.style.pointerEvents = 'none'; pane.appendChild(cv);
-    var W = 0, H = 0, grid = null, gs = 22, parts = [], on = true, raf = 0, data = samples || [], alpha = o.alpha || 0.9;
-    var col = function (v) { return v < 12 ? 'rgba(165,243,252,' : v < 25 ? 'rgba(255,255,255,' : v < 40 ? 'rgba(253,224,71,' : v < 55 ? 'rgba(251,146,60,' : 'rgba(248,113,113,'; };
-    function field(x, y) {
-      var ll = map.containerPointToLatLng([x, y]), su = 0, sv = 0, sw = 0, sp = 0;
+    var W = 0, H = 0, arrows = [], on = true, raf = 0, data = samples || [], t0 = Date.now(), ready = false;
+    var col = function (v) { return v < 15 ? '#bae6fd' : v < 30 ? '#f1f5f9' : v < 45 ? '#fde68a' : '#fca5a5'; }, last = 0;
+    function field(ll) {
+      var su = 0, sv = 0, sw = 0, sp = 0;
       for (var i = 0; i < data.length; i++) {
-        var p = data[i], dy = (p.lat - ll.lat), dx = (p.lng - ll.lng) * Math.cos(ll.lat * Math.PI / 180), d2 = dx * dx + dy * dy + 1e-6, wt = 1 / d2, to = ((p.dir + 180) % 360) * Math.PI / 180;
+        var p = data[i], dy = (p.lat - ll.lat), dx = (p.lng - ll.lng) * Math.cos(ll.lat * Math.PI / 180), wt = 1 / (dx * dx + dy * dy + 1e-6), to = ((p.dir + 180) % 360) * Math.PI / 180;
         su += Math.sin(to) * p.spd * wt; sv += Math.cos(to) * p.spd * wt; sp += p.spd * wt; sw += wt;
       }
-      return sw ? [su / sw, sv / sw, sp / sw] : [0, 0, 0];
+      return sw ? [su / sw, sv / sw, sp / sw] : null;
     }
     function build() {
-      var sz = map.getSize(); W = sz.x; H = sz.y; L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0])); cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      var cols = Math.ceil(W / gs) + 1, rows = Math.ceil(H / gs) + 1; grid = { c: cols, r: rows, v: new Array(cols * rows) };
-      for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++) grid.v[j * cols + i] = data.length ? field(i * gs, j * gs) : [0, 0, 0];
-      var n = Math.round(Math.min(o.max || 1400, W * H / (o.dens || 520))); parts = []; for (var k = 0; k < n; k++) parts.push(seed({}));
-      ctx.clearRect(0, 0, W, H);
+      if (!map._loaded) return;
+      var sz = map.getSize(); W = sz.x; H = sz.y; L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0]));
+      cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var gs = W < 520 ? 62 : 76; arrows = [];
+      if (!data.length) return;
+      for (var y = gs * 0.6; y < H; y += gs) for (var x = gs * 0.6 + ((Math.round(y / gs) % 2) ? gs / 2 : 0); x < W; x += gs) {
+        var f = field(map.containerPointToLatLng([x, y])); if (!f || f[2] < 0.5) continue;
+        var m = Math.sqrt(f[0] * f[0] + f[1] * f[1]) || 1;
+        arrows.push({ x: x, y: y, ux: f[0] / m, uy: -f[1] / m, s: f[2], len: Math.min(40, 14 + f[2] * 0.6), c: col(f[2]) });
+      }
+      ready = true;
     }
-    function at(x, y) { if (!grid) return [0, 0, 0]; var i = Math.max(0, Math.min(grid.c - 1, Math.round(x / gs))), j = Math.max(0, Math.min(grid.r - 1, Math.round(y / gs))); return grid.v[j * grid.c + i]; }
-    function seed(p) { p.x = Math.random() * W; p.y = Math.random() * H; p.age = Math.floor(Math.random() * 90); p.max = 50 + Math.floor(Math.random() * 70); return p; }
+    function paint(t) {
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < arrows.length; i++) {
+        var a = arrows[i], ph = ((a.x * a.ux + a.y * a.uy) / 140 - t * (0.35 + a.s / 90)) % 1; if (ph < 0) ph += 1;
+        var al = o.still ? 0.85 : 0.35 + 0.5 * Math.pow(Math.sin(ph * Math.PI), 2), h = a.len / 2;
+        var x1 = a.x - a.ux * h, y1 = a.y - a.uy * h, x2 = a.x + a.ux * h, y2 = a.y + a.uy * h, hx = -a.uy, hy = a.ux, hs = 5 + a.s / 12;
+        ctx.globalAlpha = al;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(2,6,23,.7)'; ctx.lineWidth = 4.5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.strokeStyle = a.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x2 + a.ux * 2, y2 + a.uy * 2); ctx.lineTo(x2 - a.ux * hs + hx * hs * 0.55, y2 - a.uy * hs + hy * hs * 0.55); ctx.lineTo(x2 - a.ux * hs - hx * hs * 0.55, y2 - a.uy * hs - hy * hs * 0.55); ctx.closePath();
+        ctx.fillStyle = a.c; ctx.strokeStyle = 'rgba(2,6,23,.7)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
     function frame() {
       if (!on) return; if (!document.body.contains(cv) || !host.isConnected) return stop();
-      if (document.hidden) { raf = requestAnimationFrame(frame); return; }
-      ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
-      ctx.lineWidth = o.width || 1.25;
-      var buckets = {};
-      for (var k = 0; k < parts.length; k++) {
-        var p = parts[k], f = at(p.x, p.y), sc = 0.045 * (o.speed || 1), nx = p.x + f[0] * sc, ny = p.y - f[1] * sc;
-        if (++p.age > p.max || nx < 0 || ny < 0 || nx > W || ny > H || f[2] < 0.5) { seed(p); continue; }
-        var c = col(f[2]); (buckets[c] = buckets[c] || []).push(p.x, p.y, nx, ny); p.x = nx; p.y = ny;
-      }
-      Object.keys(buckets).forEach(function (c) { var a = buckets[c]; ctx.beginPath(); for (var i = 0; i < a.length; i += 4) { ctx.moveTo(a[i], a[i + 1]); ctx.lineTo(a[i + 2], a[i + 3]); } ctx.strokeStyle = 'rgba(2,6,23,.45)'; ctx.lineWidth = (o.width || 1.3) + 1.8; ctx.stroke(); ctx.strokeStyle = c + alpha + ')'; ctx.lineWidth = o.width || 1.3; ctx.stroke(); });
+      var nw = Date.now(); if (!document.hidden && ready && !cv.hidden && cv.style.opacity !== '0' && nw - last > 60) { last = nw; paint((nw - t0) / 1000); }
       raf = requestAnimationFrame(frame);
     }
-    function still() { // حركة مخففة: أسهم ثابتة بدل الجزيئات
-      ctx.clearRect(0, 0, W, H); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4;
-      for (var y = gs * 2; y < H; y += gs * 3) for (var x = gs * 2; x < W; x += gs * 3) { var f = at(x, y), m = Math.sqrt(f[0] * f[0] + f[1] * f[1]) || 1, L0 = Math.min(18, 6 + f[2] / 3), ux = f[0] / m, uy = -f[1] / m; ctx.beginPath(); ctx.moveTo(x - ux * L0 / 2, y - uy * L0 / 2); ctx.lineTo(x + ux * L0 / 2, y + uy * L0 / 2); ctx.lineTo(x + ux * L0 / 2 - (ux * 4 - uy * 3), y + uy * L0 / 2 - (uy * 4 + ux * 3)); ctx.stroke(); }
-    }
-    function reset() { build(); if (rkCalm()) still(); }
     function stop() { on = false; cancelAnimationFrame(raf); map.off('movestart', hide); map.off('moveend resize', show); if (cv.parentNode) cv.parentNode.removeChild(cv); }
     function hide() { cv.style.opacity = 0; }
-    function show() { reset(); cv.style.opacity = ''; }
+    function show() { build(); cv.style.opacity = ''; if (rkCalm() || o.still) paint(0); }
     map.on('movestart', hide); map.on('moveend resize', show);
-    reset(); if (!rkCalm()) raf = requestAnimationFrame(frame);
-    return { stop: stop, set: function (s) { data = s || []; reset(); }, el: cv, toggle: function (v) { cv.hidden = !v; } };
+    map.whenReady(function () { build(); paint(0); if (!rkCalm() && !o.still) raf = requestAnimationFrame(frame); });
+    return { stop: stop, set: function (s) { data = s || []; build(); paint(0); }, el: cv, toggle: function (v) { cv.hidden = !v; } };
+  }
+  /** أسراب متحركة على مسارات الهجرة: علامات «V» صغيرة تمشي على المسار في اتجاه الهجرة الحالي.
+   * list: [{pts:[[lat,lng]..], color, n (عدد الأسراب), speed (بكسل/ث)}] */
+  function rkTracks(map, list) {
+    var host = map.getContainer(), cv = document.createElement('canvas'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.className = 'rk-flow rk-tracks'; var pane = map.getPane('rktracks') || map.createPane('rktracks'); pane.style.zIndex = 455; pane.style.pointerEvents = 'none'; pane.appendChild(cv);
+    var W = 0, H = 0, tr = [], on = true, raf = 0, t0 = Date.now();
+    function build() {
+      if (!map._loaded) return;
+      var sz = map.getSize(); W = sz.x; H = sz.y; L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0]));
+      cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      tr = (list || []).map(function (o) {
+        var P = o.pts.map(function (p) { return map.latLngToContainerPoint(p); }), cum = [0];
+        for (var i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+        return { P: P, cum: cum, len: cum[cum.length - 1], c: o.color, n: Math.max(1, o.n || 3), sp: o.speed || 26 };
+      }).filter(function (x) { return x.len > 40; });
+    }
+    function at(t, d) { var i = 1; while (i < t.cum.length - 1 && t.cum[i] < d) i++; var a = t.P[i - 1], b = t.P[i], seg = (t.cum[i] - t.cum[i - 1]) || 1, k = (d - t.cum[i - 1]) / seg; return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, ang: Math.atan2(b.y - a.y, b.x - a.x) }; }
+    function bird(x, y, ang, c, s) {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+      ctx.beginPath(); ctx.moveTo(s, 0); ctx.quadraticCurveTo(-s * 0.2, -s * 0.15, -s, -s * 0.9); ctx.moveTo(s, 0); ctx.quadraticCurveTo(-s * 0.2, s * 0.15, -s, s * 0.9);
+      ctx.strokeStyle = 'rgba(2,6,23,.75)'; ctx.lineWidth = 4; ctx.stroke(); ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+    }
+    function frame() {
+      if (!on) return; if (!document.body.contains(cv) || !host.isConnected) return stop();
+      var nw = Date.now(); if (!document.hidden && !cv.hidden && cv.style.opacity !== '0' && nw - (frame.l || 0) > 40) {
+        frame.l = nw; var t = (nw - t0) / 1000; ctx.clearRect(0, 0, W, H);
+        tr.forEach(function (o) {
+          for (var i = 0; i < o.n; i++) {
+            var d = (t * o.sp + i * o.len / o.n) % o.len, p = at(o, d);
+            if (p.x < -20 || p.y < -20 || p.x > W + 20 || p.y > H + 20) continue;
+            for (var j = 0; j < 3; j++) { var q = at(o, Math.max(0, d - j * 11)); var off = j === 0 ? 0 : (j === 1 ? 5 : -5); bird(q.x + Math.sin(q.ang) * off, q.y - Math.cos(q.ang) * off, q.ang, o.c, j === 0 ? 7 : 5.5); }
+          }
+        });
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    function stop() { on = false; cancelAnimationFrame(raf); map.off('movestart', hide); map.off('moveend resize', show); if (cv.parentNode) cv.parentNode.removeChild(cv); }
+    function hide() { cv.style.opacity = 0; }
+    function show() { build(); cv.style.opacity = ''; }
+    map.on('movestart', hide); map.on('moveend resize', show);
+    map.whenReady(function () { build(); if (!rkCalm()) raf = requestAnimationFrame(frame); });
+    return { stop: stop, toggle: function (v) { cv.hidden = !v; } };
+  }
+  /** بوصلة الرياح: اتجاه الهبوب والسرعة والهبات */
+  function rkRose(dir, spd, gust, label) {
+    if (dir == null || spd == null) return '';
+    var to = (dir + 180) % 360, c = spd < 10 ? '#a5f3fc' : spd < 20 ? '#e0f2fe' : spd < 30 ? '#fde047' : spd < 45 ? '#fb923c' : '#f87171';
+    return '<div class="rk-rose" title="' + esc(label || '') + '"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" class="o"/><circle cx="32" cy="32" r="20" class="i"/>' +
+      ['ش', 'ق', 'ج', 'غ'].map(function (t, i) { var a = i * Math.PI / 2; return '<text x="' + (32 + Math.sin(a) * 25).toFixed(1) + '" y="' + (32 - Math.cos(a) * 25 + 3.5).toFixed(1) + '">' + t + '</text>'; }).join('') +
+      '<g transform="rotate(' + to + ' 32 32)"><path d="M32 12 L38 28 L32 25 L26 28 Z" fill="' + c + '"/><line x1="32" y1="25" x2="32" y2="50" stroke="' + c + '" stroke-width="3" stroke-linecap="round"/></g></svg>' +
+      '<div><b class="mono">' + Math.round(spd) + '<i> كم/س</i></b><span>من ' + esc(compassAr(dir)) + (gust ? ' · هبات ' + Math.round(gust) : '') + '</span>' + (label ? '<small>' + esc(label) + '</small>' : '') + '</div></div>';
   }
   /** رياح الكونسول: يبدأ بالعينات المتاحة فوراً ثم يستبدلها بالحقل الحقيقي لو اتجاب */
   function rkWind(map, fallback, lvl, o) {
@@ -7642,7 +7707,7 @@
       '<div class="rk-stat">' + (c.live || '') + (c.leds || '') + '</div><div class="rk-acts">' + (c.acts || '') + '<button type="button" class="rk-ib" data-rk="full" title="ملء الشاشة" aria-label="ملء الشاشة">' + icon('full') + '</button></div></header>' +
       (c.seg ? '<div class="rk-seg">' + c.seg + '</div>' : '') + (c.kpis ? '<div class="rk-mk">' + c.kpis + '</div>' : '') +
       '<div class="rk-body"><div class="rk-stage"><div class="rk-map" id="' + c.mapId + '" dir="ltr"></div><div class="rk-sweep" aria-hidden="true"></div><div class="rk-vig" aria-hidden="true"></div>' +
-      '<div class="rk-ctl">' + (c.ctl || '') + '<div class="rk-bases">' + Object.keys(RK_BASE).map(function (k) { return '<button type="button" data-rkb="' + k + '">' + RK_BASE[k].n + '</button>'; }).join('') + '</div></div>' +
+      '<div class="rk-ctl">' + (c.ctl || '') + '<div class="rk-bases">' + Object.keys(RK_BASE).map(function (k) { return '<button type="button" data-rkb="' + k + '">' + RK_BASE[k].n + '</button>'; }).join('') + '</div>' + (c.rose || '') + '</div>' +
       (c.kpis || '') + (c.legend ? '<div class="rk-leg">' + c.legend + '</div>' : '') + '</div>' +
       '<aside class="rk-feed"><div class="rk-fh"><b>' + icon('rss') + ' ' + esc(c.feedTitle || 'آخر الرصد') + '</b>' + (c.feedNote ? '<span>' + esc(c.feedNote) + '</span>' : '') + '</div><div class="rk-fl">' + (c.feed || '<p class="rk-empty">لا يوجد رصد جديد</p>') + '</div></aside></div>' +
       (c.foot ? '<div class="rk-foot">' + c.foot + '</div>' : '') + '</section>';
@@ -7697,7 +7762,7 @@
     var cnt = { near: 0, eg: 0, world: 0 }; d.events.forEach(function (e) { EPI_PANES.forEach(function (p) { if (epiInPane(e, p[0])) cnt[p[0]]++; }); });
     var kinds = Object.keys(d.kinds || {}), lastAt = Math.max(st.lastOk || 0, nw && nw.at || 0, fa && fa.at || 0) || (MODE === 'demo' ? Date.now() : null);
     var fdBad = nw && nw.feeds ? nw.feeds.filter(function (x) { return !x.ok; }).length : 0;
-    html += rkStage({ id: 'epRk', mapId: 'epMap', ic: 'virus', title: 'رادار الوبائيات', sub: 'بؤر أمراض الدواجن حول محطاتنا وفي مصر والعالم · كل بؤرة على مكان الحدث الفعلي · الخطر على كل محطة من 0 إلى 100',
+    html += rkStage({ id: 'epRk', mapId: 'epMap', ic: 'virus', rose: worst && worst.wind ? rkRose(worst.wind.dir, worst.wind.spd, null, 'الرياح عند ' + shortSite(worst.name)) : '', title: 'رادار الوبائيات', sub: 'بؤر أمراض الدواجن حول محطاتنا وفي مصر والعالم · كل بؤرة على مكان الحدث الفعلي · الخطر على كل محطة من 0 إلى 100',
       live: rkLive(lastAt, 'آخر رصد'),
       leds: rkLeds([['WAHIS', st.ok === true ? 'ok' : st.ok === false ? 'bad' : MODE === 'demo' ? 'mid' : 'off', 'المنظمة العالمية لصحة الحيوان: كل 6 ساعات'], ['FAO', fa ? (fa.errors && fa.errors.length ? 'mid' : 'ok') : 'off', 'EMPRES-i من مجلد Drive'], ['الأخبار', nw ? (fdBad ? 'mid' : 'ok') : 'off', 'Google News وCIDRAP وAvian Flu Diary'], ['المعمل', (srcN.lab || {}).n ? 'ok' : 'off', 'نتائج المعامل'], ['البلاغات', (srcN.local || {}).n || (srcN.net || {}).n ? 'ok' : 'off', 'بلاغات الإدارة والشبكة'], ['الرياح', d.windLive ? 'ok' : 'mid', d.windLive ? 'رياح حية من Open-Meteo' : 'رياح الموسم']]),
       acts: '<select id="epD" aria-label="الفترة">' + [[30, '30 يوماً'], [90, '90 يوماً'], [180, '6 أشهر'], [365, 'سنة']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === E.days ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' + (d.canReport ? '<button class="btn" type="button" id="epLab">' + icon('flask') + ' نتيجة معمل</button><button class="btn primary" type="button" id="epNew">' + icon('plus') + ' بلاغ بؤرة</button>' : ''),
@@ -7945,7 +8010,7 @@
         L.circle([e.lat, e.lng], { radius: P.zone[0] * 1000, color: '#dc2626', weight: 2, fillColor: '#dc2626', fillOpacity: 0.12, interactive: false }).addTo(g);
       }
     });
-    d.sites.forEach(function (s) { var t = s.top[0], e = t && epiEvById(d, t.id); if (!e || t.score < 5 || (E.kind && e.kind !== E.kind)) return; L.polyline([[s.lat, s.lng], [e.lat, e.lng]], { color: EPI_HEX[s.band], weight: 1.5, opacity: 0.7, dashArray: '3 6', interactive: false }).addTo(g); });
+    d.sites.forEach(function (s) { var t = s.top[0], e = t && epiEvById(d, t.id); if (!e || t.score < 5 || (E.kind && e.kind !== E.kind)) return; L.polyline([[e.lat, e.lng], [s.lat, s.lng]], { color: EPI_HEX[s.band], weight: 2, opacity: 0.85, dashArray: '4 8', className: 'rk-arc', interactive: false }).addTo(g); });
     evs.forEach(function (e) {
       var P = d.diseases[e.kind], fresh = e.active && (Date.now() - e.start) / 864e5 <= 21;
       var m = L.marker([e.lat, e.lng], { icon: rkPin({ color: P.color, size: 12 + e.grade * 2, pulse: fresh && e.conf !== 'low', cls: e.conf === 'low' ? 'hollow' : e.active ? '' : 'old', txt: e.grade }), zIndexOffset: 3000 + e.grade * 10 });
