@@ -3032,7 +3032,7 @@ function BIO_ext(api, H) {
   }
   function birdRun(now) {
     var sites = H.sitesList(H.sitesById()).filter(function (s) { return !s.external; }), w = deps.birdWx ? deps.birdWx() : null, s = st();
-    var obs = sightingsSince(now - 7 * D);
+    var obs = sightingsSince(now - 14 * D);
     return { model: BIO_birdModel(sites, w && w.sites, obs, now, { radius: num(s.BIRD_RADIUS_KM, 50) }), wx: w, obs: obs, sites: sites };
   }
   api.birds = function (pin) {
@@ -3043,7 +3043,7 @@ function BIO_ext(api, H) {
     var season = BIO_season(now);
     return { now: now, season: season, alertLevel: num(s.BIRD_ALERT_LEVEL, 60), radius: num(s.BIRD_RADIUS_KM, 50), canEdit: u.perms.indexOf('admin') >= 0 || u.perms.indexOf('sites') >= 0,
       wx: run.wx ? { live: true, source: run.wx.source || 'Open-Meteo', fetchedAt: run.wx.fetchedAt, note: run.wx.note || '' } : { live: false, source: 'نموذج مناخي للرياح السائدة', note: 'لم تُجلب بيانات الرياح الحية بعد' },
-      ebird: !!s.EBIRD_KEY,
+      ebird: !!String(s.EBIRD_KEY || '').trim(), ebirdSt: (function () { try { return deps.ebirdState ? deps.ebirdState() : null; } catch (e) { return null; } })(),
       inat: (function () { try { var I = deps.intel ? deps.intel() : null; return I && I.status && I.status.inat && I.status.inat.ok ? I.status.inat.at : 0; } catch (e) { return 0; } })(),
       intel: (function () { try { return api._intelBrief ? api._intelBrief(u) : null; } catch (e) { return null; } })(),
       pc: (function () { try { return api._pcBrief ? api._pcBrief(u) : null; } catch (e) { return null; } })(),
@@ -3109,19 +3109,26 @@ function BIO_ext(api, H) {
     });
     return sent;
   };
-  /** مشاهدات eBird المجانية (عند إضافة مفتاح EBIRD_KEY) */
+  /** مشاهدات eBird المجانية (عند إضافة مفتاح EBIRD_KEY)
+   * v32: يحفظ الأنواع الناقلة فقط (البط والإوز والنوارس والبلشون...) مع المسافة لأقرب موقع،
+   * ويرجّع ملخص: عدد الأنواع الكلي، الناقلة، داخل نصف قطر الإنذار */
   api._ebirdIngest = function (rows) {
     var have = {}; store.all('birdobs').forEach(function (o) { have[o.id] = 1; });
-    var sites = H.sitesList(H.sitesById()).filter(function (x) { return !x.external && x.lat != null; }), add = [];
+    var sites = H.sitesList(H.sitesById()).filter(function (x) { return !x.external && x.lat != null; }), add = [], R = num(st().BIRD_RADIUS_KM, 50), sp = {}, risk = 0, inR = 0, seen = {};
     (rows || []).forEach(function (r) {
+      if (r.lat == null || r.lng == null) return;
+      sp[r.speciesCode || r.sciName] = 1;
       var genus = String(r.sciName || '').split(' ')[0];
       if (BIO_RISK_GENERA.indexOf(genus) < 0) return;
-      var id = 'EB-' + r.subId + '-' + r.speciesCode; if (have[id]) return; have[id] = 1;
+      var id = 'EB-' + r.subId + '-' + r.speciesCode; if (seen[id]) return; seen[id] = 1; risk++;
       var near = null; sites.forEach(function (s) { var d = BIO_km([s.lat, s.lng], [r.lat, r.lng]); if (!near || d < near.d) near = { d: d, id: s.id }; });
-      add.push({ id: id, time: BIO_ms(String(r.obsDt).replace(' ', 'T') + ':00+02:00') || deps.now(), lat: r.lat, lng: r.lng, siteId: near ? near.id : '', species: (r.comName || '') + ' (' + (r.sciName || '') + ')', count: r.howMany || 1, source: 'eBird', note: r.locName || '', by: 'eBird' });
+      if (near && near.d <= R) inR++;
+      if (have[id]) return; have[id] = 1;
+      var t = String(r.obsDt || ''); t = t.length <= 10 ? t + 'T12:00' : t.replace(' ', 'T');
+      add.push({ id: id, time: Math.min(deps.now(), BIO_ms(t + ':00+02:00') || deps.now()), lat: r.lat, lng: r.lng, siteId: near && near.d <= R ? near.id : '', species: (r.comName || '') + ' (' + (r.sciName || '') + ')', count: r.howMany || 1, source: 'eBird', note: (r.locName || '') + (near ? ' · ' + Math.round(near.d) + ' كم من ' + near.id : '') + (r._k === 'notable' ? ' · مشاهدة نادرة' : ''), by: 'eBird' });
     });
     if (add.length) { if (store.appendMany) store.appendMany('birdobs', add); else add.forEach(function (o) { store.append('birdobs', o); }); }
-    return add.length;
+    return { added: add.length, risk: risk, inRadius: inR, species: Object.keys(sp).length };
   };
 
   /* ---------- ملخص لمركز القيادة وشاشة العمليات ---------- */
@@ -3850,20 +3857,25 @@ function BIO_v13(api, H) {
   };
 
   /* ---------- eBird: حفظ المفتاح من التطبيق (للمدير) ---------- */
+  function ebirdSt() { try { return deps.ebirdState ? deps.ebirdState() : null; } catch (e) { return null; } }
   api.ebirdStatus = function (pin) {
-    H.auth(pin, true); var k = String(st().EBIRD_KEY || '').trim();
-    var n = has('birdobs') ? store.all('birdobs').filter(function (o) { return /eBird/i.test(String(o.source)); }).length : 0;
-    return { active: !!k, masked: k ? k.slice(0, 2) + '••••' + k.slice(-2) : '', observations: n };
+    H.auth(pin, true); var k = String(st().EBIRD_KEY || '').trim(), now = deps.now();
+    var obs = has('birdobs') ? store.all('birdobs').filter(function (o) { return /eBird/i.test(String(o.source)); }) : [];
+    var wk = obs.filter(function (o) { return BIO_ms(o.time) >= now - 14 * D; });
+    return { active: !!k, masked: k ? k.slice(0, 4) + '••••' + k.slice(-4) : '', observations: obs.length, recent: wk.length, near: wk.filter(function (o) { return BIO_norm(o.siteId); }).length, last: ebirdSt() };
   };
-  api.setEbirdKey = function (pin, key) {
-    var u = H.auth(pin, 'admin'), k = String(key || '').trim();
-    if (k && !/^[A-Za-z0-9]{6,40}$/.test(k)) throw new Error('المفتاح غير صحيح: انسخه كما يظهر في صفحة eBird (حروف وأرقام إنجليزية فقط)');
+  api.setEbirdKey = function (pin, key, off) {
+    var u = H.auth(pin, 'admin'), k = String(key || '').replace(/[\s\u200B-\u200F\u202A-\u202E\u2060\uFEFF"'`«»]/g, '');
+    if (!k && !off) throw new Error('الصق المفتاح الأول. لو عايز توقف eBird استخدم زر «إيقاف eBird»');
+    if (k && !/^[A-Za-z0-9-]{6,64}$/.test(k)) throw new Error('المفتاح فيه حروف غريبة: انسخه كما يظهر في صفحة eBird (حروف وأرقام إنجليزية وشرطة - فقط)');
+    var chk = null;
+    if (k && deps.ebirdCheck) { chk = deps.ebirdCheck(k); if (chk && (chk.code === 401 || chk.code === 403)) throw new Error('eBird رفض المفتاح ده (' + chk.code + '). افتح ebird.org/api/keygen وانسخه تاني كامل'); }
     var row = store.find('settings', 'EBIRD_KEY');
     deps.lock(function () { if (row) store.update('settings', 'EBIRD_KEY', { value: k }); else store.append('settings', { key: 'EBIRD_KEY', value: k, note: 'مفتاح eBird المجاني لمشاهدات الطيور الحقيقية حول المواقع' }); });
     log(u, 'settings', 'EBIRD_KEY', k ? 'تفعيل eBird' : 'إيقاف eBird', null, { key: k ? '••••' : '' });
     var fetched = null;
-    if (k && deps.ebirdNow) { try { fetched = deps.ebirdNow(); } catch (e) { fetched = { error: String(e && e.message || e) }; } }
-    return { ok: true, active: !!k, fetched: fetched };
+    if (deps.ebirdNow) { try { fetched = deps.ebirdNow(); } catch (e) { fetched = { err: String(e && e.message || e) }; } }
+    return { ok: true, active: !!k, check: chk, fetched: fetched };
   };
 }
 
@@ -6033,6 +6045,130 @@ var BIO_EPI_CTRY = [
 var BIO_MAMMAL_RE = /cattle|\bcows?\b|dairy|\bmilk|human|person|patient|child|worker|swine|\bpigs?\b|\bcats?\b|\bdogs?\b|mink|\bfox|seals?\b|sea lion|polar bear|\bbears?\b|otter|ferret|goats?\b|sheep|horse|alpaca|mammal|بشري|إنسان|مواطن|طفل|أبقار|ألبان|ماشية|خنازير|قطط/i;
 var BIO_BIRD_RE = /poultry|chicken|broiler|layer|\bhens?\b|flock|duck|goose|geese|turkeys? (farm|flock|operation)|quail|ostrich|wild birds?|gull|swan|crane|pelican|egg|hatcher|دواجن|دجاج|فراخ|\bبط\b|البط|أوز|سمان|نعام|طيور برية|الطيور البرية|تسمين|بياض|مزرعة|مزارع|بيض|كتاكيت/i;
 function BIO_poultryRel(t) { t = String(t || ''); return !BIO_MAMMAL_RE.test(t) || BIO_BIRD_RE.test(t); }
+/* ============ v32: مكان الخبر الحقيقي (مكان الحدث وليس مكان الجريدة) ============
+   1) يشيل اسم الجريدة من آخر عنوان Google News («... - القاهرة 24») وأسماء الجرايد المعروفة اللي فيها أسماء أماكن.
+   2) يقطّع العنوان لكلمات ويطبّعها (أ/إ/آ ← ا، ة ← ه، ى ← ي) ويشيل حروف الجر الملزقة (و، ب، ل، ف، ال، بال، لل).
+   3) يدور على محافظات ومدن مصر، ودول العالم بالاسم والصفة (أستراليا، الأسترالية…) وبالإنجليزي.
+   4) القرار: محافظة/مدينة مصرية محددة ← مكانها. دولة أجنبية ← الدولة (حتى لو الخبر في جريدة مصرية أو ذُكرت «القاهرة» كحكومة).
+      مفيش مكان محدد ← «مصر – غير محدد» بدون نقطة على الخريطة. */
+var BIO_OUTLETS_RE = /المصري اليوم|مصراوي|القاهرة 24|القاهرة الإخبارية|القاهرة الاخبارية|صدى البلد|اليوم السابع|بوابة الأهرام|الأهرام المسائي|الأهرام|بوابة أخبار اليوم|أخبار اليوم|الشروق|الوطن|الدستور|فيتو|البوابة نيوز|الفجر|الأسبوع|المصريون|مصر العربية|مصر تايمز|أهل مصر|الجمهورية أونلاين|الجمهورية|المساء|النهار|الرئيس نيوز|القاهرة والناس|سكاي نيوز عربية|العربية\.نت|الجزيرة نت|RT Arabic|روسيا اليوم|بي بي سي عربي|Egypt Independent|Egypt Today|Daily News Egypt|Ahram Online|Al-Ahram|Cairo 24|Masrawy|Youm7|Egyptian Streets|Egypt Daily News/gi;
+/** أخبار مش بؤر: نفي وطمأنة وأسعار ولقاحات وشائعات (ما تتحسبش بؤرة) */
+var BIO_NEWS_NOT = { test: function (t) { t = String(t || ''); if (/لا (توجد|يوجد|اصابات|إصابات|إصابة|اصابه)|خالي(ة)? من|خلو|ينفي|تنفي|نفت|نفي |شائع|free of|no cases|no outbreak|denies|denied|rumou?r/i.test(t)) return true; return /أسعار|اسعار|سعر|بورصة|بورصه|لقاح|تحصين|تطعيم|price|vaccin/i.test(t) && !/بؤر|بؤرة|نفوق|إعدام|اعدام|تفشي|ظهور|اكتشاف|outbreak|cull|detect|confirm/i.test(t); } };
+function BIO_arN(s) {
+  return String(s || '').replace(/[ً-ْـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[٠-٩]/g, function (d) { return String(d.charCodeAt(0) - 1632); }).toLowerCase();
+}
+/** عنوان الخبر بدون اسم الجريدة */
+function BIO_newsClean(title, src) {
+  var t = String(title || '').replace(/\s+/g, ' ').trim(), s = String(src || '').trim();
+  if (s && t.length > s.length + 8 && t.slice(-s.length) === s) t = t.slice(0, -s.length).replace(/\s*[-–—|:]\s*$/, '');
+  else { var m = /^(.{15,}?)\s+[-–—|]\s+([^-–—|]{2,60})$/.exec(t); if (m) t = m[1]; }
+  return t.replace(BIO_OUTLETS_RE, ' ').replace(/\s+/g, ' ').trim();
+}
+/* محافظات ومدن مصر: [الاسم المعروض, المحافظة, خط العرض, خط الطول, الأسماء البديلة (عربي مطبّع مفصول بـ ، ), نمط إنجليزي] */
+var BIO_EG_PLACES = [
+  ['الإسكندرية', 'الإسكندرية', 31.2, 29.92, 'اسكندريه', /\bAlexandria\b/i], ['برج العرب', 'الإسكندرية', 30.92, 29.55, 'برج العرب،عامريه', /\bBorg El[- ]Arab\b|\bAmreya\b/i],
+  ['البحيرة', 'البحيرة', 30.6, 30.4, '*بحيره', /\bBeheira\b|\bBehera\b/i], ['دمنهور', 'البحيرة', 31.03, 30.47, 'دمنهور،نوباريه،وادي النطرون،كفر الدوار،ايتاي البارود،ادكو', /\bDamanhour\b|\bNubaria\b|\bWadi El[- ]Natrun\b/i],
+  ['كفر الشيخ', 'كفر الشيخ', 31.3, 30.94, 'كفر الشيخ،بلطيم،سيدي سالم،دسوق', /\bKafr El[- ]Sheikh\b/i], ['الدقهلية', 'الدقهلية', 31.04, 31.38, 'دقهليه،منصوره،ميت غمر،سنبلاوين،طلخا', /\bDakahlia\b|\bMansoura\b/i],
+  ['دمياط', 'دمياط', 31.42, 31.81, 'دمياط', /\bDamietta\b/i], ['بورسعيد', 'بورسعيد', 31.26, 32.3, 'بورسعيد،بور سعيد', /\bPort Said\b/i],
+  ['بحيرة المنزلة', 'الدقهلية', 31.25, 32.0, 'بحيره المنزله', /\bLake Manzala\b/i], ['بحيرة البرلس', 'كفر الشيخ', 31.5, 30.85, 'بحيره البرلس،برلس', /\bBurullus\b/i], ['بحيرة مريوط', 'الإسكندرية', 31.13, 29.9, 'بحيره مريوط،مريوط', /\bMaryut\b|\bMariout\b/i], ['بحيرة ناصر', 'أسوان', 22.9, 32.6, 'بحيره ناصر', /\bLake Nasser\b/i], ['بحيرة البردويل', 'شمال سيناء', 31.15, 33.1, 'بحيره البردويل،بردويل', /\bBardawil\b/i],
+  ['مطروح', 'مطروح', 31.35, 27.24, 'مطروح،مرسي مطروح،علمين،سيوه', /\bMatrouh\b|\bMatruh\b|\bSiwa\b|\bAlamein\b/i], ['المنوفية', 'المنوفية', 30.47, 30.93, 'منوفيه،شبين الكوم،سادات،مدينه السادات،منوف', /\bMenoufia\b|\bMonufia\b|\bSadat City\b/i],
+  ['الغربية', 'الغربية', 30.8, 31.0, 'غربيه،طنطا،محله،محله الكبري،كفر الزيات،زفتي', /\bGharbia\b|\bTanta\b|\bMahalla\b/i], ['الشرقية', 'الشرقية', 30.6, 31.6, 'شرقيه،زقازيق،عاشر من رمضان،صالحيه،بلبيس،منيا القمح،ابو حماد،فاقوس', /\bSharqia\b|\bSharkia\b|\bZagazig\b|10th of Ramadan|\bBelbeis\b/i],
+  ['الإسماعيلية', 'الإسماعيلية', 30.6, 32.27, 'اسماعيليه،قصاصين،تل الكبير', /\bIsmailia\b/i], ['شمال سيناء', 'شمال سيناء', 31.1, 33.8, 'شمال سيناء،عريش', /\bNorth Sinai\b|\bArish\b/i],
+  ['جنوب سيناء', 'جنوب سيناء', 28.8, 33.9, 'جنوب سيناء،طور سيناء،شرم الشيخ', /\bSouth Sinai\b|\bSharm\b/i],
+  ['الجيزة', 'الجيزة', 29.9, 31.0, 'جيزه،6 اكتوبر،سته اكتوبر،مدينه اكتوبر،اطفيح،عياط،الصف', /\bGiza\b|\b6th of October\b/i], ['الواحات البحرية', 'الجيزة', 28.35, 28.86, 'واحات البحريه،واحات،باويطي', /\bBahariya\b/i],
+  ['القليوبية', 'القليوبية', 30.33, 31.21, 'قليوبيه،بنها،شبرا الخيمه،خانكه،قناطر الخيريه،طوخ،قليوب', /\bQalyubia\b|\bQaliubiya\b|\bBenha\b/i], ['القاهرة', 'القاهرة', 30.04, 31.24, 'قاهره', /\bCairo\b/i],
+  ['السويس', 'السويس', 29.97, 32.53, 'سويس', /\bSuez\b(?! Canal)/i], ['الفيوم', 'الفيوم', 29.31, 30.84, 'فيوم،سنورس،اطسا،طاميه،ابشواي،بحيره قارون،قارون،وادي الريان', /\bFayoum\b|\bFaiyum\b/i],
+  ['بني سويف', 'بني سويف', 29.07, 31.1, 'بني سويف', /\bBeni Suef\b/i], ['البحر الأحمر', 'البحر الأحمر', 27.25, 33.8, 'بحر الاحمر،غردقه،سفاجا', /\bRed Sea Governorate\b|\bHurghada\b/i],
+  ['الوادي الجديد', 'الوادي الجديد', 25.45, 30.55, 'وادي الجديد،خارجه،داخله،فرافره', /\bNew Valley\b|\bKharga\b|\bDakhla\b|\bFarafra\b/i], ['المنيا', 'المنيا', 28.1, 30.75, 'منيا،ملوي،سمالوط،مغاغه', /\bMinya\b/i],
+  ['أسيوط', 'أسيوط', 27.18, 31.18, 'اسيوط', /\bAssiut\b|\bAsyut\b/i], ['سوهاج', 'سوهاج', 26.56, 31.7, 'سوهاج', /\bSohag\b/i], ['قنا', 'قنا', 26.16, 32.72, 'قنا', /\bQena\b/i],
+  ['الأقصر', 'الأقصر', 25.69, 32.64, 'اقصر', /\bLuxor\b/i], ['أسوان', 'أسوان', 24.09, 32.9, 'اسوان', /\bAswan\b/i]
+];
+/* دول العالم: [الاسم, خط العرض, خط الطول, أسماء عربية مطبّعة بدون «ال» مفصولة بـ ، (* = بدون صفات تلقائية), نمط إنجليزي] */
+var BIO_WORLD = [
+  ['مصر', 26.8, 30.8, 'مصر', /\bEgypt(ian)?s?\b/i],
+  ['ليبيا', 27.0, 17.0, 'ليبيا', /\bLibya(n)?\b/i], ['السودان', 15.6, 32.5, 'سودان', /\bSudan(ese)?\b/i], ['فلسطين', 31.9, 35.2, 'فلسطين،غزه،*ضفه الغربيه', /\bPalestin\w*|\bGaza\b|\bWest Bank\b/i],
+  ['إسرائيل', 31.5, 34.9, 'اسرائيل', /\bIsrael(i)?\b/i], ['الأردن', 31.9, 36.0, 'اردن', /\bJordan(ian)?\b/i], ['السعودية', 24.0, 45.0, 'سعوديه،*مملكه العربيه السعوديه', /\bSaudi\b/i],
+  ['لبنان', 33.9, 35.8, 'لبنان', /\bLebanon\b|\bLebanese\b/i], ['سوريا', 35.0, 38.5, 'سوريا', /\bSyria(n)?\b/i], ['العراق', 33.3, 44.0, 'عراق', /\bIraq(i)?\b/i], ['الكويت', 29.3, 47.8, 'كويت', /\bKuwait(i)?\b/i],
+  ['تركيا', 39.0, 35.0, 'تركيا', /\bT[uü]rkiye\b|\bTurkish\b|\bin Turkey\b(?! (farm|flock|poult))|\bTurkey's (?!farm|flock)|\bTurkey (reports|confirms|announces)\b/i],
+  ['قبرص', 35.0, 33.2, 'قبرص', /\bCyprus\b|\bCypriot\b/i], ['اليونان', 39.5, 22.0, 'يونان', /\bGreece\b|\bGreek\b/i], ['إيطاليا', 42.5, 12.5, 'ايطاليا', /\bItal(y|ian)\b/i],
+  ['تونس', 34.0, 9.5, 'تونس', /\bTunisia(n)?\b/i], ['الجزائر', 28.0, 2.6, 'جزائر', /\bAlgeria(n)?\b/i], ['المغرب', 31.8, -7.1, 'مغرب', /\bMorocc(o|an)\b/i], ['موريتانيا', 20.3, -10.3, 'موريتانيا', /\bMauritania\b/i],
+  ['إيران', 32.4, 53.7, 'ايران', /\bIran(ian)?\b/i], ['اليمن', 15.5, 47.5, 'يمن', /\bYemen(i)?\b/i], ['عُمان', 21.5, 57.0, '*سلطنه عمان', /\bOman(i)?\b/i],
+  ['الإمارات', 24.0, 54.0, 'امارات', /\bEmirates\b|\bUAE\b/i], ['قطر', 25.3, 51.2, 'قطر', /\bQatar(i)?\b/i], ['البحرين', 26.0, 50.55, 'بحرين', /\bBahrain(i)?\b/i],
+  ['إثيوبيا', 9.1, 40.5, 'اثيوبيا', /\bEthiopia(n)?\b/i], ['إريتريا', 15.2, 39.0, 'اريتريا', /\bEritrea(n)?\b/i], ['الصومال', 5.2, 46.2, 'صومال', /\bSomali(a)?\b/i], ['جيبوتي', 11.8, 42.6, 'جيبوتي', /\bDjibouti\b/i],
+  ['كينيا', 0.0, 37.9, 'كينيا', /\bKenya(n)?\b/i], ['أوغندا', 1.4, 32.3, 'اوغندا', /\bUganda(n)?\b/i], ['تنزانيا', -6.4, 34.9, 'تنزانيا', /\bTanzania(n)?\b/i], ['نيجيريا', 9.1, 8.7, 'نيجيريا', /\bNigeria(n)?\b/i],
+  ['النيجر', 17.6, 8.1, 'نيجر', /\bNiger\b/], ['تشاد', 15.5, 18.7, 'تشاد', /\bChad\b/], ['غانا', 7.9, -1.0, 'غانا', /\bGhana(ian)?\b/i], ['ساحل العاج', 7.5, -5.5, '*ساحل العاج', /\bIvory Coast\b|C[oô]te d'Ivoire/i],
+  ['السنغال', 14.5, -14.5, 'سنغال', /\bSenegal\b/i], ['الكاميرون', 7.4, 12.4, 'كاميرون', /\bCameroon\b/i], ['بوركينا فاسو', 12.2, -1.6, '*بوركينا فاسو', /\bBurkina Faso\b/i], ['جنوب أفريقيا', -30.6, 22.9, '*جنوب افريقيا،*جنوب افريقيه', /\bSouth Africa(n)?\b/i],
+  ['بلغاريا', 42.7, 25.5, 'بلغاريا', /\bBulgaria(n)?\b/i], ['رومانيا', 45.9, 24.9, 'رومانيا', /\bRomania(n)?\b/i], ['أوكرانيا', 49.0, 31.4, 'اوكرانيا', /\bUkrain(e|ian)\b/i], ['روسيا', 55.7, 37.6, 'روسيا', /\bRussia(n)?\b/i],
+  ['جورجيا', 42.3, 43.4, 'جورجيا', /\bGeorgia\b(?!\s*(state|usa|farm|poult))/i], ['أرمينيا', 40.1, 45.0, 'ارمينيا', /\bArmenia(n)?\b/i], ['أذربيجان', 40.1, 47.6, 'اذربيجان', /\bAzerbaijan\b/i],
+  ['كازاخستان', 48.0, 67.0, 'كازاخستان', /\bKazakhstan\b/i], ['أوزبكستان', 41.4, 64.6, 'اوزبكستان', /\bUzbekistan\b/i], ['أفغانستان', 33.9, 67.7, 'افغانستان', /\bAfghanistan\b/i], ['باكستان', 30.4, 69.3, 'باكستان', /\bPakistan(i)?\b/i],
+  ['الهند', 22.0, 79.0, 'هند', /\bIndia(n)?\b/i], ['بنجلاديش', 23.7, 90.4, 'بنجلاديش،بنغلاديش', /\bBangladesh\b/i], ['نيبال', 28.4, 84.1, 'نيبال', /\bNepal\b/i], ['الصين', 35.9, 104.2, 'صين', /\bChin(a|ese)\b/i],
+  ['هونج كونج', 22.3, 114.2, '*هونج كونج،*هونغ كونغ', /\bHong Kong\b/i], ['تايوان', 23.7, 121.0, 'تايوان', /\bTaiwan(ese)?\b/i], ['اليابان', 36.2, 138.3, 'يابان', /\bJapan(ese)?\b/i],
+  ['كوريا الجنوبية', 36.5, 127.8, '*كوريا الجنوبيه،*كوريا', /\bSouth Korea(n)?\b|\bKorea(n)?\b(?! North)/i], ['منغوليا', 46.9, 103.8, 'منغوليا', /\bMongolia(n)?\b/i],
+  ['الفلبين', 12.9, 121.8, 'فلبين', /\bPhilippine(s)?\b|\bFilipino\b/i], ['فيتنام', 14.1, 108.3, 'فيتنام', /\bVietnam(ese)?\b|\bViet Nam\b/i], ['كمبوديا', 12.6, 105.0, 'كمبوديا', /\bCambodia(n)?\b/i],
+  ['تايلاند', 15.9, 100.99, 'تايلاند', /\bThai(land)?\b/i], ['إندونيسيا', -0.8, 113.9, 'اندونيسيا', /\bIndonesia(n)?\b/i], ['ماليزيا', 4.2, 101.97, 'ماليزيا', /\bMalaysia(n)?\b/i],
+  ['أستراليا', -25.3, 133.8, 'استراليا', /\bAustralia(n)?\b|\bVictoria(n)? (farm|poultry|egg)|\bNew South Wales\b|\bQueensland\b/i], ['نيوزيلندا', -40.9, 174.9, 'نيوزيلندا', /\bNew Zealand\b/i],
+  ['الولايات المتحدة', 39.8, -98.6, '*ولايات المتحده،امريكا،*الولايات المتحده الامريكيه', /\bU\.S\.|\bUS\b|\bUSA\b|\bUnited States\b|\bAmerican\b|\b(Iowa|Minnesota|California|Pennsylvania|Ohio|Indiana|Michigan|Wisconsin|Texas|Colorado|Arizona|Washington state|Oregon|Idaho|Utah|Nebraska|South Dakota|North Dakota|Kansas|Missouri|Arkansas|Mississippi|Alabama|Kentucky|Tennessee|North Carolina|South Carolina|Virginia|Maryland|Delaware|New York|New Jersey|Connecticut|Massachusetts|Maine|Vermont|Florida|Louisiana|Oklahoma)\b/],
+  ['كندا', 56.1, -106.3, 'كندا', /\bCanad(a|ian)\b|\bBritish Columbia\b|\bOntario\b|\bQuebec\b|\bAlberta\b/i], ['المكسيك', 23.6, -102.5, 'مكسيك', /\bMexic(o|an)\b/i],
+  ['البرازيل', -14.2, -51.9, 'برازيل', /\bBrazil(ian)?\b/i], ['الأرجنتين', -38.4, -63.6, 'ارجنتين', /\bArgentin(a|e|ian)\b/i], ['تشيلي', -35.7, -71.5, 'تشيلي،شيلي', /\bChile(an)?\b/i],
+  ['بيرو', -9.2, -75.0, 'بيرو', /\bPeru(vian)?\b/i], ['كولومبيا', 4.6, -74.3, 'كولومبيا', /\bColombia(n)?\b/i], ['الإكوادور', -1.8, -78.2, 'اكوادور', /\bEcuador(ian)?\b/i],
+  ['المجر', 47.2, 19.5, 'مجر،هنغاريا،هنجاريا', /\bHungar(y|ian)\b/i], ['بولندا', 52.0, 19.1, 'بولندا', /\bPol(and|ish)\b/i], ['ألمانيا', 51.2, 10.4, 'المانيا', /\bGerman(y)?\b/i], ['فرنسا', 46.6, 2.2, 'فرنسا', /\bFrance\b|\bFrench\b/i],
+  ['إسبانيا', 40.4, -3.7, 'اسبانيا', /\bSpain\b|\bSpanish\b/i], ['البرتغال', 39.4, -8.2, 'برتغال', /\bPortug(al|uese)\b/i], ['هولندا', 52.1, 5.3, 'هولندا', /\bNetherlands\b|\bDutch\b|\bHolland\b/i],
+  ['بلجيكا', 50.5, 4.5, 'بلجيكا', /\bBelgi(um|an)\b/i], ['الدنمارك', 56.3, 9.5, 'دنمارك', /\bDenmark\b|\bDanish\b/i], ['السويد', 60.1, 18.6, 'سويد', /\bSwed(en|ish)\b/i], ['النرويج', 60.5, 8.5, 'نرويج', /\bNorw(ay|egian)\b/i],
+  ['فنلندا', 61.9, 25.7, 'فنلندا', /\bFinland\b|\bFinnish\b/i], ['النمسا', 47.5, 14.6, 'نمسا،نمساوي،نمساويه', /\bAustria(n)?\b/i], ['سويسرا', 46.8, 8.2, 'سويسرا', /\bSwitzerland\b|\bSwiss\b/i],
+  ['التشيك', 49.8, 15.5, 'تشيك', /\bCzech\w*/i], ['سلوفاكيا', 48.7, 19.7, 'سلوفاكيا', /\bSlovakia\b/i], ['سلوفينيا', 46.2, 14.99, 'سلوفينيا', /\bSlovenia\b/i], ['كرواتيا', 45.1, 15.2, 'كرواتيا', /\bCroatia(n)?\b/i],
+  ['صربيا', 44.0, 21.0, 'صربيا', /\bSerbia(n)?\b/i], ['مولدوفا', 47.4, 28.4, 'مولدوفا', /\bMoldova\b/i], ['أيرلندا', 53.4, -8.2, 'ايرلندا', /\bIreland\b|\bIrish\b/i],
+  ['بريطانيا', 52.5, -1.5, 'بريطانيا،*مملكه المتحده،انجلترا،اسكتلندا،ويلز', /\bUK\b|\bU\.K\.|\bBritain\b|\bBritish\b(?! Columbia)|\bEngland\b|\bScotland\b|\bWales\b|\bNorthern Ireland\b/]
+];
+var BIO_GEO_IDX = null;
+function BIO_geoIdx() {
+  if (BIO_GEO_IDX) return BIO_GEO_IDX;
+  var idx = {}, add = function (words, ref) { var w = words.split(/\s+/).filter(String); if (!w.length) return; (idx[w[0]] = idx[w[0]] || []).push({ w: w, ref: ref }); };
+  BIO_EG_PLACES.forEach(function (p) { String(p[4]).split('،').forEach(function (n) { n = BIO_arN(n.replace(/^\*/, '')).trim(); if (n) add(n, { eg: 1, name: p[0], gov: p[1], lat: p[2], lng: p[3], strict: /^\*/.test(p[4]) }); }); });
+  BIO_WORLD.forEach(function (c) {
+    String(c[3]).split('،').forEach(function (n0) {
+      var fixed = /^\*/.test(n0), n = BIO_arN(n0.replace(/^\*/, '')).trim(), ref = { ctry: c[0], lat: c[1], lng: c[2], eg: c[0] === 'مصر' };
+      if (!n) return; add(n, ref);
+      if (fixed || /\s/.test(n)) return;
+      var st = /يا$/.test(n) ? n.slice(0, -1) : /يه$/.test(n) ? n.slice(0, -1) : (/ا$/.test(n) ? n.slice(0, -1) : n) + 'ي';
+      [st, st + 'ه', st + 'ون', st + 'ين'].forEach(function (a) { if (a !== n && a.length > 3) add(a, ref); });
+    });
+  });
+  BIO_GEO_IDX = idx; return idx;
+}
+/** حروف الجر والتعريف الملزقة في أول الكلمة: كل الاحتمالات */
+function BIO_geoVars(tok) {
+  var v = [tok];
+  ['وبال', 'وال', 'بال', 'فال', 'كال', 'لل', 'ال', 'و', 'ب', 'ل', 'ف'].forEach(function (p) { if (tok.length - p.length >= 2 && tok.indexOf(p) === 0) { var r = tok.slice(p.length); v.push(r); if (r.indexOf('ال') === 0 && r.length > 4) v.push(r.slice(2)); } });
+  return v;
+}
+/** يرجع { country, place, lat, lng, q } أو null. eg = الخبر من بحث عن مصر (لو مفيش مكان يبقى «مصر – غير محدد») */
+function BIO_newsGeo(text, eg) {
+  var raw = String(text || ''), t = BIO_arN(raw), toks = t.split(/[^a-z0-9ء-ي]+/).filter(String), idx = BIO_geoIdx(), hits = [];
+  for (var i = 0; i < toks.length; i++) {
+    var vs = BIO_geoVars(toks[i]);
+    vs.forEach(function (v) {
+      (idx[v] || []).forEach(function (e) {
+        for (var j = 1; j < e.w.length; j++) { var nx = toks[i + j]; if (!nx || BIO_geoVars(nx).indexOf(e.w[j]) < 0) return; }
+        if (e.ref.strict && !/^(وبال|بال|وال|فال|ال)بحيره$/.test(toks[i])) return;
+        if (e.ref.strict && /^(قارون|منزله|برلس|مريوط|ناصر|ريان|بردويل|ادكو|تمساح|مرات|بحيرات)/.test(toks[i + 1] || '')) return;
+        hits.push({ pos: i, ref: e.ref });
+      });
+    });
+  }
+  // الإنجليزي
+  BIO_EG_PLACES.forEach(function (p) { var m = p[5] && p[5].exec(raw); if (m) hits.push({ pos: 1000 + m.index, ref: { eg: 1, name: p[0], gov: p[1], lat: p[2], lng: p[3] } }); });
+  BIO_WORLD.forEach(function (c) { var m = c[4] && c[4].exec(raw); if (m) hits.push({ pos: 1000 + m.index, ref: { ctry: c[0], lat: c[1], lng: c[2], eg: c[0] === 'مصر' } }); });
+  hits.sort(function (a, b) { return a.pos - b.pos; });
+  var places = hits.filter(function (h) { return h.ref.gov; }), foreign = hits.filter(function (h) { return h.ref.ctry && !h.ref.eg; }), egypt = hits.some(function (h) { return h.ref.eg; });
+  var specific = places.filter(function (h) { return h.ref.gov !== 'القاهرة'; });
+  // «القاهرة» كثيراً ما تكون مقر الوزارة أو الجهة الرسمية أو المؤتمر وليست مكان الإصابة
+  var cairoGov = /وزار|وزير|حكوم|الهيئه|هيئه|مجلس|البرلمان|نواب|مؤتمر|ندوه|معرض|جامعه|متحدث|بيان|تصريح|مركز البحوث|معهد/.test(t);
+  var pick = specific[0] || (!foreign.length && !cairoGov && places[0]);
+  if (pick) { var r = pick.ref; return { country: 'مصر', place: r.name === r.gov ? r.gov : r.name + ' (' + r.gov + ')', gov: r.gov, lat: r.lat, lng: r.lng, q: r.name === r.gov ? 'محافظة' : 'مدينة' }; }
+  if (foreign.length) { var c = foreign[0].ref; return { country: c.ctry, place: c.ctry, lat: c.lat, lng: c.lng, q: 'دولة' }; }
+  if (egypt || eg) return { country: 'مصر', place: 'مصر – غير محدد', lat: '', lng: '', q: 'غير محدد' };
+  return null;
+}
 function BIO_ctryOf(t) { t = String(t || ''); for (var i = 0; i < BIO_EPI_CTRY.length; i++) if (BIO_EPI_CTRY[i][1].test(t)) return BIO_EPI_CTRY[i]; return null; }
 /** تاريخ بأي صيغة شائعة إلى yyyy-mm-dd */
 function BIO_isoDate(v) {
@@ -6091,7 +6227,7 @@ function BIO_v19epi(api, H) {
     var k = String(x.kind || '') || BIO_epiKind(x.disease, x.agent);
     return { id: String(x.id), source: String(x.source || ''), reportId: String(x.reportId || ''), disease: String(x.disease || ''), kind: BIO_EPI_D[k] ? k : 'oth', agent: String(x.agent || ''), country: String(x.country || ''), place: String(x.place || ''),
       lat: num(x.lat, null), lng: num(x.lng, null), start: dms(x.start), end: dms(x.end), status: String(x.status || ''), species: String(x.species || ''), cases: num(x.cases, 0), deaths: num(x.deaths, 0), killed: num(x.killed, 0), by: String(x.by || ''), note: String(x.note || ''), manual: /بلاغ محلي|بلاغ الشبكة|نتيجة معمل|FAO|إعلام/.test(String(x.source || '')) && !/WAHIS/.test(String(x.source || '')),
-      src: BIO_epiSrcKey(x.source), neg: /سلبي/.test(String(x.status || '')), link: /^https?:\/\//.test(String(x.reportId || '')) ? String(x.reportId) : '' };
+      src: BIO_epiSrcKey(x.source), geoq: String(x.geoq || ''), neg: /سلبي/.test(String(x.status || '')), link: /^https?:\/\//.test(String(x.reportId || '')) ? String(x.reportId) : '' };
   }
   function srcOf(e) { var k = e.src || BIO_epiSrcKey(e.source), o = BIO_EPI_SRC[k]; if (k === 'net' && /تم التحقق/.test(e.status)) return { k: k, w: 0.8, tag: 'تم التحقق', conf: 'mid' }; return { k: k, w: o.w, tag: o.tag, conf: o.conf }; }
   function resolved(e) { return /resolved|closed|منته|انتهت|مغلق/i.test(e.status) || (e.end && e.end < deps.now()); }
@@ -6400,19 +6536,32 @@ function BIO_v19epi(api, H) {
     return { ok: true };
   };
   /** الرصد الإعلامي: عناوين الأخبار من Code.gs (Google News RSS) تُحفظ كإشارات غير مؤكدة على مركز المحافظة المذكورة */
+  /** v32: تصحيح مكان الأخبار القديمة اللي اتسجلت بمكان الجريدة بدل مكان الحدث (يشتغل مع كل تحديث للأخبار) */
+  api._newsRegeo = function () {
+    var fixed = 0, drop = [];
+    rows('epi').forEach(function (x) {
+      if (BIO_epiSrcKey(x.source) !== 'news' || !/إعلامي/.test(String(x.source))) return;
+      if (BIO_NEWS_NOT.test(String(x.disease || ''))) { drop.push(x.id); return; }
+      var g = BIO_newsGeo(BIO_newsClean(x.disease, x.note), true); if (!g) return;
+      if (String(x.place) === g.place && String(x.country) === g.country && String(x.geoq || '') === g.q) return;
+      store.update('epi', x.id, { country: g.country, place: g.place, lat: g.lat, lng: g.lng, geoq: g.q }); fixed++;
+    });
+    if (drop.length) { if (store.removeMany) store.removeMany('epi', drop); else drop.forEach(function (k) { store.remove('epi', k); }); }
+    return fixed + drop.length;
+  };
   api._epiNews = function (items) {
     var have = {}; rows('epi').forEach(function (x) { have[String(x.id)] = 1; }); var adds = [], now = deps.now();
     (items || []).forEach(function (it) {
-      var t = String(it.title || ''), when = Date.parse(it.date || '') || now; if (when < now - 30 * D) return;
+      var t = BIO_newsClean(it.title, it.src), when = Date.parse(it.date || '') || now; if (when < now - 30 * D) return;
       if (!/إنفلونزا|انفلونزا|influenza|bird flu|avian flu|H5N\d|H9N2|H7N\d|نيوكاسل|newcastle|نفوق|طيور/i.test(t)) return;
-      if (!BIO_poultryRel(t)) return;
+      if (!BIO_poultryRel(t) || BIO_NEWS_NOT.test(t)) return;
       if (it.world && !/outbreak|confirm|detect|report|cull|strike|hit|spread|farm|flock|بؤرة|اكتشاف|إعدام|نفوق|إصابة|تفشي|ظهور|رصد/i.test(t)) return;
       var h = 0; String(it.link || t).split('').forEach(function (c) { h = (h * 31 + c.charCodeAt(0)) | 0; }); var id = 'N' + (h >>> 0).toString(36); if (have[id]) return; have[id] = 1;
-      var g = BIO_GOVS.filter(function (x) { return t.indexOf(x[0]) >= 0 || t.indexOf(x[0].replace(/^ال/, '')) >= 0; })[0], c = null;
-      if (!g && it.world && !/egypt|مصر|المصري/i.test(t)) { c = BIO_ctryOf(t); if (!c) return; }
-      adds.push({ id: id, source: 'رصد إعلامي', fetched: now, reportId: String(it.link || '').slice(0, 400), disease: t.slice(0, 120), kind: BIO_epiKind(t, ''), agent: (/H5N1|H9N2|H5N8|H5N5|H7N\d|H7/i.exec(t) || [''])[0], country: c ? c[0] : 'مصر', place: g ? g[0] : c ? c[0] : 'مصر', lat: g ? g[1] : c ? c[2] : '', lng: g ? g[2] : c ? c[3] : '', start: dayStr(when), end: '', status: 'غير مؤكد', species: '', cases: 0, deaths: 0, killed: 0, by: '', note: clean(it.src, 60), notified: '' });
+      var geo = BIO_newsGeo(t, !it.world); if (!geo) return;
+      adds.push({ id: id, source: 'رصد إعلامي', fetched: now, reportId: String(it.link || '').slice(0, 400), disease: t.slice(0, 120), kind: BIO_epiKind(t, ''), agent: (/H5N1|H9N2|H5N8|H5N5|H7N\d|H7/i.exec(t) || [''])[0], country: geo.country, place: geo.place, lat: geo.lat, lng: geo.lng, geoq: geo.q, start: dayStr(when), end: '', status: 'غير مؤكد', species: '', cases: 0, deaths: 0, killed: 0, by: '', note: clean(it.src, 60), notified: '' });
     });
     deps.lock(function () { if (adds.length) { if (store.appendMany) store.appendMany('epi', adds); else adds.forEach(function (x) { store.append('epi', x); }); } });
+    api._newsRegeo();
     var old = rows('epi').filter(function (x) { return BIO_epiSrcKey(x.source) === 'news' && BIO_ms(x.fetched) < now - 60 * D; }).map(function (x) { return x.id; });
     if (old.length) { if (store.removeMany) store.removeMany('epi', old); else old.forEach(function (k) { store.remove('epi', k); }); }
     return { added: adds.length };
@@ -7905,7 +8054,7 @@ var BIO_INTEL_SRC = {
   wx: { name: 'Open-Meteo: الطقس وجودة الهواء (72 ساعة)', conf: 'نموذج', url: 'https://open-meteo.com', every: 'كل 3 ساعات' },
   wind: { name: 'Open-Meteo: رياح ارتفاع الطيران (1500 م)', conf: 'نموذج', url: 'https://open-meteo.com', every: 'كل 3 ساعات' },
   news: { name: 'الرصد الإعلامي (Google News وCIDRAP)', conf: 'إعلامي', url: 'https://news.google.com', every: 'كل 6 ساعات' },
-  ebird: { name: 'eBird (يحتاج مفتاح مجاني في الإعدادات)', conf: 'علمي', url: 'https://ebird.org/api/keygen', every: 'كل 3 ساعات' }
+  ebird: { name: 'eBird – مختبر كورنيل', conf: 'علمي', url: 'https://ebird.org/api/keygen', every: 'كل 3 ساعات' }
 };
 var BIO_LOCUST_NEAR = /^(Egypt|Sudan|Libya|Saudi Arabia|Eritrea|Ethiopia|Yemen|Chad|Jordan|Israel|Palestine|Oman|Djibouti|Somalia)$/i;
 var BIO_CTRY_AR = { Egypt: 'مصر', Sudan: 'السودان', Libya: 'ليبيا', 'Saudi Arabia': 'السعودية', Eritrea: 'إريتريا', Ethiopia: 'إثيوبيا', Yemen: 'اليمن', Chad: 'تشاد', Jordan: 'الأردن', Israel: 'فلسطين المحتلة', Palestine: 'فلسطين', Oman: 'عمان', Djibouti: 'جيبوتي', Somalia: 'الصومال', Mauritania: 'موريتانيا' };
@@ -8175,7 +8324,7 @@ function BIO_v30(api, H) {
       { k: 'wx', at: ist.wx && ist.wx.at, ok: ist.wx ? ist.wx.ok : null, n: ist.wx ? ist.wx.n : null, err: ist.wx && ist.wx.err },
       { k: 'wind', at: bw && bw.fetchedAt, ok: bw ? true : null, n: bw && bw.sites ? Object.keys(bw.sites).length : null },
       { k: 'news', at: es && es.news && es.news.at, ok: es && es.news ? true : null, n: es && es.news ? es.news.items : null },
-      { k: 'ebird', at: null, ok: set.EBIRD_KEY ? true : null, n: null, off: !set.EBIRD_KEY }
+      (function () { var e = null; try { e = deps.ebirdState ? deps.ebirdState() : null; } catch (x) {} var on = !!String(set.EBIRD_KEY || '').trim(); return { k: 'ebird', at: e && e.at || null, ok: !on ? null : e ? !!e.ok : null, n: e && e.ok ? (e.risk || 0) : null, off: !on, err: e && e.err || '' }; })()
     ].map(function (x) { var m = BIO_INTEL_SRC[x.k]; x.name = m.name; x.conf = m.conf; x.url = m.url; x.every = m.every; x.age = x.at ? Math.round((now - x.at) / 6e4) : null; x.state = x.off ? 'off' : x.ok === false ? 'bad' : x.at == null ? 'none' : x.age > 26 * 60 ? 'stale' : 'live'; return x; });
 
     var cnt = { crit: 0, high: 0, mid: 0, info: 0 }; sig.forEach(function (x) { cnt[x.lv]++; });

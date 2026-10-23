@@ -442,7 +442,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 31.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -3560,11 +3560,22 @@
     var imp = W.days.map(wxImpact), bad = imp.filter(function (x) { return x.k === 'crit' || x.k === 'high'; }).length;
     var src = W.live ? 'بيانات حية: Open-Meteo' + (w.stale ? ' (آخر نسخة محفوظة)' : '') : MODE === 'demo' ? 'طقس محاكى (نسخة العرض)' : 'تعذر الاتصال: تقدير من المناخ الشهري';
     var dwn = wxDownwind(sec.sites, cur.dir);
-    var html = '<div class="bd-hero wx-hero"><div class="bd-ht"><span class="cc-kick">' + icon('wind') + ' الأرصاد الجوية والآفات الناقلة للأمراض · أداة إدارة الأمن الحيوي</span><h1>الطقس والآفات وتأثيرهما على مواقع الشركة</h1>' +
-      '<div class="cc-meta"><span class="live"><i></i> ' + esc(src) + '</span><span>قطاع ' + esc(S.wxSec) + '</span><span>تحديث ' + esc(fmt(w.at)) + '</span></div></div>' +
-      '<div class="bd-hs"><div class="bd-big" style="--c:' + LVL_C[pests[0].lvl.k] + '"><b class="mono">' + pests[0].now + '</b><span>أعلى نشاط آفة الآن</span><small>' + esc(pests[0].p.name) + '</small></div>' +
-      '<div class="bd-big" style="--c:' + (bad ? 'var(--r-high)' : 'var(--r-low)') + '"><b class="mono">' + bad + '</b><span>أيام سلبية خلال 7 أيام</span><small>حسب تأثير الطقس</small></div></div>' +
-      '<div class="cc-acts"><div class="bd-seg" role="group">' + names.map(function (n) { return '<button type="button" data-wxsec="' + esc(n) + '" class="' + (n === S.wxSec ? 'on' : '') + '">قطاع ' + esc(n) + '</button>'; }).join('') + '</div><button class="btn cc-btn" type="button" id="wxRef">' + icon('refresh') + ' تحديث الطقس</button></div></div>';
+    var cw0 = WX_CODE(cur.code), thiNow = (function () { var hs = today.thiH || [], mx = hs.length ? Math.max.apply(null, hs) : wxTHI(today.tmax, Math.max(20, (today.rh || 40) - 15)); return Math.round(mx); })(), thiL = thiLvl(thiNow);
+    if (S.wxWind == null) S.wxWind = 1; if (S.wxSweep == null) S.wxSweep = 1;
+    var html = rkStage({ id: 'wxRk', mapId: 'wxMap', ic: 'wind', title: 'رادار الطقس والرياح والآفات', sub: 'الطقس الحي واتجاه الهواء بين المحطات والإجهاد الحراري ونشاط الآفات الناقلة · قطاع ' + S.wxSec,
+      live: W.live ? rkLive(w.at, 'آخر قراءة') : '<span class="rk-live off"><i></i><b>' + (MODE === 'demo' ? 'نسخة العرض' : 'تقدير مناخي') + '</b><span>' + esc(src) + '</span></span>',
+      leds: rkLeds([['Open-Meteo', W.live ? (w.stale ? 'mid' : 'ok') : 'bad', src], ['الغبار CAMS', cur.dust != null ? 'ok' : 'off', 'جودة الهواء والغبار من CAMS'], ['توقع 7 أيام', W.days.length >= 7 ? 'ok' : 'mid', 'توقعات يومية وساعية'], ['الآفات', 'ok', 'نموذج نشاط من الحرارة والرطوبة']]),
+      acts: '<button class="btn" type="button" id="wxRef">' + icon('refresh') + ' تحديث الطقس</button>',
+      seg: names.map(function (n) { return '<button type="button" data-wxsec="' + esc(n) + '" class="' + (n === S.wxSec ? 'on' : '') + '">' + icon('pin') + 'قطاع ' + esc(n) + '</button>'; }).join(''),
+      ctl: '<div class="rk-lyr"><button type="button" data-wxl="wind" class="' + (S.wxWind ? 'on' : '') + '">' + icon('wind') + 'الرياح</button><button type="button" data-wxl="sweep" class="' + (S.wxSweep ? 'on' : '') + '">' + icon('radar') + 'المسح</button></div>',
+      kpis: rkKpis([[cur.t + '°', cw0[0] + ' · العظمى ' + today.tmax + '°', '#22d3ee', 'الرطوبة ' + cur.rh + '% · الصغرى ' + today.tmin + '°'],
+        [cur.wind + '<i class="u"> كم/س</i>', 'الرياح من ' + compassAr(cur.dir), cur.wind >= 40 ? '#ef4444' : cur.wind >= 25 ? '#f59e0b' : '#22c55e', 'هبات حتى ' + cur.gust + ' كم/س' + (cur.dust != null ? ' · غبار ' + Math.round(cur.dust) : '')],
+        [thiNow, 'الإجهاد الحراري (THI) · ' + thiL.label, LVL_C[thiL.k], 'أعلى قيمة متوقعة اليوم'],
+        [pests[0].now, 'أعلى نشاط آفة · ' + pests[0].lvl.label, LVL_C[pests[0].lvl.k], pests[0].p.name]]),
+      legend: '<span><i class="bar"></i>سرعة الرياح 10م</span><span><i style="--c:#38a3f1"></i>اتجاه الهواء 10 كم من المحطة المختارة</span><span><i style="--c:#ff8a3d"></i>محطات في مهب الهواء</span>',
+      feedTitle: 'تأثير الطقس 7 أيام', feedNote: bad ? bad + ' أيام سلبية' : 'لا أيام سلبية',
+      feed: W.days.map(function (x, i) { var m = imp[i], c = WX_CODE(x.code), dt = new Date(x.date + 'T12:00:00'); return rkItem({ t: (i === 0 ? 'اليوم' : i === 1 ? 'غداً' : DAYS_AR[dt.getDay()]) + ' ' + dt.getDate() + ' ' + MONTHS3(dt.getMonth()) + ' · ' + c[0], sub: '<b class="mono">' + x.tmax + '° / ' + x.tmin + '°</b> · رياح من ' + esc(compassAr(x.dir)) + ' <b class="mono">' + x.wind + '</b> كم/س' + (x.rain >= 0.1 ? ' · مطر ' + x.rain.toFixed(1) + ' مم' : x.rainP ? ' · احتمال مطر ' + x.rainP + '%' : '') + (x.dust != null ? ' · غبار ' + Math.round(x.dust) : ''), color: m.color, ic: 'calendar', badge: m.label, bcls: m.k === 'crit' || m.k === 'high' ? 'bad' : m.k === 'mid' ? 'mid' : 'ok', data: ' data-wxfeed="' + i + '"' }); }).join(''),
+      foot: '<span>' + icon('wind') + ' اضغط أي محطة على الخريطة لرسم اتجاه الهواء منها (10 كم، زاوية 60°) والمحطات اللي في طريقه</span><span class="rk-wnote">' + icon('wind') + ' حقل رياح حي من Open-Meteo</span>' });
     var tabs = [['wx', 'الطقس والرياح'], ['air', 'مسارات الهواء'], ['pest', 'الآفات الناقلة'], ['thi', 'الإجهاد الحراري'], ['cal', 'التقويم الموسمي']];
     if (!S.wxTab) S.wxTab = 'wx';
     html += '<div class="wx-tabs" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-wxtab="' + t[0] + '" class="' + (S.wxTab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
@@ -3586,7 +3597,7 @@
       }).join('') + '</div><div id="wxDayBox" class="wx-daybox"></div></div>';
     // اتجاه الريح والمحطات المعرضة
     secW += '<div class="card"><div class="card-head"><div><span class="kick">الرياح الآن من ' + esc(compassAr(cur.dir)) + ' بسرعة ' + cur.wind + ' كم/س · نطاق 10 كم وزاوية 60°</span><h2>' + icon('wind') + ' المحطات الواقعة في اتجاه الريح</h2></div><span class="sub">عند الاشتباه في مرض بمحطة، هذه المحطات أول من يتأثر بالهواء القادم منها</span></div>' +
-      '<div class="wx-dw"><div class="wx-dwmap" id="wxMap" dir="ltr"></div><div class="list">' + (dwn.length ? dwn.slice(0, 10).map(function (r) { return '<button type="button" class="li wx-dwrow" data-wxsite="' + esc(r.s.id) + '"><span class="av">' + icon('wind') + '</span><div class="t"><b>' + esc(shortSite(r.s.name)) + '</b><span>الهواء منها يتجه إلى: ' + esc(r.hit.map(function (h) { return shortSite(h.s.name) + ' (' + kmTxt(h.km) + ' كم)'; }).join('، ')) + '</span></div><div class="meta"><b class="mono">' + r.hit.length + '</b><span>محطة</span></div></button>'; }).join('') : '<p class="empty">' + icon('check') + 'لا توجد محطات متقاربة في اتجاه الريح الحالي</p>') + '</div></div></div>';
+      '<div class="wx-dw solo"><div class="list">' + (dwn.length ? dwn.slice(0, 10).map(function (r) { return '<button type="button" class="li wx-dwrow" data-wxsite="' + esc(r.s.id) + '"><span class="av">' + icon('wind') + '</span><div class="t"><b>' + esc(shortSite(r.s.name)) + '</b><span>الهواء منها يتجه إلى: ' + esc(r.hit.map(function (h) { return shortSite(h.s.name) + ' (' + kmTxt(h.km) + ' كم)'; }).join('، ')) + '</span></div><div class="meta"><b class="mono">' + r.hit.length + '</b><span>محطة</span></div></button>'; }).join('') : '<p class="empty">' + icon('check') + 'لا توجد محطات متقاربة في اتجاه الريح الحالي</p>') + '</div></div></div>';
     // الآفات: بطاقات الآن
     secP += '<div class="card"><div class="card-head"><div><span class="kick">من متوسط حرارة ورطوبة الأيام السبعة القادمة · 0 إلى 100</span><h2>' + icon('alert') + ' نشاط الآفات الناقلة للأمراض الآن</h2></div><div class="rlegend"><span><i class="rt-low"></i>منخفض</span><span><i class="rt-mid"></i>متوسط</span><span><i class="rt-high"></i>مرتفع</span><span><i class="rt-crit"></i>حرج</span></div></div><div class="ps-grid">' +
       pests.map(function (o) {
@@ -3623,6 +3634,10 @@
     out.innerHTML = html;
     out.querySelectorAll('[data-wxsec]').forEach(function (x) { x.onclick = function () { S.wxSec = x.dataset.wxsec; drawWx(b, w); }; });
     $('wxRef').onclick = function () { S.wx = null; viewWx(); };
+    var wRoot = $('wxRk'); wRoot.classList.toggle('no-sweep', !S.wxSweep); rkBind(wRoot, function () { return S.wxRkMap; });
+    out.querySelectorAll('[data-wxl]').forEach(function (x) { x.onclick = function () { var k = x.dataset.wxl; if (k === 'wind') { S.wxWind = S.wxWind ? 0 : 1; x.classList.toggle('on', !!S.wxWind); if (S.wxFlow) S.wxFlow.toggle(!!S.wxWind); } else { S.wxSweep = S.wxSweep ? 0 : 1; x.classList.toggle('on', !!S.wxSweep); wRoot.classList.toggle('no-sweep', !S.wxSweep); } }; });
+    out.querySelectorAll('[data-wxfeed]').forEach(function (x) { x.onclick = function () { var i = +x.dataset.wxfeed; if (S.wxTab !== 'wx') { S.wxTab = 'wx'; S.wxDayPick = i; drawWx(b, w); } else if (S.wxShowDay) { S.wxShowDay(i); var bx = $('wxDayBox'); if (bx) bx.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }; });
+    wxMapInit(sec, cur, dwn);
     out.querySelectorAll('[data-wxtab]').forEach(function (x) { x.onclick = function () { S.wxTab = x.dataset.wxtab; drawWx(b, w); }; });
     if (S.wxTab === 'thi') {
       var calc = function () { var t = parseFloat($('thiT').value), h = parseFloat($('thiH').value), o = $('thiOut'); if (isNaN(t) || isNaN(h)) { o.innerHTML = ''; return; } var v = Math.round(wxTHI(t, h)), l = thiLvl(v); o.innerHTML = '<div class="thi-res" style="--c:' + LVL_C[l.k] + '"><b class="mono">' + v + '</b><span class="wx-badge">' + esc(l.label) + '</span></div><ol>' + THI_ACT[l.k].map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol>'; };
@@ -3637,6 +3652,7 @@
     clearInterval(S.airAnim); clearInterval(S.airPlay); S.airPlay = null;
     if (S.wxTab === 'air') return drawAir(b, sec);
     if (S.wxTab !== 'wx') { if (S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; } return; }
+    S.wxShowDay = function (i) { showDay(i); };
     var showDay = function (i) {
       var m = imp[i], x = W.days[i], box = $('wxDayBox'); out.querySelectorAll('[data-wxday]').forEach(function (e) { e.classList.toggle('on', +e.dataset.wxday === i); });
       box.innerHTML = '<div class="wx-today" style="--c:' + m.color + '"><h3>' + (i === 0 ? 'اليوم' : DAYS_AR[new Date(x.date + 'T12:00:00').getDay()]) + ': <span class="wx-badge">' + esc(m.label) + '</span> <small class="muted">الرياح من ' + esc(compassAr(x.dir)) + ' حتى ' + x.gust + ' كم/س' + (x.rh != null ? ' · رطوبة ' + x.rh + '%' : '') + '</small></h3>' +
@@ -3644,16 +3660,14 @@
         (m.acts.length ? '<div class="wx-acts"><b>الإجراءات</b><ol>' + m.acts.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div>' : '') + '</div>';
     };
     out.querySelectorAll('[data-wxday]').forEach(function (e) { e.onclick = function () { showDay(+e.dataset.wxday); }; });
-    showDay(0);
-    wxMapInit(sec, cur, dwn);
+    showDay(S.wxDayPick || 0); S.wxDayPick = 0;
   }
   function wxMapInit(sec, cur, dwn) {
-    if (S.wxMap) { try { S.wxMap.remove(); } catch (e) {} S.wxMap = null; }
+    if (S.wxRkMap) { try { S.wxRkMap.remove(); } catch (e) {} S.wxRkMap = null; }
     var box = $('wxMap'); if (!box) return;
     birdLeaflet().then(function () {
       box = $('wxMap'); if (!box) return;
-      var map = L.map(box, { zoomSnap: 0.25, scrollWheelZoom: false }); S.wxMap = map;
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'صور: Esri' }).addTo(map);
+      var map = rkBase(box, {}); S.wxRkMap = map;
       var to = (cur.dir + 180) % 360, sel = null, cone = L.layerGroup().addTo(map), mk = {};
       var draw = function (id) {
         cone.clearLayers(); var a = sec.sites.filter(function (x) { return x.id === id; })[0]; if (!a) return; sel = id;
@@ -3664,15 +3678,16 @@
         Object.keys(mk).forEach(function (k) { var el = mk[k].getElement(); if (el) { el.classList.toggle('cur', k === id); el.classList.toggle('hit', hit.some(function (h) { return h.s.id === k; })); } });
       };
       sec.sites.forEach(function (x) {
-        var m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'bm-site wx-site', html: '<span class="bm-dot" style="--c:#2b7bd6"><b>' + esc(String(shortSite(x.name)).replace(/[^\d]/g, '') || '•') + '</b></span><span class="bm-lbl">' + esc(shortSite(x.name)) + '</span>', iconSize: [0, 0] }) }).addTo(map);
+        var m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'rk-farm wx-site', html: '<span class="f" style="--c:#38bdf8"><b>' + esc(String(shortSite(x.name)).replace(/[^\d]/g, '') || '•') + '</b></span><em>' + esc(shortSite(x.name)) + '</em>', iconSize: [0, 0] }) }).addTo(map);
         m.on('click', function () { draw(x.id); }); mk[x.id] = m;
       });
       var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (cur.dir + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح الآن</b><span>من ' + esc(compassAr(cur.dir)) + ' · ' + cur.wind + ' كم/س</span></div>'; return el; }; wc.addTo(map);
       map.fitBounds(L.latLngBounds(sec.sites.map(function (x) { return [x.lat, x.lng]; })).pad(0.25), { maxZoom: 14 });
       box.classList.toggle('bm-far', map.getZoom() < 12); map.on('zoomend', function () { box.classList.toggle('bm-far', map.getZoom() < 12); });
       draw((dwn[0] && dwn[0].s.id) || sec.sites[0].id);
+      S.wxFlow = rkWind(map, sec.sites.map(function (x) { return { lat: +x.lat, lng: +x.lng, dir: cur.dir, spd: cur.wind }; }), '10m', { speed: 1.2 }); if (!S.wxWind) S.wxFlow.toggle(false);
       document.querySelectorAll('[data-wxsite]').forEach(function (e) { e.onclick = function () { draw(e.dataset.wxsite); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
-      setTimeout(function () { if (S.wxMap === map) map.invalidateSize(); }, 250);
+      setTimeout(function () { if (S.wxRkMap === map) map.invalidateSize(); }, 250);
     }).catch(function () { box.innerHTML = '<p class="empty">' + icon('wifioff') + 'الخريطة تحتاج إنترنت</p>'; });
   }
   function viewBirds() {
@@ -3856,11 +3871,7 @@
     birdLeaflet().then(function () {
       box = $('bdLive'); if (!box) return;
       box.innerHTML = '';
-      var map = L.map(box, { zoomControl: true, scrollWheelZoom: true, zoomSnap: 0.25, zoomDelta: 0.5 }); S.bmap = map;
-      var esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
-      var sat = L.layerGroup([L.tileLayer(esri + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'صور: Esri' }), L.tileLayer(esri + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })]);
-      var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
-      (S.bLayer === 'osm' ? osm : sat).addTo(map);
+      var map = rkBase(box, {}); S.bmap = map;
       var flyLabs = [], spring = d.season.k === 'spring', mNow = new Date(d.now).getMonth(), sites = d.sites.filter(function (x) { return x.lat != null && x.lng != null; });
       // مسارات الهجرة
       d.flyways.forEach(function (f) {
@@ -3920,6 +3931,7 @@
       S.bLinks = L.layerGroup(); birdSecSites(d).forEach(function (x) { var q = birdDists(d, x)[0]; L.polyline([[x.lat, x.lng], [q.lat, q.lng]], { color: q.f.color, weight: 1.6, opacity: 0.75, dashArray: '2 6', interactive: false }).addTo(S.bLinks); }); S.bLinks.addTo(map);
       // الرياح على ارتفاع الطيران
       var tw = sites[0] && sites[0].wind;
+      S.bFlow = rkWind(map, sites.map(function (x) { return { lat: +x.lat, lng: +x.lng, dir: ((x.wind.toward || 0) + 180) % 360, spd: x.wind.spd }; }), '850hPa', { speed: 0.7 }); if (!S.bWind) S.bFlow.toggle(false);
       if (tw) { var wc = L.control({ position: 'topright' }); wc.onAdd = function () { var el = L.DomUtil.create('div', 'bm-wind'); el.innerHTML = '<span class="bm-arrow" style="transform:rotate(' + (tw.toward + 90) + 'deg)">' + icon('arrow') + '</span><div><b>الرياح على 1500 م</b><span>' + esc(tw.label) + ' · ' + tw.spd + ' كم/س</span></div>'; return el; }; wc.addTo(map); }
       L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
       var now = L.control({ position: 'bottomright' }); now.onAdd = function () { var el = L.DomUtil.create('div', 'bm-now'); el.id = 'bmNow'; el.hidden = true; return el; }; now.addTo(map);
@@ -3965,24 +3977,36 @@
     var out = $('v5Out'); if (!out) return;
     var mode = S.birdMode || 'live', hi = d.sites.filter(function (x) { return x.score >= d.alertLevel; }), top = d.sites[0], live = birdLive(d);
     var dir = d.season.k === 'spring' ? 'الطيور تتجه شمالاً' : d.season.k === 'autumn' ? 'الطيور تتجه جنوباً' : d.season.dir;
-    var html = '<div class="bd-hero"><div class="bd-ht"><span class="cc-kick">' + icon('bird') + ' رادار الطيور المهاجرة · الإنذار المبكر لإنفلونزا الطيور</span><h1>مسارات الهجرة وخطرها على مواقع الشركة</h1>' +
-      '<div class="cc-meta"><span class="live"><i></i> ' + esc(d.season.label) + '</span><span>' + esc(dir) + '</span><span>آخر حساب ' + esc(fmt(d.now)) + '</span></div>' +
-      '<div class="bd-src"><span class="' + (live ? 'on' : 'mod') + '">' + icon('wind') + (live ? ' رياح حية: ' + esc(d.wx.source) : /محاكاة/.test(d.wx.source || '') ? ' رياح محاكاة (نسخة العرض)' : ' رياح: نموذج مناخي حتى أول تحديث') + '</span><span class="' + (d.ebird ? 'on' : 'off') + '">' + icon('eye') + (d.ebird ? ' مشاهدات eBird مفعلة' : ' eBird غير مفعل') + '</span><span class="' + (d.inat ? 'on' : 'off') + '">' + icon('bird') + (d.inat ? ' iNaturalist حي (' + ago(d.inat) + ')' : ' iNaturalist: أول جلب خلال 3 ساعات') + '</span><span class="on">' + icon('pin') + ' ' + d.sightings.length + ' مشاهدة خلال 7 أيام</span><span class="mod">' + icon('map') + ' مسارات الهجرة: نموذج علمي</span></div></div>' +
-      '<div class="bd-hs"><div class="bd-big" style="--c:' + (top ? LVL_C[top.lvl.k] : 'var(--r-low)') + '"><b class="mono">' + (top ? top.score : 0) + '</b><span>أعلى خطر الآن</span><small>' + esc(top ? shortSite(top.name) : '—') + '</small></div>' +
-      '<div class="bd-big" style="--c:' + (hi.length ? 'var(--r-crit)' : 'var(--r-low)') + '"><b class="mono">' + hi.length + '</b><span>فوق حد التنبيه</span><small>الحد ' + d.alertLevel + ' من 100</small></div></div>' +
-      '<div class="cc-acts"><button class="btn cc-btn" type="button" id="bdSight">' + icon('plus') + ' إبلاغ عن مشاهدة</button><button class="btn cc-btn" type="button" id="bdRef">' + icon('refresh') + ' تحديث الرياح والمشاهدات</button>' +
-      '<div class="bd-seg" role="group"><button type="button" data-mode="live" class="' + (mode === 'live' ? 'on' : '') + '">خريطة تفاعلية</button><button type="button" data-mode="near" class="' + (mode === 'near' ? 'on' : '') + '">المواقع عن قرب</button><button type="button" data-mode="region" class="' + (mode === 'region' ? 'on' : '') + '">الدلتا والبحيرات</button><button type="button" data-mode="egypt" class="' + (mode === 'egypt' ? 'on' : '') + '">مصر كاملة</button></div></div></div>';
+    var eb = d.ebirdSt || null, secs = []; d.sites.forEach(function (x) { if (x.sector && secs.indexOf(x.sector) < 0) secs.push(x.sector); });
+    if (!S.bSector || (S.bSector !== '*' && secs.indexOf(S.bSector) < 0)) S.bSector = secs.indexOf('الواحات') >= 0 ? 'الواحات' : secs[0] || '*';
+    if (S.bWind == null) S.bWind = 1; if (S.bSweep == null) S.bSweep = 1;
+    var fls = []; d.sites.forEach(function (x) { (x.flocks || []).slice(0, 1).forEach(function (f) { if (x.score >= 20) fls.push({ x: x, f: f }); }); }); fls.sort(function (a, b) { return a.f.eta - b.f.eta; });
+    var ebN = d.sightings.filter(function (o) { return /eBird/i.test(o.source); }).length, inN = d.sightings.filter(function (o) { return /iNat/i.test(o.source); }).length;
+    var feed = fls.slice(0, 8).map(function (o) { return rkItem({ t: 'سرب متوقع ← ' + shortSite(o.x.name), sub: 'من ' + esc(o.f.from) + ' · <b class="mono">' + o.f.d + ' كم</b> · ' + esc(o.f.species || ''), color: o.f.color, ic: 'bird', badge: '~' + BIO_eta(o.f.eta), bcls: o.f.eta <= 24 ? 'bad' : 'mid', data: ' data-bfocus="' + esc(o.x.id) + '"' }); }).join('') +
+      d.sightings.slice(0, 30).map(function (o) { var src = /eBird/i.test(o.source) ? 'eBird' : /iNat/i.test(o.source) ? 'iNaturalist' : 'ميداني'; return rkItem({ t: String(o.species || 'طيور برية').replace(/\s*\([^)]*\)\s*$/, '') + ' · ' + (o.count || 1), sub: [esc(o.note || ''), esc(o.by || ''), '<span class="q">' + src + '</span>'].filter(Boolean).join(' · '), color: src === 'eBird' ? '#22d3ee' : src === 'iNaturalist' ? '#a3e635' : '#f59e0b', ic: 'eye', when: ago(o.time), data: o.lat != null && o.lat !== '' ? ' data-rkobs="' + o.lat + ',' + o.lng + '"' : '' }); }).join('');
+    var html = rkStage({ id: 'bdRk', mapId: 'bdLive', ic: 'bird', title: 'رادار الطيور المهاجرة', sub: 'مسارات الهجرة والرياح على ارتفاع الطيران ومشاهدات الطيور الحقيقية وخطر الأسراب على كل موقع · ' + d.season.label + ' · ' + dir,
+      live: rkLive(d.now, 'آخر حساب'),
+      leds: rkLeds([['رياح 1500م', live ? 'ok' : 'mid', live ? 'رياح حية: ' + (d.wx.source || '') : 'نموذج مناخي'], ['eBird', !d.ebird ? 'off' : eb && eb.ok ? 'ok' : eb && eb.ok === false ? 'bad' : 'mid', !d.ebird ? 'غير مفعل' : eb && eb.err ? eb.err : 'مفعل'], ['iNaturalist', d.inat ? 'ok' : 'off', 'مشاهدات علمية حية'], ['ميداني', d.sightings.length ? 'ok' : 'off', 'مشاهدات البوابات والعاملين'], ['المسارات', 'ok', 'نموذج BirdLife وAEWA']]),
+      acts: '<button class="btn" type="button" id="bdSight">' + icon('plus') + ' مشاهدة</button><button class="btn" type="button" id="bdRef">' + icon('refresh') + ' تحديث</button><button class="btn' + (d.ebird ? '' : ' primary') + '" type="button" data-ebird="1">' + icon('key') + ' eBird</button>',
+      seg: secs.concat(['*']).map(function (x) { return '<button type="button" data-bsec="' + esc(x) + '" class="' + (S.bSector === x ? 'on' : '') + '">' + icon('pin') + (x === '*' ? 'كل القطاعات' : 'قطاع ' + esc(x)) + '</button>'; }).join('') +
+        [['live', 'خريطة حية', 'map'], ['near', 'المواقع عن قرب', 'target'], ['region', 'الدلتا والبحيرات', 'drop'], ['egypt', 'مصر كاملة', 'layers']].map(function (m) { return '<button type="button" data-mode="' + m[0] + '" class="' + (mode === m[0] ? 'on' : '') + '">' + icon(m[2]) + m[1] + '</button>'; }).join(''),
+      ctl: mode === 'live' ? '<div class="rk-lyr"><button type="button" data-bm="fit">' + icon('map') + 'القطاع</button><button type="button" data-bm="tour" class="' + (S.bTour ? 'on' : '') + '">' + icon(S.bTour ? 'pause' : 'play') + (S.bTour ? 'إيقاف' : 'جولة') + '</button><button type="button" data-bm="wind" class="' + (S.bWind ? 'on' : '') + '">' + icon('wind') + 'الرياح</button><button type="button" data-bm="sweep" class="' + (S.bSweep ? 'on' : '') + '">' + icon('radar') + 'المسح</button></div>' : '',
+      kpis: rkKpis([[top ? top.score : 0, 'أعلى خطر أسراب · ' + (top ? top.lvl.label : ''), top ? LVL_C[top.lvl.k] : '#22c55e', top ? shortSite(top.name) : ''],
+        [hi.length, 'موقع فوق حد التنبيه', hi.length ? '#ef4444' : '#22c55e', 'الحد ' + d.alertLevel + ' من 100'],
+        [fls[0] ? '~' + BIO_eta(fls[0].f.eta) : '—', 'أقرب سرب متوقع', fls[0] ? fls[0].f.color : '#22d3ee', fls[0] ? 'من ' + fls[0].f.from + ' ← ' + shortSite(fls[0].x.name) : 'لا أسراب متجهة لنا'],
+        [d.sightings.length, 'مشاهدة خلال 7 أيام', '#22d3ee', 'eBird ' + ebN + ' · iNaturalist ' + inN + ' · ميداني ' + (d.sightings.length - ebN - inN)]]),
+      legend: d.flyways.map(function (f) { return '<span><i style="--c:' + f.color + '"></i>' + esc(f.name) + ' <b class="mono">' + f.intensity + '%</b></span>'; }).join('') + '<span><i style="--c:#38a3f1"></i>تجمع البط بالبحيرات</span><span><i style="--c:#22d3ee"></i>eBird</span><span><i style="--c:#a3e635"></i>iNaturalist</span><span><i style="--c:#f59e0b"></i>ميداني</span>' + (mode === 'live' ? '<span><i class="bar"></i>رياح 1500م</span>' : ''),
+      feedTitle: 'آخر الرصد', feedNote: 'الأسراب المتوقعة ثم المشاهدات', feed: feed,
+      foot: '<span>' + icon('wind') + ' ' + (live ? 'رياح حية على ارتفاع الطيران: ' + esc(d.wx.source || '') : 'الرياح: نموذج مناخي حتى أول تحديث') + '<span class="rk-wnote"> · حقل الرياح المتحرك من Open-Meteo</span></span><span>' + esc(d.season.note || '') + '</span>' });
+    if (mode !== 'live') html = html.replace('<div class="rk-map" id="bdLive" dir="ltr"></div>', '<div class="rk-map rk-svg" id="bdSvg">' + birdMap(d, mode) + '</div>');
     if (hi.length) html += '<div class="cc-alert a-bad">' + icon('bird') + '<span><b>' + plural(hi.length, 'موقع', 'مواقع') + ' في خطر ' + esc(hi[0].lvl.label) + ' من الأسراب المهاجرة</b>: ' + esc(hi.slice(0, 4).map(function (x) { return shortSite(x.name) + ' (' + x.score + ')'; }).join('، ')) + (hi[0].flocks[0] ? '. أقرب سرب متوقع من «' + esc(hi[0].flocks[0].from) + '» خلال ~' + BIO_eta(hi[0].flocks[0].eta) + '' : '') + '. وصل تنبيه للمديرين.</span><button class="btn sm" type="button" data-bsite="' + esc(hi[0].id) + '">الإجراءات</button></div>';
     if (d.missing.length) html += '<div class="cc-alert a-warn">' + icon('pin') + '<span><b>' + plural(d.missing.length, 'موقع بلا إحداثيات', 'مواقع بلا إحداثيات') + '</b> لا يدخل في الحساب: ' + esc(d.missing.map(function (m) { return m.name; }).join('، ')) + '</span><a class="btn sm" href="#birds" data-scroll="bdGeo">إضافة</a></div>';
-    html += '<div class="bd-grid' + (mode === 'live' ? ' live' : '') + '"><div class="card flush bd-map">' + (mode === 'live' ? birdLiveBar(d) + '<div class="bd-live" id="bdLive" dir="ltr"><p class="empty"><span class="spin"></span>جارٍ تحميل الخريطة…</p></div>' : '<div class="bd-mapbox">' + birdMap(d, mode) + '</div>') + '<div class="bd-legend">' +
-      d.flyways.map(function (f) { return '<span><i style="background:' + f.color + '"></i>' + esc(f.name) + ' <b class="mono">' + f.intensity + '%</b></span>'; }).join('') +
-      '<span><i class="wl"></i>تجمع البط في البحيرات <b class="mono">' + (d.wetlands[0] ? Math.round(d.wetlands[0].intensity / d.wetlands[0].w) : 0) + '%</b></span><span><i class="ob"></i>مشاهدة ميدانية</span><span><i class="eb"></i>مشاهدة eBird</span><span><i class="fl"></i>سرب متوقع وزمن الوصول</span></div></div>';
     html += '<div class="card bd-list"><div class="card-head"><div><span class="kick">0 إلى 100 · يُحدَّث كل 3 ساعات</span><h2>خطر الأسراب على كل موقع</h2></div><div class="rlegend"><span><i class="rt-low"></i>منخفض</span><span><i class="rt-mid"></i>متوسط</span><span><i class="rt-high"></i>مرتفع</span><span><i class="rt-crit"></i>حرج</span></div></div><div class="bd-rows">' +
       d.sites.map(function (x, i) {
         var f = x.flocks[0];
         return '<button type="button" class="bd-row" data-bsite="' + esc(x.id) + '"><span class="tr-rank mono">' + (i + 1) + '</span><div class="t"><b>' + esc(shortSite(x.name)) + ' <small>' + esc(x.sector) + '</small></b>' + bar(x.score, LVL_C[x.lvl.k]) +
           '<span>' + (f ? icon('bird') + ' سرب من ' + esc(f.from) + ' · ' + f.d + ' كم · ~' + BIO_eta(f.eta) : x.factors[0] ? esc(x.factors[0].label) + (x.factors[0].d ? ' · ' + x.factors[0].d + ' كم' : '') : 'بعيد عن مسارات الهجرة النشطة') + '</span></div><span class="tr-sc" style="--c:' + LVL_C[x.lvl.k] + '"><b class="mono">' + x.score + '</b>' + esc(x.lvl.label) + '</span></button>';
-      }).join('') + '</div></div></div>';
+      }).join('') + '</div></div>';
     html += '<div id="bdSpecies">' + birdSpeciesCards(d) + '</div><div id="bdDistBox">' + birdDistTable(d) + '</div>';
     // تقويم الهجرة
     var mNow = new Date(d.now).getMonth();
@@ -4034,11 +4058,13 @@
     var bindFocus = function () { out.querySelectorAll('[data-bfocus]').forEach(function (b) { b.onclick = function () { if (S.birdMode && S.birdMode !== 'live') { birdSiteSheet(b.dataset.bfocus); return; } if (S.bTour) birdTour(d, false); var m = $('bdLive'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); birdFocus(d, b.dataset.bfocus, true); }; }); };
     bindFocus();
     out.querySelectorAll('[data-bsec]').forEach(function (b) { b.onclick = function () { S.bSector = b.dataset.bsec; out.querySelectorAll('[data-bsec]').forEach(function (c) { c.classList.toggle('on', c === b); }); $('bdSpecies').innerHTML = birdSpeciesCards(d); $('bdDistBox').innerHTML = birdDistTable(d); bindFocus(); if (S.bmap) birdLiveInit(d); }; });
-    out.querySelectorAll('[data-bm]').forEach(function (b) { b.onclick = function () { var a = b.dataset.bm; if (a === 'fit') { birdTour(d, false); birdFitSector(d); } else if (a === 'tour') birdTour(d, !S.bTour); else { S.bLayer = S.bLayer === 'osm' ? 'sat' : 'osm'; drawBirds(d); } }; });
+    out.querySelectorAll('[data-bm]').forEach(function (b) { b.onclick = function () { var a = b.dataset.bm; if (a === 'fit') { birdTour(d, false); birdFitSector(d); } else if (a === 'tour') birdTour(d, !S.bTour); else if (a === 'wind') { S.bWind = S.bWind ? 0 : 1; b.classList.toggle('on', !!S.bWind); if (S.bFlow) S.bFlow.toggle(!!S.bWind); } else if (a === 'sweep') { S.bSweep = S.bSweep ? 0 : 1; b.classList.toggle('on', !!S.bSweep); $('bdRk').classList.toggle('no-sweep', !S.bSweep); } }; });
+    out.querySelectorAll('[data-rkobs]').forEach(function (b) { b.onclick = function () { var q = b.dataset.rkobs.split(',').map(Number); if (!S.bmap) return; if (S.bTour) birdTour(d, false); S.bmap.flyTo(q, Math.max(S.bmap.getZoom(), 11), { duration: 0.8 }); if (window.innerWidth < 860) $('bdLive').scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+    var bRoot = $('bdRk'); bRoot.classList.toggle('no-sweep', !S.bSweep); rkBind(bRoot, function () { return S.bmap; });
     if (mode === 'live') birdLiveInit(d); else birdLiveStop();
     out.querySelectorAll('[data-geo]').forEach(function (b) { b.onclick = function () { geoSheet(b.dataset.geo); }; });
     out.querySelectorAll('[data-scroll]').forEach(function (b) { b.onclick = function (e) { e.preventDefault(); var t = $(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth' }); }; });
-    $('bdSight').onclick = $('bdSight2').onclick = function () { birdSightingSheet(); };
+    $('bdSight').onclick = function () { birdSightingSheet(); }; if ($('bdSight2')) $('bdSight2').onclick = $('bdSight').onclick;
     $('bdRef').onclick = function () { var b = this; b.disabled = true; remote('birdsRefresh', [S.session.pin]).then(function (x) { S.birds = x; drawBirds(x); toast('تم تحديث الرياح والمشاهدات وإعادة الحساب'); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
   }
   var BIRD_ACTIONS = {
@@ -5246,20 +5272,29 @@
   function ebirdSheet() {
     var steps = [['1', 'أنشئ حساباً مجانياً في Cornell Lab', 'بالإيميل فقط، بدون أي دفع.', 'https://secure.birds.cornell.edu/identity/account/create', 'إنشاء الحساب'],
       ['2', 'اطلب مفتاح eBird API', 'سجّل الدخول بنفس الحساب، اكتب في سبب الاستخدام: Biosecurity monitoring of wild birds near poultry farms، وافق على الشروط، ثم اضغط Generate key. يظهر المفتاح فوراً.', 'https://ebird.org/api/keygen', 'صفحة طلب المفتاح'],
-      ['3', 'الصق المفتاح هنا واحفظ', 'أو اكتبه في شيت «الإعدادات» أمام EBIRD_KEY. بعدها يجلب النظام كل 3 ساعات مشاهدات آخر 3 أيام في دائرة 50 كم حول كل موقع، ويصفّي الأنواع الناقلة لإنفلونزا الطيور (البط والإوز والنوارس والبلشون واللقلق...).', '', '']];
-    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('bird') + ' تفعيل مشاهدات eBird الحقيقية</h2><span class="small">مجاني من مختبر كورنيل لعلم الطيور</span></div><div class="sheet-body" id="ebBody"><div class="eb-steps">' + steps.map(function (s) { return '<div><span class="hn">' + s[0] + '</span><div><b>' + s[1] + '</b><span class="small">' + s[2] + '</span>' + (s[3] ? '<a class="btn sm" target="_blank" rel="noopener" href="' + s[3] + '">' + icon('link') + ' ' + s[4] + '</a>' : '') + '</div></div>'; }).join('') + '</div>' +
-      (isAdmin() ? '<div class="field"><label for="ebKey">مفتاح eBird</label><input id="ebKey" type="text" dir="ltr" autocomplete="off" spellcheck="false" placeholder="مثال: a1b2c3d4e5f6"></div><div id="ebState" class="xs muted"></div><button class="btn primary big" data-a="save">' + icon('check') + ' حفظ وتفعيل</button>' : '<div class="infobox">حفظ المفتاح من التطبيق لمدير الأمن الحيوي فقط. أرسل له المفتاح أو اكتبه في شيت الإعدادات.</div>') +
-      '<p class="xs muted">شروط الاستخدام: <a target="_blank" rel="noopener" href="https://www.birds.cornell.edu/home/ebird-api-terms-of-use/">eBird API Terms of Use</a>. الاستخدام غير تجاري وداخلي ولا يُعاد نشر البيانات.</p><button class="btn big" data-a="close">إغلاق</button></div>', function (a, el) {
+      ['3', 'الصق المفتاح هنا واضغط «فحص وحفظ»', 'النظام يكلّم eBird فوراً ويتأكد إن المفتاح شغال قبل ما يحفظه، وبعدها يجلب كل 3 ساعات مشاهدات آخر 14 يوم في دائرة 50 كم حول كل موقع وآخر مشاهدات مصر كلها، ويصفّي الأنواع الناقلة لإنفلونزا الطيور.', '', '']];
+    var stHtml = function (s) {
+      if (!s || !s.active) return '<div class="eb-st off"><span class="pill p-n">غير مفعل</span><span>مفيش مفتاح محفوظ. الرادار شغال على iNaturalist ونماذج الهجرة لحد ما تضيفه.</span></div>';
+      var L = s.last || {}, ok = L.ok, when = L.at ? ago(L.at) : 'لسه ما اتجلبش';
+      return '<div class="eb-st ' + (ok ? 'ok' : ok === false ? 'bad' : 'wait') + '"><div class="spread"><span class="pill ' + (ok ? 'p-ok' : ok === false ? 'p-bad' : 'p-warn') + '">' + (ok ? 'مفعل وشغال' : ok === false ? 'مفعل بس فيه مشكلة' : 'محفوظ – في انتظار أول جلب') + '</span><span class="mono xs" dir="ltr">' + esc(s.masked) + '</span></div>' +
+        '<div class="eb-kpis"><div><b class="mono">' + (L.inRadius != null ? L.inRadius : s.near) + '</b><span>ناقلة حول المواقع (50 كم)</span></div><div><b class="mono">' + (L.risk != null ? L.risk : s.recent) + '</b><span>ناقلة في مصر (14 يوم)</span></div><div><b class="mono">' + (L.species != null ? L.species : '—') + '</b><span>نوع مرصود</span></div></div>' +
+        '<span class="xs muted">آخر جلب: ' + esc(when) + (L.err ? ' · <b class="t-bad">' + esc(L.err) + '</b>' : '') + (ok && !L.inRadius ? ' · طبيعي إن العدد حول الواحات يبقى قليل لأنها صحراء ومراقبي eBird قليلين؛ الأهم مشاهدات البحيرات (قارون، الريان، المنزلة) اللي بتظهر على الخريطة' : '') + '</span></div>';
+    };
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('bird') + ' مشاهدات eBird الحقيقية</h2><span class="small">مجاني من مختبر كورنيل لعلم الطيور</span></div><div class="sheet-body" id="ebBody"><div id="ebState">' + v5Spin() + '</div><details class="eb-how"><summary>طريقة الحصول على المفتاح</summary><div class="eb-steps">' + steps.map(function (s) { return '<div><span class="hn">' + s[0] + '</span><div><b>' + s[1] + '</b><span class="small">' + s[2] + '</span>' + (s[3] ? '<a class="btn sm" target="_blank" rel="noopener" href="' + s[3] + '">' + icon('link') + ' ' + s[4] + '</a>' : '') + '</div></div>'; }).join('') + '</div></details>' +
+      (isAdmin() ? '<div class="field"><label for="ebKey">المفتاح الجديد</label><input id="ebKey" type="text" dir="ltr" autocomplete="off" spellcheck="false" placeholder="الصق المفتاح كما هو من صفحة eBird"></div><button class="btn primary big" type="button" data-a="save">' + icon('check') + ' فحص وحفظ</button><div class="row"><button class="btn" type="button" data-a="now">' + icon('refresh') + ' جلب المشاهدات الآن</button><button class="btn ghost danger" type="button" data-a="off">إيقاف eBird</button></div>' : '<div class="infobox">حفظ المفتاح من التطبيق لمدير الأمن الحيوي فقط.</div>') +
+      '<p class="xs muted">شروط الاستخدام: <a target="_blank" rel="noopener" href="https://www.birds.cornell.edu/home/ebird-api-terms-of-use/">eBird API Terms of Use</a>. الاستخدام غير تجاري وداخلي ولا يُعاد نشر البيانات.</p><button class="btn big" type="button" data-a="close">إغلاق</button></div>', function (a, el) {
       if (a === 'close') return closeSheet();
-      if (a !== 'save') return;
-      el.disabled = true;
-      remote('setEbirdKey', [S.session.pin, $('ebKey').value]).then(function (r) {
-        var f = r.fetched; closeSheet();
-        toast(r.active ? 'تم تفعيل eBird' + (f && f.observations != null ? ' · ' + f.observations + ' مشاهدة' : '') + (f && f.error ? ' · تحقق من المفتاح: ' + f.error : '') : 'تم إيقاف eBird', 6000);
-        if (S.route === 'birds') render();
-      }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+      var done = function (r, msg) { rcClear(); S.birdsD = null; load(); toast(msg, 7000); if (S.route === 'birds' || S.route === 'ops') render(); };
+      if (a === 'save') {
+        var v = ($('ebKey').value || '').trim(); if (!v) return toast('الصق المفتاح في الخانة الأول');
+        el.disabled = true; el.textContent = 'بفحص المفتاح مع eBird…';
+        return remote('setEbirdKey', [S.session.pin, v]).then(function (r) { var f = r.fetched || {}; $('ebKey').value = ''; done(r, f.ok ? 'المفتاح شغال ✓ · ' + (f.risk || 0) + ' مشاهدة لأنواع ناقلة في مصر، منها ' + (f.inRadius || 0) + ' حول المواقع' : 'اتحفظ المفتاح' + (f.err ? ' · ' + f.err : '')); }).catch(function (e) { toast(errText(e), 8000); }).then(function () { el.disabled = false; el.innerHTML = icon('check') + ' فحص وحفظ'; });
+      }
+      if (a === 'now') { el.disabled = true; return remote('birdsRefresh', [S.session.pin]).then(function () { done(null, 'اتجلبت المشاهدات'); }).catch(function (e) { toast(errText(e)); }).then(function () { el.disabled = false; }); }
+      if (a === 'off') { if (!confirm('إيقاف eBird ومسح المفتاح؟')) return; return remote('setEbirdKey', [S.session.pin, '', true]).then(function (r) { done(r, 'اتوقف eBird'); }).catch(function (e) { toast(errText(e)); }); }
     });
-    if (isAdmin()) remote('ebirdStatus', [S.session.pin]).then(function (s) { var x = $('ebState'); if (x) x.innerHTML = s.active ? '<span class="pill p-ok">مفعل</span> المفتاح الحالي ' + esc(s.masked) + ' · ' + s.observations + ' مشاهدة مسجلة. اترك الخانة فارغة واحفظ لإيقافه.' : '<span class="pill p-n">غير مفعل</span>'; }).catch(function () {});
+    function load() { remote('ebirdStatus', [S.session.pin]).then(function (s) { var x = $('ebState'); if (x) x.innerHTML = stHtml(s); }).catch(function (e) { var x = $('ebState'); if (x) x.innerHTML = '<span class="xs t-bad">' + esc(errText(e)) + '</span>'; }); }
+    load();
   }
 
 
@@ -7000,7 +7035,7 @@
         bt.innerHTML = icon('stop') + ' إيقاف';
         S.airPlay = setInterval(function () { var r = $('airH'); if (!r) { clearInterval(S.airPlay); S.airPlay = null; return; } S.airH = (S.airH + 1) % Math.min(24, A.times.length); r.value = S.airH; draw(S.airH); }, 1100);
       };
-    });
+    }).catch(function () { var bx = $('airMap'); if (bx) bx.innerHTML = '<p class="empty">' + icon('wifioff') + 'الخريطة تحتاج إنترنت</p>'; });
   }
 
   /* ============================ الإصدار 19 ============================
@@ -7495,46 +7530,193 @@
       (val != null ? '<span class="e20-mk" style="inset-inline-start:' + Math.max(1, Math.min(99, val)) + '%"><b class="mono">' + val + '</b></span>' : '') + '</div>' +
       (compact ? '' : '<div class="e20-sacts">' + d.scale.map(function (x) { return '<div class="sa" style="--b:' + EPI_B[x.k][1] + '"><b>' + x.label + ' <span class="mono">' + x.from + '–' + x.to + '</span></b><span>' + esc(x.act) + '</span></div>'; }).join('') + '</div>') + '</div>';
   }
+  /* =====================================================================
+   * الإصدار 32: «كونسول الرادار» الموحد لرادار الوبائيات والطيور والأرصاد
+   * خريطة أقمار صناعية سينمائية + طبقة رياح حية متحركة (حقل رياح حقيقي من Open-Meteo)
+   * + لوحة مؤشرات زجاجية + شريط آخر الرصد + طبقات وتكبير لملء الشاشة
+   * ===================================================================== */
+  var RK_ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  var RK_BASE = {
+    sat: { n: 'قمر صناعي', mk: function () { return L.layerGroup([L.tileLayer(RK_ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'صور: Esri, Maxar, Earthstar', className: 'rk-t-sat' }), L.tileLayer(RK_ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, className: 'rk-t-lbl' })]); } },
+    dark: { n: 'ليلي', mk: function () { return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19, attribution: '© OpenStreetMap © CARTO', className: 'rk-t-dark' }); } },
+    terr: { n: 'تضاريس', mk: function () { return L.layerGroup([L.tileLayer(RK_ESRI + 'World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13, maxNativeZoom: 13, attribution: 'تضاريس: Esri', className: 'rk-t-terr' }), L.tileLayer(RK_ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, className: 'rk-t-lbl' })]); } }
+  };
+  function rkPref(k, v) { try { if (v === undefined) return localStorage.getItem('rk_' + k); localStorage.setItem('rk_' + k, v); } catch (e) { return null; } }
+  function rkCalm() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  /** الخريطة الأساسية للكونسول */
+  function rkBase(box, opts) {
+    var map = L.map(box, Object.assign({ zoomSnap: 0.25, zoomDelta: 0.5, scrollWheelZoom: true, worldCopyJump: true, attributionControl: true, zoomControl: false }, opts || {}));
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+    var k = rkPref('base') || 'sat'; if (!RK_BASE[k]) k = 'sat';
+    map._rkKey = k; map._rkBase = RK_BASE[k].mk().addTo(map); box.setAttribute('data-base', k);
+    return map;
+  }
+  function rkSetBase(map, k) {
+    if (!RK_BASE[k] || !map) return; if (map._rkBase) map.removeLayer(map._rkBase);
+    map._rkKey = k; map._rkBase = RK_BASE[k].mk().addTo(map); map._rkBase.bringToBack && map._rkBase.bringToBack(); map.getContainer().setAttribute('data-base', k); rkPref('base', k);
+  }
+  /** حقل رياح حقيقي: شبكة 5×5 نقاط فوق الخريطة من Open-Meteo (مجاني بدون مفتاح). lvl: '10m' أو '850hPa' */
+  function rkWindGrid(b, lvl) {
+    lvl = lvl || '10m';
+    var s = b.getSouth(), n = b.getNorth(), w = b.getWest(), e = b.getEast(), N = 5, la = [], lo = [];
+    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) { la.push((s + (n - s) * (i + 0.5) / N).toFixed(2)); lo.push((w + (e - w) * (j + 0.5) / N).toFixed(2)); }
+    var key = lvl + ':' + la[0] + ':' + lo[0] + ':' + la[la.length - 1] + ':' + lo[lo.length - 1];
+    S.rkWind = S.rkWind || {}; var c = S.rkWind[key]; if (c && Date.now() - c.at < 30 * 60e3) return Promise.resolve(c.v);
+    if (MODE === 'demo') return Promise.reject(new Error('demo'));
+    var q = lvl === '10m' ? '&current=wind_speed_10m,wind_direction_10m' : '&hourly=wind_speed_850hPa,wind_direction_850hPa&forecast_days=1&timezone=UTC';
+    return fetch('https://api.open-meteo.com/v1/forecast?latitude=' + la.join(',') + '&longitude=' + lo.join(',') + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) {
+      var arr = Array.isArray(j) ? j : [j], hr = new Date().getUTCHours(), v = arr.map(function (o, i) {
+        if (lvl === '10m') return { lat: +la[i], lng: +lo[i], spd: o.current.wind_speed_10m, dir: o.current.wind_direction_10m };
+        return { lat: +la[i], lng: +lo[i], spd: o.hourly.wind_speed_850hPa[hr], dir: o.hourly.wind_direction_850hPa[hr] };
+      }).filter(function (x) { return x.spd != null && x.dir != null; });
+      if (!v.length) throw new Error('empty'); S.rkWind[key] = { at: Date.now(), v: v }; return v;
+    });
+  }
+  /** طبقة رياح متحركة (جزيئات) فوق الخريطة. samples: [{lat,lng,dir (اتجاه الهبوب من),spd كم/س}] */
+  function rkFlow(map, samples, o) {
+    o = o || {};
+    var host = map.getContainer(), cv = document.createElement('canvas'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.className = 'rk-flow'; var pane = map.getPane('rkflow') || map.createPane('rkflow'); pane.style.zIndex = 450; pane.style.pointerEvents = 'none'; pane.appendChild(cv);
+    var W = 0, H = 0, grid = null, gs = 22, parts = [], on = true, raf = 0, data = samples || [], alpha = o.alpha || 0.9;
+    var col = function (v) { return v < 12 ? 'rgba(165,243,252,' : v < 25 ? 'rgba(255,255,255,' : v < 40 ? 'rgba(253,224,71,' : v < 55 ? 'rgba(251,146,60,' : 'rgba(248,113,113,'; };
+    function field(x, y) {
+      var ll = map.containerPointToLatLng([x, y]), su = 0, sv = 0, sw = 0, sp = 0;
+      for (var i = 0; i < data.length; i++) {
+        var p = data[i], dy = (p.lat - ll.lat), dx = (p.lng - ll.lng) * Math.cos(ll.lat * Math.PI / 180), d2 = dx * dx + dy * dy + 1e-6, wt = 1 / d2, to = ((p.dir + 180) % 360) * Math.PI / 180;
+        su += Math.sin(to) * p.spd * wt; sv += Math.cos(to) * p.spd * wt; sp += p.spd * wt; sw += wt;
+      }
+      return sw ? [su / sw, sv / sw, sp / sw] : [0, 0, 0];
+    }
+    function build() {
+      var sz = map.getSize(); W = sz.x; H = sz.y; L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0])); cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var cols = Math.ceil(W / gs) + 1, rows = Math.ceil(H / gs) + 1; grid = { c: cols, r: rows, v: new Array(cols * rows) };
+      for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++) grid.v[j * cols + i] = data.length ? field(i * gs, j * gs) : [0, 0, 0];
+      var n = Math.round(Math.min(o.max || 1400, W * H / (o.dens || 520))); parts = []; for (var k = 0; k < n; k++) parts.push(seed({}));
+      ctx.clearRect(0, 0, W, H);
+    }
+    function at(x, y) { if (!grid) return [0, 0, 0]; var i = Math.max(0, Math.min(grid.c - 1, Math.round(x / gs))), j = Math.max(0, Math.min(grid.r - 1, Math.round(y / gs))); return grid.v[j * grid.c + i]; }
+    function seed(p) { p.x = Math.random() * W; p.y = Math.random() * H; p.age = Math.floor(Math.random() * 90); p.max = 50 + Math.floor(Math.random() * 70); return p; }
+    function frame() {
+      if (!on) return; if (!document.body.contains(cv) || !host.isConnected) return stop();
+      if (document.hidden) { raf = requestAnimationFrame(frame); return; }
+      ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+      ctx.lineWidth = o.width || 1.25;
+      var buckets = {};
+      for (var k = 0; k < parts.length; k++) {
+        var p = parts[k], f = at(p.x, p.y), sc = 0.045 * (o.speed || 1), nx = p.x + f[0] * sc, ny = p.y - f[1] * sc;
+        if (++p.age > p.max || nx < 0 || ny < 0 || nx > W || ny > H || f[2] < 0.5) { seed(p); continue; }
+        var c = col(f[2]); (buckets[c] = buckets[c] || []).push(p.x, p.y, nx, ny); p.x = nx; p.y = ny;
+      }
+      Object.keys(buckets).forEach(function (c) { var a = buckets[c]; ctx.beginPath(); for (var i = 0; i < a.length; i += 4) { ctx.moveTo(a[i], a[i + 1]); ctx.lineTo(a[i + 2], a[i + 3]); } ctx.strokeStyle = 'rgba(2,6,23,.45)'; ctx.lineWidth = (o.width || 1.3) + 1.8; ctx.stroke(); ctx.strokeStyle = c + alpha + ')'; ctx.lineWidth = o.width || 1.3; ctx.stroke(); });
+      raf = requestAnimationFrame(frame);
+    }
+    function still() { // حركة مخففة: أسهم ثابتة بدل الجزيئات
+      ctx.clearRect(0, 0, W, H); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4;
+      for (var y = gs * 2; y < H; y += gs * 3) for (var x = gs * 2; x < W; x += gs * 3) { var f = at(x, y), m = Math.sqrt(f[0] * f[0] + f[1] * f[1]) || 1, L0 = Math.min(18, 6 + f[2] / 3), ux = f[0] / m, uy = -f[1] / m; ctx.beginPath(); ctx.moveTo(x - ux * L0 / 2, y - uy * L0 / 2); ctx.lineTo(x + ux * L0 / 2, y + uy * L0 / 2); ctx.lineTo(x + ux * L0 / 2 - (ux * 4 - uy * 3), y + uy * L0 / 2 - (uy * 4 + ux * 3)); ctx.stroke(); }
+    }
+    function reset() { build(); if (rkCalm()) still(); }
+    function stop() { on = false; cancelAnimationFrame(raf); map.off('movestart', hide); map.off('moveend resize', show); if (cv.parentNode) cv.parentNode.removeChild(cv); }
+    function hide() { cv.style.opacity = 0; }
+    function show() { reset(); cv.style.opacity = ''; }
+    map.on('movestart', hide); map.on('moveend resize', show);
+    reset(); if (!rkCalm()) raf = requestAnimationFrame(frame);
+    return { stop: stop, set: function (s) { data = s || []; reset(); }, el: cv, toggle: function (v) { cv.hidden = !v; } };
+  }
+  /** رياح الكونسول: يبدأ بالعينات المتاحة فوراً ثم يستبدلها بالحقل الحقيقي لو اتجاب */
+  function rkWind(map, fallback, lvl, o) {
+    var fl = rkFlow(map, fallback, o); fl.src = 'sites';
+    var load = function () { rkWindGrid(map.getBounds().pad(0.2), lvl).then(function (v) { fl.set(v); fl.src = 'grid'; var b = map.getContainer().closest('.rk'); if (b) b.classList.add('rk-wgrid'); }).catch(function () {}); };
+    setTimeout(load, 400); map.on('zoomend', function () { if (map.getZoom() <= 9) load(); });
+    return fl;
+  }
+  /** شريط الحالة الحي: «مباشر · آخر تحديث منذ ...» */
+  function rkLive(at, txt) { var age = at ? Date.now() - at : null, st = age == null ? 'off' : age < 6 * 3600e3 ? 'on' : age < 24 * 3600e3 ? 'mid' : 'off'; return '<span class="rk-live ' + st + '"><i></i><b>' + (st === 'on' ? 'مباشر' : st === 'mid' ? 'محدث اليوم' : 'غير محدث') + '</b>' + (at ? '<span>' + esc(txt || 'آخر تحديث') + ' ' + esc(ago(at)) + '</span>' : '') + '</span>'; }
+  /** مصباح لكل مصدر: [الاسم, الحالة ok|mid|bad|off, تلميح] */
+  function rkLeds(L0) { return '<span class="rk-leds">' + L0.map(function (x) { return '<span class="rk-led ' + x[1] + '" title="' + esc(x[2] || '') + '"><i></i>' + esc(x[0]) + '</span>'; }).join('') + '</span>'; }
+  /** بطاقات المؤشرات: [القيمة, الوصف, اللون, تفصيل] */
+  function rkKpis(L0) { return '<div class="rk-kpis">' + L0.map(function (x) { return '<div class="rk-kpi" style="--c:' + (x[2] || 'var(--rk-acc)') + '"><b class="mono">' + x[0] + '</b><span>' + esc(x[1]) + '</span>' + (x[3] ? '<small>' + esc(x[3]) + '</small>' : '') + '</div>'; }).join('') + '</div>'; }
+  /** الكونسول كاملاً. c: { id, title, sub, ic, live, leds, kpis, mapId, ctl (أزرار طبقات), seg, feedTitle, feed, legend, acts } */
+  function rkStage(c) {
+    return '<section class="rk" id="' + c.id + '"><header class="rk-top"><div class="rk-ttl"><span class="rk-ic">' + icon(c.ic) + '</span><div><h1>' + esc(c.title) + '</h1><p>' + esc(c.sub) + '</p></div></div>' +
+      '<div class="rk-stat">' + (c.live || '') + (c.leds || '') + '</div><div class="rk-acts">' + (c.acts || '') + '<button type="button" class="rk-ib" data-rk="full" title="ملء الشاشة" aria-label="ملء الشاشة">' + icon('full') + '</button></div></header>' +
+      (c.seg ? '<div class="rk-seg">' + c.seg + '</div>' : '') + (c.kpis ? '<div class="rk-mk">' + c.kpis + '</div>' : '') +
+      '<div class="rk-body"><div class="rk-stage"><div class="rk-map" id="' + c.mapId + '" dir="ltr"></div><div class="rk-sweep" aria-hidden="true"></div><div class="rk-vig" aria-hidden="true"></div>' +
+      '<div class="rk-ctl">' + (c.ctl || '') + '<div class="rk-bases">' + Object.keys(RK_BASE).map(function (k) { return '<button type="button" data-rkb="' + k + '">' + RK_BASE[k].n + '</button>'; }).join('') + '</div></div>' +
+      (c.kpis || '') + (c.legend ? '<div class="rk-leg">' + c.legend + '</div>' : '') + '</div>' +
+      '<aside class="rk-feed"><div class="rk-fh"><b>' + icon('rss') + ' ' + esc(c.feedTitle || 'آخر الرصد') + '</b>' + (c.feedNote ? '<span>' + esc(c.feedNote) + '</span>' : '') + '</div><div class="rk-fl">' + (c.feed || '<p class="rk-empty">لا يوجد رصد جديد</p>') + '</div></aside></div>' +
+      (c.foot ? '<div class="rk-foot">' + c.foot + '</div>' : '') + '</section>';
+  }
+  /** صف في شريط الرصد */
+  function rkItem(o) {
+    return '<button type="button" class="rk-it' + (o.cls ? ' ' + o.cls : '') + '" style="--c:' + (o.color || 'var(--rk-acc)') + '"' + (o.data || '') + '><span class="rk-dot">' + (o.ic ? icon(o.ic) : '') + '</span><span class="rk-tx"><b>' + esc(o.t) + '</b><span>' + (o.sub || '') + '</span></span>' +
+      '<span class="rk-mt">' + (o.badge ? '<em class="' + (o.bcls || '') + '">' + esc(o.badge) + '</em>' : '') + (o.when ? '<small>' + esc(o.when) + '</small>' : '') + '</span></button>';
+  }
+  /** ربط أزرار الكونسول (ملء الشاشة وطبقات الخريطة) */
+  function rkBind(root, getMap) {
+    if (!root) return;
+    var setB = function () { var m = getMap(), k = m ? m._rkKey : rkPref('base') || 'sat'; root.querySelectorAll('[data-rkb]').forEach(function (b) { b.classList.toggle('on', b.dataset.rkb === k); }); };
+    root.querySelectorAll('[data-rkb]').forEach(function (b) { b.onclick = function () { rkSetBase(getMap(), b.dataset.rkb); setB(); }; });
+    root.querySelectorAll('[data-rk="full"]').forEach(function (b) { b.onclick = function () { var f = !root.classList.contains('rk-full'); root.classList.toggle('rk-full', f); document.body.classList.toggle('rk-lock', f); b.innerHTML = icon(f ? 'x' : 'full'); var m = getMap(); if (m) setTimeout(function () { m.invalidateSize(); }, 60); }; });
+    setB();
+  }
+  /** نبضة البؤرة/المشاهدة على الخريطة */
+  function rkPin(o) { return L.divIcon({ className: 'rk-pinw', html: '<span class="rk-pin' + (o.cls ? ' ' + o.cls : '') + '" style="--c:' + o.color + ';--s:' + (o.size || 14) + 'px">' + (o.pulse ? '<i class="rk-pl"></i><i class="rk-pl b"></i>' : '') + '<i class="rk-core">' + (o.txt || '') + '</i></span>' + (o.label ? '<span class="rk-plb">' + esc(o.label) + '</span>' : ''), iconSize: [0, 0] }); }
+  /** تحديث تلقائي للشاشة كل 10 دقائق طالما مفتوحة وظاهرة */
+  function rkAuto(route, fn) {
+    clearInterval(S.rkAuto); S.rkAuto = setInterval(function () { if (S.route.split('/')[0] !== route) return clearInterval(S.rkAuto); if (document.hidden || document.querySelector('.sheet.open, .rk-full')) return; fn(); }, 10 * 60e3);
+  }
+
   function viewEpi(args) {
     var days = +(args && args[0]) || 90;
-    $('main').innerHTML = '<section class="view">' + v5Head('رادار الوبائيات', 'virus', 'بؤر أمراض الدواجن حول مزارعنا وفي مصر والإقليم من ستة مصادر لكل منها درجة ثقة، وخطرها على كل محطة بمقياس ثابت من 0 إلى 100 مع ميزان نقاط يشرح السبب، ومسارات الهجرة حتى مناطق التكاثر والتشتية، وتوقع الخطر للأيام السبعة القادمة.',
-      '<select id="epD" aria-label="الفترة">' + [[30, 'آخر 30 يوماً'], [90, 'آخر 90 يوماً'], [180, 'آخر 6 أشهر'], [365, 'آخر سنة']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === days ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select><button class="btn" type="button" id="epLab" hidden>' + icon('flask') + ' نتيجة معمل</button><button class="btn primary" type="button" id="epNew" hidden>' + icon('plus') + ' بلاغ بؤرة</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
-    $('epD').onchange = function () { go('epi/' + this.value); };
-    S.epi = { days: days, map: null, kind: '', pick: null, pane: 'near', rings: 1, fly: 1, fcAll: 0 };
+    $('main').innerHTML = '<section class="view rk-view"><div id="v5Out">' + v5Spin() + '</div></section>';
+    S.epi = { days: days, map: null, kind: '', pick: null, pane: 'near', rings: 1, fly: 1, fcAll: 0, wind: 1, sweep: 1 };
     v5Load('epiData', [days], drawEpi, 'رادار الوبائيات');
+    rkAuto('epi', function () { v5Load('epiData', [days], drawEpi, 'رادار الوبائيات'); });
+  }
+  /** دقة مكان البؤرة (للأخبار): دولة/محافظة/مدينة/غير محدد */
+  function epiGeoQ(e) {
+    if (!e.geoq) return e.src === 'woah' || e.src === 'fao' ? '<span class="q">إحداثيات رسمية</span>' : '';
+    return e.geoq === 'غير محدد' ? '<span class="q u">مكان الحدث غير محدد</span>' : '<span class="q">مكان الحدث: ' + esc(e.geoq) + '</span>';
+  }
+  function epiFeed(d) {
+    var E = S.epi, evs = d.events.filter(function (e) { return epiInPane(e, E.pane) && (!E.kind || e.kind === E.kind); }).sort(function (a, b) { return (b.active - a.active) || ((b.start || 0) - (a.start || 0)); });
+    return evs.slice(0, 80).map(function (e) {
+      var P = d.diseases[e.kind], low = e.conf === 'low';
+      return rkItem({ t: P.short + (e.agent ? ' ' + e.agent : '') + ' · ' + (e.place || e.country), sub: [esc(e.country), e.nearKm != null ? '<b class="mono">' + e.nearKm + ' كم</b> من أقرب محطة' : '', epiGeoQ(e), esc(e.source)].filter(Boolean).join(' · '), color: P.color, ic: 'virus', badge: low ? 'غير مؤكدة' : e.active ? 'نشطة' : 'منتهية', bcls: low ? 'mid' : e.active ? 'bad' : 'ok', when: epiAgo(e.start), cls: e.active ? '' : 'dim', data: ' data-rkev="' + esc(e.id) + '"' });
+    }).join('');
   }
   function epiInPane(e, p) { return p === 'near' ? e.scope === 'near' : p === 'eg' ? e.scope !== 'world' : true; }
   function drawEpi(d) {
     var out = $('v5Out'); if (!out || !S.epi) return;
     var E = S.epi; E.data = d;
-    $('epNew').hidden = !d.canReport; $('epNew').onclick = function () { epiReportSheet(d, null); };
-    $('epLab').hidden = !d.canReport; $('epLab').onclick = function () { epiLabSheet(d); };
     var act = d.events.filter(function (e) { return e.active; }), near50 = act.filter(function (e) { return e.scope === 'near'; });
     var nearest = d.events.filter(function (e) { return e.nearKm != null && e.conf !== 'low'; }).sort(function (a, b) { return a.nearKm - b.nearKm; })[0];
     var worst = d.sites[0], inZone = d.sites.filter(function (s) { return s.zone; }).length, fl = d.fly || { list: [] }, fcTop = epiFcTop(d);
-    var html = '';
-    // 1) الموقف بالمقياس الثابت
-    var wb = worst ? worst.band : 'low';
+    var html = '', wb = worst ? worst.band : 'low', st = d.status || {}, nw = d.news, fa = d.fao, srcN = d.srcN || {};
+    var cnt = { near: 0, eg: 0, world: 0 }; d.events.forEach(function (e) { EPI_PANES.forEach(function (p) { if (epiInPane(e, p[0])) cnt[p[0]]++; }); });
+    var kinds = Object.keys(d.kinds || {}), lastAt = Math.max(st.lastOk || 0, nw && nw.at || 0, fa && fa.at || 0) || (MODE === 'demo' ? Date.now() : null);
+    var fdBad = nw && nw.feeds ? nw.feeds.filter(function (x) { return !x.ok; }).length : 0;
+    html += rkStage({ id: 'epRk', mapId: 'epMap', ic: 'virus', title: 'رادار الوبائيات', sub: 'بؤر أمراض الدواجن حول محطاتنا وفي مصر والعالم · كل بؤرة على مكان الحدث الفعلي · الخطر على كل محطة من 0 إلى 100',
+      live: rkLive(lastAt, 'آخر رصد'),
+      leds: rkLeds([['WAHIS', st.ok === true ? 'ok' : st.ok === false ? 'bad' : MODE === 'demo' ? 'mid' : 'off', 'المنظمة العالمية لصحة الحيوان: كل 6 ساعات'], ['FAO', fa ? (fa.errors && fa.errors.length ? 'mid' : 'ok') : 'off', 'EMPRES-i من مجلد Drive'], ['الأخبار', nw ? (fdBad ? 'mid' : 'ok') : 'off', 'Google News وCIDRAP وAvian Flu Diary'], ['المعمل', (srcN.lab || {}).n ? 'ok' : 'off', 'نتائج المعامل'], ['البلاغات', (srcN.local || {}).n || (srcN.net || {}).n ? 'ok' : 'off', 'بلاغات الإدارة والشبكة'], ['الرياح', d.windLive ? 'ok' : 'mid', d.windLive ? 'رياح حية من Open-Meteo' : 'رياح الموسم']]),
+      acts: '<select id="epD" aria-label="الفترة">' + [[30, '30 يوماً'], [90, '90 يوماً'], [180, '6 أشهر'], [365, 'سنة']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === E.days ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>' + (d.canReport ? '<button class="btn" type="button" id="epLab">' + icon('flask') + ' نتيجة معمل</button><button class="btn primary" type="button" id="epNew">' + icon('plus') + ' بلاغ بؤرة</button>' : ''),
+      seg: EPI_PANES.map(function (p) { return '<button type="button" class="' + (E.pane === p[0] ? 'on' : '') + '" data-pane="' + p[0] + '">' + icon(p[2]) + p[1] + ' <span>' + cnt[p[0]] + '</span></button>'; }).join('') +
+        '<button type="button" class="' + (!E.kind ? 'on' : '') + '" data-ek="">كل الأمراض <span>' + d.events.length + '</span></button>' + kinds.map(function (k) { var P = d.diseases[k]; return '<button type="button" class="' + (E.kind === k ? 'on' : '') + '" data-ek="' + k + '" style="--k:' + P.color + '"><i class="k"></i>' + esc(P.short) + ' <span>' + d.kinds[k] + '</span></button>'; }).join(''),
+      ctl: '<div class="rk-lyr">' + [['rings', 'الحلقات', 'target'], ['fly', 'الهجرة', 'bird'], ['wind', 'الرياح', 'wind'], ['sweep', 'المسح', 'radar']].map(function (x) { return '<button type="button" data-tgl="' + x[0] + '" class="' + (E[x[0]] ? 'on' : '') + '">' + icon(x[2]) + x[1] + '</button>'; }).join('') + '</div>',
+      kpis: rkKpis([[worst ? worst.risk : 0, 'أعلى خطر الآن · ' + EPI_B[wb][0], EPI_B[wb][1], worst ? shortSite(worst.name) : ''],
+        [near50.length, 'بؤرة نشطة خلال 50 كم', near50.length ? '#ef4444' : '#22c55e', near50.length ? 'راجع خطة الطوارئ' : 'لا بؤر نشطة قريبة'],
+        [nearest ? nearest.nearKm + '<i class="u"> كم</i>' : '—', 'أقرب بؤرة مؤكدة', '#f59e0b', nearest ? BIO_EPI_SHORT(d, nearest) + ' · ' + (nearest.place || nearest.country) : 'لا توجد'],
+        [fl.list.length, 'بؤرة على مسار هجرة متجه لنا', fl.list.length ? '#ef4444' : '#22d3ee', fcTop ? 'ذروة الأسبوع ' + epiDay(fcTop.t, true) + ' (' + fcTop.r + ')' : '']]),
+      legend: kinds.map(function (k) { var P = d.diseases[k]; return '<span><i style="--c:' + P.color + '"></i>' + esc(P.short) + '</span>'; }).join('') + '<span><i class="ring" style="--c:#94a3b8"></i>غير مؤكدة</span><span><i class="ring" style="--c:#ef4444"></i>حلقات 3/10/50/150 كم</span><span><i class="bar"></i>سرعة الرياح</span>',
+      feedTitle: 'آخر البؤر', feedNote: 'الأحدث والنشطة أولاً', feed: epiFeed(d),
+      foot: '<span>' + icon('pin') + ' <b>مكان البؤرة = مكان الحدث</b> المذكور في التقرير الرسمي أو الخبر، مش مكان الجريدة أو الجهة اللي نشرت</span><span>' + icon('wind') + ' ' + (d.windLive ? 'الرياح حية' : 'الرياح السائدة للموسم') + '<span class="rk-wnote"> · حقل رياح حي على الخريطة من Open-Meteo</span></span><span>' + esc(d.season || '') + '</span>' });
+    // الموقف بالمقياس الثابت + ماذا نفعل
     html += '<div class="card e20-hero" style="--b:' + EPI_B[wb][1] + '"><div class="e20-hh"><div class="e20-big"><span class="e20-bn mono">' + (worst ? worst.risk : 0) + '</span><div><span class="kick">أعلى خطر الآن من 100</span><b>' + EPI_B[wb][0] + (worst ? ' · ' + esc(shortSite(worst.name)) : '') + '</b><span class="xs muted">' + esc(d.scale.filter(function (x) { return x.k === wb; })[0].act) + '</span></div></div>' +
       (fcTop ? '<div class="e20-next"><span class="kick">' + icon('calendar') + ' ذروة الأيام السبعة القادمة</span><b>' + esc(epiDay(fcTop.t, true)) + ' · <span class="mono">' + fcTop.r + '</span> ' + EPI_B[fcTop.band][0] + '</b><span class="xs muted">' + esc(shortSite(fcTop.name)) + ' · بسبب ' + esc(fcTop.drv) + '</span></div>' : '') + '</div>' +
       epiScale(d, worst ? worst.risk : 0, false) + '</div>';
-    html += kpiRow([
-      ['k-bad', 'virus', near50.length, 'بؤرة نشطة خلال 50 كم'],
-      ['k-warn', 'pin', nearest ? nearest.nearKm + ' كم' : '—', nearest ? 'أقرب بؤرة مؤكدة: ' + BIO_EPI_SHORT(d, nearest) : 'أقرب بؤرة مؤكدة'],
-      [fl.list.length ? 'k-bad' : 'k-ok', 'bird', fl.list.length, 'بؤرة على مسار هجرة متجه لنا'],
-      [inZone ? 'k-warn' : 'k-ok', 'shield', inZone, 'محطة داخل نطاق حماية أو مراقبة']]);
-    // 2) المصادر الستة
     html += epiSourcesHtml(d);
-    // 3) الألواح الثلاثة والخريطة
-    var cnt = { near: 0, eg: 0, world: 0 }; d.events.forEach(function (e) { EPI_PANES.forEach(function (p) { if (epiInPane(e, p[0])) cnt[p[0]]++; }); });
-    var kinds = Object.keys(d.kinds || {});
-    html += '<div class="card e20-panes"><div class="e20-tabs" role="tablist">' + EPI_PANES.map(function (p) { return '<button type="button" role="tab" class="e20-tab' + (E.pane === p[0] ? ' on' : '') + '" data-pane="' + p[0] + '">' + icon(p[2]) + '<span>' + p[1] + '</span><b class="mono">' + cnt[p[0]] + '</b></button>'; }).join('') + '</div>' +
-      '<div class="e20-mapbar"><div class="ep-kinds"><button type="button" class="chip' + (!E.kind ? ' on' : '') + '" data-ek="">كل الأمراض <span>' + d.events.length + '</span></button>' + kinds.map(function (k) { var P = d.diseases[k]; return '<button type="button" class="chip' + (E.kind === k ? ' on' : '') + '" data-ek="' + k + '" style="--k:' + P.color + '"><i class="ep-kdot"></i>' + esc(P.short) + ' <span>' + d.kinds[k] + '</span></button>'; }).join('') + '</div>' +
-      '<div class="row"><button type="button" class="chip' + (E.rings ? ' on' : '') + '" data-tgl="rings">حلقات المسافة</button><button type="button" class="chip' + (E.fly ? ' on' : '') + '" data-tgl="fly">مسارات الهجرة</button></div></div>' +
-      '<div class="e20-mapwrap"><div class="ep-map" id="epMap" dir="ltr"></div>' + epiScale(d, null, true) + '</div>' +
-      '<div class="e20-legend"><span><i class="lr p"></i>حماية 3 كم</span><span><i class="lr s"></i>مراقبة 10 كم</span><span><i class="lr w"></i>إنذار 50 كم</span><span><i class="lr r"></i>إقليمي 150 كم</span><span>بعدها: دولي</span><span><i class="lg-dash"></i>بؤرة غير مؤكدة</span></div>' +
-      (d.canReport ? '<p class="xs muted">' + icon('pin') + ' لتسجيل بؤرة أبلغت عنها الخدمات البيطرية أو مزرعة مجاورة: اضغط مكانها على الخريطة ثم «تسجيل بؤرة هنا».</p>' : '') +
-      '<div id="e20Pane"></div></div>';
+    html += '<div class="card e20-panes">' + (d.canReport ? '<p class="xs muted">' + icon('pin') + ' لتسجيل بؤرة أبلغت عنها الخدمات البيطرية أو مزرعة مجاورة: اضغط مكانها على الخريطة ثم «تسجيل بؤرة هنا».</p>' : '') + '<div id="e20Pane"></div></div>';
     // 4) تقاطع البؤر مع مسارات الهجرة
     html += epiFlyHtml(d);
     // 5) توقع الخطر 7 أيام
@@ -7556,11 +7738,19 @@
     var dk = ['hpai', 'nd', 'lpai'].concat(kinds).filter(function (k, i, a) { return a.indexOf(k) === i && d.diseases[k]; });
     html += '<div class="card"><h2>' + icon('book') + ' طرق الانتقال والأعراض</h2><div class="ep-dz">' + dk.map(function (k) { var P = d.diseases[k]; return '<details style="--k:' + P.color + '"><summary><i class="ep-kdot"></i><b>' + esc(P.label) + '</b><span class="xs muted">حضانة حتى ' + P.inc + ' يوماً' + (P.zone ? ' · نطاق ' + P.zone[0] + '/' + P.zone[1] + ' كم' : '') + '</span></summary><ul>' + P.routes.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' + (P.signs ? '<p class="small"><b>العلامات:</b> ' + esc(P.signs) + '</p>' : '') + '</details>'; }).join('') + '</div></div>';
     html += '<div class="infobox small ep-note">' + icon('book') + ' <span><b>كيف يُحسب الخطر:</b> احتمال الانتقال بين المزارع يقل مع المسافة وفق نواة الانتقال المنشورة لإنفلونزا الطيور (' + esc(d.kernel) + '، r0 = ' + d.diseases.hpai.r0 + ' كم)، ويزيد حتى الضعف للمحطة الواقعة في اتجاه الريح من البؤرة، ويقل ×0.7 لو الريح تبعده، ويفقد أثره تدريجياً مع الوقت. كل بؤرة تُضرب في ثقة مصدرها (رسمي ومعملي ×1، الفاو ×0.9، بلاغ الإدارة ×0.8، الشبكة ×0.5 حتى التحقق، الإعلام ×0.35). تُضاف إشارات مسارات الهجرة المصابة وإنذار النافق الداخلي ورادار الطيور، ونطاق الحماية 3 كم لا يقل عن 80 ونطاق المراقبة 10 كم لا يقل عن 45 (للبؤر المؤكدة فقط). ميزان النقاط يوزع المؤشر على أسبابه فمجموعه يساوي المؤشر. هذه أداة إنذار مبكر للتشديد، والتشخيص والقرار الرسمي للخدمات البيطرية.</span></div>';
+    if (E.map) { try { E.map.remove(); } catch (x) {} E.map = null; }
     out.innerHTML = html;
+    $('epD').onchange = function () { go('epi/' + this.value); };
+    if ($('epNew')) $('epNew').onclick = function () { epiReportSheet(d, null); };
+    if ($('epLab')) $('epLab').onclick = function () { epiLabSheet(d); };
+    var root = $('epRk'); root.classList.toggle('no-sweep', !E.sweep);
+    rkBind(root, function () { return E.map; });
     epiPane(); epiBind(d, out);
     birdLeaflet().then(function () {
       var box = $('epMap'); if (!box || S.epi !== E) return;
-      E.map = sitesMapBase(box, { scrollWheelZoom: true });
+      E.map = rkBase(box, {});
+      E.flow = rkWind(E.map, d.sites.map(function (s) { return { lat: s.lat, lng: s.lng, dir: s.wind.dir, spd: s.wind.spd }; }), '10m');
+      if (!E.wind) E.flow.toggle(false);
       E.map.on('click', function (ev) {
         if (!d.canReport) return;
         var ll = ev.latlng; E.pick = { lat: +ll.lat.toFixed(5), lng: +ll.lng.toFixed(5) };
@@ -7572,9 +7762,12 @@
   }
   function epiBind(d, out) {
     var E = S.epi;
-    out.querySelectorAll('[data-pane]').forEach(function (b) { b.onclick = function () { E.pane = b.dataset.pane; out.querySelectorAll('[data-pane]').forEach(function (x) { x.classList.toggle('on', x === b); }); epiPane(); epiPaint(); epiFit(E.pane); }; });
-    out.querySelectorAll('[data-ek]').forEach(function (b) { b.onclick = function () { E.kind = b.dataset.ek; out.querySelectorAll('[data-ek]').forEach(function (x) { x.classList.toggle('on', x === b); }); epiPaint(); epiPane(); }; });
-    out.querySelectorAll('[data-tgl]').forEach(function (b) { b.onclick = function () { E[b.dataset.tgl] = E[b.dataset.tgl] ? 0 : 1; b.classList.toggle('on', !!E[b.dataset.tgl]); epiPaint(); }; });
+    out.querySelectorAll('[data-pane]').forEach(function (b) { b.onclick = function () { E.pane = b.dataset.pane; out.querySelectorAll('[data-pane]').forEach(function (x) { x.classList.toggle('on', x === b); }); epiPane(); epiPaint(); epiFit(E.pane); if (E.feedRe) E.feedRe(); }; });
+    out.querySelectorAll('[data-ek]').forEach(function (b) { b.onclick = function () { E.kind = b.dataset.ek; out.querySelectorAll('[data-ek]').forEach(function (x) { x.classList.toggle('on', x === b); }); epiPaint(); epiPane(); if (E.feedRe) E.feedRe(); }; });
+    out.querySelectorAll('[data-tgl]').forEach(function (b) { b.onclick = function () { var k = b.dataset.tgl; E[k] = E[k] ? 0 : 1; b.classList.toggle('on', !!E[k]); if (k === 'wind') { if (E.flow) E.flow.toggle(!!E.wind); } else if (k === 'sweep') $('epRk').classList.toggle('no-sweep', !E.sweep); else epiPaint(); }; });
+    var feedBind = function () { out.querySelectorAll('[data-rkev]').forEach(function (b) { b.onclick = function () { var e = epiEvById(d, b.dataset.rkev); if (!e) return; if (e.lat == null || e.lat === '') return toast('مكان الحدث غير محدد في الخبر، فمش متحط على الخريطة'); if (!E.map) return; E.map.flyTo([e.lat, e.lng], Math.max(E.map.getZoom(), e.scope === 'world' ? 5 : 9), { duration: 0.8 }); setTimeout(function () { E.evM[e.id] && E.evM[e.id].openPopup(); }, 850); if (window.innerWidth < 860) $('epMap').scrollIntoView({ behavior: 'smooth', block: 'center' }); }; }); };
+    E.feedRe = function () { var fl = out.querySelector('#epRk .rk-fl'); if (fl) { fl.innerHTML = epiFeed(d) || '<p class="rk-empty">لا توجد بؤر في هذا العرض</p>'; feedBind(); } };
+    feedBind();
     out.querySelectorAll('[data-ep-plan]').forEach(function (b) { b.onclick = function () { epiPlanShow(d, b.dataset.epPlan); }; });
     out.querySelectorAll('[data-es]').forEach(function (b) { b.onclick = function () { epiSiteSheet(d, d.sites.filter(function (s) { return s.id === b.dataset.es; })[0]); }; });
     out.querySelectorAll('[data-src]').forEach(function (b) { b.onclick = function () { epiSrcAct(d, b.dataset.src, b); }; });
@@ -7755,17 +7948,17 @@
     d.sites.forEach(function (s) { var t = s.top[0], e = t && epiEvById(d, t.id); if (!e || t.score < 5 || (E.kind && e.kind !== E.kind)) return; L.polyline([[s.lat, s.lng], [e.lat, e.lng]], { color: EPI_HEX[s.band], weight: 1.5, opacity: 0.7, dashArray: '3 6', interactive: false }).addTo(g); });
     evs.forEach(function (e) {
       var P = d.diseases[e.kind], fresh = e.active && (Date.now() - e.start) / 864e5 <= 21;
-      var m = L.marker([e.lat, e.lng], { icon: L.divIcon({ className: 'op-wrap', html: '<span class="ep-pt' + (fresh ? ' pulse' : '') + (e.active ? '' : ' off') + (e.conf === 'low' ? ' unc' : e.manual ? ' man' : '') + '" style="--k:' + P.color + '">' + icon('virus') + '<i class="e20-pg">' + e.grade + '</i></span>', iconSize: [26, 26], iconAnchor: [13, 13] }), zIndexOffset: 3000 + e.grade * 10 });
+      var m = L.marker([e.lat, e.lng], { icon: rkPin({ color: P.color, size: 12 + e.grade * 2, pulse: fresh && e.conf !== 'low', cls: e.conf === 'low' ? 'hollow' : e.active ? '' : 'old', txt: e.grade }), zIndexOffset: 3000 + e.grade * 10 });
       m.bindPopup('<div class="op-pop" dir="rtl"><b>' + esc(e.disease) + '</b><div>درجة البؤرة <b>' + e.grade + ' من 5</b> · ' + esc(e.tag) + '</div>' + (e.agent ? '<div>المسبب: ' + esc(e.agent) + '</div>' : '') + '<div>' + esc([e.place, e.gov && e.gov !== e.place ? e.gov : '', e.country].filter(Boolean).join(' · ')) + '</div><div>بدأت ' + epiDate(e.start) + ' · ' + (e.active ? '<span class="op-bad">نشطة</span>' : 'منتهية') + '</div>' + (e.species ? '<div>' + esc(e.species) + '</div>' : '') +
         (e.cases || e.deaths || e.killed ? '<div>' + [e.cases ? e.cases + ' حالة' : '', e.deaths ? e.deaths + ' نافق' : '', e.killed ? e.killed + ' إعدام' : ''].filter(Boolean).join(' · ') + '</div>' : '') +
-        (e.nearKm != null ? '<div>أقرب محطة لنا على <b>' + e.nearKm + ' كم</b> (حلقة ' + esc(e.ring) + ')</div>' : '') + (e.fw && e.fw.length ? '<div>على مسار هجرة: ' + esc(e.fw.join('، ')) + '</div>' : '') + '<div class="xs">المصدر: ' + esc(e.source) + (e.reportId && !e.link ? ' · تقرير ' + esc(e.reportId) : '') + '</div>' +
+        (e.nearKm != null ? '<div>أقرب محطة لنا على <b>' + e.nearKm + ' كم</b> (حلقة ' + esc(e.ring) + ')</div>' : '') + (e.fw && e.fw.length ? '<div>على مسار هجرة: ' + esc(e.fw.join('، ')) + '</div>' : '') + '<div class="xs">المصدر: ' + esc(e.source) + (e.reportId && !e.link ? ' · تقرير ' + esc(e.reportId) : '') + '</div>' + (e.geoq ? '<div class="xs">دقة المكان: ' + esc(e.geoq === 'غير محدد' ? 'غير محدد' : 'على مستوى ' + e.geoq) + ' (مكان الحدث وليس مكان الجريدة)</div>' : '') +
         (e.src === 'woah' && e.reportId ? '<div class="op-links"><a href="https://wahis.woah.org/#/in-review/' + encodeURIComponent(e.reportId) + '" target="_blank" rel="noopener">التقرير الرسمي</a></div>' : e.link ? '<div class="op-links"><a href="' + esc(e.link) + '" target="_blank" rel="noopener">الخبر</a></div>' : '') + '</div>', { maxWidth: 270 });
       m.bindTooltip(P.short + ' · ' + (e.place || e.country) + ' · درجة ' + e.grade, { direction: 'top', offset: [0, -12] });
       m.addTo(g); E.evM[e.id] = m;
     });
     d.sites.forEach(function (s) {
       var to = (s.wind.dir + 180) % 360;
-      var m = L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'op-wrap', html: '<span class="ep-sd" style="--b:' + EPI_B[s.band][1] + '"><b>' + s.risk + '</b><i class="ep-arr" style="transform:rotate(' + to + 'deg)">' + icon('arr') + '</i></span><span class="op-lbl">' + esc(shortSite(s.name)) + '</span>', iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 4000 + s.risk });
+      var m = L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'rk-farm', html: '<span class="f" style="--c:' + EPI_B[s.band][1] + '"><b>' + s.risk + '</b></span><em>' + esc(shortSite(s.name)) + '</em>', iconSize: [0, 0] }), zIndexOffset: 4000 + s.risk });
       m.on('click', function () { epiSiteSheet(d, s); });
       m.bindTooltip(shortSite(s.name) + ' · خطر ' + s.risk + ' · الرياح ' + s.wind.label + ' ' + s.wind.spd + ' كم/س', { direction: 'top', offset: [0, -14] });
       m.addTo(g);
