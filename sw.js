@@ -1,5 +1,5 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v32-4';
+var CACHE = 'bio-v33-1';
 var SHELL = ['./', 'index.html', 'reports.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
@@ -29,16 +29,22 @@ self.addEventListener('fetch', function (e) {
 
 /* ---------- الإشعارات ---------- */
 var CFG = self.BIO_CONFIG || {};
-if (CFG.FIREBASE) {
-  importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js', 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
-  firebase.initializeApp(CFG.FIREBASE);
-  firebase.messaging().onBackgroundMessage(function (p) { return show(p.data || {}); });
-}
+/* v33.1: استقبال إشعارات FCM مباشرة (رسائل data) من غير مكتبة Firebase داخل عامل الخدمة،
+   علشان الإعدادات تتحفظ من داخل التطبيق ومش لازم تتكتب في config.js */
+self.addEventListener('push', function (e) {
+  var p = {}; try { p = e.data ? e.data.json() : {}; } catch (x) { p = { title: 'الأمن الحيوي', body: e.data ? e.data.text() : '' }; }
+  var d = p.data || (p.notification ? { title: p.notification.title, body: p.notification.body } : p);
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+    cs.forEach(function (c) { try { c.postMessage({ push: d }); } catch (x) {} });
+    return show(d);
+  }));
+});
 function show(d) {
   var urgent = d.kind === 'request' || d.kind === 'violation' || d.kind === 'report' || d.kind === 'escalation' || /عاجل/.test(d.title || '');
+  var bul = d.kind === 'bulletin'; if (bul && d.level && d.level !== 'عادي') urgent = true; // v33: رسائل الإدارة
   return self.registration.showNotification(d.title || 'الأمن الحيوي', {
     body: d.body || '', dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
-    tag: d.approvalId || d.reportId || d.kind || 'bio', renotify: true, requireInteraction: urgent, vibrate: [200, 100, 200],
+    tag: d.approvalId || d.reportId || (bul && d.msgId ? 'msg-' + d.msgId : '') || d.kind || 'bio', renotify: true, requireInteraction: urgent, vibrate: bul ? (d.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220, 100, 220]) : [200, 100, 200],
     data: d, actions: d.kind === 'request' && d.approvalId ? [{ action: 'approve', title: 'موافقة' }, { action: 'reject', title: 'رفض' }]
       : (d.kind === 'report' || d.kind === 'escalation') && d.reportId ? [{ action: 'r-ack', title: 'تم الاستلام' }, { action: 'r-alert', title: 'رفع إنذار على الموقع' }] : []
   });

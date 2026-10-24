@@ -2140,7 +2140,7 @@ function BIO_api(store, deps) {
     },
 
     registerDevice: function (pin, token, gateName) {
-      var u = auth(pin);
+      var u = auth(pin, 'login');
       if (!token) throw new Error('رمز الجهاز فارغ');
       var row = { token: token, userId: u.id, userName: u.name, role: u.role, gate: u.gateId || gateName || '', updated: deps.now() };
       deps.lock(function () { if (store.find('devices', token)) store.update('devices', token, row); else store.append('devices', row); });
@@ -2170,6 +2170,9 @@ function BIO_api(store, deps) {
   if (typeof BIO_v30 === 'function') BIO_v30(api, H_);
   if (typeof BIO_v31pc === 'function') BIO_v31pc(api, H_);
   if (typeof BIO_v32know === 'function') BIO_v32know(api, H_);
+  if (typeof BIO_v33staff === 'function') BIO_v33staff(api, H_);
+  if (typeof BIO_v33corr === 'function') BIO_v33corr(api, H_);
+  if (typeof BIO_v33push === 'function') BIO_v33push(api, H_);
   return api;
 }
 
@@ -8565,6 +8568,555 @@ function BIO_v32know(api, H) {
     if (deps0.knowNow) { try { deps0.knowNow(); } catch (e) { throw new Error('تعذر تحديث الأخبار الآن: ' + (e.message || e)); } }
     return api.knowHub(pin);
   };
+}
+/* ============================ الإصدار 33: رسائل الإدارة + التقدير والتحفيز لموظفي الأمن الحيوي ============================ */
+TABLES.bulletins = { sheet: 'رسائل الإدارة', key: 'id', cols: { id: 'رقم الرسالة', time: 'الوقت', fromId: 'كود المرسل', fromName: 'المرسل', toLabel: 'موجهة إلى', toIds: 'أكواد المستلمين', title: 'العنوان', body: 'النص', level: 'الأهمية', kind: 'النوع', img: 'صورة', count: 'عدد المستلمين', deleted: 'محذوفة' } };
+TABLES.breads = { sheet: 'قراءة رسائل الإدارة', key: 'id', cols: { id: 'الرقم', bulId: 'رقم الرسالة', userId: 'كود المستخدم', userName: 'الاسم', time: 'وقت القراءة' } };
+TABLES.staffx = { sheet: 'ملفات الموظفين', key: 'id', cols: { id: 'الكود', name: 'الاسم', photo: 'الصورة', birth: 'تاريخ الميلاد', hire: 'تاريخ التعيين', updatedAt: 'آخر تحديث', by: 'عدّلها' } };
+TABLES.kudos = { sheet: 'كلمات الشكر', key: 'id', cols: { id: 'الرقم', time: 'الوقت', fromId: 'كود المرسل', fromName: 'من', toId: 'كود الموظف', toName: 'إلى', tag: 'السبب', note: 'الكلمة' } };
+TABLES.stars = { sheet: 'نجوم الأسبوع والشهر', key: 'id', cols: { id: 'الرقم', time: 'الوقت', type: 'النوع', period: 'الفترة', userId: 'كود الموظف', userName: 'الاسم', reason: 'السبب', by: 'اختاره' } };
+TABLES.ideas = { sheet: 'اقتراحات الموظفين', key: 'id', cols: { id: 'الرقم', time: 'الوقت', fromId: 'كود صاحب الاقتراح', fromName: 'صاحب الاقتراح', anon: 'بدون اسم', text: 'الاقتراح', status: 'الحالة', reply: 'رد الإدارة', repliedBy: 'رد', repliedAt: 'وقت الرد' } };
+TABLES.quizAns = { sheet: 'إجابات سؤال الأسبوع', key: 'id', cols: { id: 'الرقم', week: 'الأسبوع', userId: 'كود المستخدم', userName: 'الاسم', choice: 'الإجابة', ok: 'صحيحة', time: 'الوقت' } };
+TABLES.cheerlog = { sheet: 'سجل المناسبات التلقائية', key: 'id', cols: { id: 'المفتاح', time: 'الوقت', kind: 'النوع', note: 'التفاصيل' } };
+
+/** قوالب جاهزة للرسائل الجماعية */
+var BIO_MSG_TEMPLATES = [
+  { k: 'thanks', label: 'شكر للفريق', kind: 'شكر', level: 'عادي', title: 'شكراً لفريق الأمن الحيوي', body: 'كل الشكر والتقدير لكل فرد في الفريق على مجهوده والتزامه. شغلكم هو خط الدفاع الأول عن مزارعنا، وبنشوف تعبكم كل يوم.' },
+  { k: 'heat', label: 'تنبيه حر', kind: 'تنبيه', level: 'مهم', title: 'موجة حر: خلّي بالك من نفسك', body: 'درجات الحرارة عالية النهارده. اشرب مياه كتير كل نص ساعة، اقعد في الضل بين الحركات، وبلّغ فوراً لو حسيت بدوخة أو صداع. سلامتك أهم حاجة.' },
+  { k: 'meet', label: 'اجتماع', kind: 'اجتماع', level: 'مهم', title: 'اجتماع فريق الأمن الحيوي', body: 'اجتماع الفريق يوم ... الساعة ... في ...\nالموضوعات: ...\nالحضور مهم.' },
+  { k: 'ramadan', label: 'رمضان', kind: 'تهنئة', level: 'عادي', title: 'رمضان كريم', body: 'إدارة الأمن الحيوي بتهنيكم بحلول شهر رمضان المبارك. كل سنة وانتم طيبين، وربنا يتقبل منا ومنكم.' },
+  { k: 'eid', label: 'عيد', kind: 'تهنئة', level: 'عادي', title: 'عيد سعيد', body: 'كل سنة وانتم طيبين بمناسبة العيد. شكراً لكل اللي شغال في العيد وحامي المزارع، انتم فخر الإدارة.' },
+  { k: 'alert', label: 'تعليمات عاجلة', kind: 'تنبيه', level: 'عاجل', title: 'تعليمات عاجلة', body: 'برجاء الالتزام فوراً بالآتي:\n- ...\n- ...' }
+];
+var BIO_KUDOS_TAGS = ['التزام ممتاز بالبوابة', 'تسجيل دقيق', 'اكتشف مخالفة', 'تعاون مع الفريق', 'مبادرة', 'شغل في ظروف صعبة', 'تقرير زيارة ممتاز'];
+var BIO_HEAT_TIPS = 'اشرب مياه كل نص ساعة حتى لو مش عطشان · خليك في الضل بين الحركات · غطي راسك · بلّغ فوراً لو حسيت بدوخة أو صداع أو زميلك تعب';
+
+function BIO_v33staff(api, H) {
+  var store = H.store, deps = H.deps, D = 864e5, memBul = 0;
+  var DEPT_RE = /أمن\s*حيوي|امن\s*حيوي/;
+  var STAFF_ROLES = [BIO.ROLE_MANAGER, BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_GUARD];
+  var ROLE_GROUPS = [
+    { k: 'officer', label: 'المسؤولون', role: BIO.ROLE_OFFICER }, { k: 'supervisor', label: 'المشرفون', role: BIO.ROLE_SUPERVISOR },
+    { k: 'inspector', label: 'المعاونون', role: BIO.ROLE_INSPECTOR }, { k: 'guard', label: 'أمن البوابات', role: BIO.ROLE_GUARD },
+    { k: 'mgrs', label: 'مديرو القطاعات والمواقع', roles: [BIO.ROLE_SECTOR, BIO.ROLE_SITE] }
+  ];
+  function rows(t) { try { return store.all(t) || []; } catch (e) { return []; } }
+  function now() { return deps.now(); }
+  function yes(v) { return BIO_isYes(v); }
+  function roleOf(x) { var r = BIO_role(String(x.role || '').trim()); return r ? r.k : ''; }
+  function active(x) { return String(x.active == null ? '' : x.active).trim() !== BIO.NO; }
+  function me(pin) { var u = H.auth(pin, 'login'); if (u.pestOnly) throw new Error('حسابك مخصص لقسم مكافحة الآفات فقط'); return u; }
+  function canSend(u) { return !!u.isAdmin || u.role === BIO.ROLE_OFFICER || u.role === BIO.ROLE_SUPERVISOR; }
+  function isStaffRole(r) { return STAFF_ROLES.indexOf(r) >= 0; }
+  function clip(s, n) { return String(s == null ? '' : s).trim().slice(0, n); }
+  function day(t) { return BIO_dayOf(t == null ? now() : t); }
+  function bump(t) { memBul = t; try { if (deps.bulBump) deps.bulBump(t); } catch (e) {} }
+  function bulAt() { try { if (deps.bulAt) return Number(deps.bulAt()) || 0; } catch (e) {} return memBul; }
+
+  /** تاريخ مقروء من أي صيغة: 1985-03-12 · 12/3/1985 · 12-3-1985 · رقم تاريخ إكسيل · قيمة تاريخ */
+  function dParse(v) {
+    if (v == null || v === '') return '';
+    if (v instanceof Date) return isNaN(v) ? '' : new Date(v.getTime() + 12 * 36e5).toISOString().slice(0, 10);
+    var s = String(v).replace(/^'/, '').trim().replace(/[٠-٩]/g, function (c) { return String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)); });
+    if (!s) return '';
+    var m, y, mo, d;
+    if ((m = /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/.exec(s))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else if ((m = /^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/.exec(s))) { d = +m[1]; mo = +m[2]; y = +m[3]; if (mo > 12 && d <= 12) { var t = d; d = mo; mo = t; } }
+    else if (/^\d{4,5}(\.\d+)?$/.test(s) && +s > 3000 && +s < 80000) { var dt = new Date(Math.round((+s - 25569) * D)); y = dt.getUTCFullYear(); mo = dt.getUTCMonth() + 1; d = dt.getUTCDate(); }
+    else return null;
+    if (!(y > 1930 && y < 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return null;
+    var chk = new Date(Date.UTC(y, mo - 1, d)); if (chk.getUTCMonth() !== mo - 1) return null;
+    return y + '-' + (mo < 10 ? '0' : '') + mo + '-' + (d < 10 ? '0' : '') + d;
+  }
+  function sectorOfUser(x, sites) {
+    var g = x.gate ? (store.find('checkpoints', x.gate) || sites[BIO_norm(x.gate)]) : null;
+    if (g && g.sector) return String(g.sector);
+    var sc = BIO_list(x.scope)[0] || '';
+    if (sites[BIO_norm(sc)]) return String(sites[BIO_norm(sc)].sector || '');
+    return sc;
+  }
+  function whereOf(x, sites) { var g = x.gate ? (store.find('checkpoints', x.gate) || sites[BIO_norm(x.gate)]) : null; return g ? String(g.name || '') : String(x.scope || ''); }
+  function nm(s) { return String(s || '').replace(/^(أ|م|د|ا)\s*\/\s*/, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim(); }
+
+  /** فريق الإدارة: حسابات المنظومة بأدوار الأمن الحيوي + موظفو «الأفراد والمركبات» في إدارة الأمن الحيوي، مع ملفاتهم */
+  function staff() {
+    var sites = H.sitesById(), out = [], byId = {}, byName = {}, x = {};
+    rows('staffx').forEach(function (r) { x[BIO_norm(r.id)] = r; });
+    rows('users').forEach(function (u) {
+      var r = roleOf(u); if (!active(u) || !isStaffRole(r)) return;
+      var id = BIO_norm(u.id), o = { id: id, uid: id, name: String(u.name || ''), role: r, roleLabel: (BIO_role(r) || {}).label || r, where: whereOf(u, sites), sector: sectorOfUser(u, sites), account: true };
+      out.push(o); byId[id] = o; byName[nm(o.name)] = o;
+    });
+    rows('items').forEach(function (i) {
+      if (!DEPT_RE.test(String(i.dept || '')) || !active(i)) return;
+      var id = BIO_norm(i.id); if (byId[id] || byName[nm(i.name)]) { var hit = byId[id] || byName[nm(i.name)]; hit.alt = id; byId[id] = hit; return; }
+      var d = String(i.dept || ''), o = { id: id, uid: '', name: String(i.name || ''), role: '', roleLabel: /مسئول|مسؤول/.test(d) ? 'مسؤول أمن حيوي' : /مشرف/.test(d) ? 'مشرف أمن حيوي' : /معاون|مفتش/.test(d) ? 'معاون أمن حيوي' : 'عامل أمن حيوي', where: '', sector: '', account: false };
+      out.push(o); byId[id] = o; byName[nm(o.name)] = o;
+    });
+    out.forEach(function (o) { var p = x[o.id] || (o.alt ? x[o.alt] : null) || {}; o.photo = String(p.photo || ''); o.birth = dParse(p.birth) || ''; o.hire = dParse(p.hire) || ''; });
+    out.sort(function (a, b) { return STAFF_ROLES.indexOf(a.role) - STAFF_ROLES.indexOf(b.role) || a.name.localeCompare(b.name, 'ar'); });
+    return { list: out, byId: byId, byName: byName };
+  }
+  /** كل الحسابات اللي ممكن توصلها رسالة (بدون حسابات المكافحة) */
+  function accounts() {
+    var sites = H.sitesById();
+    return rows('users').filter(function (u) { var r = BIO_role(String(u.role || '').trim()); return active(u) && r && !r.pestOnly; }).map(function (u) {
+      var r = roleOf(u); return { id: BIO_norm(u.id), name: String(u.name || ''), role: r, roleLabel: (BIO_role(r) || {}).label || r, where: whereOf(u, sites), sector: sectorOfUser(u, sites), staff: isStaffRole(r) };
+    });
+  }
+  function resolve(to, fromId) {
+    to = to || {}; var acc = accounts(), set = {}, labels = [];
+    if (to.all) { acc.forEach(function (a) { if (a.staff) set[a.id] = 1; }); labels.push('كل فريق الأمن الحيوي'); }
+    (to.roles || []).forEach(function (k) { var g = ROLE_GROUPS.filter(function (x) { return x.k === k; })[0]; if (!g) return; var rs = g.roles || [g.role]; acc.forEach(function (a) { if (rs.indexOf(a.role) >= 0) set[a.id] = 1; }); labels.push(g.label); });
+    (to.sectors || []).forEach(function (s) { s = String(s); acc.forEach(function (a) { if (a.staff && a.sector === s) set[a.id] = 1; }); labels.push('قطاع ' + s); });
+    var ids = (to.ids || []).map(BIO_norm), named = [];
+    ids.forEach(function (id) { var a = acc.filter(function (x) { return x.id === id; })[0]; if (a) { set[a.id] = 1; named.push(a.name); } });
+    if (named.length) labels.push(named.length <= 3 ? named.join('، ') : named.slice(0, 2).join('، ') + ' و' + (named.length - 2) + ' آخرين');
+    delete set[BIO_norm(fromId)];
+    return { ids: Object.keys(set), label: labels.join(' + ') };
+  }
+  function savePic(dataUrl, name) {
+    var s = String(dataUrl || '');
+    if (!s) return '';
+    if (/^https:\/\//.test(s)) return s.slice(0, 500);
+    if (!/^data:image\/(jpeg|png|webp);base64,/.test(s)) throw new Error('الصورة غير صالحة');
+    if (s.length > 1400000) throw new Error('الصورة كبيرة جداً');
+    if (deps.savePhoto) return deps.savePhoto(s, name);
+    return s; // نسخة العرض: تُحفظ في الذاكرة
+  }
+  var KIND_IC = { 'رسالة': '✉️', 'شكر': '🙏', 'تهنئة': '🎉', 'تنبيه': '⚠️', 'اجتماع': '📅', 'نجم': '⭐', 'إنجاز': '🏆', 'ترحيب': '👋', 'رد اقتراح': '💡', 'عيد ميلاد': '🎂' };
+  /** يكتب الرسالة ويبعت الإشعار؛ يستخدمها الإرسال اليدوي والمناسبات التلقائية */
+  function post(from, ids, label, p) {
+    if (!ids.length) throw new Error('لا يوجد مستلمون بهذا الاختيار');
+    var t = now(), id = deps.id('MSG-');
+    var row = { id: id, time: t, fromId: from.id || 'SYSTEM', fromName: from.name || 'منظومة الأمن الحيوي', toLabel: clip(label, 300), toIds: ids.join(','), title: clip(p.title, 120), body: clip(p.body, 2500), level: ['عادي', 'مهم', 'عاجل'].indexOf(p.level) >= 0 ? p.level : 'عادي', kind: KIND_IC[p.kind] ? p.kind : 'رسالة', img: p.img || '', count: ids.length, deleted: '' };
+    store.append('bulletins', row); bump(t);
+    try { deps.notify({ kind: 'bulletin', toUserIds: ids, msgId: id, level: row.level, title: (KIND_IC[row.kind] || '✉️') + ' ' + row.title, body: row.body.slice(0, 600) + '\n— ' + row.fromName }); } catch (e) {}
+    return row;
+  }
+  function bulOut(b, read) { return { id: b.id, time: BIO_ms(b.time), fromName: String(b.fromName || ''), fromId: BIO_norm(b.fromId), title: String(b.title || ''), body: String(b.body || ''), level: String(b.level || 'عادي'), kind: String(b.kind || 'رسالة'), ic: KIND_IC[b.kind] || '✉️', img: String(b.img || ''), toLabel: String(b.toLabel || ''), read: read || null }; }
+  function readsMap(uid) { var m = {}; rows('breads').forEach(function (r) { if (!uid || BIO_norm(r.userId) === uid) m[String(r.bulId) + (uid ? '' : '|' + BIO_norm(r.userId))] = BIO_ms(r.time) || 1; }); return m; }
+  function live(b) { return !yes(b.deleted); }
+  function forMe(b, uid) { return (',' + String(b.toIds || '') + ',').indexOf(',' + uid + ',') >= 0; }
+
+  /* ---------- النجوم ---------- */
+  function weekKey(t) { var d = new Date(t + 3 * 36e5), wd = (d.getUTCDay() + 1) % 7; var sat = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - wd)); return sat.toISOString().slice(0, 10); } // الأسبوع يبدأ السبت
+  function monthKey(t) { return day(t).slice(0, 7); }
+  function starsNow(S) {
+    var t = now(), wk = weekKey(t), mk = monthKey(t), all = rows('stars').map(function (r) { return { id: r.id, type: String(r.type), period: String(r.period).replace(/^'/, ''), userId: BIO_norm(r.userId), name: String(r.userName || ''), reason: String(r.reason || ''), time: BIO_ms(r.time), by: String(r.by || '') }; });
+    S = S || staff();
+    all.forEach(function (s) { var p = S.byId[s.userId]; s.photo = p ? p.photo : ''; s.role = p ? p.roleLabel : ''; });
+    all.sort(function (a, b) { return b.time - a.time; });
+    var w = all.filter(function (s) { return s.type === 'الأسبوع' && s.period === wk; })[0] || null, m = all.filter(function (s) { return s.type === 'الشهر' && s.period === mk; })[0] || null;
+    return { week: w, month: m, weekKey: wk, monthKey: mk, history: all.slice(0, 12) };
+  }
+
+  /* ---------- الرسائل ---------- */
+  api.staffDir = function (pin) {
+    var u = me(pin); if (!canSend(u)) throw new Error('إرسال الرسائل للمدير والمسؤول والمشرف فقط');
+    var acc = accounts().filter(function (a) { return a.id !== u.id; }), sec = {};
+    acc.forEach(function (a) { if (a.staff && a.sector) sec[a.sector] = (sec[a.sector] || 0) + 1; });
+    var S = staff();
+    return {
+      groups: [{ k: 'all', label: 'كل فريق الأمن الحيوي', n: acc.filter(function (a) { return a.staff; }).length }].concat(ROLE_GROUPS.map(function (g) { var rs = g.roles || [g.role]; return { k: g.k, label: g.label, n: acc.filter(function (a) { return rs.indexOf(a.role) >= 0; }).length }; }).filter(function (g) { return g.n; })),
+      sectors: Object.keys(sec).sort().map(function (k) { return { k: k, n: sec[k] }; }),
+      people: acc.map(function (a) { var p = S.byId[a.id]; return { id: a.id, name: a.name, role: a.roleLabel, rk: a.role, where: a.where, sector: a.sector, photo: p ? p.photo : '' }; }),
+      templates: BIO_MSG_TEMPLATES
+    };
+  };
+  api.msgSend = function (pin, p) {
+    var u = me(pin); if (!canSend(u)) throw new Error('إرسال الرسائل للمدير والمسؤول والمشرف فقط');
+    p = p || {};
+    if (!clip(p.title, 120)) throw new Error('اكتب عنوان الرسالة');
+    if (!clip(p.body, 2500) && !p.img) throw new Error('اكتب نص الرسالة');
+    var to = p.to || {};
+    if (!u.isAdmin && to.roles && to.roles.indexOf('mgrs') >= 0) throw new Error('الرسائل لمديري القطاعات والمواقع من مدير الإدارة فقط');
+    var r = resolve(to, u.id), img = p.img ? savePic(p.img, 'رسالة-' + u.id + '-' + now()) : '';
+    var row = post(u, r.ids, r.label, { title: p.title, body: p.body, level: p.level, kind: p.kind || 'رسالة', img: img });
+    return { ok: true, id: row.id, count: row.count, label: row.toLabel };
+  };
+  api.inbox = function (pin) {
+    var u = me(pin), t = now(), rd = readsMap(u.id), since = t - 90 * D;
+    var mine = rows('bulletins').filter(function (b) { return live(b) && forMe(b, u.id) && BIO_ms(b.time) >= since; }).map(function (b) { return bulOut(b, rd[b.id]); }).sort(function (a, b) { return b.time - a.time; }).slice(0, 120);
+    var out = { at: bulAt(), now: t, items: mine, unread: mine.filter(function (m) { return !m.read; }).length, canSend: canSend(u), stars: null };
+    try { var st = starsNow(); out.stars = { week: st.week, month: st.month }; } catch (e) {}
+    if (out.canSend) {
+      var all = readsMap(null);
+      out.sent = rows('bulletins').filter(function (b) { return live(b) && (BIO_norm(b.fromId) === u.id || (u.isAdmin && BIO_norm(b.fromId) === 'SYSTEM')) && BIO_ms(b.time) >= since; }).map(function (b) {
+        var o = bulOut(b), ids = String(b.toIds || '').split(',').filter(String); o.count = ids.length; o.reads = ids.filter(function (id) { return all[b.id + '|' + id]; }).length; o.system = BIO_norm(b.fromId) === 'SYSTEM'; return o;
+      }).sort(function (a, b) { return b.time - a.time; }).slice(0, 80);
+    }
+    return out;
+  };
+  api.msgRead = function (pin, ids) {
+    var u = me(pin), rd = readsMap(u.id), t = now(), add = [];
+    (Array.isArray(ids) ? ids : [ids]).slice(0, 200).forEach(function (id) {
+      id = String(id || ''); if (!id || rd[id]) return;
+      var b = store.find('bulletins', id); if (!b || !forMe(b, u.id)) return;
+      rd[id] = t; add.push({ id: id + '|' + u.id, bulId: id, userId: u.id, userName: u.name, time: t });
+    });
+    if (add.length) { if (store.appendMany) store.appendMany('breads', add); else add.forEach(function (r) { store.append('breads', r); }); }
+    return { ok: true, marked: add.length };
+  };
+  api.msgDetail = function (pin, id) {
+    var u = me(pin), b = store.find('bulletins', id); if (!b) throw new Error('الرسالة غير موجودة');
+    if (!u.isAdmin && BIO_norm(b.fromId) !== u.id) throw new Error('تفاصيل القراءة لمرسل الرسالة ومدير الإدارة فقط');
+    var all = readsMap(null), acc = {}; accounts().forEach(function (a) { acc[a.id] = a; });
+    var list = String(b.toIds || '').split(',').filter(String).map(function (x) { var a = acc[x] || { name: x, roleLabel: '', where: '' }; return { id: x, name: a.name, role: a.roleLabel, where: a.where, read: all[b.id + '|' + x] || null }; });
+    list.sort(function (a, c) { return (a.read ? 1 : 0) - (c.read ? 1 : 0) || a.name.localeCompare(c.name, 'ar'); });
+    var o = bulOut(b); o.list = list; o.reads = list.filter(function (x) { return x.read; }).length; o.count = list.length;
+    return o;
+  };
+  api.msgDelete = function (pin, id) {
+    var u = me(pin), b = store.find('bulletins', id); if (!b) throw new Error('الرسالة غير موجودة');
+    if (!u.isAdmin && BIO_norm(b.fromId) !== u.id) throw new Error('الحذف لمرسل الرسالة ومدير الإدارة فقط');
+    store.update('bulletins', id, { deleted: BIO.YES }); bump(now());
+    return { ok: true };
+  };
+  // إشارة خفيفة في كل تزامن: وقت آخر رسالة (من ذاكرة الخادم من غير قراءة الشيت)
+  var syncPrev = api.sync;
+  if (syncPrev) api.sync = function (pin, p) { var r = syncPrev(pin, p); try { r.bul = bulAt(); } catch (e) {} return r; };
+  var pingPrev = api.ping;
+  if (pingPrev) api.ping = function (pin, p) { var r = pingPrev(pin, p); try { r.bul = bulAt(); } catch (e) {} return r; };
+
+  /* ---------- الأوسمة ---------- */
+  function badgesFor(p, ctx) {
+    var b = [], k = ctx.kudosN[p.id] || 0, sw = ctx.starW[p.id] || 0, sm = ctx.starM[p.id] || 0;
+    if (k >= 25) b.push({ k: 'k25', ic: '🏅', label: 'أسطورة الفريق', note: k + ' كلمة شكر' }); else if (k >= 10) b.push({ k: 'k10', ic: '🎖️', label: 'قدوة', note: k + ' كلمة شكر' }); else if (k >= 3) b.push({ k: 'k3', ic: '🤝', label: 'محل ثقة', note: k + ' كلمات شكر' });
+    if (sm) b.push({ k: 'sm', ic: '🌟', label: 'نجم الشهر', note: sm > 1 ? sm + ' مرات' : 'مرة' });
+    if (sw) b.push({ k: 'sw', ic: '⭐', label: 'نجم الأسبوع', note: sw > 1 ? sw + ' مرات' : 'مرة' });
+    var q = ctx.quiz[p.uid || p.id]; if (q && q.streak >= 4) b.push({ k: 'quiz', ic: '🧠', label: 'عقل الأمن الحيوي', note: q.streak + ' أسابيع متتالية إجابة صحيحة' });
+    if (ctx.ideaDone[p.uid || p.id]) b.push({ k: 'idea', ic: '💡', label: 'صاحب فكرة اتنفذت', note: ctx.ideaDone[p.uid || p.id] + ' اقتراح' });
+    if (p.hire) { var y = Math.floor((now() - Date.parse(p.hire)) / (365.25 * D)); if (y >= 20) b.push({ k: 'y20', ic: '🏛️', label: 'عِشرة 20 سنة', note: y + ' سنة' }); else if (y >= 10) b.push({ k: 'y10', ic: '🛡️', label: 'عِشرة 10 سنين', note: y + ' سنة' }); else if (y >= 5) b.push({ k: 'y5', ic: '🔰', label: 'عِشرة 5 سنين', note: y + ' سنين' }); }
+    if (ctx.awards[p.id] || (p.alt && ctx.awards[p.alt])) b.push({ k: 'award', ic: '📜', label: 'شهادة تقدير', note: (ctx.awards[p.id] || ctx.awards[p.alt]) + ' شهادة' });
+    if (ctx.acc && ctx.acc[p.uid]) b.push({ k: 'acc', ic: '🎯', label: 'تسجيل دقيق', note: ctx.acc[p.uid] + ' حركة في 30 يوم بدون خطأ' });
+    return b;
+  }
+  function quizStats() {
+    var by = {};
+    rows('quizAns').forEach(function (r) { var id = BIO_norm(r.userId), o = by[id] = by[id] || { pts: 0, weeks: {}, name: String(r.userName || '') }; var ok = yes(r.ok); if (ok) o.pts++; o.weeks[Number(r.week)] = ok; });
+    var wk = curWeek();
+    Object.keys(by).forEach(function (id) { var o = by[id], s = 0, w = o.weeks[wk] != null ? wk : wk - 1; while (o.weeks[w]) { s++; w--; } o.streak = s; });
+    return by;
+  }
+  function curWeek() { return Math.floor((now() + 3 * BIO.HOUR + 4 * D) / (7 * D)); }
+  function weeklyQ() {
+    var all = []; BIO_ACADEMY.forEach(function (m) { m.quiz.forEach(function (q) { all.push({ q: q.q, a: q.a, c: q.c, why: q.why, module: m.title }); }); });
+    var wk = curWeek(); return Object.assign({ week: wk }, all[wk % all.length]);
+  }
+  /** «تسجيل دقيق»: 30 حركة أو أكتر سجلها الحساب في آخر 30 يوم بدون أي حركة اتلغت كخطأ تسجيل */
+  function accuracy(S) {
+    var out = {}, since = now() - 30 * D, names = {};
+    S.list.forEach(function (p) { if (p.uid && p.role === BIO.ROLE_GUARD) names[nm(p.name)] = p.uid; });
+    if (!Object.keys(names).length) return out;
+    var cnt = {}, bad = {};
+    try { (H.allMoves ? H.allMoves() : rows('moves')).forEach(function (m) { if (BIO_ms(m.time) < since) return; var id = names[nm(m.user)]; if (!id) return; cnt[id] = (cnt[id] || 0) + 1; if (/ملغاة|خطأ تسجيل/.test(String(m.decision || '') + String(m.flag || ''))) bad[id] = 1; }); } catch (e) {}
+    Object.keys(cnt).forEach(function (id) { if (cnt[id] >= 30 && !bad[id]) out[id] = cnt[id]; });
+    return out;
+  }
+  function occasions(S, days) {
+    var t = now(), today = day(t), out = [];
+    for (var i = 0; i <= days; i++) {
+      var d = day(t + i * D), md = d.slice(5);
+      S.list.forEach(function (p) {
+        if (p.birth && p.birth.slice(5) === md) out.push({ type: 'birth', id: p.id, name: p.name, photo: p.photo, day: d, inDays: i, today: d === today });
+        if (p.hire && p.hire.slice(5) === md && p.hire.slice(0, 4) < d.slice(0, 4)) out.push({ type: 'hire', id: p.id, name: p.name, photo: p.photo, day: d, inDays: i, years: +d.slice(0, 4) - +p.hire.slice(0, 4), today: d === today });
+      });
+    }
+    return out;
+  }
+  function daysNoEws() {
+    var last = 0; rows('ews').forEach(function (r) { var t = BIO_ms(r.time); if (t > last) last = t; });
+    if (!last) return null; return Math.floor((now() - last) / D);
+  }
+
+  api.cheerHub = function (pin) {
+    var u = me(pin), S = staff(), t = now(), mine = S.byId[u.id] || { id: u.id, uid: u.id, name: u.name, roleLabel: u.roleLabel, photo: '', birth: '', hire: '', account: true };
+    var kud = rows('kudos').map(function (r) { return { id: r.id, time: BIO_ms(r.time), from: String(r.fromName || ''), toId: BIO_norm(r.toId), to: String(r.toName || ''), tag: String(r.tag || ''), note: String(r.note || '') }; }).sort(function (a, b) { return b.time - a.time; });
+    var kudosN = {}, kMonth = {}; kud.forEach(function (k) { kudosN[k.toId] = (kudosN[k.toId] || 0) + 1; if (t - k.time < 31 * D) kMonth[k.toId] = (kMonth[k.toId] || 0) + 1; });
+    var st = starsNow(S), starW = {}, starM = {};
+    rows('stars').forEach(function (r) { var id = BIO_norm(r.userId); if (String(r.type) === 'الشهر') starM[id] = (starM[id] || 0) + 1; else starW[id] = (starW[id] || 0) + 1; });
+    var qs = quizStats(), ideas = rows('ideas').map(function (r) { return { id: r.id, time: BIO_ms(r.time), fromId: BIO_norm(r.fromId), from: yes(r.anon) ? 'بدون اسم' : String(r.fromName || ''), anon: yes(r.anon), text: String(r.text || ''), status: String(r.status || 'جديدة'), reply: String(r.reply || ''), repliedBy: String(r.repliedBy || '') }; }).sort(function (a, b) { return b.time - a.time; });
+    var ideaDone = {}; ideas.forEach(function (i) { if (i.status === 'تم التنفيذ' && !i.anon) ideaDone[i.fromId] = (ideaDone[i.fromId] || 0) + 1; });
+    var awards = {}; rows('awards').forEach(function (r) { if (String(r.status || '') !== 'ملغاة') { var c = BIO_norm(r.empCode); awards[c] = (awards[c] || 0) + 1; } });
+    var ctx = { kudosN: kudosN, starW: starW, starM: starM, quiz: qs, ideaDone: ideaDone, awards: awards, acc: accuracy(S) };
+    var q = weeklyQ(), myAns = rows('quizAns').filter(function (r) { return BIO_norm(r.userId) === u.id && Number(r.week) === q.week; })[0];
+    var sec = {};
+    S.list.forEach(function (p) { if (!p.sector) return; var o = sec[p.sector] = sec[p.sector] || { name: p.sector, people: 0, kudos: 0, quiz: 0, stars: 0 }; o.people++; o.kudos += kMonth[p.id] || 0; o.quiz += (qs[p.uid || p.id] || {}).pts || 0; o.stars += (starW[p.id] || 0) + 2 * (starM[p.id] || 0); });
+    var secList = Object.keys(sec).map(function (k) { var o = sec[k]; o.score = o.kudos * 3 + o.quiz + o.stars * 5; return o; }).sort(function (a, b) { return b.score - a.score; });
+    var quizTop = Object.keys(qs).map(function (id) { var p = S.byId[id]; return { id: id, name: p ? p.name : qs[id].name, photo: p ? p.photo : '', pts: qs[id].pts, streak: qs[id].streak }; }).filter(function (x) { return x.pts; }).sort(function (a, b) { return b.pts - a.pts || b.streak - a.streak; }).slice(0, 5);
+    var send = canSend(u);
+    return {
+      now: t, me: { id: mine.id, name: mine.name || u.name, role: mine.roleLabel || u.roleLabel, photo: mine.photo, birth: mine.birth, hire: mine.hire, badges: badgesFor(mine, ctx), kudos: kud.filter(function (k) { return k.toId === u.id || (mine.alt && k.toId === mine.alt); }).slice(0, 20), kudosN: kudosN[u.id] || 0, quiz: { pts: (qs[u.id] || {}).pts || 0, streak: (qs[u.id] || {}).streak || 0 }, staff: !!S.byId[u.id] },
+      stars: st, wall: kud.slice(0, 30), quiz: { week: q.week, q: q.q, a: q.a, module: q.module, mine: myAns ? { choice: Number(myAns.choice), ok: yes(myAns.ok), c: q.c, why: q.why } : null, top: quizTop },
+      occasions: occasions(S, 14), noEws: daysNoEws(), sectors: secList,
+      ideas: send ? ideas.slice(0, 60) : ideas.filter(function (i) { return i.fromId === u.id; }).slice(0, 20),
+      canKudos: send, canStar: !!u.isAdmin, canManage: send, tags: BIO_KUDOS_TAGS,
+      people: send ? S.list.map(function (p) { return { id: p.id, name: p.name, role: p.roleLabel, where: p.where, sector: p.sector, photo: p.photo, birth: p.birth, hire: p.hire, account: p.account, kudos: kudosN[p.id] || 0, badges: badgesFor(p, ctx).length }; }) : []
+    };
+  };
+  api.kudosGive = function (pin, p) {
+    var u = me(pin); if (!canSend(u)) throw new Error('كلمة الشكر من المدير والمسؤول والمشرف');
+    p = p || {}; var S = staff(), x = S.byId[BIO_norm(p.to)]; if (!x) throw new Error('اختار الموظف');
+    if (x.uid === u.id) throw new Error('مينفعش تشكر نفسك 🙂');
+    var tag = clip(p.tag, 60), note = clip(p.note, 400); if (!tag && !note) throw new Error('اكتب سبب الشكر');
+    var row = { id: deps.id('KD-'), time: now(), fromId: u.id, fromName: u.name, toId: x.id, toName: x.name, tag: tag, note: note };
+    store.append('kudos', row);
+    if (x.uid) try { post(u, [x.uid], x.name, { title: 'شكراً يا ' + x.name.split(' ')[0] + (tag ? ' · ' + tag : ''), body: (note || tag) + '\n\nكلمة شكر من ' + u.name + ' اتسجلت في إنجازاتك 🌟', kind: 'شكر', level: 'عادي' }); } catch (e) {}
+    return { ok: true };
+  };
+  api.starSet = function (pin, p) {
+    var u = me(pin); if (!u.isAdmin) throw new Error('نجم الأسبوع ونجم الشهر يحددهم مدير إدارة الأمن الحيوي فقط');
+    p = p || {}; var type = p.type === 'month' ? 'الشهر' : 'الأسبوع', S = staff(), x = S.byId[BIO_norm(p.id)]; if (!x) throw new Error('اختار الموظف');
+    var reason = clip(p.reason, 300); if (!reason) throw new Error('اكتب سبب الاختيار (بيظهر للفريق كله)');
+    var t = now(), period = type === 'الشهر' ? monthKey(t) : weekKey(t), old = rows('stars').filter(function (r) { return String(r.type) === type && String(r.period).replace(/^'/, '') === period; })[0];
+    var row = { time: t, type: type, period: period, userId: x.id, userName: x.name, reason: reason, by: u.name };
+    if (old) store.update('stars', old.id, row); else { row.id = deps.id('ST-'); store.append('stars', row); }
+    var all = resolve({ all: 1 }, u.id).ids;
+    if (all.length) try { post(u, all, 'كل فريق الأمن الحيوي', { title: (type === 'الشهر' ? '🌟 نجم الشهر: ' : '⭐ نجم الأسبوع: ') + x.name, body: x.name + (x.roleLabel ? ' · ' + x.roleLabel : '') + (x.where ? ' · ' + x.where : '') + '\n\n' + reason + '\n\nمبروك، وشكراً على مجهودك 👏', kind: 'نجم', level: 'مهم', img: x.photo && /^https:/.test(x.photo) ? x.photo : '' }); } catch (e) {}
+    return { ok: true, stars: starsNow(S) };
+  };
+  function upsertX(id, name, patch, by) {
+    var o = store.find('staffx', id); patch.updatedAt = now(); patch.by = by;
+    if (o) store.update('staffx', id, patch); else store.append('staffx', Object.assign({ id: id, name: name, photo: '', birth: '', hire: '' }, patch));
+  }
+  api.profileSave = function (pin, p) {
+    var u = me(pin); p = p || {};
+    var S = staff(), id = BIO_norm(p.id || u.id), x = S.byId[id];
+    if (!x) { if (id !== u.id) throw new Error('الموظف غير موجود في فريق الأمن الحيوي'); x = { id: u.id, name: u.name }; }
+    var self = x.uid === u.id || x.id === u.id; if (!self && !canSend(u)) throw new Error('تعديل ملف زميلك للمدير والمسؤول والمشرف فقط');
+    var patch = {};
+    if (p.photo !== undefined) patch.photo = p.photo ? savePic(p.photo, 'موظف-' + x.id) : '';
+    if (p.birth !== undefined) { var b = dParse(p.birth); if (b === null) throw new Error('تاريخ الميلاد غير صحيح'); patch.birth = b; }
+    if (p.hire !== undefined) { if (!canSend(u)) throw new Error('تاريخ التعيين يعدله المدير أو المسؤول أو المشرف'); var h = dParse(p.hire); if (h === null) throw new Error('تاريخ التعيين غير صحيح'); patch.hire = h; }
+    if (!Object.keys(patch).length) return { ok: true };
+    upsertX(x.id, x.name, patch, u.name);
+    return { ok: true, photo: patch.photo };
+  };
+  /** استيراد جماعي لتواريخ الميلاد والتعيين: لصق من إكسيل (الكود أو الاسم، ثم تاريخ الميلاد، ثم تاريخ التعيين) */
+  api.staffDatesImport = function (pin, text, apply) {
+    var u = me(pin); if (!canSend(u)) throw new Error('الاستيراد للمدير والمسؤول والمشرف');
+    var S = staff(), good = [], bad = [], seen = {};
+    var isD = function (v) { v = String(v).replace(/[٠-٩]/g, function (c) { return String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)); }); return /\d/.test(v) && /[-\/.]/.test(v) && !!dParse(v); };
+    var split = function (line) { return line.split(line.indexOf('\t') >= 0 ? '\t' : /[;|]/.test(line) ? /[;|]/ : ',').map(function (v) { return v.trim(); }); }, hb = -1, hh = -1;
+    String(text || '').split(/\r?\n/).slice(0, 1500).forEach(function (line, i) {
+      if (!line.trim()) return;
+      var cells = split(line);
+      // سطر العناوين: يحدد مكان عمود الميلاد وعمود التعيين بالظبط
+      if (!cells.some(isD) && cells.some(function (v) { return /ميلاد|تعيين|birth|hir/i.test(v); })) { cells.forEach(function (v, j) { if (/ميلاد|birth/i.test(v)) hb = j; else if (/تعيين|hir|التحاق/i.test(v)) hh = j; }); return; }
+      var x = null, ki = -1, shown = line.replace(/\t/g, ' · ').slice(0, 80);
+      cells.some(function (v, j) { if (!v || isD(v)) return false; x = S.byId[BIO_norm(v)] || S.byName[nm(v)] || null; if (x) ki = j; return !!x; });
+      if (!x) { if (/كود|الاسم|الكود|code|name/i.test(line) && !cells.some(isD)) return; return bad.push({ line: i + 1, text: shown, why: 'الكود أو الاسم مش موجود في فريق الأمن الحيوي' }); }
+      var rest = cells.slice(ki + 1).filter(function (v) { return v === '' || isD(v) || /^[-–]$/.test(v); });
+      while (rest.length > 2 && rest[0] === '') rest.shift();
+      var birth = rest[0] && isD(rest[0]) ? dParse(rest[0]) : '', hire = rest[1] && isD(rest[1]) ? dParse(rest[1]) : '';
+      if (hb >= 0 || hh >= 0) { birth = hb >= 0 && cells[hb] && isD(cells[hb]) ? dParse(cells[hb]) : ''; hire = hh >= 0 && cells[hh] && isD(cells[hh]) ? dParse(cells[hh]) : ''; }
+      if (!birth && !hire) return bad.push({ line: i + 1, text: shown, why: 'مفيش تاريخ مفهوم (اكتبه 1985-03-12 أو 12/3/1985)' });
+      if (birth && hire && birth > hire && hb < 0) { var tt = birth; birth = hire; hire = tt; }
+      if (birth && Date.parse(birth) > now() - 16 * 365 * D) return bad.push({ line: i + 1, text: shown, why: 'تاريخ الميلاد غير منطقي (السن أقل من 16 سنة)' });
+      if (hire && Date.parse(hire) > now() + 31 * D) return bad.push({ line: i + 1, text: shown, why: 'تاريخ التعيين في المستقبل' });
+      if (seen[x.id]) return bad.push({ line: i + 1, text: shown, why: 'الموظف متكرر في سطر سابق' });
+      seen[x.id] = 1; good.push({ id: x.id, name: x.name, birth: birth, hire: hire, oldBirth: x.birth, oldHire: x.hire });
+    });
+    if (apply) good.forEach(function (g) { var pt = {}; if (g.birth) pt.birth = g.birth; if (g.hire) pt.hire = g.hire; upsertX(g.id, g.name, pt, u.name); });
+    return { ok: true, applied: !!apply, good: good, bad: bad, total: S.list.length, missing: S.list.filter(function (p) { return !seen[p.id] && !p.birth; }).map(function (p) { return { id: p.id, name: p.name }; }).slice(0, 200) };
+  };
+  api.quizAnswer = function (pin, choice) {
+    var u = me(pin), q = weeklyQ(), c = Number(choice);
+    if (!(c >= 0 && c < q.a.length)) throw new Error('اختار إجابة');
+    if (rows('quizAns').some(function (r) { return BIO_norm(r.userId) === u.id && Number(r.week) === q.week; })) throw new Error('جاوبت على سؤال الأسبوع ده قبل كده. استنى السؤال الجاي');
+    var ok = c === q.c;
+    store.append('quizAns', { id: q.week + '|' + u.id, week: q.week, userId: u.id, userName: u.name, choice: c, ok: ok ? BIO.YES : BIO.NO, time: now() });
+    return { ok: ok, c: q.c, why: q.why };
+  };
+  api.ideaSend = function (pin, p) {
+    var u = me(pin); p = p || {}; var text = clip(p.text, 1500); if (text.length < 8) throw new Error('اكتب اقتراحك بشكل أوضح');
+    var row = { id: deps.id('ID-'), time: now(), fromId: u.id, fromName: u.name, anon: p.anon ? BIO.YES : BIO.NO, text: text, status: 'جديدة', reply: '', repliedBy: '', repliedAt: '' };
+    store.append('ideas', row);
+    return { ok: true, id: row.id };
+  };
+  api.ideaReply = function (pin, p) {
+    var u = me(pin); if (!canSend(u)) throw new Error('الرد على الاقتراحات للمدير والمسؤول والمشرف');
+    p = p || {}; var x = store.find('ideas', p.id); if (!x) throw new Error('الاقتراح غير موجود');
+    var status = ['جديدة', 'قيد الدراسة', 'تم التنفيذ', 'مرفوضة'].indexOf(p.status) >= 0 ? p.status : 'قيد الدراسة', reply = clip(p.reply, 800);
+    store.update('ideas', p.id, { status: status, reply: reply, repliedBy: u.name, repliedAt: now() });
+    var to = BIO_norm(x.fromId);
+    if (to && to !== u.id && accounts().some(function (a) { return a.id === to; })) try { post(u, [to], String(x.fromName || ''), { title: (status === 'تم التنفيذ' ? 'اقتراحك اتنفذ! 🎉' : 'رد على اقتراحك: ' + status), body: '«' + String(x.text).slice(0, 200) + '»\n\n' + (reply || 'شكراً على اقتراحك.'), kind: 'رد اقتراح', level: 'عادي' }); } catch (e) {}
+    return { ok: true };
+  };
+
+  /* ---------- المناسبات التلقائية (مرة يومياً بعد 7 الصبح بتوقيت القاهرة) ---------- */
+  function logged(k) { return !!store.find('cheerlog', k); }
+  function log(k, kind, note) { store.append('cheerlog', { id: k, time: now(), kind: kind, note: clip(note, 400) }); }
+  /** opts.thi: أعلى مؤشر حرارة ورطوبة متوقع اليوم (من Open-Meteo)، opts.force للاختبار */
+  api._cheerTick = function (opts) {
+    opts = opts || {}; var t = now(), today = day(t), done = [];
+    var hr = new Date(t + 3 * 36e5).getUTCHours();
+    if (!opts.force && hr < 7) return { skipped: 'قبل 7 الصبح' };
+    if (!opts.force && logged('DAY-' + today)) return { skipped: 'اتعمل النهارده' };
+    var S = staff(), sys = { id: 'SYSTEM', name: 'منظومة الأمن الحيوي' }, acc = accounts(), accIds = {}; acc.forEach(function (a) { accIds[a.id] = a; });
+    // 1) ترحيب بالحسابات الجديدة (أول تشغيل: كل الحسابات الحالية تعتبر قديمة)
+    var init = store.find('cheerlog', 'INIT');
+    if (!init) log('INIT', 'بداية', acc.map(function (a) { return a.id; }).join(','));
+    else {
+      var old = ',' + String(init.note || '') + ',';
+      acc.forEach(function (a) {
+        if (!a.staff || old.indexOf(',' + a.id + ',') >= 0 || logged('WEL-' + a.id)) return;
+        log('WEL-' + a.id, 'ترحيب', a.name);
+        try { post(sys, [a.id], a.name, { title: 'أهلاً بيك في فريق الأمن الحيوي 👋', body: 'أهلاً يا ' + a.name.split(' ')[0] + '، نورت الفريق!\nمن شاشة «إنجازات الفريق» تقدر تحط صورتك وتجاوب سؤال الأسبوع وتبعت اقتراحاتك. ولو احتجت أي حاجة كلم مشرفك.', kind: 'ترحيب', level: 'عادي' }); done.push('ترحيب ' + a.name); } catch (e) {}
+        var others = acc.filter(function (o) { return o.staff && o.id !== a.id; }).map(function (o) { return o.id; });
+        if (others.length) try { post(sys, others, 'كل فريق الأمن الحيوي', { title: 'زميل جديد انضم للفريق: ' + a.name, body: a.name + (a.roleLabel ? ' · ' + a.roleLabel : '') + (a.where ? ' · ' + a.where : '') + '\nرحبوا بيه 🌷', kind: 'ترحيب', level: 'عادي' }); } catch (e) {}
+      });
+    }
+    // 2) أعياد الميلاد وذكرى التعيين
+    occasions(S, 0).forEach(function (o) {
+      var p = S.byId[o.id], k = (o.type === 'birth' ? 'BD-' : 'HR-') + o.id + '-' + today.slice(0, 4);
+      if (!p || !p.uid || logged(k)) return; log(k, o.type === 'birth' ? 'عيد ميلاد' : 'ذكرى تعيين', p.name);
+      try {
+        if (o.type === 'birth') post(sys, [p.uid], p.name, { title: 'كل سنة وانت طيب يا ' + p.name.split(' ')[0] + ' 🎂', body: 'إدارة الأمن الحيوي بتتمنالك سنة جديدة مليانة صحة وخير ونجاح. شكراً على وجودك معانا.', kind: 'عيد ميلاد', level: 'عادي' });
+        else post(sys, [p.uid], p.name, { title: o.years + (o.years === 1 ? ' سنة' : o.years <= 10 ? ' سنين' : ' سنة') + ' معانا! 🎉', body: 'النهارده ذكرى تعيينك في الشركة. ' + o.years + (o.years <= 10 && o.years > 2 ? ' سنين' : ' سنة') + ' من الشغل والالتزام، شكراً من القلب.', kind: 'تهنئة', level: 'عادي' });
+        done.push((o.type === 'birth' ? 'عيد ميلاد ' : 'ذكرى تعيين ') + p.name);
+      } catch (e) {}
+    });
+    // 3) إنجازات الفريق: أيام بدون إنذار نافق
+    var n = daysNoEws(), MS = [30, 60, 100, 150, 200, 365];
+    if (n != null) MS.forEach(function (m) {
+      if (n < m || n > m + 6) return; var last = t - n * D, k = 'MS-' + day(last) + '-' + m; if (logged(k)) return; log(k, 'إنجاز', m + ' يوم');
+      var all = acc.filter(function (a) { return a.staff; }).map(function (a) { return a.id; });
+      if (all.length) try { post(sys, all, 'كل فريق الأمن الحيوي', { title: '🏆 ' + m + ' يوم بدون إنذار نافق!', body: 'الفريق كمّل ' + m + ' يوم من غير أي إنذار مبكر للنافق في المحطات. ده نتيجة التزام كل واحد فيكم على البوابات وفي المتابعة. استمروا 💪', kind: 'إنجاز', level: 'مهم' }); done.push('إنجاز ' + m); } catch (e) {}
+    });
+    // 4) رعاية في الحر: لأمن البوابات والمعاونين لما مؤشر الحرارة والرطوبة يوصل للخطر
+    var thi = Number(opts.thi);
+    if (thi >= 79 && !logged('HEAT-' + today)) {
+      log('HEAT-' + today, 'حر', 'THI ' + thi.toFixed(1));
+      var field = acc.filter(function (a) { return a.role === BIO.ROLE_GUARD || a.role === BIO.ROLE_INSPECTOR; }).map(function (a) { return a.id; });
+      if (field.length) try { post(sys, field, 'أمن البوابات + المعاونون', { title: '☀️ حر شديد النهارده: خلّي بالك من نفسك', body: 'مؤشر الحرارة والرطوبة المتوقع النهارده ' + Math.round(thi) + ' (' + (thi >= 84 ? 'طوارئ' : 'خطر') + ').\n' + BIO_HEAT_TIPS.split(' · ').map(function (x) { return '• ' + x; }).join('\n'), kind: 'تنبيه', level: 'مهم' }); done.push('حر ' + Math.round(thi)); } catch (e) {}
+    }
+    log('DAY-' + today, 'يومي', done.join('، ') || 'لا توجد مناسبات');
+    return { ok: true, done: done };
+  };
+}
+
+/* ============================ v33: ربط تقارير الزيارة بالنافق والحركة على البوابات ============================ */
+function BIO_v33corr(api, H) {
+  var store = H.store, deps = H.deps, D = 864e5;
+  function num(v, d) { var n = Number(v); return v === '' || v == null || isNaN(n) ? d : n; }
+  function rows(t) { try { return store.all(t) || []; } catch (e) { return []; } }
+  function avg(a) { var x = a.filter(function (n) { return n != null && !isNaN(n); }); return x.length ? x.reduce(function (s, n) { return s + n; }, 0) / x.length : null; }
+  function pearson(xs, ys) {
+    var n = xs.length; if (n < 4) return null;
+    var mx = avg(xs), my = avg(ys), a = 0, b = 0, c = 0;
+    for (var i = 0; i < n; i++) { var dx = xs[i] - mx, dy = ys[i] - my; a += dx * dy; b += dx * dx; c += dy * dy; }
+    return b && c ? a / Math.sqrt(b * c) : null;
+  }
+  api.vrCorr = function (pin, days) {
+    var u = H.auth(pin, true), now = deps.now(), win = Math.max(30, Math.min(180, num(days, 90))), since = now - win * D;
+    var sites = H.sitesById(), list = H.sitesList(sites).filter(function (s) { return BIO_isCycleSite(s) && H.inScope(u, s.id, sites); }), by = {};
+    list.forEach(function (s) { by[s.id] = { id: s.id, name: s.name, sector: s.sector || '', scores: [], last: null, lastAt: 0, crit: 0, nRep: 0, prep: null, deadPct: [], dead: 0, entries: 0, denied: 0, flags: 0, ews: 0 }; });
+    var linked = !!deps.visitReports, rep = [];
+    try { rep = deps.visitReports ? deps.visitReports() || [] : []; } catch (e) { linked = false; }
+    rep.forEach(function (r) {
+      var s = BIO_matchSite(r.station, r.farmCode, list); if (!s || !by[s.id]) return;
+      var t = BIO_ms(r.date) || BIO_ms(r.updatedAt); if (!t || t < since) return;
+      var o = by[s.id], sc = r.score === '' || r.score == null ? null : Number(r.score), type = String(r.type || '');
+      if (/تجهيز|تطهير/.test(type)) { if (!o.prep || t > o.prep.t) o.prep = { t: t, decision: String(r.decision || ''), downtime: num(r.downtime, null) }; return; }
+      if (!/تربية/.test(type) || sc == null || isNaN(sc)) return;
+      o.scores.push(sc); o.nRep++; o.crit += num(r.critical, 0); if (t > o.lastAt) { o.lastAt = t; o.last = sc; }
+    });
+    rows('daily').forEach(function (d) {
+      var o = by[BIO_norm(d.siteId)]; if (!o) return; var t = Date.parse(String(BIO_dayOf(d.day)) + 'T12:00:00Z'); if (!t || t < since) return;
+      var dead = num(d.dead, 0), st = num(d.stock, 0); o.dead += dead; if (st > 0) o.deadPct.push(dead / st * 100);
+    });
+    H.allMoves().forEach(function (m) {
+      var o = by[m.siteId]; if (!o || m.time < since || m.dir !== BIO.IN) return;
+      if (BIO_counted(m)) o.entries++; else if (m.decision !== BIO.PENDING && m.decision !== BIO.CANCELLED) o.denied++;
+      if (m.flag) o.flags++;
+    });
+    rows('ews').forEach(function (e) { var o = by[BIO_norm(e.siteId)]; if (o && BIO_ms(e.time) >= since) o.ews++; });
+    var out = Object.keys(by).map(function (k) {
+      var o = by[k], a = avg(o.scores), dp = avg(o.deadPct), tot = o.entries + o.denied;
+      return { id: o.id, name: o.name, sector: o.sector, score: a == null ? null : Math.round(a * 10) / 10, last: o.last, lastAt: o.lastAt || null, nRep: o.nRep, crit: o.crit, prep: o.prep,
+        mort: dp == null ? null : Math.round(dp * 1000) / 1000, dead: o.dead, entries: o.entries, denied: o.denied, flags: o.flags, viol: tot ? Math.round((o.denied + o.flags) / tot * 1000) / 10 : null, ews: o.ews };
+    }).filter(function (r) { return r.score != null || r.mort != null || r.entries; });
+    out.sort(function (a, b) { return (a.score == null ? 999 : a.score) - (b.score == null ? 999 : b.score); });
+    var bm = out.filter(function (r) { return r.score != null && r.mort != null; }), bv = out.filter(function (r) { return r.score != null && r.viol != null; });
+    var cM = pearson(bm.map(function (r) { return r.score; }), bm.map(function (r) { return r.mort; })), cV = pearson(bv.map(function (r) { return r.score; }), bv.map(function (r) { return r.viol; }));
+    var lo = out.filter(function (r) { return r.score != null && r.score < 80; }), hi = out.filter(function (r) { return r.score != null && r.score >= 80; });
+    var g = function (L, k) { var a = avg(L.map(function (r) { return r[k]; })); return a == null ? null : Math.round(a * 1000) / 1000; };
+    var groups = { lo: { n: lo.length, mort: g(lo, 'mort'), viol: g(lo, 'viol'), ews: lo.reduce(function (s, r) { return s + r.ews; }, 0) }, hi: { n: hi.length, mort: g(hi, 'mort'), viol: g(hi, 'viol'), ews: hi.reduce(function (s, r) { return s + r.ews; }, 0) } };
+    var ins = [], strength = function (c) { var a = Math.abs(c); return a >= 0.6 ? 'قوية' : a >= 0.35 ? 'متوسطة' : 'ضعيفة'; };
+    if (cM != null) ins.push(cM < -0.2 ? 'كل ما درجة التقارير تقل، النافق بيزيد (علاقة ' + strength(cM) + '، r = ' + cM.toFixed(2) + '): التقارير بتعكس الواقع، والمحطات الأضعف محتاجة أولوية.' : cM > 0.2 ? 'علاقة عكس المتوقع بين الدرجة والنافق (r = ' + cM.toFixed(2) + '): راجع دقة التقييم في المحطات اللي درجتها عالية ونافقها عالي.' : 'مفيش علاقة واضحة بين درجة التقارير والنافق في الفترة دي (r = ' + cM.toFixed(2) + ').');
+    if (cV != null) ins.push(cV < -0.2 ? 'المحطات الأقل في الدرجة عندها رفض ومخالفات أكتر على البوابة (r = ' + cV.toFixed(2) + ').' : 'مفيش علاقة واضحة بين الدرجة ومخالفات البوابة (r = ' + cV.toFixed(2) + ').');
+    if (groups.lo.n && groups.hi.n && groups.lo.mort != null && groups.hi.mort != null) ins.push('متوسط النافق اليومي في المحطات اللي درجتها أقل من 80%: ' + groups.lo.mort.toFixed(3) + '% مقابل ' + groups.hi.mort.toFixed(3) + '% في باقي المحطات.');
+    out.filter(function (r) { return r.score != null && r.score >= 85 && r.mort != null && groups.hi.mort != null && r.mort > groups.hi.mort * 1.8; }).slice(0, 3).forEach(function (r) { ins.push('«' + r.name + '» درجتها عالية (' + r.score + '%) لكن نافقها أعلى بكتير من المحطات المماثلة: محتاجة زيارة مفاجئة أو مراجعة صحية.'); });
+    return { now: now, days: win, linked: linked, rows: out, corr: { mort: cM, viol: cV, nM: bm.length, nV: bv.length }, groups: groups, insights: ins };
+  };
+}
+
+/* ============================ v33.1: إعداد الإشعارات (Firebase) من داخل التطبيق ============================ */
+function BIO_v33push(api, H) {
+  var store = H.store, deps = H.deps, mem = { web: null, sa: null };
+  function admin(pin) { var u = H.auth(pin, 'login'); if (!u.isAdmin) throw new Error('إعداد الإشعارات لمدير إدارة الأمن الحيوي فقط'); return u; }
+  function state() { if (deps.pushState) return deps.pushState(); return { web: !!mem.web, sa: !!mem.sa, project: mem.web ? mem.web.firebase.projectId : '', saProject: mem.sa ? mem.sa.project_id : '', saEmail: mem.sa ? mem.sa.client_email : '', demo: true }; }
+  function devices() { try { return store.all('devices') || []; } catch (e) { return []; } }
+  /** إعدادات Firebase للويب (عامة) لأي حساب مسجل دخول علشان يفعّل الإشعارات على جهازه */
+  api.pushConfig = function (pin) {
+    var u = H.auth(pin, 'login'), w = deps.pushWeb ? deps.pushWeb() : mem.web, st = state();
+    var mine = devices().filter(function (d) { return BIO_norm(d.userId) === u.id; }).length;
+    return { firebase: w ? w.firebase : null, vapid: w ? w.vapid : '', ready: !!(st.web && st.sa), mine: mine };
+  };
+  api.pushAdmin = function (pin) {
+    admin(pin);
+    var st = state(), dv = devices(), by = {};
+    dv.forEach(function (d) { var k = BIO_norm(d.userId); by[k] = (by[k] || 0) + 1; });
+    var users = (store.all('users') || []).filter(function (x) { var r = BIO_role(String(x.role || '').trim()); return r && String(x.active == null ? '' : x.active).trim() !== BIO.NO; }).map(function (x) {
+      var r = BIO_role(String(x.role).trim()); return { id: BIO_norm(x.id), name: String(x.name || ''), role: r.label || r.k, pest: !!r.pestOnly, n: by[BIO_norm(x.id)] || 0 };
+    }).sort(function (a, b) { return (a.n ? 1 : 0) - (b.n ? 1 : 0) || a.name.localeCompare(b.name, 'ar'); });
+    return { state: st, devices: dv.length, users: users, withDevice: users.filter(function (x) { return x.n; }).length };
+  };
+  /** p.config: نص إعدادات الويب كما يظهر في Firebase (const firebaseConfig = {...}) · p.vapid · p.sa: محتوى ملف حساب الخدمة JSON */
+  api.pushSave = function (pin, p) {
+    admin(pin); p = p || {};
+    var o = {};
+    if (p.config || p.vapid) {
+      var cur = deps.pushWeb ? deps.pushWeb() : mem.web, fb = cur ? cur.firebase : null, vapid = cur ? cur.vapid : '';
+      if (p.config) fb = BIO_parseFbConfig(p.config);
+      if (p.vapid) { vapid = String(p.vapid).replace(/\s+/g, ''); if (!/^[A-Za-z0-9_-]{60,120}$/.test(vapid)) throw new Error('مفتاح Web Push غير صحيح. انسخه من Cloud Messaging ← Web Push certificates ← Key pair'); }
+      if (!fb) throw new Error('الصق إعدادات تطبيق الويب (firebaseConfig) الأول');
+      o.web = { firebase: fb, vapid: vapid };
+    }
+    if (p.sa) {
+      var sa; try { sa = typeof p.sa === 'string' ? JSON.parse(p.sa) : p.sa; } catch (e) { throw new Error('ملف حساب الخدمة مش JSON سليم. نزّله تاني من Service accounts ← Generate new private key'); }
+      if (!sa || sa.type !== 'service_account' || !sa.private_key || !sa.client_email || !sa.project_id) throw new Error('ده مش ملف حساب خدمة Firebase. المطلوب الملف اللي بينزل من Service accounts ← Generate new private key');
+      sa = { type: sa.type, project_id: sa.project_id, private_key_id: sa.private_key_id, private_key: sa.private_key, client_email: sa.client_email, token_uri: sa.token_uri || 'https://oauth2.googleapis.com/token' };
+      o.sa = sa;
+    }
+    if (o.web && o.sa && o.web.firebase.projectId !== o.sa.project_id) throw new Error('ملف حساب الخدمة من مشروع «' + o.sa.project_id + '» والإعدادات من مشروع «' + o.web.firebase.projectId + '». لازم الاتنين من نفس المشروع');
+    if (!o.web && !o.sa) throw new Error('مفيش حاجة تتحفظ');
+    if (deps.pushSetup) return { ok: true, state: deps.pushSetup(o) };
+    if (o.web) mem.web = o.web; if (o.sa) mem.sa = o.sa;
+    return { ok: true, state: state() };
+  };
+  /** إشعار تجريبي لأجهزة الحساب نفسه فقط */
+  api.pushTest = function (pin) {
+    var u = H.auth(pin, 'login'), n = devices().filter(function (d) { return BIO_norm(d.userId) === u.id; }).length;
+    if (!n) throw new Error('الجهاز ده لسه مش متسجل للإشعارات. اضغط «تفعيل الإشعارات على هذا الجهاز» الأول');
+    var evt = { kind: 'test', toUserId: u.id, title: '✅ الإشعارات شغالة', body: 'لو الإشعار ده وصلك والتطبيق مقفول، يبقى كل الرسائل والتنبيهات هتوصلك.\n— منظومة الأمن الحيوي' };
+    if (!deps.pushNow) return { ok: true, devices: n, sent: 0, demo: true };
+    var r = deps.pushNow(evt) || {};
+    if (r.err === 'not_configured') throw new Error('ملف حساب الخدمة لسه ما اترفعش في «إعداد الإشعارات»');
+    return { ok: true, devices: n, sent: r.sent || 0, failed: r.failed || 0, err: r.err || '' };
+  };
+}
+/** يقرأ إعدادات Firebase من النص المنسوخ (JS أو JSON) */
+function BIO_parseFbConfig(t) {
+  var s = String(t || ''), o = {};
+  ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId'].forEach(function (k) {
+    var m = new RegExp('["\']?' + k + '["\']?\\s*:\\s*["\']([^"\']+)["\']').exec(s); if (m) o[k] = m[1].trim();
+  });
+  if (!o.apiKey || !o.projectId || !o.messagingSenderId || !o.appId) throw new Error('الإعدادات ناقصة. انسخ البلوك كله اللي فيه apiKey وprojectId وmessagingSenderId وappId');
+  if (!/^AIza[0-9A-Za-z_-]{30,}$/.test(o.apiKey)) throw new Error('apiKey مش شكله صحيح');
+  return o;
 }
 function BIO_v31pc(api, H) {
   var store = H.store, deps = H.deps, D = 864e5;

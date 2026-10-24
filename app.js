@@ -237,7 +237,7 @@
   function pingPresence() {
     if (!S.session || Date.now() - (S.pingAt || 0) < 55000) return;
     S.pingAt = Date.now();
-    remote('ping', [S.session.pin, { dev: devLabel(), scr: (S.route || '').split('/')[0] }]).catch(function () {});
+    remote('ping', [S.session.pin, { dev: devLabel(), scr: (S.route || '').split('/')[0] }]).then(function (r) { bulCheck(r && r.bul); }).catch(function () {});
   }
   function sync() {
     if (!S.session || S.syncing) return Promise.resolve();
@@ -245,6 +245,7 @@
     S.syncing = true; renderNet();
     var ops = S.outbox.slice(), t0 = Date.now();
     return remote('sync', [S.session.pin, { ops: ops, since: S.lastSync, refVersion: S.ref && S.ref.version, dev: devLabel(), scr: (S.route || '').split('/')[0], q: ops.length }]).then(function (r) {
+      bulCheck(r.bul);
       if (r.same) { S.online = true; S.busy503 = false; S.syncFails = 0; S.pinFails = 0; return; } // v22: مفيش جديد على الخادم
       var done = {};
       r.results.forEach(function (x) { done[x.opId] = true; if (!x.ok) toast('عملية مؤجلة لم تُقبل: ' + x.error); });
@@ -360,7 +361,7 @@
         if (!S.outbox.length && !$('sheetWrap')) { reloading = true; location.reload(); }
         else toast('وصل تحديث جديد للتطبيق، وهيتفعّل أول ما تقفله وتفتحه');
       });
-      navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.route) go(e.data.route.replace('#', '')); if (e.data && e.data.sync) sync(); });
+      navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.push && S.session) return incomingPush(e.data.push); if (e.data && e.data.route) go(e.data.route.replace('#', '')); if (e.data && e.data.sync) sync(); });
     }
     window.addEventListener('online', function () { setOnline(true); });
     window.addEventListener('offline', function () { setOnline(false); });
@@ -371,6 +372,7 @@
     if (window.matchMedia) matchMedia('(display-mode: standalone)').addEventListener && matchMedia('(display-mode: standalone)').addEventListener('change', refreshInstBtns);
     if (window.MutationObserver) new MutationObserver(function () { if (S.instShown && !$('instBar')) instDraw(); }).observe(document.body, { childList: true });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
+    setInterval(function () { if (document.hidden && S.session && !pcOnly()) sync(); }, 60000); // v33: رسائل الإدارة توصل والتطبيق في الخلفية
     setInterval(function () { if (!document.hidden && (S.outbox.length || Date.now() - (S.syncEndAt || 0) >= (S.syncGap || 0))) sync(); }, MODE === 'demo' ? 6000 : 20000);
     window.addEventListener('hashchange', function () { if (S.session) render(); });
   }
@@ -442,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 32.4</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -506,14 +508,14 @@
   function navItems() { return navItems0().filter(function (n) { return !hiddenScr(n[0]); }); }
   function navItems0() {
     if (pcOnly()) return [['pc', 'مكافحة الآفات', 'bug'], ['more', 'المزيد', 'menu']];
-    if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
+    if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['inbox', 'رسائل الإدارة', 'mail'], ['cheer', 'إنجازات الفريق', 'award'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
     if (S.session.user.isManager) return [
-      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'غرفة العمليات', 'radar'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], ['academy', 'أخبار ومعلومات الأمن الحيوي', 'grad'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], canPc() && ['pc', 'مكافحة الآفات', 'bug'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
+      ['dash', 'غرفة القرار', 'dash'], ['board', 'غرفة الإدارة العليا', 'award'], ['shield', 'درع الأمن الحيوي', 'shieldOk'], can('analytics') && ['integ', 'صدق البيانات', 'fingerprint'], ['twin', 'التوأم الرقمي', 'grid'], ['ops', 'غرفة العمليات', 'radar'], ['epi', 'رادار الوبائيات', 'virus'], ['stations', 'حالة المحطات', 'layers'], ['ews', 'الإنذار المبكر', 'pulse'], ['farm', 'بيانات المزارع', 'sheet'], ['cmp', 'مقارنة الدورات', 'bars'], ['cams', 'حائط الكاميرات', 'video'], ['report', 'التقرير التنفيذي', 'file'], can('analytics') && ['sim', 'محاكاة التفشي', 'radar'], can('reports') && ['comms', 'البلاغات', 'siren'], can('analytics') && ['map', 'الخريطة الحية', 'map'], ['birds', 'رادار الطيور', 'bird'], ['wx', 'الأرصاد والآفات', 'wind'], ['academy', 'أخبار ومعلومات الأمن الحيوي', 'grad'], hasVr() && ['vrcorr', 'تحليل التقارير مع النافق والبوابات', 'bars'], ['inbox', 'رسائل الإدارة', 'mail'], staffAcc() && ['cheer', 'إنجازات الفريق', 'award'], isAdmin() && S.session.user.isAdmin && ['pushset', 'إعداد الإشعارات', 'bell'], can('analytics') && ['trace', 'تتبع العدوى', 'trace'], can('analytics') && ['insights', 'التخطيط والتحليل', 'network'], can('decide') && ['requests', 'الطلبات', 'inbox'], ['missions', 'المأموريات', 'calendar'], ['inspect', 'التدقيق الداخلي', 'clip'], ['disposal', 'النافق والسبلة', 'box'], storeRole() && ['store', 'المخازن والأرصدة', 'box'], ['dis', 'المطهرات', 'drop'], ['calc', 'حاسبة التطهير', 'flask'], storeRole() && ['evals', 'تقييمات موظفي الإدارة', 'award'], canPrint('') && ['prints', 'طباعة التقارير', 'printer'], ['fleet', 'المركبات والمعدات', 'truck'], ['trips', 'رحلات المركبات', 'route'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خطوط السير', 'nav'], ['gates', 'سجل البوابات', 'list'], canPc() && ['pc', 'مكافحة الآفات', 'bug'], ['iso', 'معادلات العزل', 'shield'], ['contractors', 'المقاولون', 'tool'], ['companies', 'شركات النقل', 'truck'], ['passport', 'جواز الأمن الحيوي', 'card'], ['notices', 'القرارات', 'mega'], hasVr() && ['vr', 'تقارير الأمن الحيوي', 'clip'], (can('data') || isAdmin()) && ['attend', 'الحضور والانصراف', 'clock'], (can('data') || can('admin')) && ['data', 'البيانات', 'db'], canCards() && ['ucards', 'كروت الدخول', 'card'], isAdmin() && ['users', 'المستخدمون', 'user'], canOnline() && ['online', 'حالة الاتصال', 'wifi'], isAdmin() && ['purge', 'حذف وإعادة تهيئة', 'trash'], isAdmin() && ['gate', 'البوابة', 'scan'], ['more', 'المزيد', 'menu']
     ].filter(Boolean);
-    return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
+    return [['gate', 'البوابة', 'scan'], ['missions', 'الزيارات', 'calendar'], ['comms', 'المدير', 'chat'], ['notices', 'القرارات', 'mega'], ['inbox', 'رسائل الإدارة', 'mail'], ['cheer', 'إنجازات الفريق', 'award'], ['log', 'سجل اليوم', 'list'], ['tours', 'جولات المحطات', 'truck'], ['routes', 'خط السير', 'nav'], ['dis', 'المطهرات', 'drop'], ['more', 'المزيد', 'menu']];
   }
   /** الشريط السفلي للموبايل: خمسة أزرار بحد أقصى بأسماء قصيرة، والباقي في «المزيد» */
-  var NAV_SHORT = { academy: 'المعلومات', pc: 'المكافحة', ucards: 'الكروت', gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
+  var NAV_SHORT = { inbox: 'الرسائل', cheer: 'الإنجازات', academy: 'المعلومات', pc: 'المكافحة', ucards: 'الكروت', gates: 'البوابات', dash: 'القرار', board: 'الإدارة', shield: 'الدرع', twin: 'التوأم', stations: 'المحطات', comms: 'البلاغات', requests: 'الطلبات', missions: 'المأموريات', notices: 'القرارات', more: 'المزيد', gate: 'البوابة', log: 'السجل', vr: 'التقارير', calc: 'الحاسبة', store: 'المخازن', evals: 'التقييمات', prints: 'الطباعة', cmp: 'المقارنة' };
   function bottomItems() {
     var all = navItems(), pick = pcOnly() ? ['pc', 'more'] : vrOnly() ? ['vr', 'calc', 'more'] : S.session.user.isManager ? (isAdmin() ? ['dash', 'twin', 'requests', 'stations', 'comms', 'missions', 'notices', 'more'] : ['dash', 'stations', 'store', 'calc', 'more']) : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
     var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
@@ -526,12 +528,12 @@
   var NAV_GROUPS = [
     ['now', 'القيادة', 'dash', ['dash', 'board', 'shield', 'cmp', 'requests', 'comms', 'report', 'notices', 'prints']],
     ['map', 'الخريطة', 'map', ['twin', 'ops', 'map']],
-    ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'academy', 'ews', 'integ', 'sim', 'trace', 'insights']],
+    ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'academy', 'vrcorr', 'ews', 'integ', 'sim', 'trace', 'insights']],
     ['sites', 'المواقع', 'layers', ['stations', 'farm', 'pc', 'disposal', 'inspect', 'cams']],
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
     ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
-    ['people', 'HR إدارة الأمن الحيوي', 'user', ['evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
-    ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'ucards', 'purge']]
+    ['people', 'HR إدارة الأمن الحيوي', 'user', ['inbox', 'cheer', 'evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
+    ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'ucards', 'pushset', 'purge']]
   ];
   function navGroupedOn() { return !!(S.session && S.session.user.isManager && !liteOnly()); }
   function navKey() { var u = S.session && S.session.user; return 'bio-nav-' + (u ? u.id || u.name || '' : ''); }
@@ -631,10 +633,11 @@
     if (liteOnly()) { $('netChip').hidden = true; $('bellBtn').hidden = true; }
     $('bellBtn').onclick = function () { go('notices'); };
     printBind();
-    if (MODE === 'web' && window.Notification && Notification.permission === 'granted' && CFG.FIREBASE) enablePush(true);
+    if (MODE === 'web') setTimeout(pushCfgLoad, 3000);
     render();
     renderNet();
     setTimeout(awMine, 2500);
+    audioUnlock(); if (!pcOnly()) setTimeout(function () { inboxFetch(); }, 2200);
   }
   function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(); }
   function currentRoute() {
@@ -664,7 +667,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -697,6 +700,7 @@
     var set = function (k, n) { document.querySelectorAll('[data-badge="' + k + '"]').forEach(function (b) { b.hidden = !n; b.textContent = n; }); };
     set('requests', S.session && S.session.user.isManager ? S.pendingCount : 0);
     set('notices', unackedCount());
+    set('inbox', ibUnread());
     var cm = S.comms || {}; set('comms', S.session && S.session.user.isManager ? (cm.unseen || 0) + (cm.unread || 0) : (cm.unread || 0));
     var bb = $('bellBadge'); if (bb && S.session) { var n = S.session.user.isManager ? S.pendingCount : unackedCount(); bb.hidden = !n; bb.textContent = n; }
     navGroupBadges();
@@ -808,7 +812,7 @@
   function renderGateBanner() {
     var el = $('gateBanner'); if (!el) return;
     var list = S.notices.filter(function (n) { return !n.acked && !S.session.user.isManager; }).slice(0, 3);
-    el.innerHTML = list.map(function (n) {
+    el.innerHTML = starStrip(S.inbox && S.inbox.stars, 'gate') + list.map(function (n) {
       return '<div class="notice-banner ' + (n.level === 'عاجل' ? '' : 'normal') + '"><div class="spread"><b>' + icon(n.level === 'عاجل' ? 'alert' : 'mega') + ' ' + esc(n.title) + '</b><span class="xs muted">' + esc(fmt(n.time)) + '</span></div>' +
         (n.body ? '<p class="small">' + esc(n.body) + '</p>' : '') + '<div><button class="btn sm primary" data-ack="' + esc(n.id) + '">' + icon('check') + ' تم الاطلاع</button></div></div>';
     }).join('');
@@ -1443,7 +1447,8 @@
     host.appendChild(d);
   }
   window.addEventListener('message', function (e) {
-    var d = e.data; if (!d || d.c3a !== 'vr-ready') return;
+    var d = e.data; if (d && d.c3a === 'vr-go' && /^[a-z]+$/.test(String(d.route || '')) && S.session) { var ok = navItems().some(function (n) { return n[0] === d.route; }); if (ok) go(d.route); return; }
+    if (!d || d.c3a !== 'vr-ready') return;
     S.vrReady = true; clearTimeout(S.vrT);
     var f = document.querySelector('.vr-fail'); if (f) f.remove();
   });
@@ -1528,8 +1533,8 @@
     var me = S.session, pushTxt;
     if (MODE === 'demo') pushTxt = 'في نسخة العرض تظهر الإشعارات أعلى الشاشة كما ستظهر على الموبايل.';
     else if (MODE === 'gas') pushTxt = 'الإشعارات الفورية تعمل عند فتح التطبيق من رابطه المستضاف وتثبيته على الشاشة الرئيسية.';
-    else if (!CFG.FIREBASE) pushTxt = 'لم تُضبط إعدادات Firebase في config.js بعد.';
-    else pushTxt = window.Notification && Notification.permission === 'granted' ? 'الإشعارات مفعلة على هذا الجهاز.' : 'فعّل الإشعارات ليصلك كل قرار وطلب فوراً حتى والتطبيق مغلق.';
+    else if (!pushCfg()) pushTxt = isAdmin() ? 'الإشعارات والتطبيق مقفول محتاجة إعداد Firebase مرة واحدة من «إعداد الإشعارات».' : 'الإشعارات لسه ما اتجهزتش من الإدارة.';
+    else pushTxt = window.Notification && Notification.permission === 'granted' && (S.pushOn || S.pushMine) ? 'الإشعارات مفعلة على هذا الجهاز وهتوصلك والتطبيق مقفول.' : 'فعّل الإشعارات ليصلك كل قرار ورسالة فوراً حتى والتطبيق مغلق.';
     var inBar = bottomItems().map(function (n) { return n[0]; });
     var rest = navItems().filter(function (n) { return inBar.indexOf(n[0]) < 0 && n[0] !== 'more'; });
     $('main').innerHTML = '<section class="view"><div class="viewhead"><h1>المزيد</h1></div>' +
@@ -1538,7 +1543,7 @@
       '<div class="card"><div class="who"><div class="avatar">' + icon('user', 'ico-lg') + '</div><div><b>' + esc(me.user.name) + '</b><span class="small muted">' + esc(me.user.roleLabel || me.user.role) + (me.user.scope && !me.user.scope.all ? ' · ' + esc(me.user.scope.label) : '') + (me.gate.name && !me.user.isManager ? ' · ' + esc(me.gate.name) : '') + '</span>' + (me.user.isManager && me.user.perms ? '<span class="perm-mini">' + me.user.perms.map(function (k) { var d = (S.permDefs || PERM_SHORT)[k]; return '<i>' + esc(d || k) + '</i>'; }).join('') + '</span>' : '') + '</div></div>' +
       '<button class="btn" id="logoutBtn">' + icon('out') + ' تسجيل الخروج</button></div>' +
       themeCardHtml() + '<div class="card"><h2>' + icon('bell') + ' الإشعارات الفورية</h2><p class="small muted">' + esc(pushTxt) + '</p>' +
-      (MODE === 'web' && CFG.FIREBASE ? '<button class="btn primary" id="pushBtn">' + icon('bell') + ' تفعيل الإشعارات على هذا الجهاز</button>' : '') +
+      (MODE === 'web' && pushCfg() ? '<button class="btn primary" id="pushBtn">' + icon('bell') + ' تفعيل الإشعارات على هذا الجهاز</button>' : '') + (isAdmin() && S.session.user.isAdmin ? '<a class="btn" href="#pushset">' + icon('tool') + ' إعداد الإشعارات</a>' : '') +
       (instCan() ? '<button class="btn" type="button" data-install="1">' + icon('download') + ' تثبيت التطبيق على هذا الجهاز</button>' : '') + '</div>' +
       '<div class="card"><h2>' + icon('refresh') + ' المزامنة والعمل دون اتصال</h2><div class="small">الحالة: <b>' + (S.online ? 'متصل' : 'دون اتصال') + '</b></div><div class="small">آخر مزامنة: <b>' + (S.lastSync ? esc(fmt(S.lastSync)) : 'لم تتم بعد') + '</b></div>' +
       '<div class="small">عمليات بانتظار الإرسال: <b>' + S.outbox.length + '</b></div><p class="xs muted">عند انقطاع الإنترنت يستمر التطبيق في التسجيل واتخاذ القرار ببيانات آخر مزامنة، ويرسل كل شيء تلقائياً عند عودة الاتصال، ويراجع الخادم القرارات ويبلغ الإدارة بأي مخالفة.</p>' +
@@ -1568,20 +1573,25 @@
   /* ---------- الإشعارات الفورية (Firebase) ---------- */
   function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(appErr('تعذر تحميل ' + src)); }; document.head.appendChild(s); }); }
   function enablePush(silent) {
+    var PC = pushCfg();
+    if (MODE === 'gas') { if (!silent) toast('الإشعارات بتشتغل من التطبيق المثبت (نسخة GitHub) مش من رابط Apps Script', 6000); return; }
+    if (!PC) { if (!silent) toast(isAdmin() ? 'إعدادات Firebase لسه ما اتحفظتش. افتح «إعداد الإشعارات»' : 'الإشعارات لسه ما اتجهزتش من الإدارة', 6000); return; }
     if (!('serviceWorker' in navigator) || !window.Notification) { if (!silent) toast('هذا المتصفح لا يدعم الإشعارات. على آيفون: ثبّت التطبيق على الشاشة الرئيسية أولاً ثم فعّل الإشعارات.', 6000); return; }
     Notification.requestPermission().then(function (p) {
       if (p !== 'granted') throw appErr('لم يُسمح بالإشعارات. فعّلها من إعدادات المتصفح لهذا الموقع.');
       return window.firebase && firebase.messaging ? null : loadScript(FB + 'firebase-app-compat.js').then(function () { return loadScript(FB + 'firebase-messaging-compat.js'); });
     }).then(function () {
-      if (!firebase.apps.length) firebase.initializeApp(CFG.FIREBASE);
+      if (!firebase.apps.length) firebase.initializeApp(PC.firebase);
       var m = firebase.messaging();
       m.onMessage(function (pl) { var d = pl.data || {}; incomingPush(d); });
-      return navigator.serviceWorker.ready.then(function (reg) { return m.getToken({ vapidKey: CFG.VAPID_KEY, serviceWorkerRegistration: reg }); });
+      return navigator.serviceWorker.ready.then(function (reg) { return m.getToken({ vapidKey: PC.vapid, serviceWorkerRegistration: reg }); });
     }).then(function (tok) {
-      return remote('registerDevice', [S.session.pin, tok, S.session.gate.name]).then(function () { S.pushOn = true; if (!silent) toast('تم تفعيل الإشعارات على هذا الجهاز'); });
+      if (!tok) throw appErr('ماقدرناش ناخد رمز الجهاز من Firebase. جرّب تاني');
+      return remote('registerDevice', [S.session.pin, tok, S.session.gate.name]).then(function () { S.pushOn = true; S.pushMine = Math.max(1, S.pushMine || 0); if (!silent) { toast('تم تفعيل الإشعارات على هذا الجهاز ✅'); if ($('pushBtn')) render(); } });
     }).catch(function (e) { if (!silent) toast(errText(e), 6000); });
   }
   function incomingPush(d) {
+    if (d.kind === 'bulletin') return inboxFetch(true);
     var actions = null;
     if (d.kind === 'request' && d.approvalId && can('decide')) actions = decideActions(d.approvalId);
     pushCard({ title: d.title, body: d.body, actions: actions, sticky: !!actions });
@@ -4381,6 +4391,435 @@
   var KN_TABS = [['news', 'أخبار الأمن الحيوي اليوم', 'rss'], ['brief', 'النشرة اليومية', 'clip'], ['watch', 'مؤشرات الإنذار المبكر', 'pulse'], ['lib', 'المراجع الرسمية', 'book'], ['train', 'التدريب والتأهيل', 'grad']];
   var KN_SCOPE = { eg: ['مصر', 'kn-eg'], region: ['الإقليم', 'kn-rg'], world: ['العالم', 'kn-wd'] };
   var KN_TC = { outbreak: '#dc2626', bio: '#0f766e', policy: '#7c3aed', science: '#2563eb', wild: '#a16207', human: '#db2777', market: '#64748b' };
+  ICONS.mail = 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6';
+  ICONS.heart = 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z';
+  ICONS.gift = 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z';
+  ICONS.bulb = 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z';
+  /* ============================ الإصدار 33: رسائل الإدارة (جماعية وفردية) بإشعار نصي وصوتي ============================ */
+  var MSG_LV = { 'عادي': 'n', 'مهم': 'm', 'عاجل': 'u' };
+  var MSG_KL = { 'تنبيه': 'تنبيه من الإدارة', 'شكر': 'كلمة شكر', 'تهنئة': 'تهنئة', 'اجتماع': 'دعوة اجتماع', 'نجم': 'نجم الفريق', 'إنجاز': 'إنجاز الفريق', 'ترحيب': 'ترحيب', 'رد اقتراح': 'رد على اقتراحك', 'عيد ميلاد': 'عيد ميلاد سعيد' };
+  var STAFF_ROLES_C = ['مدير', 'مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مفتش أمن حيوي', 'أمن بوابة'];
+  function staffAcc() { var u = S.session && S.session.user; return !!u && !u.pestOnly && STAFF_ROLES_C.indexOf(u.role) >= 0; }
+  function msgSender() { var u = S.session && S.session.user; return !!u && !u.pestOnly && (u.isAdmin || u.role === 'مسؤول أمن حيوي' || u.role === 'مشرف أمن حيوي'); }
+  function ibKey() { var u = S.session && S.session.user; return 'bio-ib-' + (u ? u.id || u.name : ''); }
+  function ibSeenGet() { try { return Number(localStorage.getItem(ibKey())) || 0; } catch (e) { return S.ibSeen || 0; } }
+  function ibSeenSet(v) { S.ibSeen = v; try { localStorage.setItem(ibKey(), String(v)); } catch (e) {} }
+  /** الصوت لازم يتفعّل بعد أول لمسة على الشاشة (سياسة المتصفحات) */
+  function audioUnlock() {
+    if (S.actxOk) return; S.actxOk = 1;
+    var f = function () { try { var A = window.AudioContext || window.webkitAudioContext; if (!A) return; S.actx = S.actx || new A(); if (S.actx.state === 'suspended') S.actx.resume(); } catch (e) {} document.removeEventListener('pointerdown', f, true); document.removeEventListener('keydown', f, true); };
+    document.addEventListener('pointerdown', f, true); document.addEventListener('keydown', f, true);
+  }
+  /** نغمة الرسائل: 3 نغمات هادية للعادي، ونغمة متكررة أعلى للعاجل */
+  function msgChime(level) {
+    try {
+      var A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+      var c = S.actx || (S.actx = new A()); if (c.state === 'suspended') c.resume();
+      var u = level === 'عاجل', notes = u ? [988, 784, 988, 784, 1175] : level === 'مهم' ? [784, 988, 1175, 988] : [659, 784, 988];
+      notes.forEach(function (f, i) {
+        var o = c.createOscillator(), g = c.createGain(), t = c.currentTime + 0.05 + i * (u ? 0.16 : 0.2);
+        o.type = u ? 'triangle' : 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(u ? 0.5 : 0.32, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.65);
+      });
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220]); } catch (e) {}
+  }
+  /** إشعار نظام (لما التطبيق في الخلفية أو الشاشة مقفولة والتطبيق لسه شغال) */
+  function msgSysNote(m) {
+    try {
+      if (!window.Notification || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.ready.then(function (reg) {
+        reg.showNotification(m.ic + ' ' + m.title, { body: (m.body || '').slice(0, 300) + '\n— ' + m.fromName, dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'msg-' + m.id, renotify: true, requireInteraction: m.level !== 'عادي', vibrate: m.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220], data: { route: '#inbox', kind: 'bulletin' } });
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  /** إشارة «في رسالة جديدة» من التزامن: نجيب صندوق الرسائل */
+  function bulCheck(at) {
+    if (!S.session || pcOnly() || !at) return;
+    if (at > ibSeenGet() || !S.inbox) inboxFetch();
+  }
+  function inboxFetch(force) {
+    if (!S.session || pcOnly() || S.ibBusy) return Promise.resolve();
+    S.ibBusy = 1;
+    return remote('inbox', [S.session.pin]).then(function (d) {
+      S.ibBusy = 0; S.inbox = d; ibSeenSet(Math.max(d.at || 0, ibSeenGet()));
+      var un = d.items.filter(function (m) { return !m.read; }), fresh = un.filter(function (m) { return !(S.ibAlerted || {})[m.id]; });
+      S.ibAlerted = S.ibAlerted || {}; un.forEach(function (m) { S.ibAlerted[m.id] = 1; });
+      if (fresh.length && S.ibBooted) { var top = fresh.filter(function (m) { return m.level === 'عاجل'; })[0] || fresh.filter(function (m) { return m.level === 'مهم'; })[0] || fresh[0]; msgChime(top.level); if (document.hidden) fresh.slice(0, 3).forEach(msgSysNote); }
+      else if (fresh.length && !S.ibBooted) msgChime(fresh[0].level);
+      S.ibBooted = 1;
+      if (un.length && !$('msgPop') && (fresh.length || force)) msgPop(un);
+      renderBadges(); renderGateBanner();
+      if (S.route && S.route.split('/')[0] === 'inbox' && !$('sheetWrap')) ibDraw();
+    }).catch(function () { S.ibBusy = 0; });
+  }
+  /** نافذة الرسالة الواضحة: تظهر فوق أي شاشة لحد ما الموظف يضغط «قرأت» */
+  function msgPop(list) {
+    list = list.slice().sort(function (a, b) { return (MSG_LV[b.level] === 'u') - (MSG_LV[a.level] === 'u') || a.time - b.time; });
+    var i = 0, el = document.createElement('div'); el.id = 'msgPop'; el.className = 'mp-wrap'; document.body.appendChild(el);
+    var draw = function () {
+      var m = list[i]; if (!m) return close();
+      el.innerHTML = '<div class="mp lv-' + MSG_LV[m.level] + '" role="alertdialog" aria-modal="true" aria-labelledby="mpT"><div class="mp-h"><span class="mp-ic">' + m.ic + '</span><div><b>' + (m.level === 'عاجل' ? 'رسالة عاجلة من الإدارة' : MSG_KL[m.kind] || 'رسالة من الإدارة') + '</b><small>' + esc(m.fromName) + ' · ' + esc(ago(m.time)) + '</small></div>' + (list.length > 1 ? '<span class="mp-n mono">' + (i + 1) + '/' + list.length + '</span>' : '') + '</div>' +
+        '<div class="mp-b"><h2 id="mpT">' + esc(m.title) + '</h2>' + (m.body ? '<p>' + esc(m.body) + '</p>' : '') + (m.img ? '<img src="' + esc(m.img) + '" alt="" loading="lazy">' : '') + '</div>' +
+        '<div class="mp-f"><button type="button" class="btn primary big" id="mpOk">' + icon('check') + ' قرأت' + (i < list.length - 1 ? ' · التالية' : '') + '</button><button type="button" class="btn" id="mpLater">لاحقاً</button></div></div>';
+      $('mpOk').onclick = function () { var b = this; b.disabled = true; remote('msgRead', [S.session.pin, [m.id]]).catch(function () {}); m.read = Date.now(); i++; draw(); renderBadges(); };
+      $('mpLater').onclick = close;
+      setTimeout(function () { var b = $('mpOk'); if (b) b.focus(); }, 30);
+    };
+    function close() { el.remove(); renderBadges(); if (S.route && S.route.split('/')[0] === 'inbox') ibDraw(); }
+    draw();
+  }
+  function ibUnread() { return S.inbox ? S.inbox.items.filter(function (m) { return !m.read; }).length : 0; }
+  /** شريط نجم الأسبوع والشهر (البوابة وصندوق الرسائل وشاشة الإنجازات) */
+  function starStrip(st, cls) {
+    if (!st || (!st.week && !st.month)) return '';
+    var one = function (s, lbl, ic) { return s ? '<div class="ss-one"><span class="ss-av">' + avatar(s.name, s.photo) + '</span><div><small>' + ic + ' ' + lbl + '</small><b>' + esc(s.name) + '</b>' + (s.reason ? '<span>' + esc(s.reason) + '</span>' : '') + '</div></div>' : ''; };
+    return '<div class="star-strip ' + (cls || '') + '">' + one(st.week, 'نجم الأسبوع', '⭐') + one(st.month, 'نجم الشهر', '🌟') + '</div>';
+  }
+  function avatar(name, photo, big) {
+    var ini = String(name || '؟').replace(/^(أ|م|د)\s*\/\s*/, '').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join(' ');
+    return photo ? '<img class="av' + (big ? ' big' : '') + '" src="' + esc(photo) + '" alt="" loading="lazy">' : '<span class="av ini' + (big ? ' big' : '') + '">' + esc(ini) + '</span>';
+  }
+
+  function viewInbox(args) {
+    var tab = args && args[0] === 'sent' && msgSender() ? 'sent' : 'in';
+    S.ibTab = tab;
+    $('main').innerHTML = '<section class="view ib-view"><div class="ib-hero"><div><span class="kn-k">' + icon('inbox') + ' إدارة الأمن الحيوي</span><h1>رسائل الإدارة</h1><p>الرسائل والتهاني والتعليمات اللي بتوصلك من المدير والمسؤولين والمشرفين. أول ما توصل رسالة بتظهر قدامك بصوت.</p></div>' +
+      '<div class="ib-acts">' + (msgSender() ? '<button class="btn primary" type="button" id="ibNew">' + icon('plus') + ' رسالة جديدة</button>' : '') + '<button class="btn" type="button" id="ibSnd">' + icon('bell') + ' جرّب الصوت</button>' + (window.Notification && Notification.permission !== 'granted' ? '<button class="btn" type="button" id="ibPerm">' + icon('bell') + ' فعّل تنبيه الموبايل</button>' : '') + '</div></div>' +
+      (msgSender() ? '<div class="kn-tabs ib-tabs" role="tablist"><button type="button" role="tab" data-ibt="in" class="' + (tab === 'in' ? 'on' : '') + '">' + icon('inbox') + '<span>الواردة</span></button><button type="button" role="tab" data-ibt="sent" class="' + (tab === 'sent' ? 'on' : '') + '">' + icon('mega') + '<span>المرسلة ومين قرأ</span></button></div>' : '') +
+      '<div id="ibOut">' + v5Spin() + '</div></section>';
+    document.querySelectorAll('[data-ibt]').forEach(function (b) { b.onclick = function () { go(b.dataset.ibt === 'sent' ? 'inbox/sent' : 'inbox'); }; });
+    if ($('ibNew')) $('ibNew').onclick = msgCompose;
+    $('ibSnd').onclick = function () { msgChime('مهم'); };
+    if ($('ibPerm')) $('ibPerm').onclick = function () {
+      if (pushCfg() && MODE === 'web') return enablePush(false);
+      Notification.requestPermission().then(function (p) { if (p === 'granted') { toast('تمام، هيظهر تنبيه على الموبايل طول ما التطبيق مفتوح أو في الخلفية'); $('ibPerm').remove(); } else toast('التنبيهات مقفولة. فعّلها من إعدادات المتصفح لهذا الموقع', 6000); });
+    };
+    if (S.inbox) ibDraw();
+    inboxFetch();
+  }
+  function ibDraw() {
+    var out = $('ibOut'), d = S.inbox; if (!out || !d) return;
+    var h = starStrip(d.stars);
+    if (S.ibTab === 'sent') {
+      var L = d.sent || [];
+      h += L.length ? '<div class="ib-list">' + L.map(function (m) {
+        var pct = m.count ? Math.round(m.reads / m.count * 100) : 0;
+        return '<article class="ib-it sent lv-' + MSG_LV[m.level] + '"><div class="ib-top"><span class="ib-ic">' + m.ic + '</span><div class="ib-tt"><b>' + esc(m.title) + '</b><small>إلى: ' + esc(m.toLabel || '—') + ' · ' + esc(fmt(m.time)) + (m.system ? ' · تلقائية' : '') + '</small></div><span class="pill ' + (m.level === 'عاجل' ? 'p-bad' : m.level === 'مهم' ? 'p-warn' : '') + '">' + esc(m.level) + '</span></div>' +
+          (m.body ? '<p class="ib-body clamp">' + esc(m.body) + '</p>' : '') +
+          '<div class="ib-rd"><span>قرأها <b class="mono">' + m.reads + '</b> من <b class="mono">' + m.count + '</b></span>' + bar(pct, pct >= 80 ? 'var(--ok)' : pct >= 40 ? 'var(--warn)' : 'var(--bad)') + '</div>' +
+          '<div class="ib-btns"><button class="btn sm" type="button" data-ibd="' + esc(m.id) + '">' + icon('user') + ' مين قرأ ومين لسه</button><button class="btn sm ghost" type="button" data-ibx="' + esc(m.id) + '">' + icon('trash') + ' حذف</button></div></article>';
+      }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('mega') + ' لسه مابعتش رسائل. اضغط «رسالة جديدة».</p></div>';
+    } else {
+      var I = d.items || [];
+      h += I.length ? '<div class="ib-list">' + I.map(function (m) {
+        return '<article class="ib-it lv-' + MSG_LV[m.level] + (m.read ? '' : ' unread') + '" data-ibo="' + esc(m.id) + '"><div class="ib-top"><span class="ib-ic">' + m.ic + '</span><div class="ib-tt"><b>' + esc(m.title) + '</b><small>' + esc(m.fromName) + ' · ' + esc(ago(m.time)) + '</small></div>' + (m.read ? '' : '<span class="ib-dot" aria-label="غير مقروءة"></span>') + '</div>' +
+          (m.body ? '<p class="ib-body clamp">' + esc(m.body) + '</p>' : '') + (m.img ? '<img class="ib-img" src="' + esc(m.img) + '" alt="" loading="lazy">' : '') +
+          (m.read ? '' : '<div class="ib-btns"><button class="btn sm primary" type="button" data-ibr="' + esc(m.id) + '">' + icon('check') + ' قرأت</button></div>') + '</article>';
+      }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('inbox') + ' مفيش رسائل لسه. أول ما الإدارة تبعتلك رسالة هتظهر هنا وتسمع صوت تنبيه.</p></div>';
+    }
+    out.innerHTML = h;
+    out.querySelectorAll('[data-ibo]').forEach(function (a) { a.onclick = function (e) { if (e.target.closest('button')) return; var p = a.querySelector('.ib-body'); if (p) p.classList.toggle('clamp'); }; });
+    out.querySelectorAll('[data-ibr]').forEach(function (b) { b.onclick = function () { var id = b.dataset.ibr; b.disabled = true; remote('msgRead', [S.session.pin, [id]]).then(function () { S.inbox.items.forEach(function (m) { if (m.id === id) m.read = Date.now(); }); renderBadges(); ibDraw(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }; });
+    out.querySelectorAll('[data-ibd]').forEach(function (b) { b.onclick = function () { msgReaders(b.dataset.ibd); }; });
+    out.querySelectorAll('[data-ibx]').forEach(function (b) { b.onclick = function () {
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.innerHTML = icon('trash') + ' تأكيد الحذف'; b.classList.add('danger'); return; }
+      remote('msgDelete', [S.session.pin, b.dataset.ibx]).then(function () { toast('اتحذفت الرسالة من عند كل المستلمين'); inboxFetch(); }).catch(function (e) { toast(errText(e)); });
+    }; });
+  }
+  function msgReaders(id) {
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('user') + ' مين قرأ الرسالة</h2></div><div class="sheet-body"><div id="mrOut">' + v5Spin() + '</div><button class="btn ghost" data-a="x" type="button">إغلاق</button></div>', function (a) { if (a === 'x') closeSheet(); });
+    remote('msgDetail', [S.session.pin, id]).then(function (d) {
+      var r = d.list.filter(function (x) { return x.read; }), n = d.list.filter(function (x) { return !x.read; });
+      var li = function (x) { return '<div class="mr-li"><span>' + avatar(x.name) + '</span><div><b>' + esc(x.name) + '</b><small>' + esc([x.role, x.where].filter(Boolean).join(' · ')) + '</small></div>' + (x.read ? '<span class="pill p-ok">' + icon('check') + ' ' + esc(fmt(x.read)) + '</span>' : '<span class="pill">لسه</span>') + '</div>'; };
+      $('mrOut').innerHTML = '<p class="small"><b>' + esc(d.title) + '</b> · قرأها ' + r.length + ' من ' + d.list.length + '</p>' + (n.length ? '<h3 class="mr-h">لسه ماقرأوش (' + n.length + ')</h3>' + n.map(li).join('') : '') + (r.length ? '<h3 class="mr-h">قرأوا (' + r.length + ')</h3>' + r.map(li).join('') : '');
+    }).catch(function (e) { $('mrOut').innerHTML = '<p class="empty">' + esc(errText(e)) + '</p>'; });
+  }
+  /** كتابة رسالة: لكل الفريق أو مجموعات (الوظيفة/القطاع) أو أشخاص محددين، بقوالب جاهزة وصورة اختيارية */
+  function msgCompose() {
+    var C = S.mc = { groups: {}, sectors: {}, ids: {}, level: 'عادي', kind: 'رسالة', img: '', q: '' };
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('mega') + ' رسالة جديدة</h2><p class="small">بتوصل فوراً بصوت تنبيه ونافذة واضحة لحد ما المستلم يضغط «قرأت»</p></div><div class="sheet-body" id="mcOut">' + v5Spin() + '</div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'g') { C.groups[b.dataset.k] = !C.groups[b.dataset.k]; if (b.dataset.k === 'all' && C.groups.all) { C.groups = { all: true }; C.sectors = {}; } else if (b.dataset.k !== 'all') delete C.groups.all; return mcPaint(); }
+      if (a === 'sec') { C.sectors[b.dataset.k] = !C.sectors[b.dataset.k]; delete C.groups.all; return mcPaint(); }
+      if (a === 'p') { C.ids[b.dataset.k] = !C.ids[b.dataset.k]; return mcPaint(); }
+      if (a === 'lv') { C.level = b.dataset.k; return mcPaint(); }
+      if (a === 'tpl') { var t = C.d.templates.filter(function (x) { return x.k === b.dataset.k; })[0]; if (!t) return; $('mcTitle').value = t.title; $('mcBody').value = t.body; C.level = t.level; C.kind = t.kind; return mcPaint(); }
+      if (a === 'noimg') { C.img = ''; return mcPaint(); }
+      if (a === 'send') return mcSend(b);
+    });
+    remote('staffDir', [S.session.pin]).then(function (d) {
+      C.d = d;
+      $('mcOut').innerHTML = '<div class="mc-sec"><h3>إلى مين؟</h3><div class="mc-chips" id="mcG"></div><div class="mc-chips" id="mcS"></div>' +
+        '<details class="mc-ppl" id="mcPd"><summary>' + icon('user') + ' أشخاص محددين <span id="mcPn"></span></summary><label class="kn-q">' + icon('search') + '<input type="search" id="mcQ" placeholder="ابحث بالاسم أو المكان"></label><div class="mc-list" id="mcP"></div></details>' +
+        '<p class="mc-sum" id="mcSum"></p></div>' +
+        '<div class="mc-sec"><h3>قوالب جاهزة</h3><div class="mc-chips">' + d.templates.map(function (t) { return '<button type="button" class="chip" data-a="tpl" data-k="' + t.k + '">' + esc(t.label) + '</button>'; }).join('') + '</div></div>' +
+        '<div class="mc-sec"><div class="field"><label for="mcTitle">العنوان</label><input id="mcTitle" maxlength="120" placeholder="مثال: تعليمات التطهير الأسبوع ده"></div>' +
+        '<div class="field"><label for="mcBody">الرسالة</label><textarea id="mcBody" rows="5" maxlength="2500" placeholder="اكتب رسالتك…"></textarea></div>' +
+        '<div class="mc-row"><span class="mc-l">الأهمية</span><div class="kn-seg" id="mcLv"></div></div>' +
+        '<div class="mc-row"><label class="btn sm" for="mcImg">' + icon('camera') + ' صورة (اختياري)</label><input type="file" id="mcImg" accept="image/*" hidden><span id="mcImgP"></span></div></div>' +
+        '<div class="mc-foot"><button type="button" class="btn primary big" data-a="send">' + icon('mega') + ' إرسال</button><button type="button" class="btn ghost" data-a="x">إلغاء</button></div>';
+      $('mcQ').oninput = function () { C.q = this.value.trim(); mcPaint(); };
+      $('mcImg').onchange = function () { var f = this.files && this.files[0]; if (!f) return; shrinkPhoto(f).then(function (u) { C.img = u; mcPaint(); }).catch(function () { toast('تعذر قراءة الصورة'); }); };
+      mcPaint();
+    }).catch(function (e) { $('mcOut').innerHTML = '<p class="empty">' + esc(errText(e)) + '</p>'; });
+  }
+  function mcPaint() {
+    var C = S.mc, d = C && C.d; if (!d || !$('mcG')) return;
+    $('mcG').innerHTML = d.groups.map(function (g) { return '<button type="button" class="chip' + (C.groups[g.k] ? ' on' : '') + '" data-a="g" data-k="' + g.k + '">' + esc(g.label) + ' <span>' + g.n + '</span></button>'; }).join('');
+    $('mcS').innerHTML = d.sectors.length > 1 ? d.sectors.map(function (s) { return '<button type="button" class="chip' + (C.sectors[s.k] ? ' on' : '') + '" data-a="sec" data-k="' + esc(s.k) + '">قطاع ' + esc(s.k) + ' <span>' + s.n + '</span></button>'; }).join('') : '';
+    var q = C.q.toLowerCase(), ppl = d.people.filter(function (p) { return !q || (p.name + ' ' + p.where + ' ' + p.role).toLowerCase().indexOf(q) >= 0; });
+    $('mcP').innerHTML = ppl.slice(0, 200).map(function (p) { return '<button type="button" class="mc-p' + (C.ids[p.id] ? ' on' : '') + '" data-a="p" data-k="' + esc(p.id) + '"><span class="mc-ck">' + (C.ids[p.id] ? icon('check') : '') + '</span>' + avatar(p.name, p.photo) + '<span><b>' + esc(p.name) + '</b><small>' + esc([p.role, p.where].filter(Boolean).join(' · ')) + '</small></span></button>'; }).join('') || '<p class="empty small">لا يوجد</p>';
+    var nIds = Object.keys(C.ids).filter(function (k) { return C.ids[k]; }).length; $('mcPn').textContent = nIds ? '(' + nIds + ')' : '';
+    // عدد تقريبي للمستلمين (الخادم بيحسبهم بالظبط ويستبعد التكرار)
+    var set = {};
+    d.people.forEach(function (p) {
+      var r = p.rk || p.role;
+      if (C.ids[p.id]) set[p.id] = 1;
+      if (C.groups.all && STAFF_ROLES_C.indexOf(r) >= 0) set[p.id] = 1;
+      [['officer', 'مسؤول أمن حيوي'], ['supervisor', 'مشرف أمن حيوي'], ['inspector', 'مفتش أمن حيوي'], ['guard', 'أمن بوابة']].forEach(function (x) { if (C.groups[x[0]] && r === x[1]) set[p.id] = 1; });
+      if (C.groups.mgrs && (r === 'مدير قطاع' || r === 'مدير موقع')) set[p.id] = 1;
+      if (C.sectors[p.sector] && STAFF_ROLES_C.indexOf(r) >= 0) set[p.id] = 1;
+    });
+    var n = Object.keys(set).length;
+    $('mcSum').innerHTML = n ? icon('user') + ' هتوصل لـ <b class="mono">' + n + '</b> ' + (n > 10 ? 'شخص' : n > 2 ? 'أشخاص' : 'شخص') : '<span class="muted">اختار المستلمين من فوق</span>';
+    $('mcLv').innerHTML = ['عادي', 'مهم', 'عاجل'].map(function (l) { return '<button type="button" data-a="lv" data-k="' + l + '" class="' + (C.level === l ? 'on' : '') + '">' + l + '</button>'; }).join('');
+    $('mcImgP').innerHTML = C.img ? '<img class="mc-th" src="' + C.img + '" alt=""><button type="button" class="btn sm ghost" data-a="noimg">' + icon('x') + '</button>' : '';
+  }
+  function mcSend(b) {
+    var C = S.mc, to = { all: !!C.groups.all, roles: Object.keys(C.groups).filter(function (k) { return C.groups[k] && k !== 'all'; }), sectors: Object.keys(C.sectors).filter(function (k) { return C.sectors[k]; }), ids: Object.keys(C.ids).filter(function (k) { return C.ids[k]; }) };
+    if (!to.all && !to.roles.length && !to.sectors.length && !to.ids.length) return toast('اختار المستلمين الأول');
+    var p = { to: to, title: $('mcTitle').value, body: $('mcBody').value, level: C.level, kind: C.kind, img: C.img };
+    b.disabled = true; b.innerHTML = '<span class="spin"></span> جاري الإرسال';
+    remote('msgSend', [S.session.pin, p]).then(function (r) { closeSheet(); toast('اتبعتت الرسالة لـ ' + r.count + ' · ' + r.label, 5000); S.ibTab = 'sent'; inboxFetch(); if (S.route.split('/')[0] === 'inbox') go('inbox/sent'); })
+      .catch(function (e) { b.disabled = false; b.innerHTML = icon('mega') + ' إرسال'; toast(errText(e), 6000); });
+  }
+  /* ============================ الإصدار 33: إنجازات فريق الأمن الحيوي (تقدير وتحفيز) ============================ */
+  function shrinkSquare(file, size) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = size;
+          c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+          res(c.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = rej; img.src = fr.result;
+      };
+      fr.onerror = rej; fr.readAsDataURL(file);
+    });
+  }
+  function chDay(d) { if (!d) return ''; var p = d.split('-'); return +p[2] + ' ' + ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][+p[1] - 1]; }
+  function viewCheer() {
+    $('main').innerHTML = '<section class="view ch-view"><div id="chOut">' + v5Spin() + '</div></section>';
+    chLoad();
+  }
+  function chLoad() { return v5Load('cheerHub', [], function (d) { S.chD = d; chDraw(d); }, 'إنجازات الفريق', 'chOut'); }
+  function chDraw(d) {
+    var out = $('chOut'); if (!out) return;
+    var m = d.me, h = '';
+    h += '<div class="ch-hero"><label class="ch-ph" title="غيّر صورتك">' + avatar(m.name, m.photo, true) + '<span class="ch-cam">' + icon('camera') + '</span><input type="file" id="chPhoto" accept="image/*" hidden></label>' +
+      '<div class="ch-who"><span class="kn-k">' + icon('award') + ' إنجازاتك في فريق الأمن الحيوي</span><h1>' + esc(m.name) + '</h1><p>' + esc(m.role || '') + (m.hire ? ' · معانا من ' + esc(m.hire.slice(0, 4)) : '') + '</p>' +
+      '<div class="ch-stats"><div><b class="mono">' + m.kudosN + '</b><span>كلمة شكر</span></div><div><b class="mono">' + m.quiz.pts + '</b><span>نقطة أسئلة</span></div><div><b class="mono">' + m.quiz.streak + '</b><span>أسابيع متتالية</span></div><div><b class="mono">' + m.badges.length + '</b><span>وسام</span></div></div></div></div>';
+    h += '<div class="ch-badges">' + (m.badges.length ? m.badges.map(function (b) { return '<div class="ch-bd"><span>' + b.ic + '</span><div><b>' + esc(b.label) + '</b><small>' + esc(b.note) + '</small></div></div>'; }).join('') : '<p class="muted small">' + icon('star') + ' لسه مفيش أوسمة. جاوب سؤال الأسبوع 4 مرات صح ورا بعض، أو ابعت اقتراح يتنفذ، أو خد كلمات شكر من مديرك وهتظهر هنا.</p>') + '</div>';
+    if (!m.birth) h += '<div class="ch-tip">' + icon('gift') + ' <span>اكتب تاريخ ميلادك علشان الفريق يهنيك في يومك</span><input type="date" id="chBirth" max="' + new Date(Date.now() - 16 * 365 * 864e5).toISOString().slice(0, 10) + '"><button class="btn sm" type="button" id="chBirthOk">حفظ</button></div>';
+    // النجوم
+    var st = d.stars, starCard = function (s, type, lbl, ic) {
+      return '<div class="ch-star ' + type + '"><span class="ch-sl">' + ic + ' ' + lbl + '</span>' + (s ? '<div class="ch-sp">' + avatar(s.name, s.photo, true) + '<div><b>' + esc(s.name) + '</b><small>' + esc(s.role || '') + '</small><p>' + esc(s.reason) + '</p><small class="muted">اختاره ' + esc(s.by) + '</small></div></div>' : '<p class="muted small">لسه ماتحددش' + (d.canStar ? '' : '. بيختاره مدير إدارة الأمن الحيوي') + '</p>') +
+        (d.canStar ? '<button class="btn sm" type="button" data-chstar="' + type + '">' + icon('star') + (s ? ' تغيير' : ' اختيار') + ' ' + lbl + '</button>' : '') + '</div>';
+    };
+    h += '<div class="ch-grid2">' + starCard(st.week, 'week', 'نجم الأسبوع', '⭐') + starCard(st.month, 'month', 'نجم الشهر', '🌟') + '</div>';
+    // سؤال الأسبوع
+    var q = d.quiz;
+    h += '<div class="card ch-quiz"><div class="spread"><h2>' + icon('grad') + ' سؤال الأسبوع</h2><span class="muted xs">' + esc(q.module || '') + '</span></div><p class="ch-q">' + esc(q.q) + '</p><div class="ch-ans">' +
+      q.a.map(function (a, i) { var cls = q.mine ? (i === q.mine.c ? ' ok' : i === q.mine.choice ? ' bad' : ' off') : ''; return '<button type="button" class="ch-a' + cls + '" data-qa="' + i + '"' + (q.mine ? ' disabled' : '') + '><span class="mono">' + 'أبج'.charAt(i) + '</span>' + esc(a) + '</button>'; }).join('') + '</div>' +
+      (q.mine ? '<p class="ch-why ' + (q.mine.ok ? 'ok' : 'bad') + '">' + (q.mine.ok ? '✅ إجابة صحيحة! +1 نقطة' : '❌ الإجابة الصحيحة متعلّمة بالأخضر') + (q.mine.why ? '<br>' + esc(q.mine.why) : '') + '</p>' : '<p class="muted xs">إجابة واحدة بس في الأسبوع · السؤال بيتغير كل سبت</p>') +
+      (q.top.length ? '<div class="ch-top"><b class="xs">' + icon('trophy') + ' الأعلى في الأسئلة</b>' + q.top.map(function (x, i) { return '<span>' + (i + 1) + '. ' + esc(x.name) + ' <b class="mono">' + x.pts + '</b></span>'; }).join('') + '</div>' : '') + '</div>';
+    // المناسبات + إنجاز الفريق
+    var oc = d.occasions;
+    h += '<div class="ch-grid2"><div class="card"><h2>' + icon('gift') + ' مناسبات الفريق</h2>' + (oc.length ? '<div class="ch-occ">' + oc.map(function (o) { return '<div class="ch-o' + (o.today ? ' today' : '') + '">' + avatar(o.name, o.photo) + '<div><b>' + esc(o.name) + '</b><small>' + (o.type === 'birth' ? '🎂 عيد ميلاده' : '🎉 ' + o.years + ' ' + (o.years > 2 && o.years <= 10 ? 'سنين' : 'سنة') + ' في الشركة') + ' · ' + (o.today ? '<b>النهارده</b>' : o.inDays === 1 ? 'بكرة' : chDay(o.day)) + '</small></div></div>'; }).join('') + '</div>' : '<p class="muted small">مفيش مناسبات في الأسبوعين الجايين' + (d.canManage ? '. ضيف تواريخ الميلاد والتعيين من «ملفات الفريق» تحت' : '') + '</p>') + '</div>' +
+      '<div class="card ch-team"><h2>' + icon('shieldOk') + ' إنجاز الفريق</h2>' + (d.noEws != null ? '<div class="ch-big"><b class="mono">' + d.noEws + '</b><span>يوم بدون إنذار نافق في المحطات</span></div>' : '<p class="muted small">لسه مفيش بيانات إنذار مبكر</p>') +
+      (d.sectors.length ? '<h3 class="ch-h3">ترتيب القطاعات (الشهر)</h3>' + d.sectors.map(function (s, i) { var mx = d.sectors[0].score || 1; return '<div class="ch-sec"><span>' + (i === 0 && s.score ? '🥇' : i === 1 && s.score ? '🥈' : i === 2 && s.score ? '🥉' : (i + 1) + '.') + ' ' + esc(s.name) + '</span>' + bar(s.score / mx * 100, 'var(--brand)') + '<b class="mono">' + s.score + '</b></div>'; }).join('') + '<p class="muted xs">كلمة شكر = 3 · نجم = 5 (الشهر 10) · إجابة صحيحة = 1</p>' : '') + '</div></div>';
+    // حائط الشكر
+    h += '<div class="card"><div class="spread"><h2>' + icon('heart') + ' حائط الشكر</h2>' + (d.canKudos ? '<button class="btn sm primary" type="button" id="chKudos">' + icon('plus') + ' كلمة شكر</button>' : '') + '</div>' +
+      (d.wall.length ? '<div class="ch-wall">' + d.wall.map(function (k) { return '<div class="ch-k"><b>' + esc(k.to) + '</b>' + (k.tag ? '<span class="chip">' + esc(k.tag) + '</span>' : '') + (k.note ? '<p>' + esc(k.note) + '</p>' : '') + '<small>من ' + esc(k.from) + ' · ' + esc(ago(k.time)) + '</small></div>'; }).join('') + '</div>' : '<p class="muted small">لسه مفيش كلمات شكر</p>') + '</div>';
+    // الاقتراحات
+    h += '<div class="card"><h2>' + icon('bulb') + ' صندوق الاقتراحات</h2><p class="muted small">عندك فكرة تحسّن الشغل أو الأمان؟ ابعتها، والإدارة بترد عليك. ولو اتنفذت تاخد وسام «صاحب فكرة».</p>' +
+      '<div class="ch-idea"><textarea id="chIdea" rows="3" maxlength="1500" placeholder="اكتب اقتراحك…"></textarea><div class="spread"><label class="check" id="chAnon"><span class="box">' + icon('check') + '</span> من غير اسمي</label><button class="btn primary sm" type="button" id="chIdeaGo">' + icon('bulb') + ' إرسال الاقتراح</button></div></div>' +
+      (d.ideas.length ? '<div class="ch-ideas">' + d.ideas.map(function (x) { var c = { 'جديدة': '', 'قيد الدراسة': 'p-warn', 'تم التنفيذ': 'p-ok', 'مرفوضة': 'p-bad' }[x.status] || ''; return '<div class="ch-i"><div class="spread"><span class="pill ' + c + '">' + esc(x.status) + '</span><small class="muted">' + (d.canManage ? esc(x.from) + ' · ' : '') + esc(ago(x.time)) + '</small></div><p>' + esc(x.text) + '</p>' + (x.reply ? '<p class="ch-rep">' + icon('chat') + ' ' + esc(x.reply) + ' <small>— ' + esc(x.repliedBy) + '</small></p>' : '') + (d.canManage ? '<button class="btn sm" type="button" data-chir="' + esc(x.id) + '">' + icon('chat') + ' رد / تغيير الحالة</button>' : '') + '</div>'; }).join('') + '</div>' : '') + '</div>';
+    // أدوات الإدارة
+    if (d.canManage) h += '<div class="card ch-admin"><h2>' + icon('user') + ' ملفات الفريق</h2><p class="muted small">الصور وتواريخ الميلاد والتعيين بتشغّل التهاني التلقائية (عيد الميلاد وذكرى التعيين) وأوسمة الأقدمية. ' + d.people.filter(function (p) { return p.birth; }).length + ' من ' + d.people.length + ' متسجل لهم تاريخ ميلاد.</p>' +
+      '<div class="ib-acts"><button class="btn primary" type="button" id="chImp">' + icon('upload') + ' استيراد التواريخ من إكسيل</button></div>' +
+      '<div class="ch-ppl">' + d.people.map(function (p) { return '<button type="button" class="ch-pp" data-chp="' + esc(p.id) + '">' + avatar(p.name, p.photo) + '<span><b>' + esc(p.name) + '</b><small>' + esc([p.role, p.where].filter(Boolean).join(' · ')) + '</small><small>' + (p.birth ? '🎂 <bdi class="mono">' + p.birth + '</bdi>' : '<span class="muted">بدون ميلاد</span>') + (p.hire ? ' · 💼 <bdi class="mono">' + p.hire + '</bdi>' : '') + '</small></span>' + (p.kudos ? '<span class="pill">🙏 ' + p.kudos + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
+    out.innerHTML = h;
+    chBind(d);
+  }
+  function chBind(d) {
+    var ph = $('chPhoto'); if (ph) ph.onchange = function () { var f = this.files && this.files[0]; if (!f) return; shrinkSquare(f, 320).then(function (u) { toast('جاري حفظ الصورة…'); return remote('profileSave', [S.session.pin, { photo: u }]); }).then(function () { toast('اتحفظت صورتك'); chLoad(); }).catch(function (e) { toast(errText(e)); }); };
+    if ($('chBirthOk')) $('chBirthOk').onclick = function () { var v = $('chBirth').value; if (!v) return toast('اختار التاريخ'); remote('profileSave', [S.session.pin, { birth: v }]).then(function () { toast('اتحفظ تاريخ ميلادك 🎂'); chLoad(); }).catch(function (e) { toast(errText(e)); }); };
+    document.querySelectorAll('[data-qa]').forEach(function (b) { b.onclick = function () { document.querySelectorAll('[data-qa]').forEach(function (x) { x.disabled = true; }); remote('quizAnswer', [S.session.pin, +b.dataset.qa]).then(function (r) { if (r.ok) msgChime('عادي'); chLoad(); }).catch(function (e) { toast(errText(e)); chLoad(); }); }; });
+    if ($('chAnon')) $('chAnon').onclick = function () { this.classList.toggle('on'); };
+    if ($('chIdeaGo')) $('chIdeaGo').onclick = function () { var b = this, t = $('chIdea').value; b.disabled = true; remote('ideaSend', [S.session.pin, { text: t, anon: $('chAnon').classList.contains('on') }]).then(function () { toast('وصل اقتراحك للإدارة، شكراً 💡'); chLoad(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
+    document.querySelectorAll('[data-chstar]').forEach(function (b) { b.onclick = function () { chStarSheet(d, b.dataset.chstar); }; });
+    if ($('chKudos')) $('chKudos').onclick = function () { chKudosSheet(d); };
+    document.querySelectorAll('[data-chir]').forEach(function (b) { b.onclick = function () { chIdeaSheet(d, b.dataset.chir); }; });
+    document.querySelectorAll('[data-chp]').forEach(function (b) { b.onclick = function () { chPersonSheet(d, b.dataset.chp); }; });
+    if ($('chImp')) $('chImp').onclick = chImportSheet;
+  }
+  function chPick(d, id) {
+    return '<div class="field"><label for="' + id + '">الموظف</label><select id="' + id + '"><option value="">اختار…</option>' + d.people.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name) + (p.role ? ' · ' + esc(p.role) : '') + '</option>'; }).join('') + '</select></div>';
+  }
+  function chStarSheet(d, type) {
+    var lbl = type === 'month' ? 'نجم الشهر' : 'نجم الأسبوع';
+    openSheet('<div class="sheet-head sh-brand"><h2>' + (type === 'month' ? '🌟 ' : '⭐ ') + lbl + '</h2><p class="small">الاختيار بيوصل لكل فريق الأمن الحيوي كرسالة، ويظهر على شاشات البوابات</p></div><div class="sheet-body">' + chPick(d, 'csP') +
+      '<div class="field"><label for="csR">ليه اخترته؟ (بيظهر للفريق)</label><textarea id="csR" rows="3" maxlength="300" placeholder="مثال: صفر أخطاء تسجيل الأسبوع ده واكتشف مخالفة سائق"></textarea></div>' +
+      '<button class="btn primary big" type="button" data-a="ok">' + icon('star') + ' اعتماد ' + lbl + '</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'ok') { b.disabled = true; remote('starSet', [S.session.pin, { type: type, id: $('csP').value, reason: $('csR').value }]).then(function () { closeSheet(); toast('اتعلن ' + lbl + ' للفريق 🎉'); chLoad(); inboxFetch(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }
+    });
+  }
+  function chKudosSheet(d) {
+    var tag = '';
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('heart') + ' كلمة شكر</h2><p class="small">بتوصل للموظف كرسالة وتتسجل في إنجازاته</p></div><div class="sheet-body">' + chPick(d, 'ckP') +
+      '<div class="mc-chips">' + d.tags.map(function (t) { return '<button type="button" class="chip" data-a="tag" data-k="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
+      '<div class="field"><label for="ckN">كلمتك (اختياري)</label><textarea id="ckN" rows="3" maxlength="400"></textarea></div>' +
+      '<button class="btn primary big" type="button" data-a="ok">' + icon('heart') + ' إرسال الشكر</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'tag') { tag = tag === b.dataset.k ? '' : b.dataset.k; document.querySelectorAll('[data-a="tag"]').forEach(function (x) { x.classList.toggle('on', x.dataset.k === tag); }); return; }
+      if (a === 'ok') { b.disabled = true; remote('kudosGive', [S.session.pin, { to: $('ckP').value, tag: tag, note: $('ckN').value }]).then(function () { closeSheet(); toast('وصلت كلمة الشكر 🙏'); chLoad(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }
+    });
+  }
+  function chIdeaSheet(d, id) {
+    var x = d.ideas.filter(function (i) { return i.id === id; })[0]; if (!x) return; var stt = x.status === 'جديدة' ? 'قيد الدراسة' : x.status;
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('bulb') + ' رد على اقتراح</h2></div><div class="sheet-body"><p class="ch-q">' + esc(x.text) + '</p><p class="muted xs">' + esc(x.from) + '</p>' +
+      '<div class="kn-seg" id="ciS">' + ['قيد الدراسة', 'تم التنفيذ', 'مرفوضة'].map(function (s) { return '<button type="button" data-a="st" data-k="' + s + '" class="' + (s === stt ? 'on' : '') + '">' + s + '</button>'; }).join('') + '</div>' +
+      '<div class="field"><label for="ciR">الرد (بيوصله كرسالة لو مش بدون اسم)</label><textarea id="ciR" rows="3" maxlength="800">' + esc(x.reply) + '</textarea></div>' +
+      '<button class="btn primary big" type="button" data-a="ok">' + icon('check') + ' حفظ الرد</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'st') { stt = b.dataset.k; document.querySelectorAll('#ciS button').forEach(function (z) { z.classList.toggle('on', z.dataset.k === stt); }); return; }
+      if (a === 'ok') { b.disabled = true; remote('ideaReply', [S.session.pin, { id: id, status: stt, reply: $('ciR').value }]).then(function () { closeSheet(); toast('اتحفظ الرد'); chLoad(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }
+    });
+  }
+  function chPersonSheet(d, id) {
+    var p = d.people.filter(function (x) { return x.id === id; })[0]; if (!p) return; var photo;
+    openSheet('<div class="sheet-head sh-brand"><h2>' + esc(p.name) + '</h2><p class="small">' + esc([p.role, p.where].filter(Boolean).join(' · ')) + '</p></div><div class="sheet-body">' +
+      '<label class="ch-ph sm" for="cpPh">' + avatar(p.name, p.photo, true) + '<span class="ch-cam">' + icon('camera') + '</span></label><input type="file" id="cpPh" accept="image/*" hidden>' +
+      '<div class="field"><label for="cpB">تاريخ الميلاد</label><input type="date" id="cpB" value="' + esc(p.birth) + '"></div><div class="field"><label for="cpH">تاريخ التعيين</label><input type="date" id="cpH" value="' + esc(p.hire) + '"></div>' +
+      '<button class="btn primary big" type="button" data-a="ok">' + icon('check') + ' حفظ</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'ok') { b.disabled = true; var pl = { id: id, birth: $('cpB').value, hire: $('cpH').value }; if (photo) pl.photo = photo; remote('profileSave', [S.session.pin, pl]).then(function () { closeSheet(); toast('اتحفظ'); chLoad(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }
+    });
+    $('cpPh').onchange = function () { var f = this.files && this.files[0]; if (!f) return; shrinkSquare(f, 320).then(function (u) { photo = u; var l = document.querySelector('label[for="cpPh"]'); if (l) l.innerHTML = avatar(p.name, u, true) + '<span class="ch-cam">' + icon('camera') + '</span>'; }); };
+  }
+  /** لصق من إكسيل: الكود (أو الاسم) ثم تاريخ الميلاد ثم تاريخ التعيين؛ معاينة قبل الحفظ */
+  function chImportSheet() {
+    var last = null;
+    openSheet('<div class="sheet-head sh-brand"><h2>' + icon('upload') + ' استيراد تواريخ الميلاد والتعيين</h2><p class="small">انسخ من إكسيل والصق هنا. يُفضل تنسخ سطر العناوين معاهم</p></div><div class="sheet-body">' +
+      '<div class="ch-fmt"><b>الشكل المطلوب (3 أعمدة):</b><table class="mono"><tr><th>الكود</th><th>تاريخ الميلاد</th><th>تاريخ التعيين</th></tr><tr><td>102818</td><td>1988-03-12</td><td>2014-09-01</td></tr><tr><td>102772</td><td>25/10/1990</td><td>1/2/2016</td></tr></table><p class="muted xs">ينفع الاسم بدل الكود، وينفع عمود اسم بين الكود والتواريخ. التاريخ ينفع 1988-03-12 أو 12/3/1988 (يوم/شهر/سنة). الخانة الفاضية بتتساب زي ما هي.</p></div>' +
+      '<div class="field"><label for="ciT">الصق البيانات</label><textarea id="ciT" rows="7" dir="ltr" placeholder="الكود&#9;تاريخ الميلاد&#9;تاريخ التعيين"></textarea></div>' +
+      '<button class="btn big" type="button" data-a="pre">' + icon('search') + ' معاينة</button><div id="ciOut"></div><button class="btn ghost" type="button" data-a="x">إغلاق</button></div>', function (a, b) {
+      if (a === 'x') return closeSheet();
+      if (a === 'pre' || a === 'apply') {
+        b.disabled = true; var apply = a === 'apply';
+        remote('staffDatesImport', [S.session.pin, $('ciT').value, apply]).then(function (r) {
+          b.disabled = false; last = r;
+          if (apply) { closeSheet(); toast('اتحفظت تواريخ ' + r.good.length + ' موظف'); chLoad(); return; }
+          $('ciOut').innerHTML = '<div class="ch-pre"><p><b class="mono" style="color:var(--ok)">' + r.good.length + '</b> سطر سليم · <b class="mono" style="color:var(--bad)">' + r.bad.length + '</b> مرفوض</p>' +
+            (r.good.length ? '<table class="ch-tb"><tr><th>الموظف</th><th>الميلاد</th><th>التعيين</th></tr>' + r.good.map(function (g) { return '<tr><td>' + esc(g.name) + '</td><td class="mono">' + (g.birth || '<span class="muted">—</span>') + (g.oldBirth && g.birth && g.oldBirth !== g.birth ? '<small class="muted"> (كان ' + g.oldBirth + ')</small>' : '') + '</td><td class="mono">' + (g.hire || '<span class="muted">—</span>') + '</td></tr>'; }).join('') + '</table>' : '') +
+            (r.bad.length ? '<div class="ch-bad">' + r.bad.map(function (x) { return '<p class="xs"><b>سطر ' + x.line + ':</b> ' + esc(x.text) + ' ← <span style="color:var(--bad)">' + esc(x.why) + '</span></p>'; }).join('') + '</div>' : '') +
+            (r.good.length ? '<button class="btn primary big" type="button" data-a="apply">' + icon('check') + ' حفظ ' + r.good.length + ' موظف</button>' : '') +
+            (r.missing.length ? '<details><summary class="xs">' + r.missing.length + ' موظف لسه من غير تاريخ ميلاد</summary><p class="xs muted">' + r.missing.map(function (m) { return esc(m.id + ' ' + m.name); }).join('، ') + '</p></details>' : '') + '</div>';
+        }).catch(function (e) { b.disabled = false; toast(errText(e), 6000); });
+      }
+    });
+  }
+  /* ============================ v33: تحليل تقارير الزيارة مع النافق والبوابات ============================ */
+  function viewVrCorr(args) {
+    var days = Number(args && args[0]) || S.vcDays || 90; S.vcDays = days;
+    $('main').innerHTML = '<section class="view">' + v5Head('تحليل التقارير مع النافق والبوابات', 'bars', 'هل المحطات الأضعف في تقارير الزيارة هي فعلاً الأعلى في النافق والمخالفات على بوابتها؟') +
+      '<div class="kn-seg" role="group" style="margin-bottom:12px">' + [60, 90, 120, 180].map(function (d) { return '<button type="button" data-vcd="' + d + '" class="' + (d === days ? 'on' : '') + '">آخر ' + d + ' يوم</button>'; }).join('') + '</div><div id="v5Out">' + v5Spin() + '</div></section>';
+    document.querySelectorAll('[data-vcd]').forEach(function (b) { b.onclick = function () { go('vrcorr/' + b.dataset.vcd); }; });
+    v5Load('vrCorr', [days], vcDraw, 'التحليل');
+  }
+  function vcDraw(d) {
+    var out = $('v5Out'); if (!out) return;
+    if (!d.rows.length) { out.innerHTML = '<div class="card"><p class="empty">' + icon('bars') + (d.linked ? ' مفيش تقارير زيارة أو بيانات نافق في الفترة دي' : ' شيت تقارير الزيارة مش مربوط بالمنظومة') + '</p></div>'; return; }
+    var pts = d.rows.filter(function (r) { return r.score != null && r.mort != null; });
+    var W = 560, Hh = 300, P = 42, xs = pts.map(function (r) { return r.score; }), ys = pts.map(function (r) { return r.mort; });
+    var x0 = Math.min.apply(null, xs.concat([70])) - 3, x1 = Math.max.apply(null, xs.concat([100])), y1 = Math.max.apply(null, ys.concat([0.1])) * 1.15;
+    var X = function (v) { return W - P - (v - x0) / (x1 - x0) * (W - 2 * P); }, Y = function (v) { return Hh - P - v / y1 * (Hh - 2 * P); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" class="vc-sc" role="img" aria-label="الدرجة مقابل النافق">';
+    [0, 0.5, 1].forEach(function (f) { var y = Y(y1 * f); svg += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)"/><text x="' + (W - P + 4) + '" y="' + (y + 4) + '" font-size="11" fill="var(--muted)" text-anchor="start">' + (y1 * f).toFixed(2) + '%</text>'; });
+    [x0, 80, x1].forEach(function (v) { var x = X(v); svg += '<line x1="' + x + '" x2="' + x + '" y1="' + P + '" y2="' + (Hh - P) + '" stroke="var(--line)" stroke-dasharray="' + (v === 80 ? '4 4' : '0') + '"/><text x="' + x + '" y="' + (Hh - P + 16) + '" font-size="11" fill="var(--muted)" text-anchor="middle">' + Math.round(v) + '%</text>'; });
+    pts.forEach(function (r) { var c = r.score >= 90 ? '#16a34a' : r.score >= 80 ? '#65a30d' : r.score >= 70 ? '#d97706' : '#dc2626'; svg += '<circle cx="' + X(r.score).toFixed(1) + '" cy="' + Y(r.mort).toFixed(1) + '" r="' + (6 + Math.min(8, r.flags + r.denied / 5)) + '" fill="' + c + '" fill-opacity=".8" stroke="#fff" stroke-width="1.5"><title>' + esc(r.name) + ' · ' + r.score + '% · نافق ' + r.mort + '%</title></circle><text x="' + X(r.score).toFixed(1) + '" y="' + (Y(r.mort) - 12).toFixed(1) + '" font-size="10.5" font-weight="700" text-anchor="middle" fill="var(--ink)">' + esc(String(r.name).replace(/^.*محطة\s*/, 'م')) + '</text>'; });
+    svg += '<text x="' + (W / 2) + '" y="' + (Hh - 6) + '" font-size="11.5" font-weight="700" text-anchor="middle" fill="var(--ink-2)">درجة تقارير التربية ← الأعلى أحسن</text><text x="12" y="' + (Hh / 2) + '" font-size="11.5" font-weight="700" text-anchor="middle" fill="var(--ink-2)" transform="rotate(-90 12 ' + (Hh / 2) + ')">متوسط النافق اليومي %</text></svg>';
+    var g = d.groups, fx = function (v, n) { return v == null ? '—' : v.toFixed(n == null ? 3 : n); }, cr = function (c) { return c == null ? '—' : c.toFixed(2); };
+    var h = '<div class="vc-grid"><div class="card"><h3>' + icon('bars') + ' الدرجة مقابل النافق</h3>' + (pts.length ? svg + '<p class="xs muted">حجم الدايرة = الرفض والمخالفات على البوابة. الخط المتقطع = 80%.</p>' : '<p class="empty">مفيش محطات عندها تقارير وبيانات نافق مع بعض</p>') + '</div>' +
+      '<div class="card"><h3>' + icon('alert') + ' القراءة</h3><div class="vc-kp"><div><b class="mono">' + cr(d.corr.mort) + '</b><span>الدرجة × النافق (' + d.corr.nM + ' محطة)</span></div><div><b class="mono">' + cr(d.corr.viol) + '</b><span>الدرجة × مخالفات البوابة (' + d.corr.nV + ')</span></div></div>' +
+      '<div class="vc-g"><div><small>درجة أقل من 80% (' + g.lo.n + ')</small><b>نافق ' + fx(g.lo.mort) + '%</b><span>مخالفات ' + fx(g.lo.viol, 1) + '% · إنذارات ' + g.lo.ews + '</span></div><div><small>80% فأكثر (' + g.hi.n + ')</small><b>نافق ' + fx(g.hi.mort) + '%</b><span>مخالفات ' + fx(g.hi.viol, 1) + '% · إنذارات ' + g.hi.ews + '</span></div></div>' +
+      '<ul class="vc-ins">' + d.insights.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul><p class="xs muted">r قريب من −1 = كل ما الدرجة تقل النافق يزيد. العلاقة لا تعني سبب مباشر، لكنها بتحدد المحطات اللي محتاجة أولوية.</p></div></div>';
+    h += '<div class="card"><h3>' + icon('layers') + ' المحطات (الأضعف في التقارير أولاً)</h3><div class="tbl"><table><thead><tr><th>المحطة</th><th>متوسط الدرجة</th><th>آخر درجة</th><th>تقارير</th><th>حرجة</th><th>نافق يومي %</th><th>دخول</th><th>رفض</th><th>مخالفات</th><th>إنذارات نافق</th><th>آخر تجهيز</th></tr></thead><tbody>' +
+      d.rows.map(function (r) { var c = r.score == null ? '' : r.score >= 85 ? 'ok' : r.score >= 75 ? 'warn' : 'bad'; return '<tr><td><b>' + esc(r.name) + '</b></td><td class="mono vc-' + c + '">' + (r.score == null ? '—' : r.score + '%') + '</td><td class="mono">' + (r.last == null ? '—' : r.last + '%') + '</td><td class="mono">' + r.nRep + '</td><td class="mono">' + r.crit + '</td><td class="mono">' + (r.mort == null ? '—' : r.mort.toFixed(3)) + '</td><td class="mono">' + r.entries + '</td><td class="mono">' + r.denied + '</td><td class="mono">' + r.flags + '</td><td class="mono">' + r.ews + '</td><td class="small">' + (r.prep ? esc(r.prep.decision || '—') + (r.prep.downtime != null ? ' · ' + r.prep.downtime + ' يوم' : '') : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    out.innerHTML = h;
+  }
+  /* ============================ v33.1: إعداد الإشعارات (Firebase) من داخل التطبيق ============================ */
+  function pushCfg() {
+    if (CFG.FIREBASE && CFG.VAPID_KEY) return { firebase: CFG.FIREBASE, vapid: CFG.VAPID_KEY };
+    var c = S.pushCfg; if (!c) { try { c = JSON.parse(localStorage.getItem('bio-pushcfg') || 'null'); } catch (e) {} S.pushCfg = c; }
+    return c && c.firebase && c.vapid ? c : null;
+  }
+  function pushCfgLoad() {
+    if (!S.session || MODE === 'demo') return Promise.resolve(null);
+    return remote('pushConfig', [S.session.pin]).then(function (d) {
+      if (d && d.firebase && d.vapid) { S.pushCfg = { firebase: d.firebase, vapid: d.vapid }; try { localStorage.setItem('bio-pushcfg', JSON.stringify(S.pushCfg)); } catch (e) {} }
+      S.pushMine = d ? d.mine : 0; S.pushReady = !!(d && d.ready);
+      // الجهاز سامح بالإشعارات: نجدد تسجيله بهدوء (الرمز بيتغير أحياناً)
+      if (MODE === 'web' && pushCfg() && window.Notification && Notification.permission === 'granted') enablePush(true);
+      return d;
+    }).catch(function () { return null; });
+  }
+  function viewPushSet() {
+    $('main').innerHTML = '<section class="view">' + v5Head('إعداد الإشعارات', 'bell', 'علشان الرسائل والتنبيهات توصل للموبايل والتطبيق مقفول. مرة واحدة بس، ومجانية بالكامل') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    v5Load('pushAdmin', [], psDraw, 'إعداد الإشعارات');
+  }
+  function psDraw(d) {
+    var out = $('v5Out'); if (!out) return; var st = d.state;
+    var chip = function (ok, t) { return '<span class="ps-chip ' + (ok ? 'ok' : 'no') + '">' + icon(ok ? 'check' : 'x') + ' ' + t + '</span>'; };
+    var step = function (n, t, body) { return '<li class="ps-step"><span class="ps-n mono">' + n + '</span><div><b>' + t + '</b>' + body + '</div></li>'; };
+    var h = '<div class="card ps-state"><div class="ps-chips">' + chip(st.web, 'إعدادات الويب ومفتاح Web Push') + chip(st.sa, 'ملف حساب الخدمة') + chip(d.withDevice > 0, d.withDevice + ' حساب فعّل الإشعارات على موبايله') + '</div>' +
+      (st.project ? '<p class="small muted">مشروع Firebase: <b class="mono">' + esc(st.project) + '</b>' + (st.saEmail ? ' · حساب الخدمة: <span class="mono">' + esc(st.saEmail) + '</span>' : '') + '</p>' : '') +
+      (st.web && st.sa ? '<p class="ps-ok">' + icon('check') + ' الإعداد كامل. كل موظف يفتح التطبيق المثبت ويضغط «تفعيل الإشعارات على هذا الجهاز» من «المزيد» أو من «رسائل الإدارة».</p>' : '') + '</div>';
+    h += '<div class="card"><h3>' + icon('clip') + ' الخطوات في Firebase (من الكمبيوتر، حوالي 10 دقايق)</h3><ol class="ps-steps">' +
+      step(1, 'اعمل مشروع', '<p>افتح <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">console.firebase.google.com</a> بحساب جوجل بتاع الإدارة ← <b>Create a project</b> ← اسم زي <span class="mono">biosecurity-c3a</span> ← اقفل Google Analytics ← Create.</p>') +
+      step(2, 'سجّل تطبيق الويب وانسخ الإعدادات', '<p>من الترس ⚙ ← <b>Project settings</b> ← <b>General</b> ← تحت «Your apps» اضغط أيقونة الويب <span class="mono">&lt;/&gt;</span> ← اكتب اسم ← <b>Register app</b> (من غير Hosting). هيظهر بلوك فيه <span class="mono">const firebaseConfig = {…}</span>: انسخه كله والصقه في الخانة 1 تحت.</p>') +
+      step(3, 'مفتاح Web Push', '<p>Project settings ← <b>Cloud Messaging</b>. اتأكد إن «Firebase Cloud Messaging API (V1)» مكتوب جنبها Enabled. انزل لـ <b>Web configuration ← Web Push certificates</b> ← <b>Generate key pair</b> ← انسخ المفتاح الطويل والصقه في الخانة 2.</p>') +
+      step(4, 'ملف حساب الخدمة (سري)', '<p>Project settings ← <b>Service accounts</b> ← <b>Generate new private key</b> ← Generate key. هينزل ملف JSON: اختاره من الخانة 3. الملف ده بيتحفظ في خصائص السكربت على جوجل بس، ومش بيظهر لأي حد ولا بيترفع على GitHub. احذفه من الكمبيوتر بعد الحفظ.</p>') +
+      step(5, 'احفظ وجرّب', '<p>اضغط «حفظ». بعدها من الموبايل افتح التطبيق المثبت (نسخة GitHub) ← «تفعيل الإشعارات على هذا الجهاز» ← Allow ← «إرسال إشعار تجريبي لنفسي» واقفل التطبيق تستلمه.</p>') +
+      '</ol><p class="xs muted">آيفون: لازم التطبيق يكون متثبت على الشاشة الرئيسية (Add to Home Screen) و iOS 16.4 أو أحدث. أندرويد: كروم. الإشعارات مش بتشتغل من رابط Apps Script المباشر، من النسخة المثبتة بس.</p></div>';
+    h += '<div class="card"><h3>' + icon('key') + ' البيانات</h3><div class="ps-form">' +
+      '<div class="field"><label for="psCfg">1) إعدادات تطبيق الويب (firebaseConfig)</label><textarea id="psCfg" rows="7" dir="ltr" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIza…&quot;,&#10;  projectId: &quot;…&quot;, …&#10;};"></textarea><span class="hint">' + (st.web ? 'محفوظة. الصق تاني بس لو عايز تغيّرها' : 'لسه ما اتحفظتش') + '</span></div>' +
+      '<div class="field"><label for="psVapid">2) مفتاح Web Push (Key pair)</label><input id="psVapid" dir="ltr" autocomplete="off" placeholder="B…"></div>' +
+      '<div class="field"><label>3) ملف حساب الخدمة JSON</label><label class="btn" for="psSa">' + icon('upload') + ' اختيار الملف</label><input type="file" id="psSa" accept=".json,application/json" hidden><span class="hint" id="psSaN">' + (st.sa ? 'محفوظ. اختار ملف جديد بس لو عايز تغيّره' : 'لسه ما اترفعش') + '</span></div>' +
+      '<div class="ps-btns"><button class="btn primary" type="button" id="psSave">' + icon('check') + ' حفظ</button><button class="btn" type="button" id="psTest">' + icon('bell') + ' إرسال إشعار تجريبي لنفسي</button>' + (MODE === 'web' ? '<button class="btn" type="button" id="psMe">' + icon('bell') + ' تفعيل الإشعارات على هذا الجهاز</button>' : '') + '</div></div></div>';
+    var no = d.users.filter(function (u) { return !u.n; });
+    h += '<div class="card"><h3>' + icon('user') + ' مين فعّل الإشعارات على موبايله <span class="muted small">' + d.withDevice + ' من ' + d.users.length + '</span></h3>' +
+      '<div class="ps-users">' + d.users.map(function (u) { return '<span class="ps-u ' + (u.n ? 'on' : '') + '">' + (u.n ? '🔔' : '🔕') + ' ' + esc(u.name) + ' <small>' + esc(u.role) + (u.n > 1 ? ' · ' + u.n + ' أجهزة' : '') + '</small></span>'; }).join('') + '</div>' +
+      (no.length ? '<p class="xs muted">ابعت للي لسه ما فعّلوش رسالة من «رسائل الإدارة» يفتحوا التطبيق المثبت ويضغطوا «تفعيل الإشعارات».</p>' : '') + '</div>';
+    out.innerHTML = h;
+    var saTxt = '';
+    $('psSa').onchange = function () { var f = this.files && this.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { saTxt = String(r.result || ''); $('psSaN').textContent = '✓ ' + f.name + ' (هيتحفظ لما تضغط حفظ)'; }; r.readAsText(f); };
+    $('psSave').onclick = function () {
+      var b = this, p = { config: $('psCfg').value.trim(), vapid: $('psVapid').value.trim(), sa: saTxt };
+      if (!p.config && !p.vapid && !p.sa) return toast('مفيش بيانات جديدة تتحفظ');
+      b.disabled = true; b.innerHTML = '<span class="spin"></span> جاري الحفظ والتحقق';
+      remote('pushSave', [S.session.pin, p]).then(function () { toast('اتحفظت إعدادات الإشعارات'); S.pushCfg = null; try { localStorage.removeItem('bio-pushcfg'); } catch (e) {} pushCfgLoad(); viewPushSet(); })
+        .catch(function (e) { b.disabled = false; b.innerHTML = icon('check') + ' حفظ'; toast(errText(e), 8000); });
+    };
+    $('psTest').onclick = function () { var b = this; b.disabled = true; remote('pushTest', [S.session.pin]).then(function (r) { b.disabled = false; toast(r.demo ? 'نسخة العرض: الإشعار التجريبي بيتبعت على الخادم الحقيقي بس' : r.sent ? 'اتبعت لـ ' + r.sent + ' جهاز. لو التطبيق مقفول هيظهر في الإشعارات' : 'ما اتبعتش: ' + (r.err || 'راجع الإعدادات'), 7000); }).catch(function (e) { b.disabled = false; toast(errText(e), 7000); }); };
+    if ($('psMe')) $('psMe').onclick = function () { enablePush(false); };
+  }
   function viewAcademy(args) {
     var tab = (args && args[0]) || (S.kn && S.kn.tab) || 'news'; if (!KN_TABS.some(function (t) { return t[0] === tab; })) tab = 'news';
     S.kn = Object.assign({ topic: '', scope: '', q: '' }, S.kn || {}, { tab: tab });
@@ -4618,7 +5057,7 @@
     $('main').innerHTML = '<section class="view"><div class="card"><p class="empty">' + icon('tv') + 'شاشة غرفة العمليات مفتوحة</p></div></section>';
     var T = S.tv = { i: 0, d: null, b: null, dp: null, seen: {}, secs: Math.max(6, Number(S.ref && S.ref.settings.TV_SECONDS) || 12), mode: tvModeGet() };
     var el = document.createElement('div'); el.className = 'tv'; el.id = 'tv';
-    el.innerHTML = '<header class="tv-h"><div class="tv-brand">' + logoImg() + '<div><b>غرفة عمليات الأمن الحيوي</b><span>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + '</span></div></div><div class="tv-title" id="tvTitle"></div><div class="tv-dots" id="tvDots">' + TV_PANELS.map(function (p, i) { return '<i data-i="' + i + '"></i>'; }).join('') + '</div><div class="tv-clock mono" id="tvClock"></div><button class="tv-btn tv-mode" type="button" id="tvMode" title="تبديل بين جدار العمليات وتناوب اللوحات">' + icon('layers') + '<span></span></button><button class="tv-btn" type="button" id="tvFs" aria-label="ملء الشاشة">' + icon('expand') + '</button><button class="tv-btn" type="button" id="tvX" aria-label="خروج">' + icon('x') + '</button></header>' +
+    el.innerHTML = '<header class="tv-h"><div class="tv-brand">' + logoImg() + '<div><b>غرفة عمليات الأمن الحيوي</b><span>' + esc(CFG.COMPANY || 'كايرو ثري إيه') + '</span></div></div><div class="tv-title" id="tvTitle"></div>' + starStrip(S.inbox && S.inbox.stars, 'tv') + '<div class="tv-dots" id="tvDots">' + TV_PANELS.map(function (p, i) { return '<i data-i="' + i + '"></i>'; }).join('') + '</div><div class="tv-clock mono" id="tvClock"></div><button class="tv-btn tv-mode" type="button" id="tvMode" title="تبديل بين جدار العمليات وتناوب اللوحات">' + icon('layers') + '<span></span></button><button class="tv-btn" type="button" id="tvFs" aria-label="ملء الشاشة">' + icon('expand') + '</button><button class="tv-btn" type="button" id="tvX" aria-label="خروج">' + icon('x') + '</button></header>' +
       '<div class="tv-stage" id="tvStage"><p class="empty"><span class="spin"></span></p></div><div class="tv-bar"><i id="tvBar"></i></div><div class="tv-alarm" id="tvAlarm" hidden></div>' +
       '<div class="tv-start" id="tvStart"><div class="tvs-in"><span>' + icon('tv', 'ico-lg') + '</span><b>شاشة غرفة العمليات</b><p>اختر طريقة العرض. تتحول الشاشة لإنذار أحمر بصوت عند أي بلاغ عاجل لم يُفتح، وتتحدث البيانات كل 30 ثانية.</p>' +
       '<div class="tvs-modes"><button type="button" class="tvs-m' + (T.mode === 'wall' ? ' on' : '') + '" data-tvm="wall"><b>جدار العمليات</b><small>كل شيء في شاشة واحدة ثابتة: الخريطة الحية ومستوى التهديد وما يحتاج قراراً والمؤشرات</small></button><button type="button" class="tvs-m' + (T.mode === 'rot' ? ' on' : '') + '" data-tvm="rot"><b>تناوب اللوحات</b><small>' + TV_PANELS.length + ' لوحات تتبدل كل ' + T.secs + ' ثانية: الموقف والكاميرات والنافق والطيور والخطر والبلاغات</small></button></div>' +
@@ -7656,16 +8095,16 @@
       if (!v.length) throw new Error('empty'); S.rkWind[key] = { at: Date.now(), v: v }; return v;
     });
   }
-  /** طبقة اتجاه الرياح: أسهم أرصاد جوية على شبكة منتظمة، طول السهم ولونه حسب السرعة،
-   * مع موجة إضاءة خفيفة تمشي في اتجاه الهبوب (توضح الحركة من غير ما تبان زي المطر).
+  /** طبقة الرياح (v32.5): «خطوط سريان» ناعمة تتبع حقل الرياح الحقيقي + ومضات متوهجة بتمشي عليها بسرعة الريح
+   * + علامات اتجاه صغيرة على مسافات ثابتة. شكل أقرب لخرائط الأرصاد الاحترافية بدل الأسهم أو النقط.
    * samples: [{lat,lng,dir (اتجاه الهبوب من، درجات),spd كم/س}] */
   function rkFlow(map, samples, o) {
     o = o || {};
     var host = map.getContainer(), cv = document.createElement('canvas'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.className = 'rk-flow'; var pane = map.getPane('rkflow') || map.createPane('rkflow'); pane.style.zIndex = 450; pane.style.pointerEvents = 'none'; pane.appendChild(cv);
-    var W = 0, H = 0, arrows = [], on = true, raf = 0, data = samples || [], t0 = Date.now(), ready = false;
-    var col = function (v) { return v < 15 ? '#bae6fd' : v < 30 ? '#f1f5f9' : v < 45 ? '#fde68a' : '#fca5a5'; }, last = 0;
-    function field(ll) {
+    var W = 0, H = 0, lines = [], on = true, raf = 0, data = samples || [], t0 = Date.now(), last = 0, ready = false;
+    var col = function (v) { return v < 15 ? [125, 211, 252] : v < 30 ? [165, 243, 252] : v < 45 ? [253, 230, 138] : [252, 165, 165]; };
+    function fieldLL(ll) {
       var su = 0, sv = 0, sw = 0, sp = 0;
       for (var i = 0; i < data.length; i++) {
         var p = data[i], dy = (p.lat - ll.lat), dx = (p.lng - ll.lng) * Math.cos(ll.lat * Math.PI / 180), wt = 1 / (dx * dx + dy * dy + 1e-6), to = ((p.dir + 180) % 360) * Math.PI / 180;
@@ -7673,45 +8112,74 @@
       }
       return sw ? [su / sw, sv / sw, sp / sw] : null;
     }
+    var grid = null, gs = 24;
+    function at(x, y) { if (!grid) return null; var i = Math.max(0, Math.min(grid.c - 1, Math.round(x / gs))), j = Math.max(0, Math.min(grid.r - 1, Math.round(y / gs))); return grid.v[j * grid.c + i]; }
+    function trace(x, y, dirSign, steps) {
+      var pts = [];
+      for (var k = 0; k < steps; k++) {
+        var f = at(x, y); if (!f || f[2] < 0.5) break;
+        var m = Math.sqrt(f[0] * f[0] + f[1] * f[1]) || 1; x += dirSign * f[0] / m * 6; y -= dirSign * f[1] / m * 6;
+        if (x < -10 || y < -10 || x > W + 10 || y > H + 10) break; pts.push([x, y]);
+      }
+      return pts;
+    }
     function build() {
       if (!map._loaded) return;
       var sz = map.getSize(); W = sz.x; H = sz.y; L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0]));
       cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      var gs = W < 520 ? 62 : 76; arrows = [];
-      if (!data.length) return;
-      for (var y = gs * 0.6; y < H; y += gs) for (var x = gs * 0.6 + ((Math.round(y / gs) % 2) ? gs / 2 : 0); x < W; x += gs) {
-        var f = field(map.containerPointToLatLng([x, y])); if (!f || f[2] < 0.5) continue;
-        var m = Math.sqrt(f[0] * f[0] + f[1] * f[1]) || 1;
-        arrows.push({ x: x, y: y, ux: f[0] / m, uy: -f[1] / m, s: f[2], len: Math.min(40, 14 + f[2] * 0.6), c: col(f[2]) });
+      lines = []; if (!data.length) { ready = true; return; }
+      var cols = Math.ceil(W / gs) + 1, rows = Math.ceil(H / gs) + 1; grid = { c: cols, r: rows, v: new Array(cols * rows) };
+      for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++) grid.v[j * cols + i] = fieldLL(map.containerPointToLatLng([i * gs, j * gs]));
+      // بذور على شبكة متداخلة، وكل خط بيتتبع الحقل للأمام وللخلف
+      var sp = W < 520 ? 96 : 118, seed = 7;
+      var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      for (var y = sp / 2; y < H; y += sp) for (var x = sp / 2; x < W; x += sp) {
+        var sx = x + (rnd() - 0.5) * sp * 0.6, sy = y + (rnd() - 0.5) * sp * 0.6, f = at(sx, sy); if (!f) continue;
+        var back = trace(sx, sy, -1, 14).reverse(), fwd = trace(sx, sy, 1, 14), pts = back.concat([[sx, sy]], fwd);
+        if (pts.length < 6) continue;
+        var cum = [0]; for (var q = 1; q < pts.length; q++) cum.push(cum[q - 1] + Math.hypot(pts[q][0] - pts[q - 1][0], pts[q][1] - pts[q - 1][1]));
+        lines.push({ p: pts, cum: cum, len: cum[cum.length - 1], s: f[2], c: col(f[2]), ph: rnd() });
       }
       ready = true;
     }
+    function pos(l, d) { var i = 1; while (i < l.cum.length - 1 && l.cum[i] < d) i++; var a = l.p[i - 1], b = l.p[i], seg = (l.cum[i] - l.cum[i - 1]) || 1, k = Math.max(0, Math.min(1, (d - l.cum[i - 1]) / seg)); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, Math.atan2(b[1] - a[1], b[0] - a[0])]; }
     function paint(t) {
       ctx.clearRect(0, 0, W, H);
-      for (var i = 0; i < arrows.length; i++) {
-        var a = arrows[i], ph = ((a.x * a.ux + a.y * a.uy) / 140 - t * (0.35 + a.s / 90)) % 1; if (ph < 0) ph += 1;
-        var al = o.still ? 0.85 : 0.35 + 0.5 * Math.pow(Math.sin(ph * Math.PI), 2), h = a.len / 2;
-        var x1 = a.x - a.ux * h, y1 = a.y - a.uy * h, x2 = a.x + a.ux * h, y2 = a.y + a.uy * h, hx = -a.uy, hy = a.ux, hs = 5 + a.s / 12;
-        ctx.globalAlpha = al;
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.strokeStyle = 'rgba(2,6,23,.7)'; ctx.lineWidth = 4.5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        ctx.strokeStyle = a.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x2 + a.ux * 2, y2 + a.uy * 2); ctx.lineTo(x2 - a.ux * hs + hx * hs * 0.55, y2 - a.uy * hs + hy * hs * 0.55); ctx.lineTo(x2 - a.ux * hs - hx * hs * 0.55, y2 - a.uy * hs - hy * hs * 0.55); ctx.closePath();
-        ctx.fillStyle = a.c; ctx.strokeStyle = 'rgba(2,6,23,.7)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.fill();
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (var i = 0; i < lines.length; i++) {
+        var l = lines[i], c = l.c, rgb = c[0] + ',' + c[1] + ',' + c[2];
+        // خط السريان: رفيع وشفاف
+        ctx.beginPath(); ctx.moveTo(l.p[0][0], l.p[0][1]); for (var k = 1; k < l.p.length; k++) ctx.lineTo(l.p[k][0], l.p[k][1]);
+        ctx.strokeStyle = 'rgba(' + rgb + ',.16)'; ctx.lineWidth = 1; ctx.stroke();
+        // علامة اتجاه في نص الخط
+        var mid = pos(l, l.len * 0.5), a = mid[2], s0 = 5;
+        ctx.beginPath(); ctx.moveTo(mid[0] - Math.cos(a - 0.6) * s0, mid[1] - Math.sin(a - 0.6) * s0); ctx.lineTo(mid[0], mid[1]); ctx.lineTo(mid[0] - Math.cos(a + 0.6) * s0, mid[1] - Math.sin(a + 0.6) * s0);
+        ctx.strokeStyle = 'rgba(' + rgb + ',.55)'; ctx.lineWidth = 1.4; ctx.stroke();
+        // ومضة متوهجة بتجري على الخط بسرعة تتناسب مع الريح
+        if (!o.still) {
+          var v = 12 + l.s * 0.9, head = ((t * v + l.ph * l.len) % (l.len + 80)) - 10, tail = 64;
+          ctx.shadowColor = 'rgba(' + rgb + ',.9)'; ctx.shadowBlur = 8;
+          for (var g = 0; g < 7; g++) {
+            var d1 = head - g * tail / 7, d2 = head - (g + 1) * tail / 7; if (d1 < 0 || d2 > l.len) continue;
+            var p1 = pos(l, Math.max(0, Math.min(l.len, d1))), p2 = pos(l, Math.max(0, Math.min(l.len, d2)));
+            ctx.beginPath(); ctx.moveTo(p2[0], p2[1]); ctx.lineTo(p1[0], p1[1]);
+            ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.9 * Math.pow(1 - g / 7, 1.6)).toFixed(2) + ')'; ctx.lineWidth = 2.4 - g * 0.22; ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+        }
       }
-      ctx.globalAlpha = 1;
     }
     function frame() {
       if (!on) return; if (!document.body.contains(cv) || !host.isConnected) return stop();
-      var nw = Date.now(); if (!document.hidden && ready && !cv.hidden && cv.style.opacity !== '0' && nw - last > 60) { last = nw; paint((nw - t0) / 1000); }
+      var nw = Date.now(); if (!document.hidden && ready && !cv.hidden && cv.style.opacity !== '0' && nw - last > 40) { last = nw; paint((nw - t0) / 1000); }
       raf = requestAnimationFrame(frame);
     }
     function stop() { on = false; cancelAnimationFrame(raf); map.off('movestart', hide); map.off('moveend resize', show); if (cv.parentNode) cv.parentNode.removeChild(cv); }
     function hide() { cv.style.opacity = 0; }
-    function show() { build(); cv.style.opacity = ''; if (rkCalm() || o.still) paint(0); }
+    function show() { build(); cv.style.opacity = ''; paint((Date.now() - t0) / 1000); }
     map.on('movestart', hide); map.on('moveend resize', show);
     map.whenReady(function () { build(); paint(0); if (!rkCalm() && !o.still) raf = requestAnimationFrame(frame); });
-    return { stop: stop, set: function (s) { data = s || []; build(); paint(0); }, el: cv, toggle: function (v) { cv.hidden = !v; } };
+    return { stop: stop, set: function (s) { data = s || []; build(); paint((Date.now() - t0) / 1000); }, el: cv, toggle: function (v) { cv.hidden = !v; } };
   }
   /** أسراب متحركة على مسارات الهجرة: علامات «V» صغيرة تمشي على المسار في اتجاه الهجرة الحالي.
    * list: [{pts:[[lat,lng]..], color, n (عدد الأسراب), speed (بكسل/ث)}] */
@@ -11481,6 +11949,7 @@
   /* ============================ نسخة العرض: الإشعارات ============================ */
   if (MODE === 'demo') {
     window.onDemoNotify = function (evt) {
+      if (evt.kind === 'bulletin') return; // رسائل الإدارة: النافذة والصوت داخل التطبيق
       var me = S.session && S.session.user;
       var toMgr = ['birds', 'mortality', 'litter', 'capa', 'company', 'company-report', 'academy', 'trip', 'ews', 'farm'].indexOf(evt.kind) >= 0 || evt.kind === 'mission' || evt.kind === 'tamper' || evt.kind === 'deny' || evt.kind === 'card' || evt.kind === 'watch' || evt.kind === 'request' || evt.kind === 'violation' || evt.kind === 'report' || (evt.kind === 'message' && !evt.toGate);
       var app = evt.kind === 'escalation' ? (evt.level === 1 ? 'موبايل نائب المدير · تصعيد مستوى 1' : 'موبايل مدير القطاع · تصعيد مستوى 2') : toMgr ? 'موبايل مدير الأمن الحيوي' : (evt.toUserId || evt.toGate) ? 'موبايل أمن البوابة' : 'موبايلات البوابات';
