@@ -361,7 +361,7 @@
         if (!S.outbox.length && !$('sheetWrap')) { reloading = true; location.reload(); }
         else toast('وصل تحديث جديد للتطبيق، وهيتفعّل أول ما تقفله وتفتحه');
       });
-      navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.push && S.session) return incomingPush(e.data.push); if (e.data && e.data.route) go(e.data.route.replace('#', '')); if (e.data && e.data.sync) sync(); });
+      navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.push && S.session) return incomingPush(e.data.push); if (e.data && e.data.route && S.session) { KV.del('pendingRoute'); go(e.data.route.replace('#', '')); } if (e.data && e.data.sync) sync(); });
     }
     window.addEventListener('online', function () { setOnline(true); });
     window.addEventListener('offline', function () { setOnline(false); });
@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.2</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.3</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -505,10 +505,13 @@
   function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
   function hasVr() { return vrPerms().length > 0; }
   function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
+  function canRoads() { var u = S.session && S.session.user; if (!u) return false; return !!u.isAdmin || ['مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مفتش أمن حيوي', 'مدير قطاع'].indexOf(u.role) >= 0; }
   function navItems() {
     var a = navItems0();
     /* 25/10: «وصّلني» (ملاحة لفة بلفة بالصوت جوه القطاعات) لكل الأدوار ماعدا شركة المكافحة وتقارير الزيارة فقط */
     if (!pcOnly() && !a.some(function (n) { return n && n[0] === 'wassalni'; })) { var mi = a.map(function (n) { return n && n[0]; }).indexOf('more'), it = ['wassalni', 'وصّلني (الملاحة)', 'nav']; if (mi >= 0) a.splice(mi, 0, it); else a.push(it); }
+    /* v33.3: تسجيل طرق المحطات (كلين وديرتي) */
+    if (!pcOnly() && canRoads() && !a.some(function (n) { return n && n[0] === 'stroads'; })) { var mj = a.map(function (n) { return n && n[0]; }).indexOf('more'), it2 = ['stroads', 'طرق المحطات (كلين وديرتي)', 'route']; if (mj >= 0) a.splice(mj, 0, it2); else a.push(it2); }
     return a.filter(function (n) { return !hiddenScr(n[0]); });
   }
   function navItems0() {
@@ -536,7 +539,7 @@
     ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'academy', 'vrcorr', 'ews', 'integ', 'sim', 'trace', 'insights']],
     ['sites', 'المواقع', 'layers', ['stations', 'farm', 'pc', 'disposal', 'inspect', 'cams']],
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
-    ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'wassalni', 'fleet', 'trips', 'tours', 'routes']],
+    ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'wassalni', 'stroads', 'fleet', 'trips', 'tours', 'routes']],
     ['people', 'HR إدارة الأمن الحيوي', 'user', ['inbox', 'cheer', 'evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
     ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'ucards', 'pushset', 'purge']]
   ];
@@ -643,6 +646,12 @@
     renderNet();
     setTimeout(awMine, 2500);
     audioUnlock(); if (!pcOnly()) setTimeout(function () { inboxFetch(); }, 2200);
+    /* v33.3: لو التطبيق اتفتح من إشعار، نروح للمكان المطلوب (مثلاً الرسالة نفسها) حتى لو صفحة البداية غيّرته */
+    KV.get('pendingRoute').then(function (pr) {
+      if (!pr || !pr.route) return; KV.del('pendingRoute');
+      if (Date.now() - (pr.t || 0) > 15 * 60000) return;
+      var r = String(pr.route).replace('#', ''); if (r && location.hash !== '#' + r) go(r);
+    }).catch(function () {});
   }
   function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(); }
   function currentRoute() {
@@ -672,7 +681,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, wassalni: viewWassalni, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, wassalni: viewWassalni, stroads: viewStRoads, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -4435,7 +4444,7 @@
     try {
       if (!window.Notification || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
       navigator.serviceWorker.ready.then(function (reg) {
-        reg.showNotification(m.ic + ' ' + m.title, { body: (m.body || '').slice(0, 300) + '\n— ' + m.fromName, dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'msg-' + m.id, renotify: true, requireInteraction: m.level !== 'عادي', vibrate: m.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220], data: { route: '#inbox', kind: 'bulletin' } });
+        reg.showNotification(m.ic + ' ' + m.title, { body: (m.body || '').slice(0, 300) + '\n— ' + m.fromName, dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'msg-' + m.id, renotify: true, requireInteraction: m.level !== 'عادي', vibrate: m.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220], data: { route: '#inbox/m/' + m.id, kind: 'bulletin', msgId: m.id } });
       }).catch(function () {});
     } catch (e) {}
   }
@@ -4454,26 +4463,59 @@
       if (fresh.length && S.ibBooted) { var top = fresh.filter(function (m) { return m.level === 'عاجل'; })[0] || fresh.filter(function (m) { return m.level === 'مهم'; })[0] || fresh[0]; msgChime(top.level); if (document.hidden) fresh.slice(0, 3).forEach(msgSysNote); }
       else if (fresh.length && !S.ibBooted) msgChime(fresh[0].level);
       S.ibBooted = 1;
-      if (un.length && !$('msgPop') && (fresh.length || force)) msgPop(un);
+      if (un.length && !$('msgPop') && (fresh.length || force) && !(S.ibFocus && !un.some(function (m) { return m.id === S.ibFocus; }))) msgPop(un);
       renderBadges(); renderGateBanner();
       if (S.route && S.route.split('/')[0] === 'inbox' && !$('sheetWrap')) ibDraw();
     }).catch(function () { S.ibBusy = 0; });
   }
-  /** نافذة الرسالة الواضحة: تظهر فوق أي شاشة لحد ما الموظف يضغط «قرأت» */
+  /** نافذة الرسالة الواضحة: تظهر فوق أي شاشة لحد ما الموظف يضغط «قرأت». ولو الرسالة مقروءة قبل كده بتظهر للقراية تاني */
   function msgPop(list) {
-    list = list.slice().sort(function (a, b) { return (MSG_LV[b.level] === 'u') - (MSG_LV[a.level] === 'u') || a.time - b.time; });
+    if ($('msgPop')) $('msgPop').remove();
+    var foc = S.ibFocus; S.ibFocus = null;
+    list = list.slice().sort(function (a, b) { return (b.id === foc) - (a.id === foc) || (MSG_LV[b.level] === 'u') - (MSG_LV[a.level] === 'u') || a.time - b.time; });
     var i = 0, el = document.createElement('div'); el.id = 'msgPop'; el.className = 'mp-wrap'; document.body.appendChild(el);
     var draw = function () {
       var m = list[i]; if (!m) return close();
-      el.innerHTML = '<div class="mp lv-' + MSG_LV[m.level] + '" role="alertdialog" aria-modal="true" aria-labelledby="mpT"><div class="mp-h"><span class="mp-ic">' + m.ic + '</span><div><b>' + (m.level === 'عاجل' ? 'رسالة عاجلة من الإدارة' : MSG_KL[m.kind] || 'رسالة من الإدارة') + '</b><small>' + esc(m.fromName) + ' · ' + esc(ago(m.time)) + '</small></div>' + (list.length > 1 ? '<span class="mp-n mono">' + (i + 1) + '/' + list.length + '</span>' : '') + '</div>' +
-        '<div class="mp-b"><h2 id="mpT">' + esc(m.title) + '</h2>' + (m.body ? '<p>' + esc(m.body) + '</p>' : '') + (m.img ? '<img src="' + esc(m.img) + '" alt="" loading="lazy">' : '') + '</div>' +
-        '<div class="mp-f"><button type="button" class="btn primary big" id="mpOk">' + icon('check') + ' قرأت' + (i < list.length - 1 ? ' · التالية' : '') + '</button><button type="button" class="btn" id="mpLater">لاحقاً</button></div></div>';
-      $('mpOk').onclick = function () { var b = this; b.disabled = true; remote('msgRead', [S.session.pin, [m.id]]).catch(function () {}); m.read = Date.now(); i++; draw(); renderBadges(); };
+      var more = i < list.length - 1, okTxt = (m.read ? 'تمام' : 'قرأت') + (more ? ' · التالية' : '');
+      var foot = '<div class="mp-f"><button type="button" class="btn primary big" id="mpOk">' + icon('check') + ' ' + okTxt + '</button><button type="button" class="btn" id="mpLater">' + (m.read ? 'إغلاق' : 'لاحقاً') + '</button></div>';
+      if (msgIsStar(m)) el.innerHTML = starCardHtml(m, list.length > 1 ? (i + 1) + '/' + list.length : '', foot);
+      else el.innerHTML = '<div class="mp lv-' + MSG_LV[m.level] + '" role="alertdialog" aria-modal="true" aria-labelledby="mpT"><div class="mp-h"><span class="mp-ic">' + m.ic + '</span><div><b>' + (m.level === 'عاجل' ? 'رسالة عاجلة من الإدارة' : MSG_KL[m.kind] || 'رسالة من الإدارة') + '</b><small>' + esc(m.fromName) + ' · ' + esc(ago(m.time)) + '</small></div>' + (list.length > 1 ? '<span class="mp-n mono">' + (i + 1) + '/' + list.length + '</span>' : '') + '</div>' +
+        '<div class="mp-b"><h2 id="mpT">' + esc(m.title) + '</h2>' + (m.body ? '<p>' + esc(m.body) + '</p>' : '') + (m.img ? '<img src="' + esc(m.img) + '" alt="" loading="lazy">' : '') + '</div>' + foot + '</div>';
+      $('mpOk').onclick = function () { var b = this; b.disabled = true; if (!m.read) { remote('msgRead', [S.session.pin, [m.id]]).catch(function () {}); m.read = Date.now(); if (S.inbox) S.inbox.items.forEach(function (x) { if (x.id === m.id) x.read = m.read; }); } i++; draw(); renderBadges(); };
       $('mpLater').onclick = close;
       setTimeout(function () { var b = $('mpOk'); if (b) b.focus(); }, 30);
     };
     function close() { el.remove(); renderBadges(); if (S.route && S.route.split('/')[0] === 'inbox') ibDraw(); }
     draw();
+  }
+  /* v33.3: نجم الأسبوع والشهر بتصميم احتفالي فيه صورة الموظف */
+  function msgIsStar(m) { return m && (m.kind === 'نجم' || (m.meta && m.meta.star)); }
+  function starInfo(m) {
+    var mt = m.meta || {}, t = String(m.title || ''), month = mt.star ? mt.star === 'month' : /الشهر/.test(t);
+    var name = mt.name || t.replace(/^[^:]*:\s*/, '').trim();
+    var paras = String(m.body || '').split(/\n\s*\n/), head = paras[0] || '', reason = mt.reason || (paras[1] || '').trim();
+    var bits = head.split(' · '), role = mt.role != null ? mt.role : (bits[1] || ''), where = mt.where != null ? mt.where : (bits.slice(2).join(' · ') || '');
+    return { month: month, name: name, role: role, where: where, reason: reason, photo: mt.photo || m.img || '', by: mt.by || m.fromName || '' };
+  }
+  function starCardHtml(m, count, foot) {
+    var x = starInfo(m), conf = '';
+    for (var k = 0; k < 26; k++) conf += '<i style="--x:' + ((k * 37) % 100) + '%;--d:' + (k % 7) * 0.35 + 's;--c:' + ['#f5b301', '#c8182a', '#ffffff', '#ffd76a', '#ff8a3d'][k % 5] + ';--r:' + (k * 47) % 360 + 'deg"></i>';
+    return '<div class="mp star-mp ' + (x.month ? 'month' : 'week') + '" role="alertdialog" aria-modal="true" aria-labelledby="mpT"><div class="st-conf" aria-hidden="true">' + conf + '</div>' +
+      (count ? '<span class="mp-n mono st-n">' + count + '</span>' : '') +
+      '<div class="st-top"><span class="st-badge">' + (x.month ? '🌟 نجم الشهر' : '⭐ نجم الأسبوع') + '</span><small>فريق الأمن الحيوي · ' + esc(ago(m.time)) + '</small></div>' +
+      '<div class="st-photo"><span class="st-ring"></span>' + (x.photo ? '<img src="' + esc(x.photo) + '" alt="">' : '<span class="st-ini">' + esc(x.name.replace(/^(أ|م|د)\s*\/\s*/, '').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join(' ')) + '</span>') + '<span class="st-medal" aria-hidden="true">' + (x.month ? '🏆' : '⭐') + '</span></div>' +
+      '<h2 id="mpT" class="st-name">' + esc(x.name) + '</h2>' + (x.role || x.where ? '<p class="st-role">' + esc([x.role, x.where].filter(Boolean).join(' · ')) + '</p>' : '') +
+      (x.reason ? '<blockquote class="st-why">' + esc(x.reason) + '</blockquote>' : '') +
+      '<p class="st-cheer">مبروك، وشكراً على مجهودك 👏</p><p class="st-by">اختيار ' + esc(x.by || 'مدير إدارة الأمن الحيوي') + '</p>' + foot + '</div>';
+  }
+  /** يفتح رسالة بعينها (من الإشعار أو من القائمة) بالشكل الكبير */
+  function msgOpen(id, tries) {
+    var m = S.inbox && (S.inbox.items || []).filter(function (x) { return x.id === id; })[0];
+    if (m) { msgPop([m]); return; }
+    if ((tries || 0) > 4) { toast('الرسالة دي مش موجودة. ممكن تكون اتحذفت'); return; }
+    S.ibFocus = id;
+    var p = S.ibBusy ? new Promise(function (r) { setTimeout(r, 1200); }) : inboxFetch(true);
+    p.then(function () { if ($('msgPop')) return; msgOpen(id, (tries || 0) + 1); });
   }
   function ibUnread() { return S.inbox ? S.inbox.items.filter(function (m) { return !m.read; }).length : 0; }
   /** شريط نجم الأسبوع والشهر (البوابة وصندوق الرسائل وشاشة الإنجازات) */
@@ -4488,6 +4530,7 @@
   }
 
   function viewInbox(args) {
+    if (args && args[0] === 'm' && args[1]) { var mid = args[1]; try { history.replaceState(null, '', '#inbox'); } catch (e) {} S.route = 'inbox'; setTimeout(function () { msgOpen(mid); }, 60); args = []; }
     var tab = args && args[0] === 'sent' && msgSender() ? 'sent' : 'in';
     S.ibTab = tab;
     $('main').innerHTML = '<section class="view ib-view"><div class="ib-hero"><div><span class="kn-k">' + icon('inbox') + ' إدارة الأمن الحيوي</span><h1>رسائل الإدارة</h1><p>الرسائل والتهاني والتعليمات اللي بتوصلك من المدير والمسؤولين والمشرفين. أول ما توصل رسالة بتظهر قدامك بصوت.</p></div>' +
@@ -4519,13 +4562,14 @@
     } else {
       var I = d.items || [];
       h += I.length ? '<div class="ib-list">' + I.map(function (m) {
+        if (msgIsStar(m)) { var sx = starInfo(m); return '<article class="ib-it star-it ' + (sx.month ? 'month' : 'week') + (m.read ? '' : ' unread') + '" data-ibo="' + esc(m.id) + '"><span class="si-av">' + avatar(sx.name, sx.photo, true) + '</span><div class="si-t"><small>' + (sx.month ? '🌟 نجم الشهر' : '⭐ نجم الأسبوع') + ' · ' + esc(ago(m.time)) + '</small><b>' + esc(sx.name) + '</b>' + (sx.reason ? '<span>' + esc(sx.reason) + '</span>' : '') + '</div>' + (m.read ? '' : '<span class="ib-dot" aria-label="غير مقروءة"></span>') + '</article>'; }
         return '<article class="ib-it lv-' + MSG_LV[m.level] + (m.read ? '' : ' unread') + '" data-ibo="' + esc(m.id) + '"><div class="ib-top"><span class="ib-ic">' + m.ic + '</span><div class="ib-tt"><b>' + esc(m.title) + '</b><small>' + esc(m.fromName) + ' · ' + esc(ago(m.time)) + '</small></div>' + (m.read ? '' : '<span class="ib-dot" aria-label="غير مقروءة"></span>') + '</div>' +
           (m.body ? '<p class="ib-body clamp">' + esc(m.body) + '</p>' : '') + (m.img ? '<img class="ib-img" src="' + esc(m.img) + '" alt="" loading="lazy">' : '') +
           (m.read ? '' : '<div class="ib-btns"><button class="btn sm primary" type="button" data-ibr="' + esc(m.id) + '">' + icon('check') + ' قرأت</button></div>') + '</article>';
       }).join('') + '</div>' : '<div class="card"><p class="empty">' + icon('inbox') + ' مفيش رسائل لسه. أول ما الإدارة تبعتلك رسالة هتظهر هنا وتسمع صوت تنبيه.</p></div>';
     }
     out.innerHTML = h;
-    out.querySelectorAll('[data-ibo]').forEach(function (a) { a.onclick = function (e) { if (e.target.closest('button')) return; var p = a.querySelector('.ib-body'); if (p) p.classList.toggle('clamp'); }; });
+    out.querySelectorAll('[data-ibo]').forEach(function (a) { a.onclick = function (e) { if (e.target.closest('button')) return; msgOpen(a.dataset.ibo); }; });
     out.querySelectorAll('[data-ibr]').forEach(function (b) { b.onclick = function () { var id = b.dataset.ibr; b.disabled = true; remote('msgRead', [S.session.pin, [id]]).then(function () { S.inbox.items.forEach(function (m) { if (m.id === id) m.read = Date.now(); }); renderBadges(); ibDraw(); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); }; });
     out.querySelectorAll('[data-ibd]').forEach(function (b) { b.onclick = function () { msgReaders(b.dataset.ibd); }; });
     out.querySelectorAll('[data-ibx]').forEach(function (b) { b.onclick = function () {
@@ -4786,6 +4830,130 @@
     }).catch(function () { return null; });
   }
 
+
+  /* ============================ v33.3: طرق المحطات (كلين وديرتي) — بتتسجّل بالـ GPS ويستخدمها «وصّلني» ============================ */
+  var RD_KIND = { clean: { t: 'كلين', l: 'الطريق الكلين', d: 'من بوابة تطهير الكلين أو المركزية ← البوابة الأمامية للمحطة', who: 'سيارات الشركة والعاملين والكتاكيت والعلف' }, dirty: { t: 'ديرتي', l: 'الطريق الديرتي', d: 'من طريق المبيع ← البوابة الخلفية للمحطة', who: 'التجار والنافق والسبلة والخدمات' } };
+  var RD_MARKS = [['fork', 'مفرق'], ['turn', 'لفّة'], ['gate', 'بوابة'], ['tank', 'خزان مية'], ['sign', 'لافتة'], ['guard', 'كشك أمن'], ['bump', 'مطب'], ['danger', 'مكان خطر']];
+  function rdKind(v) { v = String(v || ''); return v === 'clean' || v === 'كلين' ? 'clean' : v === 'dirty' || v === 'ديرتي' ? 'dirty' : ''; }
+  function rdDist(a, b) { var R = 6371000, d = Math.PI / 180, x = (b.lat - a.lat) * d, y = (b.lng - a.lng) * d, h = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a.lat * d) * Math.cos(b.lat * d) * Math.sin(y / 2) * Math.sin(y / 2); return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
+  function rdPolyDec(str) { var out = [], n = String(str || ''), L = n.length, i = 0, la = 0, lo = 0; while (i < L) { var v = []; for (var k = 0; k < 2; k++) { var r = 0, sh = 0, b; do { if (i >= L) return out; b = n.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20); v.push((r & 1) ? ~(r >> 1) : (r >> 1)); } la += v[0]; lo += v[1]; out.push([la / 1e5, lo / 1e5]); } return out; }
+  function rdFmt(m) { m = Number(m) || 0; return m >= 1000 ? (m / 1000).toFixed(m >= 10000 ? 0 : 1) + ' كم' : Math.round(m) + ' م'; }
+  function rdDraftGet() { try { return JSON.parse(localStorage.getItem('bio-road-draft') || 'null'); } catch (e) { return null; } }
+  function rdDraftSet(d) { try { if (d) localStorage.setItem('bio-road-draft', JSON.stringify(d)); else localStorage.removeItem('bio-road-draft'); } catch (e) {} }
+  /** رسم مصغّر للطريق: الطريق والمحطة والبداية */
+  function rdSvg(polys, site) {
+    var all = []; polys.forEach(function (p) { all = all.concat(p.pts); }); if (site) all.push([site.lat, site.lng]);
+    if (all.length < 2) return '';
+    var la0 = Math.min.apply(null, all.map(function (a) { return a[0]; })), la1 = Math.max.apply(null, all.map(function (a) { return a[0]; })), lo0 = Math.min.apply(null, all.map(function (a) { return a[1]; })), lo1 = Math.max.apply(null, all.map(function (a) { return a[1]; }));
+    var k = Math.cos((la0 + la1) / 2 * Math.PI / 180), w = Math.max(1e-6, (lo1 - lo0) * k), h = Math.max(1e-6, la1 - la0), sc = Math.min(300 / w, 180 / h);
+    var X = function (a) { return 10 + ((a[1] - lo0) * k) * sc + (300 - w * sc) / 2; }, Y = function (a) { return 10 + (la1 - a[0]) * sc + (180 - h * sc) / 2; };
+    return '<svg class="rd-svg" viewBox="0 0 320 200" aria-hidden="true">' + polys.map(function (p) { return '<polyline points="' + p.pts.map(function (a) { return X(a).toFixed(1) + ',' + Y(a).toFixed(1); }).join(' ') + '" fill="none" stroke="' + (p.kind === 'clean' ? '#1d8a5a' : '#a8641a') + '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + X(p.pts[0]).toFixed(1) + '" cy="' + Y(p.pts[0]).toFixed(1) + '" r="5" fill="#fff" stroke="' + (p.kind === 'clean' ? '#1d8a5a' : '#a8641a') + '" stroke-width="3"/>'; }).join('') +
+      (site ? '<circle cx="' + X([site.lat, site.lng]).toFixed(1) + '" cy="' + Y([site.lat, site.lng]).toFixed(1) + '" r="7" fill="#c8182a" stroke="#fff" stroke-width="2"/>' : '') + '</svg>';
+  }
+  function viewStRoads() {
+    $('main').innerHTML = '<section class="view rd-view">' + v5Head('طرق المحطات', 'route', 'كل محطة ليها طريقين ومايتلخبطوش: <b>الكلين</b> من بوابة تطهير الكلين أو المركزية للبوابة الأمامية، و<b>الديرتي</b> من طريق المبيع للبوابة الخلفية (تجار ونافق وخدمات). سجّل كل طريق مرة واحدة وانت سايق عليه فعلاً، و«وصّلني» هيوجّه عليه لفة بلفة بالصوت') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    v5Load('roadsList', [], rdDraw, 'طرق المحطات');
+  }
+  function rdDraw(d) {
+    S.rd = d; var out = $('v5Out'); if (!out) return;
+    var by = {}; (d.roads || []).forEach(function (r) { var k = rdKind(r.kind); if (!k) return; by[r.siteId] = by[r.siteId] || {}; by[r.siteId][k] = r; });
+    var st = (d.sites || []).filter(function (x) { return /تسمين|محطة|أمهات|امهات|تربية|تفريخ|علف/.test(x.name + ' ' + x.type); });
+    var other = (d.sites || []).filter(function (x) { return st.indexOf(x) < 0; });
+    var nC = st.filter(function (x) { return by[x.id] && by[x.id].clean; }).length, nD = st.filter(function (x) { return by[x.id] && by[x.id].dirty; }).length;
+    var dr = rdDraftGet();
+    var h = (dr && dr.pts && dr.pts.length > 1 ? '<div class="card rd-draft">' + icon('alert') + '<div><b>فيه تسجيل ما اتحفظش</b><span>' + esc(dr.siteName || '') + ' · ' + esc(RD_KIND[dr.kind] ? RD_KIND[dr.kind].l : '') + ' · ' + rdFmt(dr.len) + ' · ' + dr.pts.length + ' نقطة</span></div><div class="row"><button class="btn primary sm" type="button" id="rdDrSave">' + icon('check') + ' احفظه دلوقتي</button><button class="btn sm ghost" type="button" id="rdDrDel">' + icon('trash') + ' امسحه</button></div></div>' : '') +
+      '<div class="card rd-sum"><div class="rd-k"><b class="mono">' + nC + '/' + st.length + '</b><span><i class="rd-dot clean"></i> طرق كلين متسجّلة</span></div><div class="rd-k"><b class="mono">' + nD + '/' + st.length + '</b><span><i class="rd-dot dirty"></i> طرق ديرتي متسجّلة</span></div>' +
+      (d.canEdit ? '<button class="btn primary big" type="button" id="rdNew">' + icon('plus') + ' سجّل طريق جديد</button>' : '<p class="small muted">التسجيل للمدير والمسؤول والمشرف والمعاون ومدير القطاع.</p>') + '</div>' +
+      '<div class="rd-list">' + st.concat(other).map(function (x) {
+        var b = by[x.id] || {}, polys = ['clean', 'dirty'].filter(function (k) { return b[k]; }).map(function (k) { return { kind: k, pts: rdPolyDec(b[k].poly) }; });
+        var cell = function (k) {
+          var r = b[k], K = RD_KIND[k];
+          return '<div class="rd-c ' + k + (r ? ' on' : '') + '"><div class="rd-ct"><i class="rd-dot ' + k + '"></i><b>' + K.l + '</b></div>' +
+            (r ? '<span class="small">' + rdFmt(r.lenM) + ' · ' + esc(r.by || '') + ' · ' + esc(ago(r.updatedAt)) + (r.marks && r.marks.length ? ' · ' + r.marks.length + ' علامة' : '') + '</span>' : '<span class="small muted">لسه مش متسجّل</span>') +
+            (d.canEdit ? '<div class="row"><button class="btn sm' + (r ? '' : ' primary') + '" type="button" data-rdrec="' + esc(x.id) + '" data-k="' + k + '">' + icon('route') + ' ' + (r ? 'سجّله تاني' : 'سجّله') + '</button>' + (r ? '<button class="btn sm ghost" type="button" data-rddel="' + esc(r.id) + '">' + icon('trash') + '</button>' : '') + '</div>' : '') + '</div>';
+        };
+        return '<article class="card rd-it"><div class="rd-h"><div><b>' + esc(x.name) + '</b><small>' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</small></div>' + (polys.length ? rdSvg(polys, x) : '') + '</div><div class="rd-cs">' + cell('clean') + cell('dirty') + '</div></article>';
+      }).join('') + '</div>';
+    out.innerHTML = h;
+    if ($('rdNew')) $('rdNew').onclick = function () { rdSetup('', ''); };
+    out.querySelectorAll('[data-rdrec]').forEach(function (b) { b.onclick = function () { rdSetup(b.dataset.rdrec, b.dataset.k); }; });
+    out.querySelectorAll('[data-rddel]').forEach(function (b) { b.onclick = function () {
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.innerHTML = icon('trash') + ' تأكيد الحذف'; b.classList.add('danger'); return; }
+      remote('roadDelete', [S.session.pin, b.dataset.rddel]).then(function (r) { toast('اتمسح الطريق'); S.rd.roads = r.roads; rdDraw(S.rd); }).catch(function (e) { toast(errText(e)); });
+    }; });
+    if ($('rdDrSave')) $('rdDrSave').onclick = function () { rdSave(rdDraftGet(), this); };
+    if ($('rdDrDel')) $('rdDrDel').onclick = function () { rdDraftSet(null); rdDraw(S.rd); };
+  }
+  /** اختيار المحطة ونوع الطريق قبل التسجيل */
+  function rdSetup(siteId, kind) {
+    var d = S.rd || { sites: [] };
+    openSheet('<div class="sheet-head sh-brand"><div class="big-ico">' + icon('route') + '</div><h2>تسجيل طريق محطة</h2><span class="small">اقف عند أول الطريق وابدأ، واسوق لحد بوابة المحطة وبعدين اضغط «إنهاء وحفظ»</span></div><div class="sheet-body">' +
+      '<div class="field"><label for="rdSite">المحطة</label><select id="rdSite"><option value="">اختار المحطة</option>' + d.sites.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === siteId ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label>نوع الطريق</label><div class="rd-kinds">' + ['clean', 'dirty'].map(function (k) { var K = RD_KIND[k]; return '<button type="button" class="rd-kb ' + k + (kind === k ? ' on' : '') + '" data-rk="' + k + '"><i class="rd-dot ' + k + '"></i><b>' + K.l + '</b><span>' + K.d + '</span><small>' + K.who + '</small></button>'; }).join('') + '</div></div>' +
+      '<div class="field"><label for="rdName">اسم الطريق (اختياري)</label><input id="rdName" maxlength="60" placeholder="مثال: من الكلين عند خزان المية"></div>' +
+      '<div class="rd-tip">' + icon('info') + '<span>شغّل الـ GPS، وخلي الشاشة منوّرة والموبايل في مكان ثابت. ابدأ من <b>أول الطريق</b> (بوابة الكلين أو المركزية للكلين، والمبيع للديرتي) واسوق بالسرعة العادية. عند أي مفرق أو خزان أو بوابة اضغط علامتها علشان «وصّلني» يقولها للسواق.</span></div>' +
+      '<button class="btn primary big" type="button" data-a="go">' + icon('route') + ' ابدأ التسجيل</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, el) {
+      if (a === 'x') return closeSheet();
+      if (a === 'go') {
+        var sid = $('rdSite').value, k = (document.querySelector('.rd-kb.on') || {}).dataset; k = k && k.rk;
+        if (!sid) return toast('اختار المحطة'); if (!k) return toast('اختار نوع الطريق: كلين ولا ديرتي');
+        var site = d.sites.filter(function (x) { return x.id === sid; })[0];
+        closeSheet(); rdRecord(site, k, $('rdName') ? $('rdName').value.trim() : '');
+      }
+    });
+    document.querySelectorAll('.rd-kb').forEach(function (b) { b.onclick = function () { document.querySelectorAll('.rd-kb').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+  }
+  /** شاشة التسجيل الحي */
+  function rdRecord(site, kind, name) {
+    if (!navigator.geolocation) return toast('الموبايل ده مافيهوش تحديد مكان');
+    var R = { siteId: site.id, siteName: site.name, kind: kind, name: name, pts: [], marks: [], len: 0, t0: Date.now(), acc: null }, wid = null, lock = null, tick = null;
+    var el = document.createElement('div'); el.id = 'rdRec'; el.className = 'rd-rec ' + kind; document.body.appendChild(el);
+    el.innerHTML = '<div class="rr-h"><span class="rr-live"><i></i> بيسجّل</span><div><b>' + esc(RD_KIND[kind].l) + '</b><small>' + esc(site.name) + '</small></div></div>' +
+      '<div class="rr-big"><div><b class="mono" id="rrLen">0 م</b><span>المسافة</span></div><div><b class="mono" id="rrPts">0</b><span>نقطة</span></div><div><b class="mono" id="rrTime">0:00</b><span>الوقت</span></div></div>' +
+      '<div class="rr-gps" id="rrGps">بيدوّر على إشارة الـ GPS…</div><div class="rr-to" id="rrTo"></div>' +
+      '<div class="rr-marks">' + RD_MARKS.map(function (m) { return '<button type="button" class="btn" data-mk="' + m[0] + '">' + esc(m[1]) + '</button>'; }).join('') + '</div><div class="rr-ml" id="rrMl"></div>' +
+      '<div class="rr-f"><button type="button" class="btn ok big" id="rrDone">' + icon('check') + ' إنهاء وحفظ</button><button type="button" class="btn ghost" id="rrCancel">إلغاء</button></div>';
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { lock = l; }).catch(function () {}); } catch (e) {}
+    var paint = function () {
+      $('rrLen').textContent = rdFmt(R.len); $('rrPts').textContent = R.pts.length;
+      var s = Math.round((Date.now() - R.t0) / 1000); $('rrTime').textContent = Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2);
+      var g = $('rrGps'); if (R.acc != null) { g.textContent = 'دقة الإشارة ± ' + Math.round(R.acc) + ' م' + (R.acc > 35 ? ' · ضعيفة، استنى شوية' : ''); g.className = 'rr-gps ' + (R.acc <= 15 ? 'ok' : R.acc <= 35 ? 'mid' : 'bad'); }
+      var last = R.pts[R.pts.length - 1]; if (last) { var dd = rdDist({ lat: last[0], lng: last[1] }, site); $('rrTo').textContent = 'باقي للمحطة حوالي ' + rdFmt(dd); }
+      $('rrMl').textContent = R.marks.length ? 'العلامات: ' + R.marks.map(function (m) { return (RD_MARKS.filter(function (x) { return x[0] === m.k; })[0] || ['', 'علامة'])[1]; }).join(' · ') : '';
+    };
+    wid = navigator.geolocation.watchPosition(function (p) {
+      var c = p.coords; R.acc = c.accuracy;
+      var q = [+c.latitude.toFixed(6), +c.longitude.toFixed(6)], last = R.pts[R.pts.length - 1];
+      if (c.accuracy > (R.pts.length ? 35 : 50)) return paint();
+      if (!last) R.pts.push(q);
+      else { var g = rdDist({ lat: last[0], lng: last[1] }, { lat: q[0], lng: q[1] }); if (g >= 6) { R.pts.push(q); R.len += g; } }
+      if (R.pts.length % 10 === 0) rdDraftSet(R);
+      paint();
+    }, function (e) { $('rrGps').textContent = e && e.code === 1 ? 'اسمح للتطبيق يعرف مكانك من إعدادات المتصفح' : 'إشارة الموقع ضعيفة. اطلع في مكان مفتوح'; $('rrGps').className = 'rr-gps bad'; }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+    tick = setInterval(paint, 1000);
+    el.querySelectorAll('[data-mk]').forEach(function (b) { b.onclick = function () {
+      var last = R.pts[R.pts.length - 1]; if (!last) return toast('استنى لحد ما الإشارة تثبت');
+      R.marks.push({ lat: last[0], lng: last[1], k: b.dataset.mk }); rdDraftSet(R); paint(); toast('اتسجّلت علامة: ' + b.textContent);
+    }; });
+    var stop = function () { if (wid != null) navigator.geolocation.clearWatch(wid); clearInterval(tick); try { if (lock) lock.release(); } catch (e) {} el.remove(); };
+    $('rrCancel').onclick = function () { if (R.pts.length > 5 && !confirmish(this, 'متأكد؟ التسجيل هيتمسح')) return; stop(); rdDraftSet(null); };
+    $('rrDone').onclick = function () {
+      if (R.pts.length < 2 || R.len < 30) return toast('الطريق أقل من 30 متر. كمّل السواقة لحد بوابة المحطة');
+      var dd = rdDist({ lat: R.pts[R.pts.length - 1][0], lng: R.pts[R.pts.length - 1][1] }, site);
+      if (dd > 800) return toast('لسه بعيد عن ' + site.name + ' (' + rdFmt(dd) + '). الطريق لازم يخلص عند بوابة المحطة', 6000);
+      stop(); rdDraftSet(R); rdSave(R);
+    };
+    paint();
+  }
+  function confirmish(b, txt) { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = txt; setTimeout(function () { if (b) { b.dataset.sure = ''; b.textContent = 'إلغاء'; } }, 4000); return false; }
+  function rdSave(R, btn) {
+    if (!R) return; if (btn) btn.disabled = true;
+    toast('بيحفظ الطريق…');
+    remote('roadSave', [S.session.pin, { siteId: R.siteId, kind: R.kind, name: R.name, pts: R.pts, marks: R.marks }]).then(function (r) {
+      rdDraftSet(null); toast('اتحفظ ' + (RD_KIND[R.kind] ? RD_KIND[R.kind].l : 'الطريق') + ' لـ ' + R.siteName + ' · ' + rdFmt(r.road.lenM) + '. «وصّلني» هيستخدمه على طول', 6000);
+      if (S.rd) { S.rd.roads = r.roads; if (S.route.split('/')[0] === 'stroads') rdDraw(S.rd); } else go('stroads');
+    }).catch(function (e) { if (btn) btn.disabled = false; toast(errText(e) + ' · التسجيل محفوظ على الموبايل، تقدر تحفظه تاني من «طرق المحطات»', 8000); if (S.route.split('/')[0] === 'stroads' && S.rd) rdDraw(S.rd); });
+  }
   /* ============================ «وصّلني»: رابط الملاحة لفة بلفة (صفحة ?p=wassalni في مشروع المنظومة) ============================ */
   function wslBase() {
     var u = window.BIO_EXEC || CFG.API_URL || (S.ref && S.ref.settings && S.ref.settings.APP_URL) || '';
@@ -4809,7 +4977,7 @@
         '<p class="small muted">اطبع الـ QR ده وحطه على البوابة الخارجية: الزائر يصوّره بالموبايل ويختار المحطة. أرقام الاتصال (المدير والمسؤول والمشرف) بتظهر جوه الملاحة وفي «أنا تايه»، والطرق اللي المشرفين بيسجّلوها في «شريك الدفاع» بتظهر لوحدها.</p>' +
         '</div></div></div>' : '<div class="card"><p class="lk-warn">' + icon('alert') + ' <span>لم يُضبط رابط التطبيق (APP_URL) في الإعدادات، فمش قادرين نعمل الرابط من هنا. اكتب رابط /exec في ورقة الإعدادات.</span></p></div>') +
       (link && sites.length ? '<div class="card"><h3>' + icon('pin') + ' رابط مباشر لكل مكان <span class="muted small">' + sites.length + '</span></h3><p class="small muted">لو الزائر رايح مكان معين ابعتله رابطه: يفتح على المكان على طول.</p><div class="wsl-list">' +
-        sites.map(function (x) { var l = wslLink('B:' + x.id); return '<div class="wsl-row"><div><b>' + esc(x.name || x.id) + '</b><span class="small muted">' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</span></div><div class="row"><a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText(x.name || x.id, l))) + '">' + icon('wa') + ' واتساب</a><button class="btn sm" type="button" data-wsl-copy="' + esc(l) + '">' + icon('copy') + ' نسخ</button><a class="btn sm" target="_blank" rel="noopener" href="' + esc(l) + '">' + icon('nav') + ' افتح</a></div></div>'; }).join('') + '</div></div>' : '') +
+        sites.map(function (x) { var stn = /تسمين|محطة|أمهات|امهات|تربية/.test((x.name || '') + ' ' + (x.type || '')); var one = function (l, lbl, nm) { return '<div class="row wsl-k">' + (lbl ? '<span class="wsl-kl">' + lbl + '</span>' : '') + '<a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText(nm, l))) + '">' + icon('wa') + ' واتساب</a><button class="btn sm" type="button" data-wsl-copy="' + esc(l) + '">' + icon('copy') + ' نسخ</button><a class="btn sm" target="_blank" rel="noopener" href="' + esc(l) + '">' + icon('nav') + ' افتح</a></div>'; }; return '<div class="wsl-row"><div><b>' + esc(x.name || x.id) + '</b><span class="small muted">' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</span></div><div class="wsl-ks">' + (stn ? one(wslLink('B:' + x.id + ':clean'), '<i class="rd-dot clean"></i> كلين · للبوابة الأمامية', (x.name || x.id) + ' (الطريق الكلين للبوابة الأمامية)') + one(wslLink('B:' + x.id + ':dirty'), '<i class="rd-dot dirty"></i> ديرتي · للبوابة الخلفية', (x.name || x.id) + ' (الطريق الديرتي للبوابة الخلفية)') : one(wslLink('B:' + x.id), '', x.name || x.id)) + '</div></div>'; }).join('') + '</div></div>' : '') +
       '</section>';
     if ($('wslQr') && !window.QRCode) $('wslQr').style.display = 'none';
     if (link && window.QRCode && $('wslQr')) new QRCode($('wslQr'), { text: link, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });

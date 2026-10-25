@@ -2173,6 +2173,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v33staff === 'function') BIO_v33staff(api, H_);
   if (typeof BIO_v33corr === 'function') BIO_v33corr(api, H_);
   if (typeof BIO_v33push === 'function') BIO_v33push(api, H_);
+  if (typeof BIO_v333roads === 'function') BIO_v333roads(api, H_);
   return api;
 }
 
@@ -8570,7 +8571,7 @@ function BIO_v32know(api, H) {
   };
 }
 /* ============================ الإصدار 33: رسائل الإدارة + التقدير والتحفيز لموظفي الأمن الحيوي ============================ */
-TABLES.bulletins = { sheet: 'رسائل الإدارة', key: 'id', cols: { id: 'رقم الرسالة', time: 'الوقت', fromId: 'كود المرسل', fromName: 'المرسل', toLabel: 'موجهة إلى', toIds: 'أكواد المستلمين', title: 'العنوان', body: 'النص', level: 'الأهمية', kind: 'النوع', img: 'صورة', count: 'عدد المستلمين', deleted: 'محذوفة' } };
+TABLES.bulletins = { sheet: 'رسائل الإدارة', key: 'id', cols: { id: 'رقم الرسالة', time: 'الوقت', fromId: 'كود المرسل', fromName: 'المرسل', toLabel: 'موجهة إلى', toIds: 'أكواد المستلمين', title: 'العنوان', body: 'النص', level: 'الأهمية', kind: 'النوع', img: 'صورة', count: 'عدد المستلمين', deleted: 'محذوفة', meta: 'تفاصيل' } };
 TABLES.breads = { sheet: 'قراءة رسائل الإدارة', key: 'id', cols: { id: 'الرقم', bulId: 'رقم الرسالة', userId: 'كود المستخدم', userName: 'الاسم', time: 'وقت القراءة' } };
 TABLES.staffx = { sheet: 'ملفات الموظفين', key: 'id', cols: { id: 'الكود', name: 'الاسم', photo: 'الصورة', birth: 'تاريخ الميلاد', hire: 'تاريخ التعيين', updatedAt: 'آخر تحديث', by: 'عدّلها' } };
 TABLES.kudos = { sheet: 'كلمات الشكر', key: 'id', cols: { id: 'الرقم', time: 'الوقت', fromId: 'كود المرسل', fromName: 'من', toId: 'كود الموظف', toName: 'إلى', tag: 'السبب', note: 'الكلمة' } };
@@ -8689,12 +8690,12 @@ function BIO_v33staff(api, H) {
   function post(from, ids, label, p) {
     if (!ids.length) throw new Error('لا يوجد مستلمون بهذا الاختيار');
     var t = now(), id = deps.id('MSG-');
-    var row = { id: id, time: t, fromId: from.id || 'SYSTEM', fromName: from.name || 'منظومة الأمن الحيوي', toLabel: clip(label, 300), toIds: ids.join(','), title: clip(p.title, 120), body: clip(p.body, 2500), level: ['عادي', 'مهم', 'عاجل'].indexOf(p.level) >= 0 ? p.level : 'عادي', kind: KIND_IC[p.kind] ? p.kind : 'رسالة', img: p.img || '', count: ids.length, deleted: '' };
+    var row = { id: id, time: t, fromId: from.id || 'SYSTEM', fromName: from.name || 'منظومة الأمن الحيوي', toLabel: clip(label, 300), toIds: ids.join(','), title: clip(p.title, 120), body: clip(p.body, 2500), level: ['عادي', 'مهم', 'عاجل'].indexOf(p.level) >= 0 ? p.level : 'عادي', kind: KIND_IC[p.kind] ? p.kind : 'رسالة', img: p.img || '', count: ids.length, deleted: '', meta: p.meta ? JSON.stringify(p.meta).slice(0, 4000) : '' };
     store.append('bulletins', row); bump(t);
-    try { deps.notify({ kind: 'bulletin', toUserIds: ids, msgId: id, level: row.level, title: (KIND_IC[row.kind] || '✉️') + ' ' + row.title, body: row.body.slice(0, 600) + '\n— ' + row.fromName }); } catch (e) {}
+    try { deps.notify({ kind: 'bulletin', toUserIds: ids, msgId: id, level: row.level, title: (KIND_IC[row.kind] || '✉️') + ' ' + row.title, body: row.body.slice(0, 600) + '\n— ' + row.fromName, img: /^https:\/\//.test(String(row.img)) ? String(row.img).slice(0, 400) : '' }); } catch (e) {}
     return row;
   }
-  function bulOut(b, read) { return { id: b.id, time: BIO_ms(b.time), fromName: String(b.fromName || ''), fromId: BIO_norm(b.fromId), title: String(b.title || ''), body: String(b.body || ''), level: String(b.level || 'عادي'), kind: String(b.kind || 'رسالة'), ic: KIND_IC[b.kind] || '✉️', img: String(b.img || ''), toLabel: String(b.toLabel || ''), read: read || null }; }
+  function bulOut(b, read) { return { id: b.id, time: BIO_ms(b.time), fromName: String(b.fromName || ''), fromId: BIO_norm(b.fromId), title: String(b.title || ''), body: String(b.body || ''), level: String(b.level || 'عادي'), kind: String(b.kind || 'رسالة'), ic: KIND_IC[b.kind] || '✉️', img: String(b.img || ''), toLabel: String(b.toLabel || ''), meta: (function () { try { return b.meta ? (typeof b.meta === 'string' ? JSON.parse(b.meta) : b.meta) : null; } catch (e) { return null; } })(), read: read || null }; }
   function readsMap(uid) { var m = {}; rows('breads').forEach(function (r) { if (!uid || BIO_norm(r.userId) === uid) m[String(r.bulId) + (uid ? '' : '|' + BIO_norm(r.userId))] = BIO_ms(r.time) || 1; }); return m; }
   function live(b) { return !yes(b.deleted); }
   function forMe(b, uid) { return (',' + String(b.toIds || '') + ',').indexOf(',' + uid + ',') >= 0; }
@@ -8873,7 +8874,7 @@ function BIO_v33staff(api, H) {
     var row = { time: t, type: type, period: period, userId: x.id, userName: x.name, reason: reason, by: u.name };
     if (old) store.update('stars', old.id, row); else { row.id = deps.id('ST-'); store.append('stars', row); }
     var all = resolve({ all: 1 }, u.id).ids;
-    if (all.length) try { post(u, all, 'كل فريق الأمن الحيوي', { title: (type === 'الشهر' ? '🌟 نجم الشهر: ' : '⭐ نجم الأسبوع: ') + x.name, body: x.name + (x.roleLabel ? ' · ' + x.roleLabel : '') + (x.where ? ' · ' + x.where : '') + '\n\n' + reason + '\n\nمبروك، وشكراً على مجهودك 👏', kind: 'نجم', level: 'مهم', img: x.photo && /^https:/.test(x.photo) ? x.photo : '' }); } catch (e) {}
+    if (all.length) try { post(u, all, 'كل فريق الأمن الحيوي', { title: (type === 'الشهر' ? 'نجم الشهر: ' : 'نجم الأسبوع: ') + x.name, body: x.name + (x.roleLabel ? ' · ' + x.roleLabel : '') + (x.where ? ' · ' + x.where : '') + '\n\n' + reason + '\n\nمبروك، وشكراً على مجهودك 👏', kind: 'نجم', level: 'مهم', img: x.photo || '', meta: { star: type === 'الشهر' ? 'month' : 'week', period: period, name: x.name, role: x.roleLabel || '', where: x.where || '', reason: reason, photo: x.photo || '', by: u.name } }); } catch (e) {}
     return { ok: true, stars: starsNow(S) };
   };
   function upsertX(id, name, patch, by) {
@@ -9605,3 +9606,90 @@ function BIO_seedPc(s, now) {
 }
 var BIO_seedPrevPc_ = BIO_seed;
 BIO_seed = function (now) { var s = BIO_seedPrevPc_(now); try { BIO_seedPc(s, now); } catch (e) { } return s; };
+
+/* ============================ v33.3: طرق المحطات (كلين وديرتي) لـ«وصّلني» ============================
+   كل محطة ليها طريقين بمسارين مختلفين:
+   - كلين: من بوابة تطهير الكلين أو المركزية ← البوابة الأمامية للمحطة (سيارات الشركة والعاملين والكتاكيت والعلف).
+   - ديرتي: من طريق المبيع ← البوابة الخلفية (التجار والنافق والسبلة والخدمات).
+   الطريق بيتسجّل بالـ GPS من الموبايل وهو ماشي فعلاً، ويتحفظ في ورقة «طرق المحطات». «وصّلني» بيقراه ويوجّه على نوعه بس. */
+TABLES.stroads = { sheet: 'طرق المحطات', key: 'id', cols: { id: 'رقم الطريق', siteId: 'كود الموقع', siteName: 'الموقع', kind: 'النوع', name: 'الاسم', poly: 'المسار (مرمّز)', marks: 'العلامات', lenM: 'الطول (متر)', nPts: 'عدد النقاط', active: 'نشط', byId: 'كود المسجّل', by: 'سجّله', time: 'وقت التسجيل', updatedAt: 'آخر تعديل' } };
+var BIO_ROAD_KINDS = { clean: 'كلين', dirty: 'ديرتي' };
+var BIO_ROAD_MARKS = { fork: 'المفرق', turn: 'اللفّة', gate: 'البوابة', tank: 'خزان المية', sign: 'اللافتة', guard: 'كشك الأمن', tower: 'البرج', bump: 'المطب', danger: 'المكان الخطر', note: 'علامة' };
+/** ترميز المسار بنفس صيغة «شريك الدفاع» (Encoded Polyline بدقة 1e-5) */
+function BIO_polyEnc(pts) {
+  var out = '', la = 0, lo = 0;
+  function enc(v) { v = v < 0 ? ~(v << 1) : (v << 1); var s = ''; while (v >= 0x20) { s += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; } return s + String.fromCharCode(v + 63); }
+  pts.forEach(function (p) { var a = Math.round(p[0] * 1e5), o = Math.round(p[1] * 1e5); out += enc(a - la) + enc(o - lo); la = a; lo = o; });
+  return out;
+}
+function BIO_polyDec(str) {
+  var out = [], n = String(str || ''), L = n.length, i = 0, la = 0, lo = 0;
+  while (i < L) {
+    var vals = [];
+    for (var k = 0; k < 2; k++) { var r = 0, sh = 0, b; do { if (i >= L) return out; b = n.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20); vals.push((r & 1) ? ~(r >> 1) : (r >> 1)); }
+    la += vals[0]; lo += vals[1]; out.push([la / 1e5, lo / 1e5]);
+  }
+  return out;
+}
+function BIO_roadKind(v) { v = String(v || '').trim(); if (v === 'clean' || v === BIO_ROAD_KINDS.clean) return 'clean'; if (v === 'dirty' || v === BIO_ROAD_KINDS.dirty) return 'dirty'; return ''; }
+function BIO_v333roads(api, H) {
+  var store = H.store, deps = H.deps, R = 6371000, DG = Math.PI / 180;
+  function dist(a, b) { var dLa = (b.lat - a.lat) * DG, dLo = (b.lng - a.lng) * DG, h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a.lat * DG) * Math.cos(b.lat * DG) * Math.sin(dLo / 2) * Math.sin(dLo / 2); return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
+  function me(pin) { var u = H.auth(pin, 'login'); if (u.pestOnly) throw new Error('حسابك مخصص لقسم مكافحة الآفات فقط'); return u; }
+  function canEdit(u) { return !!u.isAdmin || [BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_SECTOR].indexOf(u.role) >= 0; }
+  function sites() {
+    var L = (store.all('sites') || []).map(function (s) { return { id: BIO_norm(s.id), name: String(s.name || s.id), sector: String(s.sector || ''), type: String(s.type || ''), level: s.level, external: s.external, lat: s.lat, lng: s.lng }; });
+    return BIO_fixGeo(L).filter(function (s) { return !BIO_isYes(s.external) && s.lat != null && s.lng != null; })
+      .sort(function (a, b) { var ra = BIO_placeRank(a), rb = BIO_placeRank(b); return (a.sector || '').localeCompare(b.sector || '', 'ar') || (ra == null ? 999 : ra) - (rb == null ? 999 : rb) || a.name.localeCompare(b.name, 'ar'); });
+  }
+  function rows() { try { return (store.all('stroads') || []).filter(function (r) { return String(r.active).trim() !== BIO.NO && String(r.active) !== '0'; }); } catch (e) { return []; } }
+  function out(r) { var mk = []; try { mk = typeof r.marks === 'string' ? JSON.parse(r.marks || '[]') : (r.marks || []); } catch (e) { mk = []; } return { id: String(r.id), siteId: BIO_norm(r.siteId), siteName: String(r.siteName || ''), kind: BIO_roadKind(r.kind), name: String(r.name || ''), poly: String(r.poly || ''), marks: mk, lenM: Number(r.lenM) || 0, nPts: Number(r.nPts) || 0, by: String(r.by || ''), updatedAt: BIO_ms(r.updatedAt) || BIO_ms(r.time) || 0 }; }
+  function flush() { try { if (deps.wslFlush) deps.wslFlush(); } catch (e) {} }
+  api.roadsList = function (pin) {
+    var u = me(pin);
+    return { canEdit: canEdit(u), kinds: BIO_ROAD_KINDS, marks: BIO_ROAD_MARKS, sites: sites(), roads: rows().map(out) };
+  };
+  /** p = { siteId, kind: clean|dirty, name, pts: [[lat,lng],...] بترتيب السواقة من أول الطريق للمحطة, marks: [{lat,lng,k,t}] } */
+  api.roadSave = function (pin, p) {
+    var u = me(pin); if (!canEdit(u)) throw new Error('تسجيل طرق المحطات للمدير والمسؤول والمشرف والمعاون ومدير القطاع');
+    p = p || {};
+    var kind = BIO_roadKind(p.kind); if (!kind) throw new Error('اختار نوع الطريق: كلين ولا ديرتي');
+    var st = sites().filter(function (s) { return s.id === BIO_norm(p.siteId); })[0]; if (!st) throw new Error('اختار المحطة (لازم يكون ليها إحداثيات في ورقة المواقع)');
+    var raw = Array.isArray(p.pts) ? p.pts : []; if (raw.length < 2 || raw.length > 8000) throw new Error('الطريق المسجّل قصير قوي أو فيه نقط كتير قوي. سجّله تاني');
+    var pts = [], L = 0;
+    for (var i = 0; i < raw.length; i++) {
+      var la = Number(raw[i] && raw[i][0]), lo = Number(raw[i] && raw[i][1]);
+      if (!isFinite(la) || !isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180 || (!la && !lo)) throw new Error('فيه نقطة غير صحيحة في التسجيل (رقم ' + (i + 1) + ')');
+      var q = { lat: +la.toFixed(5), lng: +lo.toFixed(5) };
+      if (pts.length) { var g = dist(pts[pts.length - 1], q); if (g > 3000) throw new Error('فيه قفزة كبيرة في التسجيل (' + Math.round(g) + ' متر)، غالباً إشارة الموقع ضاعت. سجّل الطريق تاني'); if (g < 0.5) continue; L += g; }
+      pts.push(q);
+    }
+    if (pts.length < 2 || L < 30) throw new Error('الطريق المسجّل أقل من 30 متر');
+    if (L > 150000) throw new Error('الطريق أطول من 150 كم. سجّل الجزء اللي جوه القطاع بس');
+    var endD = dist(pts[pts.length - 1], st); if (endD > 800) throw new Error('آخر الطريق بعيد عن «' + st.name + '» بحوالي ' + Math.round(endD) + ' متر. الطريق لازم يخلص عند بوابة المحطة');
+    var marks = [];
+    (Array.isArray(p.marks) ? p.marks : []).slice(0, 80).forEach(function (m) {
+      var ml = { lat: Number(m && m.lat), lng: Number(m && m.lng) }; if (!isFinite(ml.lat) || !isFinite(ml.lng)) return;
+      var bi = -1, bd = Infinity;
+      for (var j = 0; j < pts.length; j++) { var d = dist(pts[j], ml); if (d < bd) { bd = d; bi = j; } }
+      if (bi < 0 || bd > 150) return;
+      marks.push({ i: bi, k: BIO_ROAD_MARKS[String(m.k)] ? String(m.k) : 'note', t: String((m && m.t) || '').trim().slice(0, 40) });
+    });
+    marks.sort(function (a, b) { return a.i - b.i; });
+    var poly = BIO_polyEnc(pts.map(function (x) { return [x.lat, x.lng]; }));
+    if (poly.length > 45000) throw new Error('الطريق فيه نقط كتير قوي. سجّله على جزئين');
+    var t = deps.now(), name = String(p.name || '').trim().slice(0, 60) || ((kind === 'clean' ? 'الطريق الكلين لـ ' : 'الطريق الديرتي لـ ') + st.name);
+    /* طريق واحد شغال لكل نوع في كل محطة: التسجيل الجديد بيحل محل القديم (والقديم بيفضل في الشيت متعلّم «لا») */
+    rows().filter(function (r) { return BIO_norm(r.siteId) === st.id && BIO_roadKind(r.kind) === kind; }).forEach(function (r) { store.update('stroads', r.id, { active: BIO.NO, updatedAt: t }); });
+    var row = { id: deps.id('RD-'), siteId: st.id, siteName: st.name, kind: BIO_ROAD_KINDS[kind], name: name, poly: poly, marks: JSON.stringify(marks), lenM: Math.round(L), nPts: pts.length, active: BIO.YES, byId: u.id, by: u.name, time: t, updatedAt: t };
+    store.append('stroads', row);
+    flush();
+    return { road: out(row), roads: rows().map(out) };
+  };
+  api.roadDelete = function (pin, id) {
+    var u = me(pin); if (!canEdit(u)) throw new Error('حذف الطرق للمدير والمسؤول والمشرف والمعاون ومدير القطاع');
+    var r = store.find('stroads', String(id || '')); if (!r) throw new Error('الطريق ده مش موجود');
+    store.update('stroads', r.id, { active: BIO.NO, updatedAt: deps.now() }); flush();
+    return { roads: rows().map(out) };
+  };
+}

@@ -1,5 +1,5 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v33-2';
+var CACHE = 'bio-v33-3';
 var SHELL = ['./', 'index.html', 'reports.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
@@ -45,6 +45,7 @@ function show(d) {
   return self.registration.showNotification(d.title || 'الأمن الحيوي', {
     body: d.body || '', dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
     tag: d.approvalId || d.reportId || (bul && d.msgId ? 'msg-' + d.msgId : '') || d.kind || 'bio', renotify: true, requireInteraction: urgent, vibrate: bul ? (d.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220, 100, 220]) : [200, 100, 200],
+    image: /^https:\/\//.test(d.img || '') ? d.img : undefined,
     data: d, actions: d.kind === 'request' && d.approvalId ? [{ action: 'approve', title: 'موافقة' }, { action: 'reject', title: 'رفض' }]
       : (d.kind === 'report' || d.kind === 'escalation') && d.reportId ? [{ action: 'r-ack', title: 'تم الاستلام' }, { action: 'r-alert', title: 'رفع إنذار على الموقع' }] : []
   });
@@ -80,11 +81,30 @@ self.addEventListener('notificationclick', function (e) {
     }).catch(function () { return openApp('#comms'); }));
     return;
   }
-  e.waitUntil(openApp(d.route || '#'));
+  /* v33.3: رسالة الإدارة تفتح على الرسالة نفسها (تظهر الأول بالشكل الكبير، وبعدها تفضل في «رسائل الإدارة») */
+  var route = d.route || '#';
+  if (d.kind === 'bulletin' && d.msgId && !/^#inbox\/m\//.test(route)) route = '#inbox/m/' + d.msgId;
+  e.waitUntil(kvSet('pendingRoute', { route: route, t: Date.now() }).then(function () { return openApp(route); }));
 });
+function kvSet(key, val) {
+  return new Promise(function (res) {
+    try {
+      var r = indexedDB.open('bio-biosecurity', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
+      r.onsuccess = function () { try { var tx = r.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put(val, key); tx.oncomplete = function () { res(); }; tx.onerror = function () { res(); }; } catch (e) { res(); } };
+      r.onerror = function () { res(); };
+    } catch (e) { res(); }
+  });
+}
+/** يفتح التطبيق على المسار: لو التطبيق مفتوح يروح له (النافذة الرئيسية بس، مش إطار التقارير)، ولو مقفول يفتحه */
 function openApp(route) {
+  var url = new URL('./' + (route || ''), self.registration.scope).href;
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
-    for (var i = 0; i < cs.length; i++) { cs[i].postMessage({ route: route, sync: true }); return cs[i].focus(); }
-    return self.clients.openWindow('./' + route);
+    var top = cs.filter(function (c) { return c.frameType !== 'nested' && c.url.indexOf(self.registration.scope) === 0 && !/reports\.html/.test(c.url); })[0];
+    if (top) {
+      try { top.postMessage({ route: route, sync: true }); } catch (x) {}
+      return (top.focus ? top.focus() : Promise.resolve()).catch(function () { return self.clients.openWindow(url); });
+    }
+    return self.clients.openWindow(url);
   });
 }
