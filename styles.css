@@ -5406,3 +5406,13 @@ body.rk-lock { overflow: hidden; }
 .ps-users { display: flex; flex-wrap: wrap; gap: 6px; }
 .ps-u { padding: 5px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: .84rem; } .ps-u.on { background: var(--ok-soft); border-color: transparent; }
 .ps-u small { color: var(--muted); }
+/* 33.2 «وصّلني» */
+.wsl-grid{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.wsl-qr{background:#fff;padding:10px;border-radius:12px;line-height:0;flex:none}
+.wsl-qr img,.wsl-qr canvas{width:168px;height:168px}
+.wsl-side{flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px}
+.wsl-btns{flex-wrap:wrap;gap:8px}
+.wsl-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.wsl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
+.wsl-row>div:first-child{display:flex;flex-direction:column;min-width:0}
+.wsl-row .row{gap:6px;flex-wrap:wrap}

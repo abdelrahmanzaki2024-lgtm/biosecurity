@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.2</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -505,7 +505,12 @@
   function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
   function hasVr() { return vrPerms().length > 0; }
   function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
-  function navItems() { return navItems0().filter(function (n) { return !hiddenScr(n[0]); }); }
+  function navItems() {
+    var a = navItems0();
+    /* 25/10: «وصّلني» (ملاحة لفة بلفة بالصوت جوه القطاعات) لكل الأدوار ماعدا شركة المكافحة وتقارير الزيارة فقط */
+    if (!pcOnly() && !a.some(function (n) { return n && n[0] === 'wassalni'; })) { var mi = a.map(function (n) { return n && n[0]; }).indexOf('more'), it = ['wassalni', 'وصّلني (الملاحة)', 'nav']; if (mi >= 0) a.splice(mi, 0, it); else a.push(it); }
+    return a.filter(function (n) { return !hiddenScr(n[0]); });
+  }
   function navItems0() {
     if (pcOnly()) return [['pc', 'مكافحة الآفات', 'bug'], ['more', 'المزيد', 'menu']];
     if (vrOnly()) return [['vr', 'تقارير الأمن الحيوي', 'clip'], ['inbox', 'رسائل الإدارة', 'mail'], ['cheer', 'إنجازات الفريق', 'award'], ['calc', 'حاسبة التطهير', 'flask'], ['more', 'المزيد', 'menu']];
@@ -531,7 +536,7 @@
     ['risk', 'المخاطر', 'alert', ['epi', 'birds', 'wx', 'academy', 'vrcorr', 'ews', 'integ', 'sim', 'trace', 'insights']],
     ['sites', 'المواقع', 'layers', ['stations', 'farm', 'pc', 'disposal', 'inspect', 'cams']],
     ['stock', 'المخازن والمطهرات', 'box', ['store', 'dis', 'calc']],
-    ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'fleet', 'trips', 'tours', 'routes']],
+    ['move', 'الحركة', 'truck', ['gates', 'iso', 'gate', 'missions', 'wassalni', 'fleet', 'trips', 'tours', 'routes']],
     ['people', 'HR إدارة الأمن الحيوي', 'user', ['inbox', 'cheer', 'evals', 'attend', 'passport', 'contractors', 'companies', 'online']],
     ['admin', 'الإدارة', 'db', ['vr', 'data', 'users', 'ucards', 'pushset', 'purge']]
   ];
@@ -667,7 +672,7 @@
     document.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === base || (base === 'table' || base === 'cards' || base === 'history' || base === 'external' || base === 'selfpoints') && b.dataset.go === 'data' || (base === 'ref' || base === 'tv' || base === 'backup') && b.dataset.go === 'more' || (base === 'users' || base === 'codes') && b.dataset.go === 'users' || (base === 'plan' || base === 'network' || base === 'audit') && b.dataset.go === 'insights'); });
     navOpenActive(base);
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
-    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
+    var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, wassalni: viewWassalni, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
     views[base](r.split('/').slice(1));
     renderBadges(); renderSub();
@@ -4779,6 +4784,38 @@
       if (MODE === 'web' && pushCfg() && window.Notification && Notification.permission === 'granted') enablePush(true);
       return d;
     }).catch(function () { return null; });
+  }
+
+  /* ============================ «وصّلني»: رابط الملاحة لفة بلفة (صفحة ?p=wassalni في مشروع المنظومة) ============================ */
+  function wslBase() {
+    var u = window.BIO_EXEC || CFG.API_URL || (S.ref && S.ref.settings && S.ref.settings.APP_URL) || '';
+    if (!u && /\/exec/.test(location.href)) u = location.href;
+    return String(u).split('#')[0].split('?')[0];
+  }
+  function wslLink(to) { var b = wslBase(); return b ? b + '?p=wassalni' + (to ? '&to=' + encodeURIComponent(to) : '') : ''; }
+  function wslText(name, link) {
+    return '🧭 «وصّلني» · ' + (CFG.COMPANY || 'كايرو ثري إيه') + '\n' + (name ? 'الطريق لـ ' + name + ' لفة بلفة بالصوت، ' : 'ملاحة لفة بلفة بالصوت لكل محطات ومواقع القطاع، ') + 'وبيشتغل جوه القطاع من غير إنترنت بعد أول فتح:\n' + link +
+      '\n\nافتح الرابط، اسمح بتحديد المكان، واختار المكان ← «ابدأ». لو تهت اضغط «أنا تايه».';
+  }
+  function viewWassalni() {
+    var link = wslLink('');
+    var sites = (S.ref ? S.ref.sites : []).filter(function (x) { return !x.external && x.lat != null && x.lat !== '' && x.lng != null && x.lng !== ''; });
+    $('main').innerHTML = '<section class="view">' + v5Head('وصّلني', 'nav', 'ملاحة لفة بلفة بالصوت لأي حد داخل القطاع: سيارات الشركة والزوار والموردين. رابط واحد من غير تسجيل دخول، وبيشتغل جوه القطاع من غير إنترنت بعد أول فتح') +
+      (link ? '<div class="card wsl-card"><div class="wsl-grid"><div class="wsl-qr" id="wslQr"></div><div class="wsl-side">' +
+        '<div class="field"><label for="wslUrl">الرابط</label><input id="wslUrl" type="text" dir="ltr" readonly value="' + esc(link) + '"></div>' +
+        '<div class="row wsl-btns"><a class="btn primary" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('nav') + ' افتح «وصّلني»</a>' +
+        '<a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText('', link))) + '">' + icon('wa') + ' ابعته على واتساب</a>' +
+        '<button class="btn" type="button" data-wsl-copy="' + esc(link) + '">' + icon('copy') + ' نسخ الرابط</button></div>' +
+        '<p class="small muted">اطبع الـ QR ده وحطه على البوابة الخارجية: الزائر يصوّره بالموبايل ويختار المحطة. أرقام الاتصال (المدير والمسؤول والمشرف) بتظهر جوه الملاحة وفي «أنا تايه»، والطرق اللي المشرفين بيسجّلوها في «شريك الدفاع» بتظهر لوحدها.</p>' +
+        '</div></div></div>' : '<div class="card"><p class="lk-warn">' + icon('alert') + ' <span>لم يُضبط رابط التطبيق (APP_URL) في الإعدادات، فمش قادرين نعمل الرابط من هنا. اكتب رابط /exec في ورقة الإعدادات.</span></p></div>') +
+      (link && sites.length ? '<div class="card"><h3>' + icon('pin') + ' رابط مباشر لكل مكان <span class="muted small">' + sites.length + '</span></h3><p class="small muted">لو الزائر رايح مكان معين ابعتله رابطه: يفتح على المكان على طول.</p><div class="wsl-list">' +
+        sites.map(function (x) { var l = wslLink('B:' + x.id); return '<div class="wsl-row"><div><b>' + esc(x.name || x.id) + '</b><span class="small muted">' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</span></div><div class="row"><a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText(x.name || x.id, l))) + '">' + icon('wa') + ' واتساب</a><button class="btn sm" type="button" data-wsl-copy="' + esc(l) + '">' + icon('copy') + ' نسخ</button><a class="btn sm" target="_blank" rel="noopener" href="' + esc(l) + '">' + icon('nav') + ' افتح</a></div></div>'; }).join('') + '</div></div>' : '') +
+      '</section>';
+    if ($('wslQr') && !window.QRCode) $('wslQr').style.display = 'none';
+    if (link && window.QRCode && $('wslQr')) new QRCode($('wslQr'), { text: link, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });
+    $('main').querySelectorAll('[data-wsl-copy]').forEach(function (b) {
+      b.onclick = function () { var t = b.getAttribute('data-wsl-copy'); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('تم نسخ الرابط'); }, function () { toast('تعذر النسخ من هذا المتصفح'); }); };
+    });
   }
   function viewPushSet() {
     $('main').innerHTML = '<section class="view">' + v5Head('إعداد الإشعارات', 'bell', 'علشان الرسائل والتنبيهات توصل للموبايل والتطبيق مقفول. مرة واحدة بس، ومجانية بالكامل') + '<div id="v5Out">' + v5Spin() + '</div></section>';
