@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 34.1</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 35</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -689,7 +689,7 @@
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
     var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, wassalni: viewWassalni, stroads: viewStRoads, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
-    views.home = viewHome; views.site = viewSite; views.mapc = viewMapC; views.myday = viewMyDay;
+    views.home = viewHome; views.site = viewSite; views.mapc = viewMapC; views.myday = viewMyDay; views.cyrep = viewCyrep;
     views[base](r.split('/').slice(1));
     hubTabsDraw(base);
     renderBadges(); renderSub();
@@ -1452,7 +1452,8 @@
     if (vrLocal() && navigator.onLine === false && vrKnown()) { try { window.open('reports.html', '_blank') || (location.href = 'reports.html'); } catch (e) { location.href = 'reports.html'; } return Promise.resolve(); }
     var w = null; try { w = window.open('', '_blank'); } catch (e) {}
     if (w) try { w.document.write('<meta name="viewport" content="width=device-width"><p dir="rtl" style="font:16px sans-serif;padding:24px;color:#444">جارٍ فتح تقارير الأمن الحيوي…</p>'); } catch (e) {}
-    return remote('vrOpen', [S.session.pin]).then(function (x) { var u = vrUrl(x.url); if (w) w.location = u; else location.href = u; }, function (e) { if (w) w.close(); toast(errText(e)); });
+    var vgo = S.vrGoto || ''; S.vrGoto = '';
+    return remote('vrOpen', [S.session.pin, vgo]).then(function (x) { var u = vrUrl(x.url); if (w) w.location = u; else location.href = u; }, function (e) { if (w) w.close(); toast(errText(e)); });
   }
   /** لو التقارير ماظهرتش جوه المنصة على الجهاز ده (زي صفحة خطأ Google 401)، نعرض الفتح في نافذة مستقلة */
   function vrFailBar() {
@@ -1486,7 +1487,8 @@
     if (vrExtPref() && MODE !== 'demo') return viewVrExt();
     $('main').innerHTML = '<section class="view">' + v5Head('تقارير زيارات الأمن الحيوي', 'clip', 'التقارير الثلاثة بدورة المراجعة والاعتماد، بنفس دخولك للمنصة') + '<div class="card vr-wait"><span class="spin"></span><b>جارٍ فتح التقارير بحسابك…</b><span class="small muted">بنتأكد من صلاحياتك ونفتح تطبيق التقارير بدورك</span></div></section>';
     var vrOff = function () { return { url: 'reports.html', role: '', roleLabel: 'بدون نت · التقارير بتتحفظ على الجهاز' }; };
-    var vrGo = vrLocal() && navigator.onLine === false && vrKnown() ? Promise.resolve(vrOff()) : remote('vrOpen', [S.session.pin]).catch(function (e) { if (e && e.net && vrLocal() && vrKnown()) return vrOff(); throw e; });
+    var vgo = S.vrGoto || ''; S.vrGoto = '';
+    var vrGo = vrLocal() && navigator.onLine === false && vrKnown() ? Promise.resolve(vrOff()) : remote('vrOpen', [S.session.pin, vgo]).catch(function (e) { if (e && e.net && vrLocal() && vrKnown()) return vrOff(); throw e; });
     vrGo.then(function (r) {
       if (S.route.split('/')[0] !== 'vr') return;
       if (r.demo) return vrDemo(r);
@@ -1496,7 +1498,7 @@
         '<button type="button" class="btn sm ghost" data-vr="win" title="فتح التقارير في نافذة مستقلة">' + icon('expand') + '<span class="hide-sm"> نافذة مستقلة</span></button>' +
         '<button type="button" class="btn sm ghost" data-vr="reload" title="إعادة تحميل التقارير">' + icon('refresh') + '</button>' +
         (vrOnly() ? '<button type="button" class="btn sm" data-vr="more" title="حسابي وتسجيل الخروج">' + icon('user') + '<span class="hide-sm"> حسابي</span></button>' : '<button type="button" class="btn sm" data-vr="sys">' + icon('dash') + '<span class="hide-sm"> النظام</span></button>') + '</div>' +
-        '<iframe class="vr-frame" id="vrFrame" title="تقارير زيارات الأمن الحيوي" allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation" src="' + esc(r.url) + '"></iframe>';
+        '<iframe class="vr-frame" id="vrFrame" title="تقارير زيارات الأمن الحيوي" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; geolocation" src="' + esc(r.url) + '"></iframe>';
       S.vrFrame = { url: r.url, role: r.role };
       S.vrReady = false; clearTimeout(S.vrT);
       S.vrT = setTimeout(function () { if (!S.vrReady && S.vrFrame && S.route.split('/')[0] === 'vr') vrFailBar(); }, 12000);
@@ -4970,31 +4972,83 @@
     if (!u && /\/exec/.test(location.href)) u = location.href;
     return String(u).split('#')[0].split('?')[0];
   }
+  function wslToOf(l) { var m = /[?&]to=([^&#]+)/.exec(String(l)); return m ? decodeURIComponent(m[1]) : ''; }
   function wslLink(to) { var b = wslBase(); return b ? b + '?p=wassalni' + (to ? '&to=' + encodeURIComponent(to) : '') : ''; }
   function wslText(name, link) {
     return '🧭 «وصّلني» · ' + (CFG.COMPANY || 'كايرو ثري إيه') + '\n' + (name ? 'الطريق لـ ' + name + ' لفة بلفة بالصوت، ' : 'ملاحة لفة بلفة بالصوت لكل محطات ومواقع القطاع، ') + 'وبيشتغل جوه القطاع من غير إنترنت بعد أول فتح:\n' + link +
       '\n\nافتح الرابط، اسمح بتحديد المكان، واختار المكان ← «ابدأ». لو تهت اضغط «أنا تايه».';
   }
-  function viewWassalni() {
+  function wslShareHtml() {
     var link = wslLink('');
     var sites = (S.ref ? S.ref.sites : []).filter(function (x) { return !x.external && x.lat != null && x.lat !== '' && x.lng != null && x.lng !== ''; });
-    $('main').innerHTML = '<section class="view">' + v5Head('وصّلني', 'nav', 'ملاحة لفة بلفة بالصوت لأي حد داخل القطاع: سيارات الشركة والزوار والموردين. رابط واحد من غير تسجيل دخول، وبيشتغل جوه القطاع من غير إنترنت بعد أول فتح') +
+    return '<div class="wsl-share">' +
       (link ? '<div class="card wsl-card"><div class="wsl-grid"><div class="wsl-qr" id="wslQr"></div><div class="wsl-side">' +
         '<div class="field"><label for="wslUrl">الرابط</label><input id="wslUrl" type="text" dir="ltr" readonly value="' + esc(link) + '"></div>' +
-        '<div class="row wsl-btns"><a class="btn primary" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('nav') + ' افتح «وصّلني»</a>' +
+        '<div class="row wsl-btns"><a class="btn" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('expand') + ' جرّب الرابط زي الزائر</a>' +
         '<a class="btn wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText('', link))) + '">' + icon('wa') + ' ابعته على واتساب</a>' +
         '<button class="btn" type="button" data-wsl-copy="' + esc(link) + '">' + icon('copy') + ' نسخ الرابط</button></div>' +
         '<p class="small muted">اطبع الـ QR ده وحطه على البوابة الخارجية: الزائر يصوّره بالموبايل ويختار المحطة. أرقام الاتصال (المدير والمسؤول والمشرف) بتظهر جوه الملاحة وفي «أنا تايه»، والطرق اللي المشرفين بيسجّلوها في «شريك الدفاع» بتظهر لوحدها.</p>' +
         '</div></div></div>' : '<div class="card"><p class="lk-warn">' + icon('alert') + ' <span>لم يُضبط رابط التطبيق (APP_URL) في الإعدادات، فمش قادرين نعمل الرابط من هنا. اكتب رابط /exec في ورقة الإعدادات.</span></p></div>') +
       (link && sites.length ? '<div class="card"><h3>' + icon('pin') + ' رابط مباشر لكل مكان <span class="muted small">' + sites.length + '</span></h3><p class="small muted">لو الزائر رايح مكان معين ابعتله رابطه: يفتح على المكان على طول.</p><div class="wsl-list">' +
-        sites.map(function (x) { var stn = /تسمين|محطة|أمهات|امهات|تربية/.test((x.name || '') + ' ' + (x.type || '')); var one = function (l, lbl, nm) { return '<div class="row wsl-k">' + (lbl ? '<span class="wsl-kl">' + lbl + '</span>' : '') + '<a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText(nm, l))) + '">' + icon('wa') + ' واتساب</a><button class="btn sm" type="button" data-wsl-copy="' + esc(l) + '">' + icon('copy') + ' نسخ</button><a class="btn sm" target="_blank" rel="noopener" href="' + esc(l) + '">' + icon('nav') + ' افتح</a></div>'; }; return '<div class="wsl-row"><div><b>' + esc(x.name || x.id) + '</b><span class="small muted">' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</span></div><div class="wsl-ks">' + (stn ? one(wslLink('B:' + x.id + ':clean'), '<i class="rd-dot clean"></i> كلين · للبوابة الأمامية', (x.name || x.id) + ' (الطريق الكلين للبوابة الأمامية)') + one(wslLink('B:' + x.id + ':dirty'), '<i class="rd-dot dirty"></i> ديرتي · للبوابة الخلفية', (x.name || x.id) + ' (الطريق الديرتي للبوابة الخلفية)') : one(wslLink('B:' + x.id), '', x.name || x.id)) + '</div></div>'; }).join('') + '</div></div>' : '') +
-      '</section>';
+        sites.map(function (x) { var stn = /تسمين|محطة|أمهات|امهات|تربية/.test((x.name || '') + ' ' + (x.type || '')); var one = function (l, lbl, nm) { return '<div class="row wsl-k">' + (lbl ? '<span class="wsl-kl">' + lbl + '</span>' : '') + '<a class="btn sm wa" target="_blank" rel="noopener" href="' + esc(waLink(wslText(nm, l))) + '">' + icon('wa') + ' واتساب</a><button class="btn sm" type="button" data-wsl-copy="' + esc(l) + '">' + icon('copy') + ' نسخ</button><a class="btn sm primary" href="#wassalni/to/' + esc(encodeURIComponent(wslToOf(l))) + '">' + icon('nav') + ' افتح هنا</a></div>'; }; return '<div class="wsl-row"><div><b>' + esc(x.name || x.id) + '</b><span class="small muted">' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</span></div><div class="wsl-ks">' + (stn ? one(wslLink('B:' + x.id + ':clean'), '<i class="rd-dot clean"></i> كلين · للبوابة الأمامية', (x.name || x.id) + ' (الطريق الكلين للبوابة الأمامية)') + one(wslLink('B:' + x.id + ':dirty'), '<i class="rd-dot dirty"></i> ديرتي · للبوابة الخلفية', (x.name || x.id) + ' (الطريق الديرتي للبوابة الخلفية)') : one(wslLink('B:' + x.id), '', x.name || x.id)) + '</div></div>'; }).join('') + '</div></div>' : '') +
+      '</div>';
+  }
+  function wslShareBind() {
+    var link = wslLink('');
     if ($('wslQr') && !window.QRCode) $('wslQr').style.display = 'none';
-    if (link && window.QRCode && $('wslQr')) new QRCode($('wslQr'), { text: link, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });
+    if (link && window.QRCode && $('wslQr') && !$('wslQr').firstChild) new QRCode($('wslQr'), { text: link, width: 168, height: 168, correctLevel: QRCode.CorrectLevel.M });
     $('main').querySelectorAll('[data-wsl-copy]').forEach(function (b) {
       b.onclick = function () { var t = b.getAttribute('data-wsl-copy'); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('تم نسخ الرابط'); }, function () { toast('تعذر النسخ من هذا المتصفح'); }); };
     });
   }
+  /* v35: «وصّلني» بقى جزء من التطبيق: نفس محرك الملاحة بيتفتح جوه الشاشة على الموبايل والكمبيوتر (مش رابط بيفتح صفحة تانية).
+     في نسخة Apps Script ونسخة العرض الصفحة متضمنة في التطبيق (srcdoc)، وفي النسخة المثبتة ملف wassalni.html المحفوظ على الجهاز. */
+  window.BIO_wslHost = function () { return Object.assign({}, S.wslCfg || {}, { start: S.wslStart || '', embedded: true }); };
+  window.BIO_wslCall = function (action, p) {
+    return remote('wslCall', [String(action), JSON.stringify(p || {})]).then(function (r) { return r || { ok: false, err: 'server', msg: 'رد فاضي من الخادم' }; },
+      function (e) { return { ok: false, err: e && e.net ? 'net' : 'server', msg: e && e.net ? 'مفيش إنترنت دلوقتي' : errText(e) }; });
+  };
+  /* لما الملاحة تبدأ على الموبايل، «وصّلني» بياخد الشاشة كلها (من غير شريط التطبيق) ويرجع أول ما تخرج من الملاحة */
+  window.BIO_wslNav = function (on) {
+    var h = $('wslHost'); if (!h) return;
+    var full = !!on && window.innerWidth < 900;
+    h.classList.toggle('max', full); document.body.classList.toggle('wsl-driving', full); wslFit();
+  };
+  window.addEventListener('hashchange', function () { if (!/^#wassalni/.test(location.hash)) document.body.classList.remove('wsl-driving'); });
+  function wslCanShare() { var u = S.session && S.session.user; return !!(u && u.isManager); }
+  function viewWassalni(args) {
+    args = args || [];
+    var tab = args[0] === 'share' ? 'share' : 'nav';
+    S.wslStart = args[0] === 'to' && args[1] ? decodeURIComponent(args[1]).replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 40) : '';
+    var bar = '<div class="wsl-bar"><div class="wsl-t">' + icon('nav') + '<div><b>وصّلني</b><span>ملاحة لفة بلفة بالصوت لكل محطات ومواقع القطاع</span></div></div>' +
+      (wslCanShare() ? '<div class="wsl-seg" role="tablist"><button type="button" role="tab" class="' + (tab === 'nav' ? 'on' : '') + '" data-wt="nav">' + icon('nav') + ' الملاحة</button><button type="button" role="tab" class="' + (tab === 'share' ? 'on' : '') + '" data-wt="share">' + icon('share') + ' رابط للزوار</button></div>' : '') +
+      (tab === 'nav' ? '<button type="button" class="btn sm ghost wsl-full" id="wslFull" title="ملء الشاشة">' + icon('full') + '<span class="hide-sm"> ملء الشاشة</span></button>' : '') + '</div>';
+    if (tab === 'share') {
+      $('main').innerHTML = '<section class="view wsl-in">' + bar + wslShareHtml() + '</section>';
+      wslShareBind();
+    } else {
+      $('main').innerHTML = '<section class="view wsl-in nav">' + bar + '<div class="wsl-host" id="wslHost"><div class="card vr-wait" id="wslWait"><span class="spin"></span><b>جارٍ فتح «وصّلني»…</b></div></div></section>';
+      var open = function () {
+        if (S.route.split('/')[0] !== 'wassalni' || !$('wslHost')) return;
+        var f = document.createElement('iframe');
+        f.id = 'wslFrame'; f.className = 'wsl-frame'; f.title = 'وصّلني'; f.setAttribute('allow', 'geolocation; screen-wake-lock; fullscreen; autoplay; clipboard-write');
+        if (window.BIO_WSL_PAGE) f.srcdoc = window.BIO_WSL_PAGE; else f.src = 'wassalni.html';
+        $('wslHost').innerHTML = ''; $('wslHost').appendChild(f); wslFit();
+      };
+      (S.wslCfg ? Promise.resolve(S.wslCfg) : remote('wslConfig', []).then(function (c) { S.wslCfg = c; return c; }).catch(function () { S.wslCfg = { hotlines: [] }; return S.wslCfg; })).then(open);
+      if ($('wslFull')) $('wslFull').onclick = function () { var h = $('wslHost'); if (!h) return; try { (h.requestFullscreen || h.webkitRequestFullscreen).call(h); } catch (e) { h.classList.toggle('max'); wslFit(); } };
+      wslFit();
+    }
+    $('main').querySelectorAll('[data-wt]').forEach(function (b) { b.onclick = function () { go(b.dataset.wt === 'share' ? 'wassalni/share' : 'wassalni'); }; });
+  }
+  function wslFit() {
+    var h = $('wslHost'); if (!h) return;
+    if (h.classList.contains('max')) { h.style.height = ''; return; }
+    var bn = $('bottomNav'), bh = bn && getComputedStyle(bn).display !== 'none' ? bn.offsetHeight : 0;
+    var top = h.getBoundingClientRect().top + window.scrollY;
+    h.style.height = Math.max(460, window.innerHeight - top - bh - 10) + 'px';
+  }
+  window.addEventListener('resize', function () { if (S.route && S.route.split('/')[0] === 'wassalni') wslFit(); });
   function viewPushSet() {
     $('main').innerHTML = '<section class="view">' + v5Head('إعداد الإشعارات', 'bell', 'علشان الرسائل والتنبيهات توصل للموبايل والتطبيق مقفول. مرة واحدة بس، ومجانية بالكامل') + '<div id="v5Out">' + v5Spin() + '</div></section>';
     v5Load('pushAdmin', [], psDraw, 'إعداد الإشعارات');
@@ -12215,6 +12269,7 @@
     var u = S.session && S.session.user; if (!u || !u.isManager || liteOnly()) return [];
     var a = [['home', 'الرئيسية', 'dash'], ['site', 'صفحة المحطة', 'layers'], ['mapc', 'خريطة القيادة', 'map']];
     if (['مفتش أمن حيوي', 'مشرف أمن حيوي', 'مسؤول أمن حيوي'].indexOf(u.role) >= 0 || isAdmin()) a.push(['myday', 'يومي', 'calendar']);
+    a.push(['cyrep', 'المحطة بالأرقام', 'file']);
     return a;
   }
   navGrouped = function () {
@@ -12344,7 +12399,7 @@
       $('spTabs').querySelectorAll('[data-st]').forEach(function (b) { b.onclick = function () { go('site/' + encodeURIComponent(row.id) + '/' + b.dataset.st); }; });
       var body = $('spBody'); body.innerHTML = v5Spin();
       if (tab === 'econ' || tab === 'causes') return remote('prodAnalytics', [S.session.pin]).then(function (A) { if (!$('spBody')) return; body.innerHTML = tab === 'econ' ? econHtml(A, row.id) : causesHtml(A, row.id); bindEcon(A); }).catch(function (e) { body.innerHTML = e.net ? offlineCard('التحليلات') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
-      remote('siteCard', [S.session.pin, row.id]).then(function (c) { if ($('spBody')) body.innerHTML = siteTabHtml(tab, c, row); bindSiteTab(body); }).catch(function (e) { body.innerHTML = e.net ? offlineCard('صفحة المحطة') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+      remote('siteCard', [S.session.pin, row.id]).then(function (c) { if (!$('spBody')) return; body.innerHTML = siteTabHtml(tab, c, row); bindSiteTab(body); if (tab === 'inspect' && $('spFnd')) siteFindings(row, c, $('spFnd')); else if (tab === 'over') siteCyCard(row, body.querySelector('.sp-grid') || body); }).catch(function (e) { body.innerHTML = e.net ? offlineCard('صفحة المحطة') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
     }).catch(function (e) { $('spHead').innerHTML = e.net ? offlineCard('صفحة المحطة') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
   }
   function bindSiteTab(box) { box.querySelectorAll('[data-go2]').forEach(function (b) { b.onclick = function () { go(b.dataset.go2); }; }); }
@@ -12367,7 +12422,7 @@
     var feed = '<section class="card"><div class="card-head"><h2>' + icon('box') + ' العلف مقابل معيار هابرد</h2><span class="small muted">جم/طائر/يوم · العمود = الفعلي · الخط = المعيار عند نفس العمر</span></div>' + (ik.length ? '<div class="sp-feed">' + ik.map(function (x) { var lv = x.pct == null ? 'young' : x.pct < 85 ? 'bad' : x.pct < 95 ? 'warn' : ''; return '<div><span class="std" style="bottom:' + ((x.std || 0) / ikmx * 100).toFixed(1) + '%"></span><span class="act ' + lv + '" style="height:' + (x.g / ikmx * 100).toFixed(1) + '%" title="' + esc('عمر ' + x.age + ': ' + x.g + ' جم مقابل ' + x.std) + '"></span></div>'; }).join('') + '</div>' + (ikl && ikl.pct == null ? v34Msg('info', 'الدورة لسه تحت عمر 7 أيام: العلف المصروف في الأيام الأولى بيتحط في المعالف ومش بيعبّر عن الأكل الفعلي، فالمقارنة بتبدأ من عمر 7.') : '') + (ikl && ikl.pct != null ? v34Msg(ikl.pct < 85 ? 'bad' : ikl.pct < 95 ? 'warn' : 'info', 'آخر يوم (عمر ' + ikl.age + '): <b>' + ikl.g + ' جم/طائر</b> مقابل ' + ikl.std + ' في المعيار = <b>' + ikl.pct + '%</b>' + (ikl.pct < 85 ? '. قلة الأكل من أول علامات المرض أو مشكلة في العلف أو الحرارة.' : '')) : '') : v34Empty('مفيش علف يومي للدورة الحالية في ملف المزارع')) + '</section>';
     var ews = c.ews && Date.now() - c.ews.time < 3 * 864e5 ? v34Msg('bad', '<b>إنذار ' + esc(c.ews.level) + '</b> · ' + esc(c.ews.why)) : '';
     if (tab === 'moves') return '<div class="sp-grid one">' + moves + '</div>';
-    if (tab === 'inspect') return '<div class="sp-grid one">' + insp + '</div>';
+    if (tab === 'inspect') return '<div id="spFnd">' + v5Spin() + '</div>';
     if (tab === 'roads') return '<div class="sp-grid one"><section class="card"><div class="card-head"><h2>' + icon('route') + ' طرق المحطة</h2></div><div class="sp-two">' + road('clean', 'الطريق الكلين ← البوابة الأمامية') + road('dirty', 'الطريق الديرتي ← البوابة الخلفية') + '</div><div class="row">' + lnk('stroads', 'طرق المحطات') + lnk('wassalni', 'وصّلني') + lnk('routes', 'خطوط السير') + '</div></section></div>';
     return ews + '<div class="sp-grid">' + houses + mort + feed + insp + moves + '</div>';
   }
@@ -12520,7 +12575,9 @@
   /* ============================ يومي (نموذج د للمعاون) ============================ */
   function viewMyDay() {
     var have = navItems().map(function (n) { return n[0]; });
-    $('main').innerHTML = '<section class="view v34 md"><header><span class="hm-date">' + esc(arDay(Date.now())) + '</span><h1 id="mdTitle">خطة النهارده</h1><p class="v34-sub">المحطات مرتبة بالأولوية: الإنذار الأول، وبعدها اللي عدّى عليها أطول وقت من غير زيارة.</p></header><div id="mdList">' + v5Spin() + '</div></section>';
+    var mdt = S.mdTab || 'vis';
+    $('main').innerHTML = '<section class="view v34 md"><header><span class="hm-date">' + esc(arDay(Date.now())) + '</span><h1 id="mdTitle">خطة النهارده</h1><p class="v34-sub">المحطات مرتبة بالأولوية: الإنذار الأول، وبعدها اللي عدّى عليها أطول وقت من غير زيارة.</p></header><div class="row md-tabs" id="mdTabs"><button type="button" class="chip' + (mdt === 'vis' ? ' on' : '') + '" data-mdt="vis">الزيارات</button><button type="button" class="chip' + (mdt === 'fnd' ? ' on' : '') + '" data-mdt="fnd">للتحقق <b class="mono">…</b></button></div><div id="mdList"' + (mdt === 'fnd' ? ' hidden' : '') + '>' + v5Spin() + '</div><div id="mdFnd"' + (mdt === 'fnd' ? '' : ' hidden') + '>' + v5Spin() + '</div></section>';
+    $('mdTabs').querySelectorAll('[data-mdt]').forEach(function (b) { b.onclick = function () { S.mdTab = b.dataset.mdt; $('mdTabs').querySelectorAll('[data-mdt]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('mdList').hidden = S.mdTab !== 'vis'; $('mdFnd').hidden = S.mdTab !== 'fnd'; }; });
     remote('stationStatus', [S.session.pin]).then(function (ss) {
       if (!$('mdList')) return;
       var now = Date.now(), rows = (ss.rows || []).filter(function (r) { return r.cycle; }).map(function (r) {
@@ -12530,10 +12587,178 @@
       $('mdTitle').textContent = rows.length ? rows.length + ' زيارات مقترحة النهارده' : 'مفيش زيارات مقترحة';
       $('mdList').innerHTML = rows.map(function (x, i) {
         return '<div class="md-card' + (i === 0 ? ' now' : '') + '"><div class="md-h"><b>' + esc(shortSite(x.r.name)) + '</b><span class="' + (x.r.ews || x.r.spike ? 'bad' : '') + '">' + esc(x.r.phase || '') + (x.r.age ? ' · عمر ' + x.r.age : '') + '</span></div><p>' + esc(x.why) + '</p><div class="md-b">' +
-          (have.indexOf('vr') >= 0 ? '<button type="button" class="btn ' + (i === 0 ? 'primary' : 'dark') + '" data-go2="vr">' + icon('edit') + ' ابدأ التقرير</button>' : '') + (have.indexOf('wassalni') >= 0 ? '<button type="button" class="btn" data-go2="wassalni">' + icon('nav') + ' وصّلني</button>' : '') + (have.indexOf('site') >= 0 ? '<button type="button" class="btn ghost" data-go2="site/' + esc(x.r.id) + '">المحطة</button>' : '') + '</div></div>';
+          (have.indexOf('vr') >= 0 ? '<button type="button" class="btn ' + (i === 0 ? 'primary' : 'dark') + '" data-go2="vr">' + icon('edit') + ' ابدأ التقرير</button>' : '') + (have.indexOf('wassalni') >= 0 ? '<button type="button" class="btn" data-go2="wassalni/to/' + esc(encodeURIComponent('B:' + x.r.id)) + '">' + icon('nav') + ' وصّلني</button>' : '') + (have.indexOf('site') >= 0 ? '<button type="button" class="btn ghost" data-go2="site/' + esc(x.r.id) + '">المحطة</button>' : '') + '</div></div>';
       }).join('') || v34Empty('مفيش محطات في نطاقك');
       bindSiteTab($('mdList'));
+      mydayFindings(rows);
     }).catch(function (e) { $('mdList').innerHTML = e.net ? offlineCard('خطة اليوم') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+
+  /* ============================ v35: الملاحظات المفتوحة + «المحطة بالأرقام» ============================ */
+  HUBS.sites.tabs.splice(1, 0, 'cyrep');
+  HUB_TAB_LABEL.cyrep = 'المحطة بالأرقام';
+  NAV_GROUPS = HUB_GROUPS.map(function (g) { var t = []; g[3].forEach(function (h) { t = t.concat(HUBS[h].tabs); }); return [g[0], g[1], g[2], t]; });
+  /** يفتح تطبيق التقارير على ملاحظة معينة (تحديث حالتها أو قفلها بصورة «بعد») */
+  function vrGo(g) {
+    S.vrGoto = g;
+    if (S.vrFrame) { S.vrFrame = null; var h = $('vrHost'); if (h) { h.hidden = true; h.innerHTML = ''; } }
+    if (vrExtPref() && MODE !== 'demo') { vrOpenWin(); return; }
+    go('vr');
+  }
+  function bindVrGo(box) { box.querySelectorAll('[data-vrgo]').forEach(function (b) { b.onclick = function () { if (MODE === 'demo') { toast('في النسخة التجريبية التقارير بتتفتح كعرض بس — في المنظومة الحقيقية الزرار ده بيفتح الملاحظة نفسها في تطبيق التقارير'); go('vr'); return; } vrGo(b.dataset.vrgo); }; }); }
+  var FD_SEV = { 'حرجة': 's0', 'رئيسية': 's1', 'ثانوية': 's2' };
+  function fdDue(f) {
+    if (!f.open) return '<b class="fd-ok">اتقفلت</b><small class="mono">' + esc(f.at ? f.at.slice(0, 10) : '') + '</small>';
+    if (f.late) return '<b class="bad">متأخرة ' + f.late + ' ' + (f.late === 1 ? 'يوم' : 'أيام') + '</b><small>كان الميعاد <span class="mono">' + esc(f.u) + '</span></small>';
+    return '<b>من ' + (f.age == null ? '—' : f.age + ' ' + (f.age === 1 ? 'يوم' : 'أيام')) + '</b><small>' + (f.u ? 'الميعاد <span class="mono">' + esc(f.u) + '</span>' : 'بدون ميعاد') + '</small>';
+  }
+  function fdPh(id, lab, after) { return id ? '<div class="fd-ph' + (after ? ' a' : '') + '" data-fph="' + esc(id) + '"><span>' + lab + '</span></div>' : '<div class="fd-ph none"><span>' + lab + ': مفيش</span></div>'; }
+  function fdCard(f, opt) {
+    opt = opt || {};
+    return '<div class="fd-card' + (f.late ? ' late' : '') + (f.open ? '' : ' closed') + '"><div class="fd-h"><div class="fd-hl"><div class="fd-t"><span class="fd-sev ' + (FD_SEV[f.sev] || 's2') + '">' + esc(f.sev) + '</span><b class="mono">' + esc(f.c) + '</b><span>' + esc(f.ax || '') + '</span>' + (f.st === 'قيد التنفيذ' ? '<span class="fd-st">قيد التنفيذ</span>' : '') + (opt.site ? '<span class="fd-site">' + esc(shortSite(f.site)) + '</span>' : '') + '</div><b class="fd-title">' + esc(f.t || f.d) + '</b></div><div class="fd-due">' + fdDue(f) + '</div></div>' +
+      '<div class="fd-b">' + (opt.noPh ? '' : '<div class="fd-phs">' + fdPh(f.phB[0], 'قبل') + fdPh(f.phA, 'بعد', 1) + '</div>') + '<div class="fd-txt">' + (f.a ? '<span><b>الإجراء:</b> ' + esc(f.a) + '</span>' : '') + '<span>' + (f.o ? '<b>المسؤول:</b> ' + esc(f.o) + ' · ' : '') + '<b>تقرير</b> <span class="mono">' + esc(f.rep) + '</span></span>' + (f.n || f.bn ? '<span class="muted">آخر متابعة: ' + esc([f.bn, f.n].filter(Boolean).join(' · ')) + '</span>' : '') + (opt.why ? '<span class="fd-why">' + esc(opt.why) + '</span>' : '') + '</div></div>' +
+      (f.open && opt.act !== false ? '<div class="fd-act"><button type="button" class="btn dark' + (opt.big ? '' : ' sm') + '" data-vrgo="fnd:' + esc(f.rid) + ':' + esc(f.c) + '">' + icon('camera') + ' صورة «بعد» واقفل</button><button type="button" class="btn ' + (opt.big ? '' : 'sm ghost') + '" data-vrgo="fnd:' + esc(f.rid) + ':' + esc(f.c) + '">لسه</button></div>' : '') + '</div>';
+  }
+  function fdPhotos(box) {
+    box.querySelectorAll('[data-fph]').forEach(function (el) {
+      var id = el.dataset.fph, k = 'fph_' + id; S.fphC = S.fphC || {};
+      var put = function (src) { if (src) { el.style.backgroundImage = 'url("' + src + '")'; el.classList.add('ok'); } else el.classList.add('none'); };
+      if (S.fphC[k] != null) return put(S.fphC[k]);
+      remote('fndPhoto', [S.session.pin, id]).then(function (r) { S.fphC[k] = r.src || ''; put(r.src); }).catch(function () { el.classList.add('none'); });
+    });
+  }
+  /** تبويب «التفتيش والملاحظات» في صفحة المحطة */
+  function siteFindings(row, c, box) {
+    remote('findings', [S.session.pin, row.id]).then(function (F) {
+      if (!box.isConnected) return;
+      var f = S.fdFilt || 'open', all = F.items, open = all.filter(function (x) { return x.open; }), late = open.filter(function (x) { return x.late; }), prog = open.filter(function (x) { return x.st === 'قيد التنفيذ'; }), closed = all.filter(function (x) { return !x.open; });
+      var L = f === 'late' ? late : f === 'prog' ? prog : f === 'closed' ? closed : open;
+      var ch = function (k, t, n) { return '<button type="button" class="chip' + (f === k ? ' on' : '') + '" data-fdf="' + k + '">' + t + ' <b class="mono">' + n + '</b></button>'; };
+      var V = F.visits || [], vmx = 100;
+      var side = '<div class="fd-side"><section class="card"><div class="card-head"><h2>آخر ' + (V.length || '') + ' زيارات</h2></div>' + (V.length ? '<div class="fd-vis">' + V.map(function (v) { return '<div><b class="mono">' + v.score + '%</b><i class="' + (v.score < 75 ? 'b' : 'g') + '" style="height:' + Math.max(6, (v.score - 50) * 1.6).toFixed(0) + 'px"></i><span class="mono">' + esc(fmtD(v.t)) + '</span></div>'; }).join('') + '</div>' : v34Empty('مفيش تقارير زيارة')) + '</section>' +
+        '<section class="card"><div class="card-head"><h2>القفل في المحطة دي</h2></div><div class="fd-kv"><span>متوسط أيام القفل</span><b class="mono">' + (F.stats.avgDays == null ? '—' : F.stats.avgDays) + '</b></div><div class="fd-kv"><span>اتقفلت في ميعادها</span><b class="mono">' + (F.stats.onTime == null ? '—' : F.stats.onTime + '%') + '</b></div><div class="fd-kv"><span>متوسط الشركة</span><b class="mono">' + (F.company.onTime == null ? '—' : F.company.onTime + '%') + '</b></div></section>' +
+        '<div class="v34-msg warn"><b>الحرجة بتمنع التسكين.</b> لو فيه ملاحظة حرجة مفتوحة والمحطة عليها تسكين في خلال 3 أيام، المنظومة بتنبه مدير الإدارة.</div></div>';
+      box.innerHTML = (F.placeSoon ? v34Msg('bad', '<b>تسكين يوم ' + esc(F.placeSoon.day) + ' ولسه فيه ' + F.placeSoon.crit.length + ' ملاحظة حرجة مفتوحة</b> · ' + esc(F.placeSoon.crit.map(function (x) { return x.c; }).join('، '))) : '') +
+        (!F.linked ? v34Msg('info', 'الملاحظات بتيجي من تطبيق التقارير 3.2. لو مش ظاهرة، اتأكد إن تطبيق التقارير اتحدث وإن «REPORTS_SHEET_ID» في الإعدادات صحيح.') : '') +
+        '<div class="fd-wrap"><div class="fd-main"><div class="fd-bar"><div class="row">' + ch('open', 'مفتوحة', open.length) + ch('late', 'متأخرة', late.length) + ch('prog', 'قيد التنفيذ', prog.length) + ch('closed', 'مقفولة', closed.length) + '</div><span class="small muted">مترتبة بالمتأخر وبعدين الشدة</span></div>' +
+        (L.length ? L.map(function (x) { return fdCard(x); }).join('') : v34Empty(f === 'closed' ? 'مفيش ملاحظات اتقفلت قريب' : 'مفيش ملاحظات ' + (f === 'late' ? 'متأخرة' : f === 'prog' ? 'قيد التنفيذ' : 'مفتوحة') + ' على المحطة دي')) + '</div>' + side + '</div>';
+      box.querySelectorAll('[data-fdf]').forEach(function (b) { b.onclick = function () { S.fdFilt = b.dataset.fdf; siteFindings(row, c, box); }; });
+      bindVrGo(box); fdPhotos(box);
+    }).catch(function (e) { box.innerHTML = e.net ? offlineCard('الملاحظات') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+  function fmtD(t) { try { var d = new Date(t + 3 * 36e5); return d.getUTCDate() + '/' + (d.getUTCMonth() + 1); } catch (e) { return ''; } }
+  /** كارت «تقارير نهاية الدورة» تحت نظرة عامة في صفحة المحطة */
+  function siteCyCard(row, box) {
+    if (hiddenScr('cyrep')) return;
+    remote('cycleReports', [S.session.pin, row.id]).then(function (R) {
+      if (!box.isConnected || !R.items.length) return;
+      var d = document.createElement('section'); d.className = 'card';
+      d.innerHTML = '<div class="card-head"><h2>' + icon('file') + ' المحطة بالأرقام: تقارير نهاية الدورة</h2></div><div class="cy-list">' + R.items.slice(0, 4).map(cyRowHtml).join('') + '</div>';
+      box.appendChild(d); bindCyRows(d);
+    }).catch(function () {});
+  }
+  function cyRowHtml(r) { return '<button type="button" class="cy-row" data-cy="' + esc(r.id) + '"><span class="cy-g g' + esc(String(r.grade).replace('+', 'p')) + '">' + esc(r.grade || '—') + '</span><span class="cy-n"><b>' + esc(shortSite(r.site)) + ' · الدورة ' + esc(r.cycle) + '</b><small>' + esc(r.first) + ' ← ' + esc(r.last) + '</small></span><span class="cy-s ' + (r.approvedAt ? 'ok' : '') + '">' + (r.approvedAt ? 'معتمد' : 'مستني الاعتماد') + '</span></button>'; }
+  function bindCyRows(box) { box.querySelectorAll('[data-cy]').forEach(function (b) { b.onclick = function () { go('cyrep/' + encodeURIComponent(b.dataset.cy)); }; }); }
+  function viewCyrep(args) {
+    var id = args && args[0] ? decodeURIComponent(args[0]) : '';
+    if (id) return viewCyOne(id);
+    $('main').innerHTML = '<section class="view v34"><div class="v34-top"><div><h2 class="v34-h">' + icon('file') + ' المحطة بالأرقام</h2><span class="v34-sub">تقرير منفصل بيتعمل لوحده أول ما الدورة تتقفل (بعد آخر يوم بيع في ملف المزارع)، وبيتبعت لمدير الإدارة يراجعه ويعتمده.</span></div></div><div id="cyList">' + v5Spin() + '</div></section>';
+    remote('cycleReports', [S.session.pin]).then(function (R) {
+      if (!$('cyList')) return;
+      var st = S.cySite || 'all', sites = []; R.items.forEach(function (r) { if (sites.indexOf(r.siteId) < 0) sites.push(r.siteId); });
+      var L = R.items.filter(function (r) { return st === 'all' || r.siteId === st; }), nm = {}; R.items.forEach(function (r) { nm[r.siteId] = r.site; });
+      $('cyList').innerHTML = R.items.length ? '<div class="row cy-f"><button type="button" class="chip' + (st === 'all' ? ' on' : '') + '" data-cys="all">الكل <b class="mono">' + R.items.length + '</b></button>' + sites.map(function (k) { return '<button type="button" class="chip' + (st === k ? ' on' : '') + '" data-cys="' + esc(k) + '">' + esc(shortSite(nm[k])) + '</button>'; }).join('') + '</div><section class="card"><div class="cy-list">' + L.map(cyRowHtml).join('') + '</div></section>' :
+        v34Msg('info', 'مفيش دورات اتقفلت في آخر 4 شهور لسه. أول ما ملف المزارع اليومي يوصل لآخر يوم بيع في أي محطة، التقرير هيتعمل لوحده ويوصلك.');
+      $('cyList').querySelectorAll('[data-cys]').forEach(function (b) { b.onclick = function () { S.cySite = b.dataset.cys; viewCyrep(); }; });
+      bindCyRows($('cyList'));
+    }).catch(function (e) { $('cyList').innerHTML = e.net ? offlineCard('المحطة بالأرقام') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+  function cyN(v, d) { return v == null ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function cySg(v, d) { return v == null ? '' : (v > 0 ? '+' : v < 0 ? '−' : '') + cyN(Math.abs(v), d); }
+  function viewCyOne(id) {
+    $('main').innerHTML = '<section class="view v34 cy-view"><div id="cyBody">' + v5Spin() + '</div></section>';
+    remote('cycleReport', [S.session.pin, id]).then(function (R) {
+      if (!$('cyBody')) return;
+      var d = R.data; if (!d) { $('cyBody').innerHTML = v34Empty('بيانات التقرير ناقصة'); return; }
+      var bar = '<div class="cy-bar no-print"><button type="button" class="btn ghost" id="cyBack">' + icon('back') + ' كل التقارير</button><span class="cy-sp"></span><button type="button" class="btn" id="cyPrint">' + icon('printer') + ' طباعة / PDF</button></div>';
+      var appr = R.approvedAt ? '<div class="v34-msg info no-print"><b>اعتمده ' + esc(R.approvedBy) + '</b> · ' + esc(fmt(R.approvedAt)) + (R.comment ? ' · ' + esc(R.comment) : '') + '</div>' : R.canApprove ? '<section class="card no-print cy-appr"><div class="card-head"><h2>' + icon('check') + ' اعتماد مدير الإدارة</h2></div><textarea id="cyCm" rows="2" placeholder="تعليقك على الدورة (اختياري)"></textarea><button type="button" class="btn primary" id="cyOk">اعتماد التقرير</button></section>' : '<div class="v34-msg warn no-print">التقرير مستني اعتماد مدير الإدارة.</div>';
+      $('cyBody').innerHTML = bar + appr + '<div class="cy-pages">' + cyPage1(d, R) + cyPage2(d, R) + '</div>';
+      $('cyBack').onclick = function () { go('cyrep'); };
+      $('cyPrint').onclick = function () { document.body.classList.add('cy-printing'); setTimeout(function () { window.print(); setTimeout(function () { document.body.classList.remove('cy-printing'); }, 400); }, 60); };
+      if ($('cyOk')) $('cyOk').onclick = function () { var b = this; b.disabled = true; remote('cycleReportApprove', [S.session.pin, id, $('cyCm').value]).then(function () { toast('اتعتمد التقرير'); viewCyOne(id); }).catch(function (e) { b.disabled = false; toast(errText(e)); }); };
+    }).catch(function (e) { $('cyBody').innerHTML = e.net ? offlineCard('التقرير') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+  function cyHead(d, page, big) {
+    return '<div class="cy-hd' + (big ? '' : ' sm') + '"><div><span class="cy-k">منظومة الأمن الحيوي · كايرو ثري إيه</span><b>' + esc(shortSite(d.site)) + ' بالأرقام' + (big ? '' : ' · الأمن الحيوي في الدورة') + '</b>' + (big ? '<span>الدورة ' + esc(d.cycle) + ' · تسكين ' + esc(d.first) + ' · آخر بيع ' + esc(d.last) + (d.houses ? ' · ' + d.houses + ' عنابر' : '') + ' · ' + cyN(d.placed) + ' كتكوت</span>' : '') + '</div><div class="cy-hr"><span>تقرير نهاية دورة · اتعمل تلقائي</span><span>صفحة ' + page + ' من 2</span></div></div>';
+  }
+  function cyFoot(l, r) { return '<div class="cy-ft"><span>' + l + '</span><span>' + r + '</span></div>'; }
+  function cyPage1(d, R) {
+    var gcls = { A: 'a', 'B+': 'bp', B: 'b', C: 'c' }[d.grade] || 'n';
+    var kp = d.kpi.map(function (k) {
+      var ref = k.hub != null ? k.hub : k.q, vals = [k.v, k.hub, k.q, k.p].filter(function (x) { return x != null; }), lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), pad = (hi - lo) * 0.35 || Math.abs(hi) * 0.05 || 1; lo -= pad; hi += pad;
+      var P = function (x) { return ((x - lo) / (hi - lo) * 100).toFixed(1); }, col = k.good === false ? 'b' : k.good ? 'g' : 'n';
+      var badge = k.good == null || ref == null ? '' : '<em class="' + col + '">' + (k.good ? 'أحسن' : 'أضعف') + ' من ' + esc(k.hub != null ? k.hubL : k.qL) + '</em>';
+      return '<div class="cy-k1"><div class="cy-kt"><span>' + esc(k.t) + '</span>' + badge + '</div><b class="mono">' + cyN(k.v, k.dec) + (k.unit ? ' <small>' + esc(k.unit) + '</small>' : '') + '</b><div class="cy-kb">' + (k.v != null ? '<i class="v ' + col + '" style="width:' + P(k.v) + '%"></i>' : '') + (k.hub != null ? '<i class="h" style="right:' + P(k.hub) + '%"></i>' : '') + (k.q != null ? '<i class="q" style="right:' + P(k.q) + '%"></i>' : '') + '</div><div class="cy-kc"><span>' + esc(k.hubL || 'هابرد') + ' <b class="mono">' + cyN(k.hub, k.dec) + '</b></span><span>' + esc(k.qL) + ' <b class="mono">' + cyN(k.q, k.dec) + '</b></span><span>السابقة <b class="mono">' + cyN(k.p, k.dec) + '</b></span></div></div>';
+    }).join('');
+    // منحنى النافق
+    var C = d.curve, all = C.cur.concat(C.prev).map(function (x) { return x[1]; }).concat(C.band.map(function (x) { return x[2]; }).filter(function (v) { return v != null; })), ymx = Math.max.apply(null, all.concat([1])) * 1.1, amx = Math.max.apply(null, C.cur.concat(C.prev).map(function (x) { return x[0]; }).concat([35]));
+    var X = function (a) { return (40 + a / amx * 640).toFixed(1); }, Y = function (v) { return (192 - v / ymx * 176).toFixed(1); };
+    var line = function (p) { return p.map(function (x, i) { return (i ? 'L' : 'M') + X(x[0]) + ' ' + Y(x[1]); }).join(' '); };
+    var B = C.band.filter(function (x) { return x[1] != null; }), band = B.length > 1 ? 'M' + B.map(function (x) { return X(x[0]) + ' ' + Y(x[1]); }).join(' L') + ' L' + B.slice().reverse().map(function (x) { return X(x[0]) + ' ' + Y(x[2]); }).join(' L') + ' Z' : '';
+    var last = C.cur[C.cur.length - 1], plast = C.prev[C.prev.length - 1], grid = [0, 0.25, 0.5, 0.75, 1].map(function (f) { return 'M40 ' + Y(ymx * f / 1.1) + ' H690'; }).join(' ');
+    var ticks = ''; for (var a = 0; a <= amx; a += 10) ticks += '<text x="' + X(a) + '" y="214" font-size="11" fill="#5B6574" text-anchor="middle">' + a + '</text>';
+    var svg = '<svg viewBox="0 0 700 220" class="cy-svg" aria-label="منحنى النافق التراكمي"><path d="' + grid + '" stroke="#EEF0F3"/>' + (band ? '<path d="' + band + '" fill="#EEF0F3"/>' : '') + (C.prev.length ? '<path d="' + line(C.prev) + '" fill="none" stroke="#8B93A0" stroke-width="2" stroke-dasharray="5 4"/>' : '') + '<path d="' + line(C.cur) + '" fill="none" stroke="#C8161E" stroke-width="3" stroke-linejoin="round"/>' +
+      (last ? '<circle cx="' + X(last[0]) + '" cy="' + Y(last[1]) + '" r="5" fill="#C8161E"/><text x="' + (+X(last[0]) - 8) + '" y="' + (+Y(last[1]) + 18) + '" text-anchor="end" font-size="12" font-weight="700" fill="#C8161E">' + cyN(last[1], 1) + '%</text>' : '') + (plast ? '<text x="' + (+X(plast[0]) - 8) + '" y="' + (+Y(plast[1]) - 8) + '" text-anchor="end" font-size="11" fill="#5B6574">' + cyN(plast[1], 1) + '%</text>' : '') + ticks +
+      '<text x="4" y="' + (+Y(ymx / 1.1) + 4) + '" font-size="11" fill="#5B6574">' + cyN(ymx / 1.1, 1) + '%</text><text x="4" y="196" font-size="11" fill="#5B6574">0</text></svg>';
+    var fmx = Math.max.apply(null, d.feed.map(function (f) { return Math.max(f.g, f.std || 0); }).concat([1])) * 1.05;
+    var feed = d.feed.length ? d.feed.slice(-7).map(function (f) { var bad = f.pct != null && f.pct <= -5; return '<div class="cy-fr"><span>أسبوع ' + f.w + '</span><div><i class="' + (bad ? 'b' : '') + '" style="width:' + (f.g / fmx * 100).toFixed(1) + '%"></i>' + (f.std ? '<em style="right:' + (f.std / fmx * 100).toFixed(1) + '%"></em>' : '') + '</div><b class="mono ' + (bad ? 'b' : '') + '">' + (f.pct == null ? '—' : cySg(f.pct) + '%') + '</b></div>'; }).join('') : '<p class="cy-na">مفيش علف يومي كفاية في الملف</p>';
+    var sales = d.sales.length ? d.sales.slice(0, 4).map(function (x) { return '<div class="cy-sr"><span>' + esc(x.day.slice(5).split('-').reverse().join('/')) + ' · عمر ' + x.age + '</span><span><b class="mono">' + cyN(x.w, 2) + '</b> <em class="mono ' + (x.pct == null ? '' : x.pct >= 0 ? 'g' : 'b') + '">' + (x.pct == null ? '' : cySg(x.pct) + '%') + '</em></span></div>'; }).join('') + (d.monthW ? '<div class="cy-sr"><span>الشركة · نفس الشهر (الوسيط)</span><span><b class="mono">' + cyN(d.monthW, 2) + '</b></span></div>' : '') : '<p class="cy-na">وزن البيع مش متسجل في ملف المزارع</p>';
+    return '<article class="a4p">' + cyHead(d, 1, true) + '<div class="cy-in">' +
+      '<div class="cy-v"><div class="cy-gr ' + gcls + '"><b class="mono">' + esc(d.grade) + '</b><span>تقييم الدورة</span></div><div><b>' + esc(d.verdict) + '</b><span>' + esc(d.line) + '</span></div></div>' +
+      '<h3 class="cy-h">المؤشرات الأساسية</h3><div class="cy-kg">' + kp + '</div><div class="cy-lg"><span><i class="h"></i>' + esc('معيار هابرد / الحد الأدنى') + '</span><span><i class="q"></i>أفضل ربع في الشركة (' + d.nClosed + ' دورة)</span><span>الشريط أزرق لو أحسن من المرجع وبرتقالي لو أضعف</span></div>' +
+      '<h3 class="cy-h">النافق التراكمي حسب العمر</h3><div class="cy-box">' + svg + '<div class="cy-lg"><span><i class="l r"></i>الدورة دي</span>' + (C.prev.length ? '<span><i class="l d"></i>الدورة السابقة' + (d.prevCycle ? ' (' + esc(d.prevCycle) + ')' : '') + '</span>' : '') + (band ? '<span><i class="bd"></i>نص دورات الشركة اللي في النص</span>' : '') + '</div></div>' +
+      '<div class="cy-2"><div><h3 class="cy-h">استهلاك العلف مقابل هابرد (جم/طائر/يوم)</h3><div class="cy-box">' + feed + '<small class="cy-note">الخط الأسود = هابرد عند نفس العمر.</small></div></div><div><h3 class="cy-h">الوزن عند البيع (كجم)</h3><div class="cy-box">' + sales + '<small class="cy-note">النسبة = الفرق عن وزن هابرد عند نفس عمر البيع.</small></div></div></div>' +
+      '</div>' + cyFoot('المصدر: البيانات اليومية للمزارع (' + d.days + ' يوم) · ' + esc(d.std) + ' · ' + d.nClosed + ' دورة في الشركة', 'اتعمل تلقائي ' + esc(fmt(R.madeAt))) + '</article>';
+  }
+  function cyPage2(d, R) {
+    var V = d.visits, span = Math.max(d.maxAge || 40, 40) + 6, X = function (a) { return (30 + (a + 5) / span * 650).toFixed(1); };
+    var vs = '<svg viewBox="0 0 700 114" class="cy-svg" aria-label="الزيارات على عمر الدورة"><rect x="' + X(-5) + '" y="40" width="' + (X(0) - X(-5)).toFixed(1) + '" height="60" fill="#F6F7F9"/><path d="M30 80 H690" stroke="#1C1F24" stroke-width="2"/>';
+    for (var a = 0; a <= span - 6; a += 10) vs += '<path d="M' + X(a) + ' 76 V84" stroke="#8B93A0"/><text x="' + X(a) + '" y="100" font-size="11" fill="#5B6574" text-anchor="middle">' + a + '</text>';
+    V.forEach(function (v, i) { var c = v.score < 75 ? '#C76A1C' : '#1F5FAE', y = i % 2 ? 34 : 18; vs += '<path d="M' + X(v.age) + ' ' + (y + 12) + ' V74" stroke="#B8BEC8" stroke-dasharray="3 3"/><circle cx="' + X(v.age) + '" cy="80" r="7" fill="' + c + '"/><text x="' + X(v.age) + '" y="' + y + '" font-size="12" font-weight="700" fill="' + c + '" text-anchor="middle">' + v.score + '%</text><text x="' + X(v.age) + '" y="' + (y + 12) + '" font-size="10" fill="#4A5260" text-anchor="middle">' + esc((/تجهيز/.test(v.type) ? 'تجهيز' : v.vt || 'دورية').slice(0, 10)) + '</text>'; });
+    vs += '<text x="' + X(-2.5) + '" y="111" font-size="10" fill="#8B93A0" text-anchor="middle">قبل التسكين</text></svg>';
+    var P = function (x) { return ((x - 50) / 50 * 100).toFixed(1); };
+    var axes = d.axes.length ? d.axes.map(function (x) {
+      var up = x.p == null || x.v == null || x.v >= x.p, c = up ? 'g' : 'b', lo = Math.min(x.v == null ? x.p : x.v, x.p == null ? x.v : x.p), hi = Math.max(x.v == null ? x.p : x.v, x.p == null ? x.v : x.p), dd = x.v != null && x.p != null ? x.v - x.p : null;
+      return '<div class="cy-ax"><span>' + esc(x.t) + '</span><div class="cy-axb"><span class="z"></span>' + (dd != null ? '<span class="ln ' + c + '" style="right:' + P(Math.max(50, lo)) + '%;width:' + (P(hi) - P(Math.max(50, lo))).toFixed(1) + '%"></span>' : '') + (x.p != null ? '<span class="p" style="right:' + P(Math.max(50, x.p)) + '%"></span>' : '') + (x.v != null ? '<span class="c ' + c + '" style="right:' + P(Math.max(50, x.v)) + '%"></span>' : '') + '</div><b class="mono">' + (x.v == null ? '—' : x.v + '%') + '</b><span class="mono ' + c + '">' + (dd == null ? '' : cySg(dd)) + '</span></div>';
+    }).join('') + '<div class="cy-ax sc"><span></span><div class="cy-axs mono"><span>50%</span><span>75%</span><span>100%</span></div><span></span><span></span></div>' : '<p class="cy-na">درجات المحاور بتيجي من تطبيق التقارير 3.2 (زيارات التربية المعتمدة في فترة الدورة).</p>';
+    var F = d.fnd, G = d.gate;
+    var st = function (v, t, cls) { return '<div class="cy-st"><b class="mono ' + (cls || '') + '">' + (v == null ? '—' : v) + '</b><span>' + t + '</span></div>'; };
+    return '<article class="a4p">' + cyHead(d, 2, false) + '<div class="cy-in">' +
+      '<h3 class="cy-h">الزيارات على عمر الدورة</h3><div class="cy-box">' + (V.length ? vs + '<div class="cy-lg"><span>المحور الأفقي = عمر الدورة باليوم · ' + V.length + ' زيارة، متوسط <b class="mono">' + d.vAvg + '%</b></span></div>' : '<p class="cy-na">مفيش تقارير زيارة متسجلة في فترة الدورة.</p>') + '</div>' +
+      '<h3 class="cy-h">المحاور الثمانية: الدورة دي مقابل السابقة</h3><div class="cy-box">' + axes + (d.axes.length ? '<div class="cy-lg"><span><i class="cy-dp"></i>السابقة</span><span><i class="cy-dc g"></i>الدورة دي (أحسن)</span><span><i class="cy-dc b"></i>الدورة دي (أسوأ)</span></div>' : '') + '</div>' +
+      '<div class="cy-2"><div><h3 class="cy-h">الملاحظات</h3><div class="cy-box"><div class="cy-sts four">' + st(F.opened, 'اتفتحت') + st(F.closed, 'اتقفلت') + st(F.lateClosed, 'اتقفلت متأخر', F.lateClosed ? 'b' : '') + st(F.avgDays, 'يوم للقفل') + '</div>' +
+      (F.open.length ? '<span class="cy-red">لسه مفتوحة وهتتنقل للدورة الجاية' + (F.open.length > 2 ? ' (أهم 2)' : '') + '</span>' + F.open.slice(0, 2).map(function (f) { return '<div class="cy-of"><b>' + esc(f.c) + ' · ' + esc(f.t) + '</b><span>' + esc(f.sev) + ' · ' + esc(f.st) + (f.age != null ? ' من ' + f.age + ' يوم' : '') + (f.o ? ' · ' + esc(f.o) : '') + '</span></div>'; }).join('') : '<span class="cy-note">كل ملاحظات الدورة اتقفلت.</span>') + '</div></div>' +
+      '<div><h3 class="cy-h">البوابة والبيانات</h3><div class="cy-box"><div class="cy-sts">' + st(cyN(G.in), 'دخول للمحطة') + st(G.deny, 'مرفوض', G.deny ? 'r' : '') + st(G.flags, 'مخالفة', G.flags ? 'b' : '') + st(G.gaps, 'يوم بيانات ناقص', G.gaps ? 'b' : '') + '</div><span class="cy-note">من سجل البوابات وملف المزارع اليومي في فترة الدورة.</span></div></div></div>' +
+      '<h3 class="cy-h">للدورة الجاية</h3><div class="cy-nx">' + (d.next.length ? d.next.map(function (n) { return '<div><b>' + esc(n.t) + '</b><span>' + esc(n.s) + '</span></div>'; }).join('') : '<div><b>استمرار</b><span>مفيش نقطة ضعف واضحة في الدورة دي.</span></div>') + '</div>' +
+      '<h3 class="cy-h">اعتماد مدير الإدارة</h3><div class="cy-ap"><div class="cy-box">' + (R.approvedAt ? '<b>' + esc(R.comment || 'بدون تعليق') + '</b>' : '<span class="cy-note">التعليق</span><i></i><i></i>') + '</div><div class="cy-box"><span class="cy-note">الاسم</span>' + (R.approvedAt ? '<b>' + esc(R.approvedBy) + '</b>' : '<i></i>') + '<span class="cy-note">التاريخ</span>' + (R.approvedAt ? '<b class="mono">' + esc(fmt(R.approvedAt)) + '</b>' : '<i></i>') + '</div></div>' +
+      '</div>' + cyFoot('المصدر: ' + V.length + ' تقرير زيارة · سجل البوابات · الملاحظات · البيانات اليومية', 'بيتحفظ في «المحطة بالأرقام» ويتبعت لمدير الإدارة') + '</article>';
+  }
+  /** «يومي»: الملاحظات اللي ميعادها جه وعلى طريق المعاون النهارده */
+  function mydayFindings(plan) {
+    var box = $('mdFnd'); if (!box) return;
+    remote('findings', [S.session.pin, '']).then(function (F) {
+      if (!$('mdFnd')) return;
+      var today = new Date(Date.now() + 3 * 36e5).toISOString().slice(0, 10), soon = new Date(Date.now() + 2 * 864e5 + 3 * 36e5).toISOString().slice(0, 10), inPlan = {};
+      plan.forEach(function (x, i) { inPlan[x.r.id] = i + 1; });
+      var L = F.items.filter(function (f) { return f.open && (f.late || (f.u && f.u <= soon) || inPlan[f.siteId] || f.sev === 'حرجة'); }).sort(function (a, b) { return (b.late > 0) - (a.late > 0) || ((inPlan[a.siteId] || 99) - (inPlan[b.siteId] || 99)) || ({ 'حرجة': 0, 'رئيسية': 1, 'ثانوية': 2 }[a.sev] - { 'حرجة': 0, 'رئيسية': 1, 'ثانوية': 2 }[b.sev]); });
+      var t = $('mdTabs'); if (t) t.querySelector('[data-mdt="fnd"] b').textContent = L.length;
+      var more = Math.max(0, L.length - 8); L = L.slice(0, 8);
+      box.innerHTML = L.length ? L.map(function (f) {
+        var why = (f.late ? 'متأخرة ' + f.late + ' ' + (f.late === 1 ? 'يوم' : 'أيام') : f.u === today ? 'الميعاد النهارده' : f.u ? 'الميعاد ' + f.u : '') + (inPlan[f.siteId] ? ' · في طريقك النهارده' : '') + (f.st === 'قيد التنفيذ' ? ' · قيد التنفيذ من آخر زيارة، اتأكد واقفل' : '');
+        return fdCard(f, { site: true, noPh: true, why: why, big: true });
+      }).join('') + (more ? '<p class="small muted md-note">و' + more + ' ملاحظات تانية أقل أولوية في صفحة كل محطة ← «التفتيش والملاحظات».</p>' : '') + '<p class="small muted md-note">«لسه» بتطلب سبب بالكتابة أو بالصوت وبتمد الميعاد 3 أيام.</p>' : v34Empty(F.linked ? 'مفيش ملاحظات محتاجة تحقق النهارده' : 'الملاحظات بتيجي من تطبيق التقارير 3.2');
+      bindVrGo(box);
+    }).catch(function (e) { if ($('mdFnd')) $('mdFnd').innerHTML = e.net ? offlineCard('الملاحظات') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
   }
 
   if (document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);

@@ -1,0 +1,2176 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d1d1e"><title>وصّلني</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>:root{
+  --red:#EA2329;--red-d:#B81E25;--ink:#242424;--gray:#6D6E71;
+  --bg:#F4F4F5;--card:#fff;--line:#E4E4E6;--soft:#F0F0F2;--txt:#242424;--mut:#6D6E71;
+  --ok:#2E9E5B;--ok-bg:#E6F5EC;--warn:#C98200;--warn-bg:#FFF4D9;--bad-bg:#FDE8E9;
+  --hdr:#242424;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.05);
+  --r:16px;--tab:64px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#161617;--card:#212123;--line:#343437;--soft:#2A2A2D;--txt:#F2F2F3;--mut:#A3A4A8;--ok-bg:#16301F;--warn-bg:#3A2D0E;--bad-bg:#3A1618;--shadow:0 1px 2px rgba(0,0,0,.4)}
+}
+:root[data-theme="dark"]{--bg:#161617;--card:#212123;--line:#343437;--soft:#2A2A2D;--txt:#F2F2F3;--mut:#A3A4A8;--ok-bg:#16301F;--warn-bg:#3A2D0E;--bad-bg:#3A1618;--shadow:0 1px 2px rgba(0,0,0,.4)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:#E9E9EB;color:var(--txt);font-family:'Cairo','Segoe UI',Tahoma,Arial,sans-serif;font-size:16px;line-height:1.6;direction:rtl;-webkit-text-size-adjust:100%}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:#0C0C0D}}
+:root[data-theme="dark"] body{background:#0C0C0D}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--red-d);text-decoration:none}
+img{max-width:100%;display:block}
+#app_unused{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;background:var(--bg);position:relative;display:flex;flex-direction:column}
+@media (min-width:520px){#app_unused{box-shadow:0 0 0 1px var(--line),0 20px 60px rgba(0,0,0,.18)}}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:16px;height:16px}svg.i.lg{width:28px;height:28px}
+
+/* ---- header ---- */
+.hdr{position:sticky;top:0;z-index:20;background:var(--hdr);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top))}
+.hdr .logo{height:34px;width:auto}
+.hdr .ttl{flex:1;font-weight:800;font-size:17px;line-height:1.2}
+.hdr .sub{display:block;font-weight:500;font-size:11.5px;color:#BDBDC0}
+.hdr .ib{background:rgba(255,255,255,.1);border:0;color:#fff;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;cursor:pointer;position:relative}
+.hdr .ib:active{background:rgba(255,255,255,.22)}
+.hdr .pts{background:var(--red);border-radius:999px;padding:3px 11px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.staffbar{height:4px;background:linear-gradient(90deg,var(--red),var(--red-d))}
+.dot{position:absolute;top:7px;left:7px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 4px;border:2px solid var(--hdr)}
+
+/* ---- layout ---- */
+#view{flex:1;padding:14px 14px calc(var(--tab) + 28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
+#view.notab{padding-bottom:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.card.flat{box-shadow:none}
+.card.dark{background:var(--ink);color:#fff;border-color:#000}
+.card.red{background:linear-gradient(135deg,var(--red),var(--red-d));color:#fff;border:0}
+.card h2,.h2{margin:0 0 6px;font-size:18px;font-weight:800;line-height:1.35}
+.card h3,.h3{margin:0 0 4px;font-size:16px;font-weight:700}
+.mut{color:var(--mut)}.sm{font-size:13.5px}.xs{font-size:12px}
+.row{display:flex;align-items:center;gap:10px}.row.sp{justify-content:space-between}.row.top{align-items:flex-start}
+.grow{flex:1;min-width:0}
+.col{display:flex;flex-direction:column;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tc{text-align:center}
+hr.sep{border:0;border-top:1px solid var(--line);margin:12px 0}
+.sec-t{font-weight:800;font-size:15px;margin:4px 2px -4px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.sec-t:before{content:"";width:5px;height:16px;background:var(--red);border-radius:3px}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:10px 20px;border-radius:14px;border:0;background:var(--red);color:#fff;font-weight:800;font-size:16.5px;cursor:pointer;width:100%;transition:transform .08s,filter .15s}
+.btn:active{transform:scale(.98);filter:brightness(.92)}
+.btn[disabled],.btn.off{background:var(--soft);color:var(--mut);cursor:not-allowed;transform:none}
+.btn.dk{background:var(--ink);color:#fff}
+.btn.gh{background:transparent;color:var(--txt);border:1.5px solid var(--line)}
+.btn.ok{background:var(--ok)}
+.btn.sm{min-height:40px;padding:6px 14px;font-size:14.5px;width:auto;border-radius:11px}
+.btn.xs{min-height:32px;padding:3px 11px;font-size:13px;width:auto;border-radius:9px}
+.lnk{background:none;border:0;color:var(--red-d);font-weight:700;cursor:pointer;padding:6px 0;font-size:14.5px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:999px;font-size:13px;font-weight:700;background:var(--soft);color:var(--txt);white-space:nowrap;border:0}
+.chip.red{background:var(--red);color:#fff}.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.warn{background:var(--warn-bg);color:var(--warn)}.chip.bad{background:var(--bad-bg);color:var(--red-d)}.chip.dk{background:var(--ink);color:#fff}
+button.chip{cursor:pointer}button.chip.sel{background:var(--ink);color:#fff}
+
+/* ---- sheet / toast ---- */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:min(480px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 14px calc(22px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+.sheet .grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+#toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:90;max-width:min(440px,92vw);pointer-events:none}
+#toast div{background:var(--ink);color:#fff;border-radius:14px;padding:11px 16px;font-weight:700;font-size:14.5px;box-shadow:0 8px 28px rgba(0,0,0,.3);margin-bottom:8px;animation:tin .25s ease-out;border-right:5px solid var(--red)}
+#toast div.ok{border-right-color:var(--ok)}
+@keyframes tin{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+.pop{position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:95;pointer-events:none;font-size:46px;font-weight:900;color:var(--red);text-shadow:0 2px 0 #fff,0 6px 24px rgba(234,35,41,.4);animation:pop 1.3s ease-out forwards}
+@keyframes pop{0%{transform:translate(-50%,10px) scale(.6);opacity:0}25%{transform:translate(-50%,-10px) scale(1.15);opacity:1}100%{transform:translate(-50%,-90px) scale(1);opacity:0}}
+.conf{position:fixed;inset:0;pointer-events:none;z-index:94;overflow:hidden}
+.conf i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;animation:fall 1.9s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.9}}
+@media (prefers-reduced-motion:reduce){.pop,.conf i,.sheet,#toast div{animation:none}}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:sp .8s linear infinite;margin:20px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.skel{height:90px;border-radius:16px;background:linear-gradient(90deg,var(--soft),var(--line),var(--soft));background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* ===== الملاحة «وصّلني» ===== */
+.rt-go{min-height:84px;background:var(--ok);color:#fff;border:0;border-radius:20px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:26px;box-shadow:0 10px 26px rgba(46,158,91,.35);margin-bottom:10px;margin-top:8px;text-align:right}
+.rt-go b{display:block;font-size:28px;line-height:1.1}.rt-go small{display:block;font-size:13.5px;font-weight:700;opacity:.92;margin-top:3px}
+.rt-go-ic{width:40px;height:40px;flex:none;transform:rotate(18deg)}
+.rt-go-s{color:var(--ok)!important;font-weight:800;margin-inline-end:10px}
+.nav{--nbg:#060A10;--nfg:#F5F8FB;--nmut:#93A0AE;--ncard:#101822;--nline:#223042;--ngo:#34D27B;--nmid:#FFB020;--nbad:#FF4D57;
+  --mgo:#0B7A4B;--mgo2:#0FA463;--mmid:#A96500;--mbad:#B3202A;--minfo:#1D4E89;--mwait:#2A3A4D;
+  position:fixed;inset:0;z-index:56;background:var(--nbg);color:var(--nfg);display:flex;flex-direction:column;gap:6px;overflow:hidden;overscroll-behavior:contain;
+  padding:calc(6px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto;color-scheme:dark}
+.nav.day{--nbg:#EEF1F5;--nfg:#0A0D11;--nmut:#56606C;--ncard:#FFFFFF;--nline:#D3D9E0;--ngo:#0B8A42;--nmid:#A86400;--nbad:#C8102E;color-scheme:light}
+.nav button,.nav a{font-family:inherit;-webkit-tap-highlight-color:transparent}
+.nav-top{display:flex;align-items:center;gap:8px;min-height:50px}
+.nav-x{flex:none;display:flex;align-items:center;gap:5px;min-height:44px;padding:0 12px;border-radius:14px;border:1px solid var(--nline);background:var(--ncard);color:var(--nfg);font-size:14px;font-weight:800;cursor:pointer}
+.nav-x .i{width:18px;height:18px}
+.nav-to{flex:1;min-width:0;text-align:center}
+.nav-lbl{font-size:12px;color:var(--nmut);font-weight:700;line-height:1.2}
+.nav-to b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:18px;line-height:1.25;font-weight:900;overflow:hidden;text-wrap:balance}
+.nav-step:has(#nv-step:empty):has(#nv-next[style*="none"]){display:none}
+.nav-step{font-size:12px;color:var(--nmut);display:flex;gap:6px;justify-content:center;align-items:center;white-space:nowrap;overflow:hidden;line-height:1.5}
+.nav-step span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nv-skip{flex:none;border:1px solid var(--nline);background:transparent;color:var(--nfg);border-radius:999px;font-size:11.5px;font-weight:800;padding:0 9px;cursor:pointer;line-height:1.7}
+.nav-warnbar{display:flex;align-items:center;gap:8px;justify-content:space-between;background:var(--ncard);border:1px solid var(--nmid);color:var(--nmid);border-radius:14px;padding:7px 12px;font-weight:800;font-size:13px}
+.nav-wb{flex:none;border:0;border-radius:12px;background:var(--nmid);color:#000;font-weight:900;font-size:14px;padding:9px 12px;cursor:pointer}
+/* كارت التوجيه: اللفة الجاية بخط كبير */
+.nv-man{display:flex;align-items:center;gap:12px;border-radius:20px;padding:10px 14px;min-height:104px;background:var(--mgo);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.32);transition:background-color .3s,box-shadow .3s;flex:none}
+.nv-man.soon{background:linear-gradient(135deg,var(--mgo2),var(--mgo));box-shadow:0 0 0 3px #fff inset,0 10px 28px rgba(0,0,0,.32)}
+.nv-man.mid{background:var(--mmid)}.nv-man.bad{background:var(--mbad);animation:navpulse2 1s ease-in-out infinite}
+.nv-man.info,.nv-man.free{background:var(--minfo)}.nv-man.wait{background:var(--mwait)}.nv-man.go,.nv-man.done{background-color:var(--mgo)}
+.nv-mi{position:relative;width:76px;height:76px;flex:none}
+.nv-mi .nav-arrow,.nv-mi .nv-gl{position:absolute;inset:0;color:#fff}
+.nv-gl svg,.nav-arrow svg{width:100%;height:100%;display:block}
+.nv-man.gl .nav-arrow{display:none}.nv-man.ar .nv-gl{display:none}.nv-man.wait .nav-arrow{opacity:.35}
+.nav-arrow{transition:transform .45s ease-out;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+.nav-arrow.bad{animation:navpulse 1s ease-in-out infinite}
+.nv-mt{flex:1;min-width:0;display:flex;flex-direction:column}
+#nv-mdist{font-size:clamp(34px,10.5vw,48px);line-height:1.02;font-weight:900;font-variant-numeric:tabular-nums;direction:rtl;letter-spacing:-.5px}
+#nv-mdist:empty{display:none}
+.nav-say{font-size:clamp(20px,6vw,27px);line-height:1.2;font-weight:900;text-wrap:balance;color:#fff}
+.nv-msub{font-size:14px;font-weight:700;opacity:.93;line-height:1.35;margin-top:2px}
+.nv-msub:empty{display:none}
+.nv-msub .nav-wb{margin-top:6px}
+.nv-then{display:flex;align-items:center;gap:6px;align-self:flex-start;margin:-8px 18px 0;background:var(--mgo);color:#fff;border-radius:0 0 14px 14px;padding:4px 12px 5px;font-size:13px;font-weight:800;flex:none}
+.nv-then:empty{display:none}
+.nv-then i{display:inline-flex;width:22px;height:22px}.nv-then i svg{width:100%;height:100%}
+/* منظر القيادة */
+.nv-stage{position:relative;flex:1 1 auto;min-height:170px;border-radius:20px;overflow:hidden;background:#03070D;border:1px solid var(--nline)}
+.nav.day .nv-stage{background:#E4D3AE}
+.nv-stage canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.nav-gps{position:absolute;top:8px;right:8px;max-width:calc(100% - 64px);font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:rgba(6,12,20,.8);color:#C9D3DE;line-height:1.5}
+.nav-gps.go{color:#5BE39A}.nav-gps.mid{color:#FFC861}.nav-gps.bad{color:#FF7D84}
+.nav.day .nav-gps{background:rgba(255,255,255,.92);color:#3A444F}.nav.day .nav-gps.go{color:#0B8A42}.nav.day .nav-gps.mid{color:#9A5A00}.nav.day .nav-gps.bad{color:#C8102E}
+.nv-north{position:absolute;top:8px;left:8px;width:36px;height:36px;border-radius:50%;background:rgba(6,12,20,.8);border:1px solid rgba(255,255,255,.18)}
+.nv-north i{position:absolute;top:2px;left:0;right:0;text-align:center;font-style:normal;font-weight:900;color:#FF4D57;font-size:13px;line-height:1}
+.nv-north::after{content:'';position:absolute;left:calc(50% - 4px);top:16px;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:12px solid #fff}
+.nv-chip{position:absolute;top:40px;right:8px;max-width:calc(100% - 64px)}
+.nvc{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;background:rgba(6,12,20,.8);line-height:1.5}
+.nvc svg{width:14px;height:14px;flex:none}
+.nvc.road{color:#7FE0AE}.nvc.join,.nvc.direct{color:#FFC861}
+.nav.day .nvc{background:rgba(255,255,255,.92)}.nav.day .nvc.road{color:#0B7A4B}.nav.day .nvc.join,.nav.day .nvc.direct{color:#9A5A00}
+.nv-far{position:absolute;left:10px;right:10px;top:72px;background:rgba(6,12,20,.93);color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:700;line-height:1.5}
+.nv-far:empty{display:none}
+.nv-far b{font-size:15px}
+.nv-farb{display:flex;align-items:center;justify-content:center;gap:6px;background:#1F6FFF;color:#fff;border-radius:12px;min-height:48px;font-weight:900;font-size:16px;text-decoration:none}
+.nv-farb .i{width:18px;height:18px}
+.nav-arrive{position:absolute;left:50%;top:46%;width:min(56%,210px);aspect-ratio:1;border-radius:50%;background:var(--ngo);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;opacity:0;transform:translate(-50%,-50%) scale(.6);transition:opacity .3s,transform .3s;pointer-events:none;text-align:center;padding:10%;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.nav-arrive.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.nav-arrive svg{width:42%;height:auto}.nav-arrive b{font-size:28px;font-weight:900;line-height:1}.nav-arrive span{font-size:13.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.nv-fab{position:absolute;bottom:10px;display:flex;align-items:center;gap:6px;min-height:46px;padding:0 14px;border-radius:999px;border:0;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.nv-fab .i{width:18px;height:18px;flex:none}
+.nv-fab.lost{right:10px;background:#FFB020;color:#1A1200}
+.nv-fab.view{left:10px;background:rgba(6,12,20,.85);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.nav.day .nv-fab.view{background:#fff;color:#0A0D11;border:1px solid #D3D9E0}
+/* الباقي والوقت */
+.nv-info{display:flex;flex-direction:column;gap:6px;flex:none}
+.nv-rem{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap}
+.nv-rem>b{font-size:clamp(28px,8.5vw,38px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums;direction:rtl}
+.nv-eta{display:flex;flex-direction:column;font-size:13px;font-weight:800;color:var(--nmut);line-height:1.4}
+.nv-eta span:empty{display:none}
+.nv-eta .tr{display:inline-flex;align-items:center;gap:4px}.nv-eta .tr svg{width:15px;height:15px}
+.nv-eta .tr.go{color:var(--ngo)}.nv-eta .tr.bad{color:var(--nbad)}
+.nv-prog{height:6px;border-radius:99px;background:var(--nline);overflow:hidden}
+.nv-prog i{display:block;height:100%;width:0;background:linear-gradient(270deg,var(--ngo),#5AA9FF);border-radius:inherit;transition:width .6s}
+.nav-bar{display:flex;gap:8px;flex:none}
+.nav-b{flex:1;min-width:0;min-height:58px;border-radius:18px;border:1px solid var(--nline);background:var(--ncard);color:var(--nfg);font-size:14.5px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 8px;text-align:center;line-height:1.2;text-decoration:none}
+.nav-b .i{width:20px;height:20px;flex:none}
+.nav-b.sos{flex:1.2;background:var(--nbad);border-color:var(--nbad);color:#fff;font-size:21px;letter-spacing:.5px}
+@keyframes navpulse{50%{opacity:.45}}
+@keyframes navpulse2{50%{box-shadow:0 0 0 4px rgba(255,255,255,.7),0 10px 28px rgba(0,0,0,.32)}}
+/* «أنا تايه» */
+.lost-calm{display:flex;gap:10px;align-items:flex-start;background:var(--ok-bg);border-radius:14px;padding:12px;font-weight:700;font-size:14.5px;margin-bottom:10px;line-height:1.55}
+.lost-calm .i{width:22px;height:22px;flex:none;color:var(--ok);margin-top:2px}
+.lost-list{display:flex;flex-direction:column;gap:8px}
+.lost-b{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:10px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--txt);text-align:right;cursor:pointer;font-family:inherit;text-decoration:none}
+.lost-b>svg{width:34px;height:34px;flex:none;color:var(--ok)}
+.lost-b b{display:block;font-size:16.5px;font-weight:900;line-height:1.3}.lost-b small{display:block;font-size:13px;color:var(--mut);font-weight:700;line-height:1.4}
+.lost-b.go{border:2px solid var(--ok)}
+.lost-b.red{background:var(--red);border-color:var(--red);color:#fff}.lost-b.red>svg,.lost-b.red small{color:#fff}
+.lost-b.dk{background:var(--ink);border-color:var(--ink);color:#fff}.lost-b.dk>svg,.lost-b.dk small{color:#fff}
+.lost-ll{margin-top:12px;text-align:center;border:1px dashed var(--line);border-radius:14px;padding:10px}
+.lost-ll b{display:block;font-size:22px;font-weight:900;letter-spacing:.5px;margin:4px 0 8px;font-variant-numeric:tabular-nums}
+@media (max-height:700px){.nv-man{min-height:84px;padding:8px 12px}.nv-mi{width:60px;height:60px}#nv-mdist{font-size:32px}.nav-say{font-size:20px}.nav-b{min-height:50px}.nav-top{min-height:44px}.nav-to b{font-size:18px}.nv-rem>b{font-size:28px}}
+@media (prefers-reduced-motion:reduce){.nav-arrow,.nav-arrive,.nv-man,.nv-prog i{transition:none;animation:none}}
+
+/* ===== «وصّلني» — الشاشة الرئيسية (هوية «العدو غير المرئي»: أحمر #EA2329 / فحمي #242424) ===== */
+body{background:var(--bg)}
+.wsl{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+.wh{position:relative;overflow:hidden;color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 18px;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.035) 0 2px,transparent 2px 14px),radial-gradient(120% 90% at 100% 0,rgba(234,35,41,.45),transparent 60%),#1d1d1e;border-bottom:4px solid var(--red)}
+.wh-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wh-top img{height:34px;width:auto}
+.wh-tag{font-size:12.5px;font-weight:800;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);padding:3px 12px;border-radius:999px}
+.wh-ttl{display:flex;gap:12px;align-items:center;margin:14px 0 14px}
+.wh-pin{flex:none;width:58px;height:58px;border-radius:18px;background:linear-gradient(145deg,#F23C42,#B81E25);display:grid;place-items:center;box-shadow:0 10px 24px rgba(234,35,41,.45)}
+.wh-pin svg{width:30px;height:30px;fill:#fff;stroke:#fff}
+.wh h1{margin:0;font-size:34px;line-height:1.05;font-weight:900;letter-spacing:-.3px}
+.wh p{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:#D5D6D9;font-weight:700;text-wrap:balance}
+.wh-search{display:flex;align-items:center;gap:8px;background:#fff;color:#242424;border-radius:16px;padding:0 14px;min-height:54px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.wh-search svg{color:var(--red)}
+.wh-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:16.5px;font-weight:700;min-height:52px;color:#242424}
+.wv{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 0}
+.wv span,.wv-b{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut)}
+.wv span.ok{color:var(--ok);border-color:rgba(46,158,91,.35)}
+.wv-b{color:#fff;background:var(--ink);border-color:var(--ink);cursor:pointer;font-family:inherit}
+.wm{flex:1;padding:12px 14px 20px;display:flex;flex-direction:column;gap:12px}
+.w-near{background:var(--card);border:1.5px solid var(--red);border-radius:18px;padding:10px;box-shadow:0 10px 26px rgba(234,35,41,.12)}
+.w-near-l{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:var(--red);margin:0 4px 6px}
+.w-near-n{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;font-weight:700;color:var(--mut);margin:8px 4px 2px;line-height:1.5}
+.w-near .wp{border:0;box-shadow:none;padding:6px 4px}
+.wg{display:flex;flex-direction:column;gap:8px}
+.wg-t{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-size:15px;font-weight:900;color:var(--txt)}
+.wg-t:before{content:"";width:5px;height:17px;background:var(--red);border-radius:3px}
+.wg-t span{font-size:12px;color:var(--mut);background:var(--soft);border-radius:999px;padding:0 8px;font-weight:800}
+.wp{display:flex;align-items:center;gap:12px;width:100%;text-align:right;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;min-height:66px;cursor:pointer;font-family:inherit;color:var(--txt);box-shadow:var(--shadow)}
+.wp:active{transform:scale(.99)}
+.wp-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--soft);color:var(--ink)}
+.wp-ic.farm{background:#242424;color:#fff}.wp-ic.disinfect{background:var(--red);color:#fff}.wp-ic.service{background:#6D6E71;color:#fff}
+.wp-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.wp-t b{font-size:16px;font-weight:900;line-height:1.3}
+.wp-t small{font-size:12.5px;color:var(--mut);font-weight:700}
+.wp-road,.wp-stop{display:inline-flex;align-items:center;gap:4px;font-style:normal;font-size:12px;font-weight:900;color:var(--ok);margin-top:2px}
+.wp-stop{color:var(--red)}
+.wp.stop{border-color:rgba(234,35,41,.5)}
+.wp-d{flex:none;text-align:left}
+.wp-d em{font-style:normal;font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;color:var(--txt);direction:rtl;unicode-bidi:isolate}
+.w-empty{text-align:center;color:var(--mut);font-weight:700;padding:30px 10px}
+.wf{padding:14px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;font-weight:700;text-align:center}
+.wf p{margin:10px 0 0}
+.wf-who{display:flex;flex-direction:column;gap:6px;text-align:right}
+.wf-who label{font-size:13px;font-weight:800;color:var(--txt)}.wf-who small{font-weight:700;color:var(--mut)}
+.wf-who input{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);padding:0 12px;font-size:15px;font-weight:700}
+/* ورقة المكان */
+.wps{display:flex;flex-direction:column;gap:10px}
+.wps-h{display:flex;gap:12px;align-items:center}
+.wps-h h2{margin:0;font-size:20px;line-height:1.3;font-weight:900}
+.wps-n{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:14px;padding:10px 12px;font-size:13.5px;font-weight:700;line-height:1.55;color:var(--txt)}
+.wps-n b{display:block;font-size:14.5px;font-weight:900}
+.wps-n svg{margin-top:3px;flex:none}
+.wps-n.ok{background:var(--ok-bg)}.wps-n.ok svg{color:var(--ok)}
+.wps-n.bad{background:var(--bad-bg)}.wps-n.bad svg{color:var(--red)}
+.wps-n.bio svg{color:var(--red)}
+.wps .btn svg{width:22px;height:22px}
+.wk{display:flex;flex-direction:column;gap:10px;margin:4px 0 2px}
+.wk-b{display:flex;align-items:center;gap:12px;width:100%;min-height:76px;padding:12px 14px;border-radius:18px;border:2px solid var(--line);background:var(--card);color:var(--txt);text-align:right;cursor:pointer;font-family:inherit}
+.wk-b .wk-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none;font-size:22px;font-weight:900}
+.wk-b.clean{border-color:#1d8a5a}.wk-b.clean .wk-ic{background:#1d8a5a;color:#fff}
+.wk-b.dirty{border-color:#a8641a}.wk-b.dirty .wk-ic{background:#a8641a;color:#fff}
+.wk-b b{display:block;font-size:17px;font-weight:900;line-height:1.3}.wk-b small{display:block;font-size:13px;color:var(--mut);font-weight:700;line-height:1.45}
+.wk-b em{display:inline-block;font-style:normal;font-size:12px;font-weight:900;margin-top:3px;padding:1px 8px;border-radius:99px;background:var(--soft)}
+.wk-b em.y{background:var(--ok-bg);color:var(--ok)}
+.wp-k{display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:3px}.wp-k i{font-style:normal;font-size:11.5px;font-weight:900;padding:1px 8px;border-radius:99px}
+.wp-k .c{background:#e3f4ec;color:#1d8a5a}.wp-k .d{background:#f8ecdd;color:#a8641a}
+.wps .btn[data-act="w_go"] svg{fill:#fff}
+h2{font-size:20px}
+/* ===== منظومة الأمن الحيوي: «وصّلني» جوه التطبيق (بيتضاف وقت البناء) ===== */
+html.in-app body{background:var(--bg)}
+html.in-app .wh-top{display:none}
+html.in-app .wh-ttl{margin-top:4px}
+@media (max-width:640px){html.in-app .wh p{display:none}html.in-app .wh h1{font-size:28px}html.in-app .wh-pin{width:48px;height:48px;border-radius:15px}html.in-app .wh-ttl{margin:4px 0 12px}}
+/* الكمبيوتر: عرض كامل، الهيدر بعرض الصفحة، و«الأقرب ليك» ثابت على جنب والأماكن في شبكة */
+@media (min-width:900px){
+  html.in-app .wsl{max-width:none}
+  html.in-app .wh{padding-left:max(24px,calc((100% - 1180px)/2));padding-right:max(24px,calc((100% - 1180px)/2))}
+  html.in-app .wh-ttl{max-width:none}
+  html.in-app .wh{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,520px);align-items:center;column-gap:28px}
+  html.in-app .wh-ttl{margin:10px 0}
+  html.in-app .wh-search{grid-column:2;grid-row:1}
+  html.in-app .wh-ttl{grid-column:1;grid-row:1}
+  html.in-app .wv{max-width:1180px;margin:0 auto;width:100%;padding-left:24px;padding-right:24px}
+  html.in-app .wm{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start;max-width:1180px;margin:0 auto;width:100%;padding:16px 24px 28px}
+  html.in-app #w_near{position:sticky;top:14px}
+  html.in-app #w_near:empty{display:none}
+  html.in-app #w_near:empty + #w_list{grid-column:1/-1}
+  html.in-app #w_list{display:flex;flex-direction:column;gap:14px;min-width:0}
+  html.in-app .wg{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+  html.in-app .wg-t{grid-column:1/-1}
+  html.in-app .nav{max-width:none;padding-left:max(16px,calc((100% - 760px)/2));padding-right:max(16px,calc((100% - 760px)/2))}
+  html.in-app .ovl{align-items:center}
+  html.in-app .sheet{width:min(560px,94%);border-radius:22px;max-height:86vh}
+}
+
+</style></head><body><div id="wsl" class="wsl"></div><div id="toast"></div><script>window.WSL_CFG={logo:"data:image/png;base64,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"};try{var P=window.parent;if(P&&P!==window&&P.BIO_wslHost){var h=P.BIO_wslHost(),st=String(h.start||'');delete h.start;Object.assign(window.WSL_CFG,h);window.WSL_DEMO=function(a,p){return P.BIO_wslCall(a,p)};document.documentElement.classList.add('in-app');var nv=false;setInterval(function(){var on=!!document.querySelector('.nav');if(on!==nv){nv=on;try{P.BIO_wslNav&&P.BIO_wslNav(on)}catch(e){}}},600);if(st){var km=/:(clean|dirty)$/.exec(st),id=km?st.slice(0,-km[0].length):st,n=0,iv=setInterval(function(){n++;if(n>80)return clearInterval(iv);var A=window.APP;if(!A||!A.wsl||!A.wsl.data)return;var D=A.wsl.data()||{},L=D.places||[],pl=null;for(var i=0;i<L.length;i++)if(L[i].id===id)pl=L[i];if(!pl)return;clearInterval(iv);if(km)A.wsl.go(pl,km[1]);else{var b=document.querySelector('[data-act=w_pick][data-id=\''+id+'\']');if(b)b.click()}},250)}}}catch(e){}</script><script>/* ============================================================
+   «وصّلني» — النسخة المستقلة (لأي تطبيق تاني: منظومة الأمن الحيوي، سيارات الشركة، الزوار)
+   الأساسيات اللي محرّك الملاحة والصوت محتاجينها من تطبيق «شريك الدفاع»، بنفس الأسماء.
+   مصدر البيانات:
+     - داخل Apps Script: google.script.run.wslApi(الإجراء، JSON)
+     - النسخة التجريبية: window.WSL_DEMO(الإجراء، البيانات)
+   ============================================================ */
+(function () {
+  'use strict';
+  var W = window, CFG = W.WSL_CFG || {};
+  var A = W.APP = W.APP || {};
+  var H = A.handlers = A.handlers || {};
+
+  function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  var mem = {};
+  function lsGet(k) { try { return W.localStorage.getItem(k); } catch (e) { return mem[k] || null; } }
+  function lsSet(k, v) { try { if (v === null) W.localStorage.removeItem(k); else W.localStorage.setItem(k, v); } catch (e) { if (v === null) delete mem[k]; else mem[k] = v; } }
+
+  var IC = {
+    x: '<path d="M6 6l12 12M18 6L6 18"/>', check: '<path d="M5 12l5 5L20 7"/>',
+    flame: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    truck: '<path d="M2 7h11v9H2zM13 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    warn: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+    speaker: '<path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+    pin: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.6"/>',
+    nav: '<path d="M12 2.5l7.5 18.5-7.5-4.6-7.5 4.6z"/>',
+    road: '<path d="M8 3L4 21M16 3l4 18M12 4v3M12 10.5v3M12 17v3"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    loc: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/>',
+    map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    back: '<path d="M9 5l7 7-7 7"/>', play: '<path d="M7 4l13 8-13 8z" fill="currentColor"/>',
+    wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 15.8a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/>',
+    biohaz: '<circle cx="12" cy="12" r="2.2"/><path d="M12 9.8V4.5M10.1 13.1l-4.6 2.6M13.9 13.1l4.6 2.6"/><circle cx="12" cy="12" r="8.5"/>'
+  };
+  function ic(name, cls) { return '<svg class="i ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (IC[name] || '') + '</svg>'; }
+
+  function toast(msg, kind) {
+    var box = $('#toast'); if (!box) return;
+    var d = document.createElement('div'); d.className = kind === 'ok' ? 'ok' : ''; d.textContent = msg;
+    box.appendChild(d); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 3600);
+  }
+  function sheet(html, onClose) {
+    closeSheet();
+    var o = document.createElement('div'); o.className = 'ovl'; o.id = 'ovl';
+    o.innerHTML = '<div class="sheet" role="dialog"><div class="grab"></div>' + html + '</div>';
+    o.addEventListener('click', function (e) { if (e.target === o) closeSheet(); });
+    document.body.appendChild(o); document.body.style.overflow = 'hidden';
+    o._onClose = onClose; return o;
+  }
+  function closeSheet() {
+    var o = $('#ovl'); if (!o) return;
+    if (o._onClose) try { o._onClose(); } catch (e) { /* ignore */ }
+    o.parentNode.removeChild(o); document.body.style.overflow = '';
+  }
+  H.closesheet = closeSheet;
+
+  /* المسار المرمّز (نفس صيغة جدول الطرق في «شريك الدفاع») */
+  function polyDec(str) {
+    var out = [], n = String(str || ''), L = n.length, i = 0, la = 0, lo = 0;
+    while (i < L) {
+      var vals = [];
+      for (var k = 0; k < 2; k++) {
+        var r = 0, sh = 0, b;
+        do { if (i >= L) return out; b = n.charCodeAt(i++) - 63; if (b < 0 || b > 63) return out; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20);
+        vals.push((r & 1) ? ~(r >> 1) : (r >> 1));
+      }
+      la += vals[0]; lo += vals[1];
+      out.push([la / 1e5, lo / 1e5]);
+    }
+    return out;
+  }
+  W.C3A = W.C3A || {}; W.C3A.U = W.C3A.U || {}; W.C3A.U.polyDec = W.C3A.U.polyDec || polyDec;
+
+  /* الاتصال بالخادم: نفس شكل الرد في «شريك الدفاع» {ok, data, msg} */
+  function rawCall(action, payload) {
+    return new Promise(function (resolve) {
+      var pj = JSON.stringify(payload || {});
+      if (W.WSL_DEMO) { setTimeout(function () { resolve(W.WSL_DEMO(action, payload || {})); }, 30); return; }
+      if (W.google && W.google.script && W.google.script.run) {
+        try {
+          W.google.script.run
+            .withSuccessHandler(function (r) { resolve(r || { ok: false, err: 'server', msg: 'رد فاضي من الخادم' }); })
+            .withFailureHandler(function () { resolve({ ok: false, err: 'net', msg: navigator.onLine === false ? 'مفيش إنترنت دلوقتي' : 'الخادم مش بيرد. جرّب تاني' }); })
+            .wslApi(action, pj);
+        } catch (e) { resolve({ ok: false, err: 'net', msg: 'الخدمة مش متاحة' }); }
+        return;
+      }
+      resolve({ ok: false, err: 'net', msg: 'الخدمة مش متاحة' });
+    });
+  }
+
+  /* التفويض العام للنقرات: data-act="اسم" ← APP.handlers[اسم](العنصر، الحدث) */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-act]') : null;
+    if (!t) return;
+    var fn = H[t.dataset.act];
+    if (fn) fn(t, e);
+  });
+
+  A.esc = esc; A.ic = ic; A.$ = $; A.$$ = $$; A.lsGet = lsGet; A.lsSet = lsSet;
+  A.toast = toast; A.sheet = sheet; A.closeSheet = closeSheet; A.rawCall = rawCall;
+  A.S = A.S || { role: 'guest' };
+  A.voiceRate = function () { return 0.95; };
+  A.cfg = CFG;
+  /* «ابعت مكاني للمسؤول» في «أنا تايه»: بيتسجّل عند المسؤولين في التطبيق المضيف (ويوصلهم تنبيه) */
+  A.routeCall = function (action, p) {
+    if (action !== 'routeEmergency') return Promise.resolve({ ok: false, msg: 'غير مدعوم' });
+    var st = A.nav && A.nav.state && A.nav.state(), tg = st && st.targets ? st.targets[st.idx] : null;
+    p = p || {}; p.dest = tg ? tg.name : ''; p.who = lsGet('wsl_who') || '';
+    return rawCall('lost', p);
+  };
+})();
+
+/* ============================================================
+   الصوت المتسجّل («باقة الصوت») + «استوديو الصوت» للمدير
+   المشكلة: صوت الموبايل (تحويل النص لكلام) ممكن مايكونش فيه عربي، والتاجر مش هيعرف يظبطه.
+   الحل: المدير بيسجّل جمل التطبيق بصوته مرة واحدة من «اللوحة ← استوديو الصوت»، والتطبيق
+   بينزّلها عند كل التجار ويحفظها على الموبايل، ويشغّلها من غير إنترنت ومن غير أي إعداد.
+   - الجمل اللي بتتغير (المسافات والأسعار) بتتركّب من تسجيلات صغيرة: «بعد» + «ميتين» + «متر» + «لف يمين».
+   - لو جملة ناقصة تسجيل: يجرّب صوت الموبايل العربي لو موجود، ولو مش موجود يسكت (الكلام مكتوب على الشاشة).
+   - التشغيل بـ Web Audio: يقص السكوت اللي قبل وبعد الكلام، ويوحّد علوّ الصوت بين التسجيلات.
+   ============================================================ */
+(function () {
+  'use strict';
+  var A = window.APP, S = A.S, esc = A.esc, ic = A.ic, H = A.handlers, W = window;
+
+  /* ---------- الأرقام والمسافات بالكلام المصري ---------- */
+  var ONES = ['صفر', 'واحد', 'اتنين', 'تلاتة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'تمانية', 'تسعة', 'عشرة', 'حداشر', 'اتناشر', 'تلتاشر', 'أربعتاشر', 'خمستاشر', 'ستاشر', 'سبعتاشر', 'تمنتاشر', 'تسعتاشر'];
+  var TENS = ['', '', 'عشرين', 'تلاتين', 'أربعين', 'خمسين', 'ستين', 'سبعين', 'تمانين', 'تسعين'];
+  var HUND = ['', 'مية', 'ميتين', 'تلتمية', 'ربعمية', 'خمسمية', 'ستمية', 'سبعمية', 'تمنمية', 'تسعمية'];
+  function eg(n) {
+    n = Math.max(0, Math.round(n));
+    if (n < 20) return ONES[n];
+    if (n < 100) { var t = Math.floor(n / 10), o = n % 10; return o ? ONES[o] + ' و' + TENS[t] : TENS[t]; }
+    if (n < 1000) { var h = Math.floor(n / 100), r = n % 100; return r ? HUND[h] + ' و' + eg(r) : HUND[h]; }
+    return String(n);
+  }
+  function numKeys(n) {
+    n = Math.round(Number(n) || 0);
+    if (n < 0 || n > 999) return null;
+    if (n < 20) return ['n' + n];
+    if (n < 100) { var t = Math.floor(n / 10), o = n % 10; return o ? ['n' + o, 'wt' + t] : ['t' + t]; }
+    var h = Math.floor(n / 100), r = n % 100;
+    return r ? ['h' + h].concat(wKeys(r)) : ['h' + h];
+  }
+  function wKeys(n) { if (n < 20) return ['wn' + n]; var t = Math.floor(n / 10), o = n % 10; return o ? ['wn' + o, 'wt' + t] : ['wt' + t]; }
+  function distParts(m) {
+    m = Math.max(0, Number(m) || 0);
+    if (m >= 9750) { var km = m >= 100000 ? Math.round(m / 10000) * 10 : Math.round(m / 1000); return { t: eg(km) + ' كيلو', k: numKeys(km) && numKeys(km).concat(['u_kilo']) }; }
+    if (m >= 1250) {
+      var h = Math.round(m / 500) / 2, k = Math.floor(h), half = h - k >= 0.5;
+      var t = (k === 1 ? 'كيلو' : k === 2 ? 'اتنين كيلو' : eg(k) + ' كيلو') + (half ? ' ونص' : '');
+      var keys = (k === 1 ? ['u_kilo'] : numKeys(k).concat(['u_kilo'])); if (half) keys.push('w_half');
+      return { t: t, k: keys };
+    }
+    if (m >= 900) return { t: 'كيلو', k: ['u_kilo'] };
+    var r = m >= 300 ? Math.round(m / 100) * 100 : m >= 100 ? Math.round(m / 50) * 50 : Math.max(10, Math.round(m / 10) * 10);
+    return { t: eg(r) + ' متر', k: numKeys(r).concat(['u_meter']) };
+  }
+  function moneyParts(v) {
+    v = Math.round(Math.abs(Number(v) || 0) * 100) / 100;
+    var whole = Math.floor(v), pia = Math.round((v - whole) * 100), t = '', k = [];
+    if (!whole && pia === 50) return { t: 'نص جنيه', k: ['w_half_pound'] };
+    if (whole) { t = whole === 1 ? 'جنيه' : eg(whole) + ' جنيه'; k = whole === 1 ? ['u_pound'] : (numKeys(whole) || [null]).concat(['u_pound']); }
+    if (pia === 50 && whole) { t += ' ونص'; k.push('w_half'); }
+    else if (pia) { t += (whole ? ' و' : '') + eg(pia) + ' قرش'; k = k.concat(whole ? wKeys(pia) : numKeys(pia)).concat(['u_piaster']); }
+    if (!t) return { t: 'صفر جنيه', k: ['n0', 'u_pound'] };
+    return { t: t, k: k };
+  }
+  function idk(id) { return String(id || '').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 40); }
+
+  /* ---------- قائمة الجمل اللي بتتسجّل ---------- */
+  var CAT = [], CT = {};
+  function add(g, k, t, max, hint) { var o = { g: g, k: k, t: t, max: max || 8, h: hint || '' }; CAT.push(o); CT[k] = o; }
+  (function () {
+    var N = 'nav';
+    [['n_take', 'هوصّلك لـ'], ['n_mode_road', 'على الطريق المتسجّل، لفة بلفة.'], ['n_mode_arrow', 'بص على السهم، وامشي ناحيته.'],
+      ['n_after', 'بعد'], ['n_now', 'دلوقتي'], ['n_at', 'عند'], ['n_at_fork', 'عند المفرق'],
+      ['m_straight', 'كمّل على طول'], ['m_slight_r', 'ميّل يمين'], ['m_slight_l', 'ميّل شمال'], ['m_turn_r', 'لف يمين'], ['m_turn_l', 'لف شمال'],
+      ['m_sharp_r', 'لفة حادة يمين'], ['m_sharp_l', 'لفة حادة شمال'], ['m_uturn', 'لف وارجع'],
+      ['t_slight_r', 'ميّل يمين شوية'], ['t_slight_l', 'ميّل شمال شوية'], ['t_back', 'إنت ماشي عكس الاتجاه. لف وارجع.'],
+      ['n_arrived', 'وصلت'], ['n_next_pt', 'النقطة الجاية'], ['n_away', 'على بعد'], ['n_has_road', 'وليها طريق متسجّل.'], ['n_passed', 'عدّيت'],
+      ['n_dest', 'وصلت لوجهتك،'], ['n_salama', 'حمد الله على السلامة.'], ['n_back_done', 'رجعت لأول نقطة بدأت منها. لو محتاج مساعدة كلّم المسؤول.'],
+      ['n_wrong', 'إنت ماشي عكس الطريق. لف وارجع.'], ['n_on_road', 'رجعت على الطريق. كمّل.'], ['n_ok_cont', 'تمام. كمّل على الطريق'],
+      ['n_left', 'فاضل'], ['n_to', 'على'], ['n_near', 'قربت توصل'], ['n_pass', 'هتعدّي على'], ['n_ok', 'إنت على الطريق الصح.'], ['n_cont', 'كمّل.'],
+      ['n_off_road', 'إنت طلعت من الطريق.'], ['n_road', 'الطريق'], ['n_go_back', 'ارجع له بالراحة.'], ['n_road_start', 'بداية الطريق المتسجّل'],
+      ['n_road_rec', 'الطريق المتسجّل'], ['n_join_tail', 'اوصل له وأنا هكمّل معاك.'], ['n_off_line', 'إنت بعدت عن الخط. السهم هيرجعك للنقطة الجاية.'],
+      ['n_on_line', 'رجعت على الخط. كمّل.'], ['n_correct', 'إنت ماشي صح.'], ['n_farther', 'إنت بتبعد عن'], ['n_look_arrow', 'بص على السهم.'],
+      ['n_weak', 'إشارة الموقع ضعيفة. لو تقدر، اقف في مكان مفتوح.'], ['n_far_gm', 'افتح خرائط جوجل لحد هناك، ولما تقرّب أنا هكمّل معاك.'],
+      ['n_far_gm2', 'افتح خرائط جوجل للطريق العمومي.'], ['n_lost', 'ولا يهمك. اقف على جنب في مكان آمن، وأنا هرجّعك.'], ['n_sent', 'اتبعت مكانك للمسؤول.'],
+      ['n_voice_on', 'الصوت رجع.'], ['n_back_dest', 'رجعنا للوجهة.'], ['n_trail', 'هرجّعك على نفس الأثر اللي جيت منه، لفة بلفة.'], ['n_station', 'المحطة'],
+      ['sd_front', 'قدامك'], ['sd_back', 'وراك'], ['sd_right', 'على يمينك'], ['sd_left', 'على شمالك'],
+      ['dir0', 'ناحية الشمال'], ['dir1', 'ناحية الشمال الشرقي'], ['dir2', 'ناحية الشرق'], ['dir3', 'ناحية الجنوب الشرقي'], ['dir4', 'ناحية الجنوب'],
+      ['dir5', 'ناحية الجنوب الغربي'], ['dir6', 'ناحية الغرب'], ['dir7', 'ناحية الشمال الغربي'],
+      ['mk_fork', 'المفرق'], ['mk_turn', 'اللفّة'], ['mk_gate', 'البوابة'], ['mk_tank', 'خزان المية'], ['mk_sign', 'اللافتة'], ['mk_guard', 'كشك الأمن'],
+      ['mk_tower', 'البرج'], ['mk_bump', 'المطب'], ['mk_danger', 'المكان الخطر'], ['mk_note', 'العلامة']
+    ].forEach(function (x) { add(N, x[0], x[1], 8); });
+    var i;
+    for (i = 0; i < 20; i++) add('num', 'n' + i, ONES[i], 4, 'الرقم لوحده');
+    for (i = 2; i < 10; i++) add('num', 't' + i, TENS[i], 4, 'من غير واو');
+    for (i = 2; i < 10; i++) add('num', 'wt' + i, 'و' + TENS[i], 4, 'بالواو في الأول');
+    for (i = 1; i < 10; i++) add('num', 'h' + i, HUND[i], 4);
+    for (i = 1; i < 20; i++) add('num', 'wn' + i, 'و' + ONES[i], 4, 'بالواو في الأول');
+    [['u_meter', 'متر'], ['u_kilo', 'كيلو'], ['w_half', 'ونص'], ['u_pound', 'جنيه'], ['u_piaster', 'قرش'], ['w_half_pound', 'نص جنيه']].forEach(function (x) { add('num', x[0], x[1], 4); });
+    [['p_today', 'أسعار النهارده من كايرو ثري ايه.'], ['p_stale', 'أسعار النهارده لسه ماتنشرتش. دي آخر أسعار منشورة.'], ['p_up', 'زاد عن امبارح'], ['p_down', 'نقص عن امبارح'],
+      ['p_flat', 'وهو ثابت زي امبارح'], ['p_final', 'السعر النهائي بيتأكد وقت الصفقة.'], ['per_kilo', 'للكيلو'], ['per_chick', 'للكتكوت'], ['per_egg', 'للبيضة'], ['per_carton', 'للكرتونة']
+    ].forEach(function (x) { add('price', x[0], x[1], 8); });
+  })();
+  var PERK = { 'كجم': 'per_kilo', 'كيلو': 'per_kilo', 'كتكوت': 'per_chick', 'بيضة': 'per_egg', 'كرتونة': 'per_carton' };
+  function scrCat() { var sc = A.voiceScripts || {}; return Object.keys(sc).map(function (k) { return { g: 'scr', k: 'scr_' + k, t: sc[k].join(' '), max: 45, h: '' }; }); }
+
+  /* ---------- التخزين على الموبايل ---------- */
+  function lsGet(k) { try { return W.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { W.localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+  var IDX = null, HAVE = {};
+  try { IDX = JSON.parse(lsGet('c3a_vp_idx') || 'null'); HAVE = JSON.parse(lsGet('c3a_vp_have') || '{}') || {}; } catch (e) { IDX = null; HAVE = {}; }
+  if (!IDX || !IDX.clips) IDX = { ver: -1, clips: {} };
+  function saveMeta() { lsSet('c3a_vp_idx', JSON.stringify(IDX)); lsSet('c3a_vp_have', JSON.stringify(HAVE)); }
+  var DBP = null;
+  function db() {
+    if (DBP) return DBP;
+    DBP = new Promise(function (res, rej) {
+      try {
+        var r = W.indexedDB.open('c3a_voice', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('clips'); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      } catch (e) { rej(e); }
+    });
+    DBP.catch(function () { DBP = null; });
+    return DBP;
+  }
+  function idb(mode, fn) {
+    return db().then(function (d) {
+      return new Promise(function (res, rej) {
+        var tx = d.transaction('clips', mode), st = tx.objectStore('clips'), out = fn(st);
+        tx.oncomplete = function () { res(out && out.result !== undefined ? out.result : null); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  }
+  function idbGet(k) { return idb('readonly', function (st) { return st.get(k); }).catch(function () { return null; }); }
+  function idbPut(k, v) { return idb('readwrite', function (st) { st.put(v, k); }).catch(function () { return null; }); }
+  function has(k) { var m = IDX.clips[k]; return !!(m && HAVE[k] === m[0]); }
+  function b64ToAb(b64) { var bin = W.atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function abToB64(ab) { var u = new Uint8Array(ab), s = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return W.btoa(s); }
+
+  /* ---------- تنزيل الباقة: الفهرس، وبعدين التسجيلات الناقصة على دفعات ---------- */
+  var SY = { busy: null, ts: 0 };
+  function sync(force) {
+    if (SY.busy) return SY.busy;
+    if (!A.rawCall || (!force && Date.now() - SY.ts < 5 * 60000)) return Promise.resolve(false);
+    SY.ts = Date.now();
+    SY.busy = A.rawCall('voiceIndex', {}).then(function (r) {
+      if (!r || !r.ok || !r.data || !r.data.clips) return false;
+      IDX = r.data; saveMeta();
+      var miss = Object.keys(IDX.clips).filter(function (k) { return !has(k); });
+      var step = function () {
+        if (!miss.length) return true;
+        var batch = miss.splice(0, 12);
+        return A.rawCall('voiceGet', { keys: batch }).then(function (g) {
+          if (!g || !g.ok) return false;
+          var puts = Object.keys(g.data.clips || {}).map(function (k) {
+            var c = g.data.clips[k];
+            return idbPut(k, { m: c.m, ab: b64ToAb(c.b64) }).then(function () { HAVE[k] = c.m[0]; delete BUF[k]; });
+          });
+          return Promise.all(puts).then(function () { saveMeta(); return step(); });
+        });
+      };
+      return step();
+    }).catch(function () { return false; }).then(function (x) { SY.busy = null; return x; });
+    return SY.busy;
+  }
+  /* أول ما يدخل أي حد (تاجر أو موظف أو سائق برابط): ننزّل الباقة في الخلفية، ونراجعها كل 3 ساعات */
+  setTimeout(function tick() { if (S.role) sync(Date.now() - SY.ts > 3 * 3600000); setTimeout(tick, SY.ts ? 15 * 60000 : 8000); }, 6000);
+  W.addEventListener('online', function () { if (S.role) sync(true); });
+
+  /* ---------- التشغيل ---------- */
+  var AC = null, BUF = {}, BUFQ = [], PL = { gen: 0, srcs: [], until: 0 };
+  function ctx() {
+    if (AC) return AC;
+    var C = W.AudioContext || W.webkitAudioContext;
+    if (!C) return null;
+    try { AC = new C(); } catch (e) { AC = null; return null; }
+    try { if (W.navigator.audioSession) W.navigator.audioSession.type = 'playback'; } catch (e) { /* آيفون: يشتغل حتى والموبايل صامت */ }
+    return AC;
+  }
+  function unlock() {
+    var c = ctx(); if (!c) return;
+    try { if (c.state !== 'running') c.resume(); var s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (e) { /* ignore */ }
+  }
+  ['pointerdown', 'touchend', 'keydown'].forEach(function (ev) { W.addEventListener(ev, unlock, { capture: true, passive: true }); });
+  function decode(ab) {
+    var c = ctx(); if (!c) return Promise.reject(new Error('no audio'));
+    return new Promise(function (res, rej) {
+      try { var p = c.decodeAudioData(ab.slice(0), res, rej); if (p && p.then) p.then(res, rej); } catch (e) { rej(e); }
+    });
+  }
+  function buf(k) {
+    if (BUF[k]) return Promise.resolve(BUF[k]);
+    return idbGet(k).then(function (v) {
+      if (!v || !v.ab) return null;
+      return decode(v.ab).then(function (b) {
+        BUF[k] = b; BUFQ.push(k);
+        while (BUFQ.length > 60) delete BUF[BUFQ.shift()];
+        return b;
+      });
+    }).catch(function () { return null; });
+  }
+  function stop() { PL.gen++; PL.srcs.forEach(function (s) { try { s.stop(); } catch (e) { /* ignore */ } }); PL.srcs = []; PL.until = 0; }
+  function speaking() { return !!(AC && PL.until && AC.currentTime < PL.until); }
+  /* يشغّل التسجيلات ورا بعض. بيرجع true لو اشتغلت، false لو تسجيل ناقص أو الموبايل مش بيعرف يفكّه */
+  function playKeys(keys) {
+    var gen = ++PL.gen;
+    PL.srcs.forEach(function (s) { try { s.stop(); } catch (e) { /* ignore */ } }); PL.srcs = [];
+    var c = ctx(); if (!c || !keys.length) return Promise.resolve(false);
+    try { if (c.state !== 'running') c.resume(); } catch (e) { /* ignore */ }
+    return Promise.all(keys.map(buf)).then(function (bs) {
+      if (gen !== PL.gen) return true;
+      if (bs.some(function (b) { return !b; })) return false;
+      var t = c.currentTime + 0.06;
+      bs.forEach(function (b, i) {
+        var m = IDX.clips[keys[i]] || [0, '', 0, 0, 1], s0 = Math.min(m[2] || 0, b.duration - 0.05), s1 = m[3] && m[3] > s0 ? Math.min(m[3], b.duration) : b.duration, dur = Math.max(0.05, s1 - s0);
+        var src = c.createBufferSource(), g = c.createGain();
+        src.buffer = b; g.gain.value = m[4] || 1;
+        src.connect(g); g.connect(c.destination);
+        src.start(t, s0, dur);
+        PL.srcs.push(src);
+        var txt = (CT[keys[i]] && CT[keys[i]].t) || '';
+        t += dur + (/[.،]$/.test(txt) ? 0.22 : 0.05);
+      });
+      PL.until = t;
+      return true;
+    });
+  }
+
+  /* ---------- صوت الموبايل كبديل (لو موجود عربي) ---------- */
+  function voices() { try { return W.speechSynthesis.getVoices() || []; } catch (e) { return []; } }
+  function arVoice() { var vs = voices(); for (var i = 0; i < vs.length; i++) if (/^ar/i.test(String(vs[i].lang || ''))) return vs[i]; return null; }
+  /* لو قايمة الأصوات لسه ماتحمّلتش بنجرّب؛ لو اتحمّلت ومافيهاش عربي مانقولش حاجة (أحسن من كلام بلغة غلط) */
+  function ttsMaybe() { if (!(W.speechSynthesis && W.SpeechSynthesisUtterance)) return false; return !voices().length || !!arVoice(); }
+  function tts(text, rate) {
+    if (!text || !ttsMaybe()) return false;
+    try {
+      var ss = W.speechSynthesis, u = new W.SpeechSynthesisUtterance(text), v = arVoice();
+      ss.cancel(); u.lang = v ? v.lang : 'ar-EG'; if (v) u.voice = v;
+      u.rate = rate || (A.voiceRate ? A.voiceRate() : 0.92); u.pitch = 1;
+      ss.speak(u); return true;
+    } catch (e) { return false; }
+  }
+
+  /* لما قايمة أصوات الموبايل تتحمّل: لو مافيهاش عربي، نشيل زرار «اسمع» من الشاشات اللي مالهاش تسجيل */
+  try {
+    if (W.speechSynthesis && W.speechSynthesis.addEventListener) W.speechSynthesis.addEventListener('voiceschanged', function () {
+      if (ttsMaybe()) return;
+      A.$$('[data-act="scr_say"]').forEach(function (b) { if (!has('scr_' + (b.dataset.id || ''))) b.parentNode.removeChild(b); });
+    });
+  } catch (e) { /* ignore */ }
+
+  /* ---------- الكلام بالقطع (tokens) ----------
+     القطعة: 'مفتاح' | {n: رقم} | {d: متر} | {money: جنيه} | {st: محطة} | {mk: علامة} | {t: نص, k: مفتاح بديل, opt: تتشال لو مالهاش تسجيل} */
+  function build(tokens) {
+    var keys = [], text = [], ok = true;
+    (tokens || []).forEach(function (tk) {
+      if (tk === null || tk === undefined || tk === '') return;
+      if (typeof tk === 'string') { var c = CT[tk]; text.push(c ? c.t : tk); keys.push(tk); return; }
+      if (tk.n !== undefined) { text.push(eg(tk.n)); var nk = numKeys(tk.n); if (nk) keys = keys.concat(nk); else ok = false; return; }
+      if (tk.d !== undefined) { var dp = distParts(tk.d); text.push(dp.t); if (dp.k) keys = keys.concat(dp.k); else ok = false; return; }
+      if (tk.money !== undefined) { var mp = moneyParts(tk.money); text.push(mp.t); keys = keys.concat(mp.k); return; }
+      if (tk.st) { text.push(tk.st.name || ''); var sk = tk.st.sid ? 'st_' + idk(tk.st.sid) : ''; keys.push(sk && has(sk) ? sk : 'n_station'); return; }
+      if (tk.mk) { var mk = tk.mk; text.push(mk.t || (CT['mk_' + mk.k] || {}).t || 'العلامة'); keys.push('mk_' + (CT['mk_' + mk.k] ? mk.k : 'note')); return; }
+      if (tk.t !== undefined) { text.push(String(tk.t)); if (tk.k && has(tk.k)) keys.push(tk.k); else if (!tk.opt) ok = false; }
+    });
+    if (keys.some(function (k) { return !k || !has(k); })) ok = false;
+    return { keys: ok ? keys : null, text: text.join(' ').replace(/\s+([.،])/g, '$1').replace(/\s+/g, ' ').trim() };
+  }
+  /* يقول الجملة: التسجيل لو كامل، وإلا صوت الموبايل العربي، وإلا يسكت. بيرجع النص المكتوب */
+  function say(tokens, o) {
+    o = o || {};
+    var b = build(tokens);
+    if (b.keys && b.keys.length && ctx()) {
+      playKeys(b.keys).then(function (played) { if (!played && !o.noTts) tts(b.text, o.rate); });
+      return b.text;
+    }
+    if (!o.noTts) tts(b.text, o.rate);
+    return b.text;
+  }
+  function canSay(tokens) { var b = build(tokens); return !!(b.keys && b.keys.length) || ttsMaybe(); }
+  function textOf(tokens) { return build(tokens).text; }
+
+  /* الأسعار: جملة لكل صنف */
+  function marketTokens(m) {
+    if (!m || !m.items) return [];
+    var priced = m.items.filter(function (x) { return x.price !== null && x.price !== undefined; });
+    if (!priced.length) return [];
+    var out = [[m.state === 'fresh' ? 'p_today' : 'p_stale']];
+    priced.forEach(function (it) {
+      var u = String(it.unit || ''), per = u.split('/')[1] || '', tk = [{ t: it.short || it.name, k: 'mi_' + idk(it.id) }];
+      if (/^جنيه\//.test(u)) { tk.push({ money: it.price }); tk.push(PERK[per] ? PERK[per] : { t: 'لل' + per, opt: true }); }
+      else { tk.push({ n: it.price }); tk.push({ t: u, opt: true }); }
+      if (it.chg !== null && it.chg !== undefined && it.fresh !== false) {
+        var amt = Math.abs(Number(it.chg));
+        if (it.dir === 'flat') tk.push('p_flat');
+        else if (amt) { tk.push(it.dir === 'up' ? 'p_up' : 'p_down'); tk.push(/^جنيه\//.test(u) ? { money: amt } : { n: amt }); }
+      }
+      out.push(tk);
+    });
+    if (m.note) out.push([{ t: 'ملاحظة: ' + String(m.note), opt: true }]);
+    out.push(['p_final']);
+    return out;
+  }
+  /* يقول كذا جملة ورا بعض (الأسعار)؛ لو أي جملة ناقصة يقول الكل بصوت الموبايل */
+  function sayAll(list, o) {
+    var flat = [];
+    list.forEach(function (tk) { flat = flat.concat(tk); });
+    var b = build(flat);
+    if (b.keys && b.keys.length && ctx()) { playKeys(b.keys).then(function (p) { if (!p) ttsLines(list); }); return true; }
+    return ttsLines(list);
+    function ttsLines(l) { var lines = l.map(textOf); if (A.speakLines && ttsMaybe()) { A.speakLines(lines); return true; } return false; }
+  }
+
+  A.vp = {
+    say: say, sayAll: sayAll, canSay: canSay, text: textOf, build: build, has: has, play: playKeys, stop: stop, speaking: speaking, sync: sync,
+    ttsMaybe: ttsMaybe, marketTokens: marketTokens, eg: eg, numKeys: numKeys, distParts: distParts, moneyParts: moneyParts, idk: idk,
+    count: function () { return Object.keys(IDX.clips).length; }, catalog: function () { return scrCat().concat(CAT); }
+  };
+
+})();
+
+/* ============================================================
+   الملاحة «وصّلني» — الإصدار 2: ملاحة على الطريق الحقيقي
+   معمولة للضغط: تاجر تايه في الصحرا بالليل، أو أول مرة يدخل المزارع والطرق كلها شبه بعض.
+   - لو المحطة ليها «طريق متسجّل» (المشرف سجّله بالعربية مرة واحدة): التوجيه لفة بلفة على نفس الطريق،
+     «بعد ميتين متر لِف يمين عند خزان المية»، وتنبيه أول ما يطلع من الطريق ويرجّعه لأقرب نقطة عليه.
+   - لو مافيش طريق متسجّل: سهم على خط مستقيم للمكان، مع توضيح صريح إن ده خط مستقيم.
+   - لو المكان بعيد (برّه القطاع): خرائط جوجل لحد بداية الطريق، وبعدها الملاحة تكمّل جوه.
+   - منظر قيادة ثلاثي الأبعاد مرسوم على الموبايل من غير إنترنت: الطريق قدامه، اللفة الجاية، العلامات، والمحطة.
+   - «أنا تايه»: يهدّيه، يرجّعه للطريق أو على أثره، يبعت مكانه للمسؤول، ويكتب إحداثياته عشان يقولها في التليفون.
+   الاتجاه من حركة GPS وهو ماشي (أدق جوه العربية)، ومن البوصلة وهو واقف.
+   ============================================================ */
+(function () {
+  'use strict';
+  var A = window.APP, esc = A.esc, ic = A.ic, H = A.handlers, W = window;
+  var R = 6371000, D2R = Math.PI / 180;
+  var CU = (W.C3A && W.C3A.U) || {};
+
+  /* ---------- حساب ---------- */
+  function dist(a, b) {
+    var dLat = (b.lat - a.lat) * D2R, dLng = (b.lng - a.lng) * D2R;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function bearing(a, b) {
+    var y = Math.sin((b.lng - a.lng) * D2R) * Math.cos(b.lat * D2R);
+    var x = Math.cos(a.lat * D2R) * Math.sin(b.lat * D2R) - Math.sin(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.cos((b.lng - a.lng) * D2R);
+    return (Math.atan2(y, x) / D2R + 360) % 360;
+  }
+  function norm(d) { d = ((d % 360) + 360) % 360; return d > 180 ? d - 360 : d; }
+  function local(o, p) { return { x: (p.lng - o.lng) * D2R * R * Math.cos(o.lat * D2R), y: (p.lat - o.lat) * D2R * R }; }
+  /* موقع p بالنسبة للقطعة a→b: t نسبة الإسقاط (0 عند a و1 عند b) و d البعد العمودي بالمتر */
+  function segInfo(p, a, b) {
+    var u = local(p, a), v = local(p, b), dx = v.x - u.x, dy = v.y - u.y, L2 = dx * dx + dy * dy;
+    var t = L2 ? -(u.x * dx + u.y * dy) / L2 : 0, tc = Math.max(0, Math.min(1, t));
+    var cx = u.x + tc * dx, cy = u.y + tc * dy;
+    return { t: t, d: Math.sqrt(cx * cx + cy * cy), len: Math.sqrt(L2) };
+  }
+  function turnOf(rel) {
+    var a = Math.abs(rel);
+    if (a <= 20) return 'straight';
+    if (a <= 55) return rel > 0 ? 'slight_r' : 'slight_l';
+    if (a <= 140) return rel > 0 ? 'right' : 'left';
+    return 'back';
+  }
+  var TURN = {
+    straight: { t: 'كمّل على طول', s: 'كمّل على طول', c: 'go' },
+    slight_r: { t: 'ميّل يمين شوية', s: 'ميّل يمين شوية', c: 'mid' },
+    slight_l: { t: 'ميّل شمال شوية', s: 'ميّل شمال شوية', c: 'mid' },
+    right: { t: 'لِف يمين', s: 'لف يمين', c: 'mid' },
+    left: { t: 'لِف شمال', s: 'لف شمال', c: 'mid' },
+    back: { t: 'إنت ماشي عكس الاتجاه — لِف وارجع', s: 'إنت ماشي عكس الاتجاه. لف وارجع', c: 'bad' }
+  };
+  var DIRS = ['الشمال', 'الشمال الشرقي', 'الشرق', 'الجنوب الشرقي', 'الجنوب', 'الجنوب الغربي', 'الغرب', 'الشمال الغربي'];
+  function dirWord(b) { return DIRS[Math.round(((b % 360) + 360) % 360 / 45) % 8]; }
+  function fmtD(m) {
+    m = Math.max(0, m);
+    if (m >= 10000) return Math.round(m / 1000) + ' كم';
+    if (m >= 1000) return (Math.round(m / 100) / 10).toFixed(1) + ' كم';
+    if (m >= 100) return Math.round(m / 10) * 10 + ' م';
+    return Math.round(m) + ' م';
+  }
+  function fmtT(sec) {
+    if (sec < 60) return 'أقل من دقيقة';
+    if (sec < 3600) return 'حوالي ' + Math.round(sec / 60) + ' دقيقة';
+    var h = Math.floor(sec / 3600), mn = Math.round((sec % 3600) / 60);
+    return 'حوالي ' + h + ' ساعة' + (mn ? ' و' + mn + ' دقيقة' : '');
+  }
+  function clockOf(ts) {
+    var d = new Date(ts), h = d.getHours(), m = d.getMinutes(), ap = h < 12 ? 'ص' : 'م';
+    h = h % 12 || 12;
+    return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+  }
+  /* الأرقام بالكلام المصري: «ميتين وخمسين متر»، «تلاتة كيلو ونص» */
+  var ONES = ['صفر', 'واحد', 'اتنين', 'تلاتة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'تمانية', 'تسعة', 'عشرة', 'حداشر', 'اتناشر', 'تلتاشر', 'أربعتاشر', 'خمستاشر', 'ستاشر', 'سبعتاشر', 'تمنتاشر', 'تسعتاشر'];
+  var TENS = ['', '', 'عشرين', 'تلاتين', 'أربعين', 'خمسين', 'ستين', 'سبعين', 'تمانين', 'تسعين'];
+  var HUND = ['', 'مية', 'ميتين', 'تلتمية', 'ربعمية', 'خمسمية', 'ستمية', 'سبعمية', 'تمنمية', 'تسعمية'];
+  function eg(n) {
+    n = Math.max(0, Math.round(n));
+    if (n < 20) return ONES[n];
+    if (n < 100) { var t = Math.floor(n / 10), o = n % 10; return o ? ONES[o] + ' و' + TENS[t] : TENS[t]; }
+    if (n < 1000) { var h = Math.floor(n / 100), r = n % 100; return r ? HUND[h] + ' و' + eg(r) : HUND[h]; }
+    var k = Math.floor(n / 1000), rr = n % 1000;
+    var ks = k === 1 ? 'ألف' : k === 2 ? 'ألفين' : eg(k) + (k <= 10 ? ' آلاف' : ' ألف');
+    return rr ? ks + ' و' + eg(rr) : ks;
+  }
+  function sayD(m) {
+    m = Math.max(0, m);
+    if (m >= 9750) { var km = m >= 100000 ? Math.round(m / 10000) * 10 : Math.round(m / 1000); return eg(km) + ' كيلو'; }
+    if (m >= 1250) {
+      var h = Math.round(m / 500) / 2, k = Math.floor(h), half = h - k >= 0.5;
+      return (k === 1 ? 'كيلو' : k === 2 ? 'اتنين كيلو' : eg(k) + ' كيلو') + (half ? ' ونص' : '');
+    }
+    if (m >= 900) return 'كيلو';
+    var r = m >= 300 ? Math.round(m / 100) * 100 : m >= 100 ? Math.round(m / 50) * 50 : Math.max(10, Math.round(m / 10) * 10);
+    return eg(r) + ' متر';
+  }
+  /* نقط الرجوع من الأثر (للتوافق والاختبار): من آخر مكان لأوله، نقطة كل ~150 متر */
+  function backTargets(trail) {
+    if (!trail || trail.length < 2) return null;
+    var out = [], acc = 0, i;
+    for (i = trail.length - 2; i > 0; i--) {
+      acc += dist(trail[i + 1], trail[i]);
+      if (acc >= 150) { out.push({ lat: trail[i].lat, lng: trail[i].lng, name: 'أثر طريقك' }); acc = 0; }
+    }
+    out.push({ lat: trail[0].lat, lng: trail[0].lng, name: 'أول نقطة بدأت منها' });
+    out.forEach(function (p, j) { if (j < out.length - 1) p.name = 'أثر طريقك ' + (j + 1); });
+    return out;
+  }
+
+  /* ---------- الطرق المتسجّلة: نموذج الطريق واللفات ---------- */
+  var MARKS = { fork: 'المفرق', turn: 'اللفّة', gate: 'البوابة', tank: 'خزان المية', sign: 'اللافتة', guard: 'كشك الأمن', tower: 'البرج', bump: 'المطب', danger: 'المكان الخطر', note: 'العلامة' };
+  function markLabel(mk) { return mk.t || MARKS[mk.k] || 'العلامة'; }
+  function mkRoad(r) {
+    if (!r) return null;
+    var raw = r.pts || (CU.polyDec ? CU.polyDec(r.poly) : []), pts = [];
+    (raw || []).forEach(function (a) {
+      var p = Array.isArray(a) ? { lat: +a[0], lng: +a[1] } : { lat: +a.lat, lng: +a.lng };
+      if (isFinite(p.lat) && isFinite(p.lng) && (!pts.length || dist(pts[pts.length - 1], p) > 0.3)) pts.push(p);
+    });
+    if (pts.length < 2) return null;
+    var cum = [0];
+    for (var i = 1; i < pts.length; i++) cum.push(cum[i - 1] + dist(pts[i - 1], pts[i]));
+    var rd = { id: r.id || '', sid: r.sid || '', name: r.name || '', pts: pts, cum: cum, len: cum[cum.length - 1], marks: [], pass: [], trail: !!r.trail };
+    (r.marks || []).forEach(function (m) {
+      var j = Math.max(0, Math.min(pts.length - 1, Math.round(+m.i || 0)));
+      rd.marks.push({ s: cum[j], k: m.k || 'note', t: String(m.t || ''), lat: pts[j].lat, lng: pts[j].lng });
+    });
+    rd.man = maneuvers(rd);
+    return rd;
+  }
+  function idxAt(rd, s) {
+    var lo = 0, hi = rd.cum.length - 2;
+    while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (rd.cum[mid] <= s) lo = mid; else hi = mid - 1; }
+    return lo;
+  }
+  function pointAt(rd, s) {
+    if (s <= 0) return rd.pts[0];
+    if (s >= rd.len) return rd.pts[rd.pts.length - 1];
+    var i = idxAt(rd, s), a = rd.pts[i], b = rd.pts[i + 1], L = rd.cum[i + 1] - rd.cum[i], t = L ? (s - rd.cum[i]) / L : 0;
+    return { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t };
+  }
+  function bearingAt(rd, s) {
+    var s0 = Math.max(0, s - 12), s1 = Math.min(rd.len, s0 + 24);
+    if (s1 - s0 < 24) s0 = Math.max(0, s1 - 24);
+    return bearing(pointAt(rd, s0), pointAt(rd, s1));
+  }
+  /* أقرب نقطة على الطريق. win = نطاق [من، لحد] على طول الطريق يتدوّر فيه الأول (عشان الطريق اللي بيلف على نفسه) */
+  function project(rd, p, win) {
+    var best = { d: Infinity, s: 0, i: 0 };
+    for (var i = 0; i + 1 < rd.pts.length; i++) {
+      if (win && (rd.cum[i + 1] < win[0] || rd.cum[i] > win[1])) continue;
+      var si = segInfo(p, rd.pts[i], rd.pts[i + 1]), tc = Math.max(0, Math.min(1, si.t));
+      if (si.d < best.d) best = { d: si.d, s: rd.cum[i] + tc * (rd.cum[i + 1] - rd.cum[i]), i: i };
+    }
+    if (best.d === Infinity) return win ? project(rd, p, null) : { d: Infinity, s: 0, i: 0, q: rd.pts[0] };
+    best.q = pointAt(rd, best.s);
+    return best;
+  }
+  function mtype(a) {
+    var x = Math.abs(a), sd = a > 0 ? '_r' : '_l';
+    if (x < 25) return 'straight';
+    if (x < 50) return 'slight' + sd;
+    if (x < 120) return 'turn' + sd;
+    if (x < 160) return 'sharp' + sd;
+    return 'uturn';
+  }
+  function turnAt(rd, s, w) {
+    w = w || 30;
+    return norm(bearing(pointAt(rd, s), pointAt(rd, Math.min(rd.len, s + w))) - bearing(pointAt(rd, Math.max(0, s - w)), pointAt(rd, s)));
+  }
+  /* اللفات من شكل الطريق: زاوية الاتجاه قبل النقطة وبعدها بـ30 متر. المنحنيات الهادية مش بتتعد لفة.
+     العلامات اللي جنب لفة بتتربط بيها («عند خزان المية»)، والمفرق من غير لفة بيبقى «عند المفرق كمّل على طول» */
+  function maneuvers(rd) {
+    var out = [], L = rd.len, W1 = 30, step = 5;
+    if (L >= 2 * W1 + step) {
+      var smp = [];
+      for (var s = W1; s <= L - W1; s += step) smp.push({ s: s, d: turnAt(rd, s, W1) });
+      var i = 0;
+      while (i < smp.length) {
+        if (Math.abs(smp[i].d) < 28) { i++; continue; }
+        var sg = smp[i].d > 0, j = i, best = i;
+        while (j < smp.length && Math.abs(smp[j].d) >= 28 && (smp[j].d > 0) === sg) { if (Math.abs(smp[j].d) > Math.abs(smp[best].d)) best = j; j++; }
+        var s0 = smp[i].s, s1 = smp[j - 1].s;
+        var tot = norm(bearing(pointAt(rd, s1), pointAt(rd, Math.min(L, s1 + W1))) - bearing(pointAt(rd, Math.max(0, s0 - W1)), pointAt(rd, s0)));
+        var ang = Math.abs(tot) > Math.abs(smp[best].d) && (tot > 0) === sg ? tot : smp[best].d;
+        var prev = out[out.length - 1];
+        /* لفتين في نفس الاتجاه قريبين من بعض (ناصية مشطوفة) = لفة واحدة بزاويتهم الكلية */
+        if (prev && s0 - prev.s1 < 45 && (prev.a > 0) === (ang > 0)) {
+          var tot2 = norm(bearing(pointAt(rd, s1), pointAt(rd, Math.min(L, s1 + W1))) - bearing(pointAt(rd, Math.max(0, prev.s0 - W1)), pointAt(rd, prev.s0)));
+          if ((tot2 > 0) === (ang > 0) && Math.abs(tot2) > Math.max(Math.abs(ang), Math.abs(prev.a))) prev.a = tot2; else if (Math.abs(ang) > Math.abs(prev.a)) prev.a = ang;
+          prev.s = (prev.s + smp[best].s) / 2; prev.s1 = s1; prev.type = mtype(prev.a);
+        }
+        else out.push({ s: smp[best].s, s0: s0, s1: s1, a: ang, type: mtype(ang) });
+        i = j;
+      }
+    }
+    rd.marks.forEach(function (mk) {
+      var near = null;
+      out.forEach(function (m) { if (Math.abs(m.s - mk.s) <= 45 && (!near || Math.abs(m.s - mk.s) < Math.abs(near.s - mk.s))) near = m; });
+      if (near) { if (mk.k === 'fork') near.fork = true; if (!near.mark || near.mark.k === 'fork') near.mark = mk; return; }
+      if (mk.k === 'fork' && mk.s > 10 && mk.s < L - 10) { var a = turnAt(rd, mk.s, 20); out.push({ s: mk.s, a: a, type: Math.abs(a) < 25 ? 'straight' : mtype(a), fork: true, mark: mk }); return; }
+      rd.pass.push(mk);
+    });
+    out.sort(function (x, y) { return x.s - y.s; });
+    out.forEach(function (m, k) { m.n = k; });
+    out.push({ s: L, a: 0, type: 'arrive', n: out.length });
+    return out;
+  }
+  var MTXT = { straight: 'كمّل على طول', slight_r: 'ميّل يمين', slight_l: 'ميّل شمال', turn_r: 'لِف يمين', turn_l: 'لِف شمال', sharp_r: 'لفّة حادة يمين', sharp_l: 'لفّة حادة شمال', uturn: 'لِف وارجع (يو-تيرن)', arrive: 'هتوصل' };
+  var MSAY = { straight: 'كمّل على طول', slight_r: 'ميّل يمين', slight_l: 'ميّل شمال', turn_r: 'لف يمين', turn_l: 'لف شمال', sharp_r: 'لفة حادة يمين', sharp_l: 'لفة حادة شمال', uturn: 'لف وارجع', arrive: 'هتوصل' };
+  function manText(m, name, say) {
+    if (m.type === 'arrive') return (say ? 'هتوصل ' : 'هتوصل «') + name + (say ? '' : '»');
+    var t = (say ? MSAY : MTXT)[m.type] || '';
+    return m.fork ? 'عند المفرق ' + t : t;
+  }
+  function manSub(m) {
+    if (!m.mark) return '';
+    if (m.fork) return m.mark.t || '';
+    return (m.mark.k === 'gate' || m.mark.k === 'sign' ? 'بعد ' : 'عند ') + markLabel(m.mark);
+  }
+
+  /* ---------- تخزين خفيف على الجهاز ---------- */
+  function lsGet(k) { try { return W.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { W.localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+  function ssGet(k) { try { return W.sessionStorage.getItem(k); } catch (e) { return null; } }
+  function ssSet(k, v) { try { W.sessionStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+
+  /* ---------- الأثر: بيتسجل طول ما الرحلة أو الملاحة شغالة، ويتمسح بعد 36 ساعة ---------- */
+  var TRAIL_KEY = 'c3a_trail', TR = { k: '', pts: [], saved: 0 };
+  function trailLoad(k) {
+    if (TR.k === k) return TR.pts;
+    TR.k = k; TR.pts = [];
+    try {
+      var o = JSON.parse(lsGet(TRAIL_KEY) || 'null');
+      if (o && o.k === k && Array.isArray(o.pts)) TR.pts = o.pts.filter(function (p) { return Date.now() - p.ts < 36 * 3600000; });
+    } catch (e) { TR.pts = []; }
+    return TR.pts;
+  }
+  function trailAdd(k, f) {
+    if (!f || !(f.acc <= 60)) return;
+    var pts = trailLoad(k), last = pts[pts.length - 1];
+    if (last && dist(last, f) < 15) return;
+    pts.push({ lat: +f.lat.toFixed(6), lng: +f.lng.toFixed(6), ts: f.ts || Date.now() });
+    if (pts.length > 2000) pts.splice(0, pts.length - 2000);
+    if (Date.now() - TR.saved > 8000) { TR.saved = Date.now(); lsSet(TRAIL_KEY, JSON.stringify({ k: k, pts: pts })); }
+  }
+  A.navTrack = function (pos, routeKey) { if (pos && routeKey) trailAdd('r:' + routeKey, pos); };
+
+  /* ---------- الصوت: جملة واحدة قصيرة كل مرة، والأهم يقطع الأقل ---------- */
+  var VO = { pri: 0, until: 0 };
+  function pickVoice() {
+    var vs = []; try { vs = W.speechSynthesis.getVoices() || []; } catch (e) { vs = []; }
+    var lang = function (v) { return String(v.lang || '').replace('_', '-').toLowerCase(); };
+    var pri = ['ar-eg', 'ar-sa', 'ar'];
+    for (var i = 0; i < pri.length; i++) for (var j = 0; j < vs.length; j++) if (lang(vs[j]) === pri[i]) return vs[j];
+    for (var k = 0; k < vs.length; k++) if (lang(vs[k]).indexOf('ar') === 0) return vs[k];
+    return null;
+  }
+  /* الكلام بالقطع: التسجيلات المتسجّلة من «استوديو الصوت» الأول، وصوت الموبايل العربي لو مفيش، وإلا سكوت.
+     القطعة: مفتاح جملة، أو {d: متر}، أو {st: نقطة}، أو {mk: علامة}، أو {t: نص} */
+  function ST(p) { return { st: { sid: (p && p.sid) || '', name: (p && p.name) || 'المحطة' } }; }
+  function D(m) { return { d: m }; }
+  function MK(mk) { return { mk: mk }; }
+  function speak(tokens, pri) {
+    if (!N || !tokens) return;
+    if (typeof tokens === 'string') tokens = [{ t: tokens }];
+    var text = A.vp ? A.vp.text(tokens) : tokens.map(function (x) { return typeof x === 'string' ? x : (x.t || (x.st && x.st.name) || (x.d !== undefined ? sayD(x.d) : '')); }).join(' ');
+    N.lastSaidTs = Date.now();
+    if (!N.voice) return;
+    pri = pri || 1;
+    var now = Date.now();
+    /* جملة أهم شغالة: نأجّل دي لحد ما تخلص (مانضيعهاش)، ولو استنت أكتر من 8 ثواني تتلغي */
+    if (now < VO.until && pri < VO.pri) { if (!N.pend || pri >= N.pend.pri) N.pend = { tokens: tokens, pri: pri, ts: now }; return; }
+    N.pend = null;
+    VO.pri = pri; VO.until = now + Math.max(1600, text.length * 95);
+    N.said.push(text); if (N.said.length > 40) N.said.shift();
+    if (A.vp) { A.vp.say(tokens, { rate: A.voiceRate ? A.voiceRate() : 0.92 }); return; }
+    if (!(W.speechSynthesis && W.SpeechSynthesisUtterance)) { N.noVoice = true; return; }
+    try {
+      var ss = W.speechSynthesis, u = new W.SpeechSynthesisUtterance(text), v = pickVoice();
+      ss.cancel();
+      u.lang = v ? v.lang : 'ar-EG'; if (v) u.voice = v;
+      u.rate = A.voiceRate ? A.voiceRate() : 0.92; u.pitch = 1;
+      u.onend = function () { VO.until = 0; };
+      ss.speak(u);
+    } catch (e) { N.noVoice = true; }
+  }
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* ignore */ } }
+
+  /* ---------- الحالة ---------- */
+  var N = null;
+  function rt() { return A.rtInfo ? A.rtInfo() : null; }
+  function routeTargets() {
+    var r = rt(); if (!r || !r.d) return null;
+    var pts = r.d.route.points || [];
+    var start = pts.filter(function (p) { return p.st; })[0] || null;
+    var tg = pts.filter(function (p) { return !p.st; }).map(function (p) { return { lat: +p.lat, lng: +p.lng, name: String(p.name || 'نقطة'), sid: p.sid || '' }; });
+    return tg.length ? { targets: tg, start: start ? { lat: +start.lat, lng: +start.lng } : null, all: pts, roads: r.d.roads || [], title: r.d.route.title, key: r.d.route.id, corridor: Number(r.d.route.corridorM) || 150, hotline: r.d.hotline || '' } : null;
+  }
+  function cur() { return N && N.targets[N.idx]; }
+  function leg() { return N && N.legs[N.idx]; }
+  function arriveR() { var a = N.pos ? N.pos.acc : 50; return Math.max(35, Math.min(80, a)); }
+  function mkLegs(targets, roads) {
+    return targets.map(function (t) {
+      var rs = (roads || []).filter(function (r) { return r && t.sid && r.sid === t.sid; }).map(mkRoad).filter(Boolean);
+      return { roads: rs, road: null, onRoad: false, everOn: false, sLast: null, offTs: 0, offSaid: 0, joinSaid: 0 };
+    });
+  }
+
+  function heading() {
+    var now = Date.now();
+    if (N.gpsH != null && now - N.gpsHts < 4000 && N.speed >= 1.8) return { h: N.gpsH, src: 'gps' };
+    if (N.comp != null && now - N.compTs < 1500) return { h: N.comp, src: 'compass' };
+    if (N.gpsH != null && now - N.gpsHts < 15000) return { h: N.gpsH, src: 'gps' };
+    return null;
+  }
+  function onPos(p) {
+    if (!N) return;
+    var c = p.coords, f = { lat: c.latitude, lng: c.longitude, acc: c.accuracy || 100, ts: Date.now() };
+    var last = N.fixes[N.fixes.length - 1];
+    var spd = (c.speed != null && !isNaN(c.speed)) ? c.speed : (last ? dist(last, f) / Math.max(1, (f.ts - last.ts) / 1000) : 0);
+    N.speed = N.fixes.length ? N.speed * 0.6 + spd * 0.4 : spd;
+    if (c.heading != null && !isNaN(c.heading) && spd >= 1.8) { N.gpsH = c.heading; N.gpsHts = f.ts; }
+    else {
+      for (var i = N.fixes.length - 1; i >= 0; i--) {
+        if (f.ts - N.fixes[i].ts > 30000) break;
+        if (dist(N.fixes[i], f) >= Math.max(20, Math.min(60, f.acc))) { N.gpsH = bearing(N.fixes[i], f); N.gpsHts = f.ts; break; }
+      }
+    }
+    N.fixes.push(f);
+    while (N.fixes.length > 40 || (N.fixes.length && f.ts - N.fixes[0].ts > 60000)) N.fixes.shift();
+    /* الحركة على الشاشة بتتنقل بنعومة من المكان المعروض للمكان الجديد */
+    N.anim = { from: N.dpos || f, to: f, t0: Date.now() };
+    N.pos = f; N.gpsErr = '';
+    if (!N.prevPt) N.prevPt = { lat: f.lat, lng: f.lng };
+    trailAdd(N.trailKey, f);
+    update();
+  }
+  function onGpsErr(e) {
+    if (!N) return;
+    N.gpsErr = e && e.code === 1 ? 'denied' : 'weak';
+    update();
+  }
+  function screenAngle() { try { return (W.screen.orientation && W.screen.orientation.angle) || W.orientation || 0; } catch (e) { return 0; } }
+  function onOri(e) {
+    if (!N) return;
+    var h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;
+    else if ((e.absolute || e.type === 'deviceorientationabsolute') && e.alpha != null) h = 360 - e.alpha;
+    if (h == null) return;
+    h = (h + screenAngle() + 360) % 360;
+    N.comp = N.comp == null ? h : (N.comp + norm(h - N.comp) * 0.25 + 360) % 360;
+    N.compTs = Date.now();
+    N.compSeen = true;
+  }
+  function compassOn() {
+    W.addEventListener('deviceorientationabsolute', onOri, true);
+    W.addEventListener('deviceorientation', onOri, true);
+  }
+  function compassNeedsAsk() { return !!(W.DeviceOrientationEvent && typeof W.DeviceOrientationEvent.requestPermission === 'function'); }
+  function askCompass() {
+    try {
+      W.DeviceOrientationEvent.requestPermission().then(function (s) { if (N) { N.compAsked = true; if (s === 'granted') compassOn(); update(); } }, function () { if (N) { N.compAsked = true; update(); } });
+    } catch (e) { /* ignore */ }
+  }
+  function wake() {
+    try { if (navigator.wakeLock && !document.hidden && N) navigator.wakeLock.request('screen').then(function (l) { if (N) N.wake = l; else try { l.release(); } catch (e) { /* ignore */ } }, function () { /* اختياري */ }); } catch (e) { /* ignore */ }
+  }
+  function onVis() { if (N && !document.hidden) { wake(); update(); loop(); } }
+  function onPop() { if (N) close(true); }
+
+  /* ---------- فتح وقفل ---------- */
+  function isNight() { var t = lsGet('c3a_nav_theme'); if (t === 'day' || t === 'night') return t === 'night'; var h = new Date().getHours(); return h >= 17 || h < 6; }
+  function open(opts) {
+    opts = opts || {};
+    if (N) close();
+    var base = null, mode = opts.mode || 'route';
+    if (mode === 'route') {
+      base = routeTargets();
+      if (!base) { A.toast('الخط ده لسه مافيهوش نقط للملاحة', 'err'); return false; }
+    } else {
+      if (!opts.targets || !opts.targets.length) return false;
+      base = { targets: opts.targets.map(function (p) { return { lat: +p.lat, lng: +p.lng, name: String(p.name || 'الوجهة'), sid: p.sid || '' }; }), start: null, all: opts.targets, roads: opts.roads || [], title: opts.title || opts.targets[0].name, key: 'free:' + opts.targets.map(function (p) { return (+p.lat).toFixed(4) + ',' + (+p.lng).toFixed(4); }).join('|'), corridor: 0, hotline: opts.hotline || '' };
+    }
+    var saved = Number(ssGet('c3a_nav_idx_' + base.key) || 0);
+    var idx = opts.idx != null ? Math.max(0, Math.min(base.targets.length - 1, opts.idx)) : (saved > 0 && saved < base.targets.length ? saved : 0);
+    N = {
+      mode: mode, base: base, targets: base.targets, legs: mkLegs(base.targets, base.roads), idx: idx, prevPt: idx > 0 ? base.targets[idx - 1] : base.start, title: base.title,
+      key: base.key, trailKey: mode === 'route' ? 'r:' + base.key : 'f:' + base.key, pos: null, dpos: null, anim: null, fixes: [], gpsH: null, gpsHts: 0, comp: null, compTs: 0, speed: 0,
+      watch: null, tick: null, turn: '', turnTs: 0, turnSaid: '', turnSaidTs: 0, ms: {}, hist: [], lastD: null, lastSaidTs: Date.now(),
+      voice: lsGet('c3a_nav_voice') !== '0', view: lsGet('c3a_nav_view') === 'map' ? 'map' : '3d', night: isNight(), said: [], arrivedTs: 0, done: false, off: false, offTs: 0,
+      weakTs: 0, weakSaid: false, farTs: 0, farSaid: 0, noVoice: false, gpsErr: '', wake: null, back: null, introDone: false, compSeen: false, compAsked: false,
+      G: null, camH: null, chev: 0, raf: 0, lastFrame: 0, said3: {}, wrongTs: 0, wrongSaid: 0, totalMax: 0, farSaidK: '', rotA: 0, lastManN: -1, okSaidTs: 0
+    };
+    trailLoad(N.trailKey);
+    build();
+    if (navigator.geolocation) N.watch = navigator.geolocation.watchPosition(onPos, onGpsErr, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+    else N.gpsErr = 'none';
+    if (compassNeedsAsk()) askCompass(); else compassOn();
+    N.tick = setInterval(update, 400);
+    wake();
+    document.addEventListener('visibilitychange', onVis);
+    W.addEventListener('resize', onResize);
+    try { W.history.pushState({ c3anav: 1 }, ''); W.addEventListener('popstate', onPop); } catch (e) { /* ignore */ }
+    var lg = leg();
+    speak(['n_take', ST(cur()), lg && lg.roads.length ? 'n_mode_road' : 'n_mode_arrow'], 3);
+    update();
+    loop();
+    return true;
+  }
+  function close(fromPop) {
+    if (!N) return;
+    var n = N; N = null;
+    if (n.watch != null) try { navigator.geolocation.clearWatch(n.watch); } catch (e) { /* ignore */ }
+    clearInterval(n.tick);
+    if (n.raf) try { W.cancelAnimationFrame(n.raf); } catch (e) { /* ignore */ }
+    W.removeEventListener('deviceorientationabsolute', onOri, true);
+    W.removeEventListener('deviceorientation', onOri, true);
+    document.removeEventListener('visibilitychange', onVis);
+    W.removeEventListener('popstate', onPop);
+    W.removeEventListener('resize', onResize);
+    if (n.wake) try { n.wake.release(); } catch (e) { /* ignore */ }
+    try { if (W.speechSynthesis) W.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    if (TR.pts.length) lsSet(TRAIL_KEY, JSON.stringify({ k: TR.k, pts: TR.pts }));
+    var el = document.getElementById('nav'); if (el) el.parentNode.removeChild(el);
+    if (!fromPop) try { if (W.history.state && W.history.state.c3anav) W.history.back(); } catch (e) { /* ignore */ }
+    if (A.screens && A.screens.route && A.S.role === 'route') A.screens.route();
+  }
+  function onResize() { if (N) N.sized = 0; }
+
+  /* ---------- رموز اللفات (SVG) — نفس الرسم في الكارت وعلى الطريق ---------- */
+  var GLY = {
+    straight: 'M24 42V9M13 19L24 8l11 11',
+    turn_r: 'M15 42V25a9 9 0 0 1 9-9h15M31 8l8 8-8 8',
+    turn_l: 'M33 42V25a9 9 0 0 0-9-9H9M17 8l-8 8 8 8',
+    slight_r: 'M19 42V27L35 11M24 11h11v11',
+    slight_l: 'M29 42V27L13 11M24 11H13v11',
+    sharp_r: 'M15 42V11M15 11l19 19M22 31h12V19',
+    sharp_l: 'M33 42V11M33 11L14 30M26 31H14V19',
+    uturn: 'M32 42V20a8 8 0 0 0-16 0v17M9 30l7 7 7-7',
+    arrive: 'M14 43V7M14 8h21l-5 7 5 7H14'
+  };
+  var LGLY = {
+    fork: 'M12 21v-8M12 13L6 5M12 13l6-8', turn: 'M7 21v-8a5 5 0 0 1 5-5h7M15 4l4 4-4 4', gate: 'M4 21V5M20 21V5M4 9h16M4 14h16M9 9v5M15 9v5',
+    tank: 'M6 9h12v8H6zM8 9V6h8v3M8 17l-1 4M16 17l1 4', sign: 'M5 4h14v8H5zM12 12v9', guard: 'M4 21V10l8-6 8 6v11zM9 21v-6h6v6',
+    tower: 'M12 3L7 21M12 3l5 18M8.5 15h7M10 9h4', bump: 'M3 17c3-6 15-6 18 0M3 17h18', danger: 'M12 3L2 20h20zM12 9v5M12 17v.5', note: 'M12 3a9 9 0 1 0 .01 0zM12 8v5M12 16v.5'
+  };
+  function glyph(type) { return '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="' + (GLY[type] || GLY.straight) + '" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+  var ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6 L86 90 L50 70 L14 90 Z" fill="currentColor" stroke="rgba(0,0,0,.25)" stroke-width="3" stroke-linejoin="round"/></svg>';
+  var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* أرقام الاتصال: مدير/مسؤول/مشرف الأمن الحيوي (من إعدادات وصّلني) */
+  function hots() {
+    var c = A.cfg || {}, L = (c.hotlines || []).filter(function (h) { return h && h.phone; });
+    if (!L.length && N && N.base && N.base.hotline) L = [{ role: 'المسؤول', phone: N.base.hotline }];
+    return L;
+  }
+  function hotLinks(cls) {
+    return hots().map(function (h) { return '<a class="lost-b ' + (cls || 'dk') + '" href="tel:' + esc(h.phone) + '">' + ic('phone', 'sm') + '<span><b>اتصل بـ' + esc(h.role) + '</b><small dir="ltr">' + esc(h.phone) + '</small></span></a>'; }).join('');
+  }
+  H.nav_call = function () {
+    var L = hots(); if (!L.length) return;
+    A.sheet('<h2>اتصل بالأمن الحيوي</h2><div class="lost-list">' + hotLinks('dk') + '</div><button class="btn gh" data-act="closesheet" style="margin-top:10px">رجوع</button>');
+  };
+
+  /* ---------- البناء مرة واحدة، والتحديث بيغيّر النصوص بس ---------- */
+  function build() {
+    var HL = hots(), route = N.mode === 'route';
+    var el = document.createElement('div');
+    el.id = 'nav'; el.className = 'nav ' + (N.night ? 'night' : 'day'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'الملاحة');
+    el.innerHTML =
+      '<div class="nav-top">' +
+        '<button class="nav-x" data-act="nav_close" aria-label="اقفل الملاحة">' + ic('x', 'sm') + '<span>خروج</span></button>' +
+        '<div class="nav-to"><div class="nav-lbl" id="nv-lbl">رايح لـ</div><b id="nv-name"></b><div class="nav-step"><span id="nv-step"></span><button class="nv-skip" data-act="nav_next" id="nv-next">التالية ‹</button></div></div>' +
+        '<button class="nav-x" data-act="nav_theme" id="nv-theme" aria-label="ليل أو نهار"></button>' +
+      '</div>' +
+      '<div class="nav-warnbar" id="nv-warn"></div>' +
+      '<div class="nv-man" id="nv-man">' +
+        '<div class="nv-mi"><div class="nav-arrow" id="nv-arrow">' + ARROW + '</div><div class="nv-gl" id="nv-gl"></div></div>' +
+        '<div class="nv-mt"><b id="nv-mdist"></b><div class="nav-say" id="nv-say" aria-live="polite"></div><div class="nv-msub" id="nv-hint"></div></div>' +
+      '</div>' +
+      '<div class="nv-then" id="nv-then"></div>' +
+      '<div class="nv-stage" id="nv-stage">' +
+        '<canvas id="nv-cv"></canvas>' +
+        '<div class="nav-gps" id="nv-gps"></div>' +
+        '<div class="nv-north" id="nv-north" aria-hidden="true"><i>ش</i></div>' +
+        '<div class="nv-chip" id="nv-chip"></div>' +
+        '<div class="nv-far" id="nv-far"></div>' +
+        '<div class="nav-arrive" id="nv-arr">' + CHECK + '<b>وصلت</b><span id="nv-arr-n"></span></div>' +
+        '<button class="nv-fab lost" data-act="nav_lost">' + ic('warn', 'sm') + '<span>أنا تايه</span></button>' +
+        '<button class="nv-fab view" data-act="nav_view" id="nv-view"></button>' +
+      '</div>' +
+      '<div class="nv-info">' +
+        '<div class="nv-rem"><b id="nv-dist">—</b><div class="nv-eta"><span id="nv-eta"></span><span id="nv-trend"></span></div></div>' +
+        '<div class="nv-prog" aria-hidden="true"><i id="nv-prog"></i></div>' +
+      '</div>' +
+      '<div class="nav-bar">' +
+        (route ? '<button class="nav-b sos" data-act="nav_sos">طوارئ</button>' : '') +
+        (HL.length === 1 ? '<a class="nav-b" href="tel:' + esc(HL[0].phone) + '">' + ic('phone', 'sm') + '<span>اتصل بـ' + esc(HL[0].role) + '</span></a>' : HL.length ? '<button class="nav-b" data-act="nav_call">' + ic('phone', 'sm') + '<span>اتصل بالمسؤولين</span></button>' : '') +
+        '<button class="nav-b" data-act="nav_voice" id="nv-voice"></button>' +
+      '</div>';
+    document.body.appendChild(el);
+    themeCols();
+  }
+  function setTxt(id, t) { var e = document.getElementById(id); if (e) { e._h = null; if (e.textContent !== t) e.textContent = t; } }
+  function setHtml(id, h) { var e = document.getElementById(id); if (e && e._h !== h) { e._h = h; e.innerHTML = h; } }
+  function cls(id, c) { var e = document.getElementById(id); if (e && e.className !== c) e.className = c; }
+  function show(id, on) { var e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; }
+
+  function remainingAfter(i) {
+    var s = 0;
+    for (var j = i; j < N.targets.length - 1; j++) s += dist(N.targets[j], N.targets[j + 1]);
+    return s;
+  }
+  function resetLegVoice() { N.hist = []; N.ms = {}; N.turn = ''; N.turnSaid = ''; N.lastD = null; N.off = false; N.said3 = {}; N.lastManN = -1; N.farSaidK = ''; }
+  function advance(why) {
+    var was = cur();
+    ssSet('c3a_nav_idx_' + N.key, String(N.idx + 1));
+    N.prevPt = was; N.idx++; resetLegVoice();
+    var nx = cur(), lg = leg();
+    if (why === 'arrive') {
+      N.arrivedTs = Date.now();
+      setTxt('nv-arr-n', was.name);
+      buzz([200, 100, 200, 100, 400]);
+      speak(['n_arrived', ST(was)].concat(nx ? ['n_next_pt', ST(nx), 'n_away', D(N.pos ? dist(N.pos, nx) : dist(was, nx))].concat(lg && lg.roads.length ? ['n_has_road'] : []) : []), 5);
+    } else if (why === 'skip') {
+      speak(['n_passed', ST(was), 'n_next_pt', ST(nx)], 3);
+    } else if (nx) {
+      speak(['n_next_pt', ST(nx)], 3);
+    }
+  }
+  function finish() {
+    var was = cur();
+    N.done = true; N.arrivedTs = Date.now();
+    ssSet('c3a_nav_idx_' + N.key, '0');
+    setTxt('nv-arr-n', was.name);
+    buzz([200, 100, 200, 100, 600]);
+    speak(N.back ? ['n_back_done'] : ['n_dest', ST(was), 'n_salama'], 5);
+  }
+
+  /* ---------- قلب الملاحة: بيحسب «إنت فين من الطريق» واللفة الجاية ---------- */
+  function guide(hd) {
+    var tg = cur(), lg = leg(), pos = N.pos, d = dist(pos, tg), now = Date.now();
+    var g = { kind: 'direct', tg: tg, d: d, road: null, pr: null, s: 0, man: null, manD: 0, then: null, joinPt: null };
+    if (lg && lg.roads.length) {
+      /* أقرب طريق متسجّل؛ ولو ماشي على طريق نفضل عليه إلا لو طريق تاني أقرب بفرق واضح */
+      var best = null, mine = null;
+      lg.roads.forEach(function (rd) {
+        var win = rd === lg.road && lg.sLast != null ? [lg.sLast - 120, lg.sLast + 500] : null;
+        var pr = project(rd, pos, win);
+        if (win && pr.d > 80) pr = project(rd, pos, null);
+        if (rd === lg.road) mine = { rd: rd, pr: pr };
+        if (!best || pr.d < best.pr.d) best = { rd: rd, pr: pr };
+      });
+      if (mine && mine.pr.d <= best.pr.d + 40) best = mine;
+      var rd = best.rd, pr = best.pr, tol = Math.max(35, Math.min(70, pos.acc + 15));
+      lg.road = rd;
+      var on = lg.onRoad ? pr.d <= tol * 1.4 : pr.d <= tol;
+      g.road = rd; g.pr = pr;
+      if (on) {
+        lg.onRoad = true; lg.everOn = true; lg.sLast = pr.s; lg.lastOn = pr.q;
+        g.kind = 'road'; g.s = pr.s;
+        var endGap = dist(rd.pts[rd.pts.length - 1], tg);
+        if (rd.len - pr.s < 25 && endGap > Math.max(arriveR(), 60)) { g.kind = 'direct'; g.after = true; }
+        else {
+          for (var i = 0; i < rd.man.length; i++) if (rd.man[i].s > pr.s + 6) { g.man = rd.man[i]; break; }
+          if (!g.man) g.man = rd.man[rd.man.length - 1];
+          g.manD = Math.max(0, g.man.s - pr.s);
+          var nx2 = rd.man[g.man.n + 1];
+          if (nx2 && g.man.type !== 'arrive' && nx2.s - g.man.s < 160) g.then = nx2;
+          g.rem = (rd.len - pr.s) + endGap;
+          /* ماشي عكس الطريق؟ */
+          if (hd && hd.src === 'gps' && N.speed >= 2) {
+            var dev = Math.abs(norm(hd.h - bearingAt(rd, pr.s)));
+            if (dev > 115) { if (!N.wrongTs) N.wrongTs = now; if (now - N.wrongTs > 3500) g.kind = 'wrong'; }
+            else N.wrongTs = 0;
+          }
+        }
+      } else {
+        lg.onRoad = false;
+        g.kind = pr.d > 3000 ? 'far' : 'join';
+        g.joinPt = pr.q;
+        g.rem = pr.d + (rd.len - pr.s) + dist(rd.pts[rd.pts.length - 1], tg);
+      }
+    } else if (d > 8000) g.kind = 'far';
+    if (g.kind === 'direct' || (g.kind === 'far' && !g.road)) g.rem = d;
+    g.rem = (g.rem || d) + remainingAfter(N.idx);
+    return g;
+  }
+
+  function update() {
+    if (!N || !document.getElementById('nav')) return;
+    var now = Date.now(), tg = cur(), r = rt();
+    if (N.pend && now >= VO.until) { var pd = N.pend; N.pend = null; if (now - pd.ts < 8000) speak(pd.tokens, pd.pri); }
+    var nav = document.getElementById('nav');
+    nav.className = 'nav ' + (N.night ? 'night' : 'day') + (N.done ? ' done' : '') + (N.view === 'map' ? ' vmap' : '');
+    setTxt('nv-lbl', N.back ? 'راجع على أثرك لـ' : (N.done ? 'وصلت' : 'رايح لـ'));
+    setTxt('nv-name', tg ? tg.name : '');
+    setTxt('nv-step', N.targets.length > 1 ? 'النقطة ' + (N.idx + 1) + ' من ' + N.targets.length + (N.back ? '' : ' · ' + (N.title || '')) : (N.title && tg && N.title !== tg.name && N.title !== 'إلى ' + tg.name ? N.title : ''));
+    show('nv-next', N.idx < N.targets.length - 1 && !N.done && !N.back);
+    setHtml('nv-theme', N.night ? ic('star', 'sm') + '<span>ليلي</span>' : ic('flame', 'sm') + '<span>نهاري</span>');
+    setHtml('nv-voice', N.voice ? ic('speaker', 'sm') + '<span>الصوت شغال</span>' : ic('x', 'sm') + '<span>الصوت مقفول</span>');
+    setHtml('nv-view', N.view === 'map' ? ic('truck', 'sm') + '<span>منظر السواقة</span>' : ic('search', 'sm') + '<span>الخريطة كلها</span>');
+
+    var warn = '';
+    if (N.mode === 'route' && r && r.d && r.d.route.status === 'planned') warn = '<span>الرحلة لسه ماتبدأتش — المسؤول مش شايف مكانك.</span><button class="nav-wb" data-act="nav_start">ابدأ الرحلة</button>';
+    else if (N.mode === 'route' && r && r.d && r.d.route.status === 'emergency') warn = '<span>الطوارئ اتبعتت. المسؤول شايف مكانك.</span>';
+    setHtml('nv-warn', warn); show('nv-warn', !!warn);
+
+    var gps, gc = 'nav-gps';
+    if (N.gpsErr === 'denied') { gps = 'الموقع مقفول. افتح الموقع (GPS) واسمح للتطبيق، وبعدين ارجع هنا'; gc += ' bad'; }
+    else if (N.gpsErr === 'none') { gps = 'الموبايل ده مش بيدعم تحديد الموقع'; gc += ' bad'; }
+    else if (!N.pos) { gps = 'بندوّر على إشارة الموقع…'; gc += ' mid'; }
+    else if (now - N.pos.ts > 20000) { gps = 'الموقع مااتحدّثش من ' + Math.round((now - N.pos.ts) / 1000) + ' ثانية'; gc += ' mid'; }
+    else {
+      var a = Math.round(N.pos.acc);
+      gps = (a <= 15 ? 'إشارة الموقع ممتازة' : a <= 40 ? 'إشارة الموقع كويسة' : a <= 100 ? 'إشارة الموقع متوسطة' : 'إشارة الموقع ضعيفة') + ' · ±' + a + ' م';
+      gc += a <= 40 ? ' go' : a <= 100 ? ' mid' : ' bad';
+    }
+    setTxt('nv-gps', gps); cls('nv-gps', gc);
+    var arrShow = N.arrivedTs && (N.done || now - N.arrivedTs < 4500);
+    cls('nv-arr', 'nav-arrive' + (arrShow ? ' on' : ''));
+
+    if (N.done) {
+      N.G = { kind: 'done', tg: tg, d: 0, rem: 0 };
+      card('done', 'arrive', null, N.back ? 'رجعت لأول نقطة بدأت منها' : 'وصلت لوجهتك', N.back ? 'لو لسه مش عارف مكانك، كلّم المسؤول أو ابعت طوارئ.' : (N.mode === 'route' ? 'لو خلّصت مشوارك، اقفل الملاحة وانهي الرحلة من الشاشة اللي ورا.' : ''), '');
+      setTxt('nv-dist', '0 م'); setTxt('nv-eta', ''); setHtml('nv-trend', ''); setHtml('nv-then', ''); setHtml('nv-chip', ''); setHtml('nv-far', '');
+      progress(0);
+      return;
+    }
+    if (!N.pos || !tg) {
+      N.G = null;
+      card('wait', null, 0, N.gpsErr === 'denied' ? 'محتاجين الموقع عشان نوصّلك' : 'استنى ثواني…', 'لو جوه مبنى أو تحت سقف، اطلع برّه عشان الإشارة تمسك.', '');
+      setTxt('nv-dist', '—'); setTxt('nv-eta', ''); setHtml('nv-trend', ''); setHtml('nv-then', ''); setHtml('nv-chip', ''); setHtml('nv-far', '');
+      return;
+    }
+
+    var hd = heading(), d = dist(N.pos, tg);
+    /* وصول وتخطي */
+    if (d <= arriveR()) { if (N.idx < N.targets.length - 1) advance('arrive'); else finish(); return update(); }
+    var lg0 = leg();
+    if (lg0 && lg0.road && lg0.onRoad && lg0.road.len - (lg0.sLast || 0) < 25 && dist(lg0.road.pts[lg0.road.pts.length - 1], tg) <= 150 && d <= 160) {
+      if (N.idx < N.targets.length - 1) advance('arrive'); else finish(); return update();
+    }
+    var nx = N.targets[N.idx + 1];
+    if (nx && !(lg0 && lg0.roads.length)) {
+      var si = segInfo(N.pos, tg, nx);
+      if (si.t > 0.2 && si.d < Math.max(120, (N.base.corridor || 150) * 1.2)) { advance('skip'); return update(); }
+    }
+
+    var g = guide(hd);
+    N.G = g;
+    N.totalMax = Math.max(N.totalMax || 0, g.rem);
+    progress(N.totalMax ? 1 - g.rem / N.totalMax : 0);
+
+    /* المسافة الكلية والوقت */
+    setTxt('nv-dist', fmtD(g.rem));
+    var v = N.speed >= 2 ? N.speed : 0, etaS = g.rem / Math.max(v, 6.9);
+    setTxt('nv-eta', (v ? fmtT(etaS) : '') + (v || g.rem < 60000 ? (v ? ' · ' : '') + 'توصل ' + (v ? '' : 'تقريبًا ') + clockOf(now + etaS * 1000) : ''));
+    N.hist.push({ ts: now, d: g.rem });
+    while (N.hist.length && now - N.hist[0].ts > 25000) N.hist.shift();
+    var trend = '', span = N.hist.length ? now - N.hist[0].ts : 0, gap = Math.max(12, N.pos.acc / 2);
+    if (span >= 8000) { var diff = N.hist[0].d - g.rem; trend = diff > gap ? 'closer' : diff < -gap ? 'farther' : ''; }
+    setHtml('nv-trend', trend === 'closer' ? '<span class="tr go">' + CHECK + 'بتقرب من الهدف</span>' : trend === 'farther' ? '<span class="tr bad">بتبعد عن الهدف</span>' : '');
+
+    var gm = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=';
+    if (g.kind === 'road' || g.kind === 'wrong') roadUi(g, hd, now, trend);
+    else if (g.kind === 'join') joinUi(g, hd, now);
+    else if (g.kind === 'far') {
+      var dst = g.road ? g.road.pts[0] : tg, dd = g.road ? dist(N.pos, dst) : d;
+      var rel0 = hd ? norm(bearing(N.pos, dst) - hd.h) : norm(bearing(N.pos, dst));
+      arrowTo(rel0, 'info');
+      card('info', null, dd, g.road ? 'اتبع خرائط جوجل لحد بداية الطريق' : 'المكان بعيد — اتبع خرائط جوجل', (g.road ? 'بداية الطريق المتسجّل ناحية ' : 'المكان ناحية ') + dirWord(bearing(N.pos, dst)) + '.', '');
+      setHtml('nv-far', '<b>' + (g.road ? 'خطوة 1 من 2: الطريق العمومي' : 'المكان بعيد عن هنا') + '</b><span>' + (g.road ? 'خرائط جوجل هتوصلك لحد بداية الطريق المتسجّل. أول ما تقرّب (أقل من 3 كم) هكمّل معاك أنا لحد المحطة.' : 'خرائط جوجل أحسن للطرق العمومية. لما تقرّب ارجع هنا.') + '</span><a class="nv-farb" target="_blank" rel="noopener" href="' + gm + dst.lat.toFixed(6) + ',' + dst.lng.toFixed(6) + '">' + ic('truck', 'sm') + 'افتح خرائط جوجل</a>');
+      setHtml('nv-then', ''); setHtml('nv-chip', g.road ? chip('road', 'المحطة ليها طريق متسجّل') : chip('direct', 'مافيش طريق متسجّل للمكان ده'));
+      var fk = g.road ? 'r' : 'd';
+      if (N.farSaidK !== fk) { N.farSaidK = fk; speak(g.road ? ['n_road_start', 'n_away', D(dd), 'n_far_gm'] : [ST(tg), 'n_away', D(dd), 'n_far_gm2'], 3); }
+    } else directUi(g, hd, now, trend, d, tg);
+    if (g.kind !== 'far') setHtml('nv-far', '');
+    if (N.pos.acc > 100) { if (!N.weakTs) N.weakTs = now; if (now - N.weakTs > 15000 && !N.weakSaid) { N.weakSaid = true; speak(['n_weak'], 2); } }
+    else N.weakTs = 0;
+  }
+  function chip(k, t) { return '<span class="nvc ' + k + '">' + (k === 'road' ? CHECK : '') + esc(t) + '</span>'; }
+  function progress(f) { var e = document.getElementById('nv-prog'); if (e) e.style.width = Math.round(Math.max(0, Math.min(1, f)) * 100) + '%'; }
+  /* كارت التوجيه فوق: رمز اللفة + المسافة لحد اللفة + الجملة + سطر العلامة */
+  function card(state, gl, dTo, text, sub, extra) {
+    cls('nv-man', 'nv-man ' + state + (gl ? ' gl' : ' ar'));
+    if (gl) setHtml('nv-gl', glyph(gl));
+    setTxt('nv-mdist', dTo == null ? '' : dTo === 0 && state === 'wait' ? '' : fmtD(dTo));
+    setTxt('nv-say', text);
+    cls('nv-say', 'nav-say ' + ({ go: 'go', soon: 'go', mid: 'mid', bad: 'bad', info: 'free', wait: '', done: 'go', free: 'free' }[state] || ''));
+    setHtml('nv-hint', sub ? esc(sub) + (extra || '') : (extra || ''));
+  }
+  function arrowTo(rel, c) {
+    N.rotA += norm(rel - N.rotA);
+    var arrow = document.getElementById('nv-arrow');
+    if (arrow) arrow.style.transform = 'rotate(' + N.rotA.toFixed(1) + 'deg)';
+    cls('nv-arrow', 'nav-arrow ' + c);
+  }
+
+  /* على الطريق المتسجّل */
+  function roadUi(g, hd, now, trend) {
+    var rd = g.road, m = g.man, tg = g.tg;
+    setHtml('nv-chip', rd.trail ? chip('road', 'راجع على نفس أثرك') : chip('road', 'على الطريق المتسجّل'));
+    if (N.off) { N.off = false; speak(['n_on_road'], 3); }
+    if (g.kind === 'wrong') {
+      card('bad', 'uturn', null, 'إنت ماشي عكس الطريق', 'لِف وارجع بالراحة، والطريق هيفضل قدامك على الشاشة.', '');
+      cls('nv-arrow', 'nav-arrow bad');
+      setHtml('nv-then', '');
+      if (now - N.wrongSaid > 12000) { N.wrongSaid = now; buzz([600]); speak(['n_wrong'], 4); }
+      return;
+    }
+    var far = m.type !== 'arrive' && g.manD > 900;
+    var st = g.manD <= 120 ? 'soon' : 'go';
+    if (far) card('go', 'straight', g.manD, 'كمّل على الطريق', 'بعدها: ' + manText(m, tg.name), '');
+    else card(st, m.type, g.manD, manText(m, tg.name), m.type === 'arrive' ? (rd.trail ? 'أول نقطة بدأت منها' : '') : manSub(m), '');
+    cls('nv-arrow', 'nav-arrow go');
+    setHtml('nv-then', g.then && !far ? '<span>وبعدها على طول</span><i>' + glyph(g.then.type) + '</i><b>' + esc(manText(g.then, tg.name)) + '</b>' : '');
+    /* الصوت: كل لفة ليها 3 تنبيهات بالكتير (بعيد، قريب، دلوقتي) */
+    var key = rd.id + ':' + m.n, said = N.said3[key] || (N.said3[key] = {}), v = N.speed || 0;
+    var line = (m.fork ? ['n_at_fork'] : []).concat(['m_' + (m.type === 'straight' ? 'straight' : m.type)]);
+    var lm = m.mark && m.type !== 'arrive' ? (m.fork ? (m.mark.t ? [{ t: m.mark.t, opt: true }] : []) : [m.mark.k === 'gate' || m.mark.k === 'sign' ? 'n_after' : 'n_at', MK(m.mark)]) : [];
+    if (N.lastManN !== m.n) {
+      if (N.lastManN >= 0 && g.manD > 600 && m.type !== 'arrive') speak(['n_ok_cont', D(g.manD)], 2);
+      N.lastManN = m.n;
+    }
+    if (m.type === 'arrive') {
+      if (g.manD <= 300 && g.manD > 120 && !said.a) { said.a = 1; speak(['n_left', D(g.manD), 'n_to', ST(tg)], 3); }
+      if (g.manD <= 120 && !said.b) { said.b = 1; speak(['n_near', ST(tg)], 3); }
+    } else {
+      if (!said.f && g.manD <= 450 && g.manD > 250 && v >= 7) { said.f = 1; speak(['n_after', D(g.manD)].concat(line, lm), 3); }
+      if (!said.n && g.manD <= 170 && g.manD > Math.max(45, v * 5)) { said.n = 1; speak(['n_after', D(g.manD)].concat(line, lm), 3); }
+      if (!said.x && g.manD <= Math.max(45, v * 5)) { said.x = 1; buzz([120]); speak(line.concat(['n_now'], lm), 4); }
+    }
+    /* علامات بنعدّي عليها */
+    rd.pass.forEach(function (mk, k) {
+      var dd = mk.s - g.s, kk = rd.id + ':p' + k;
+      if (dd > 40 && dd <= 160 && !N.said3[kk]) { N.said3[kk] = 1; speak(['n_pass', MK(mk)], 2); }
+    });
+    if (now - N.lastSaidTs > 90000 && g.manD > 300 && N.speed >= 2) speak(['n_ok', 'n_left', D(g.rem)], 1);
+  }
+  /* بعيد عن الطريق المتسجّل: يرجّعه لأقرب نقطة عليه */
+  function joinUi(g, hd, now) {
+    var lg = leg(), pr = g.pr, jp = g.joinPt, rel = hd ? norm(bearing(N.pos, jp) - hd.h) : null;
+    var side = rel == null ? 'ناحية ' + dirWord(bearing(N.pos, jp)) : Math.abs(rel) <= 30 ? 'قدامك' : Math.abs(rel) >= 140 ? 'وراك' : rel > 0 ? 'على يمينك' : 'على شمالك';
+    var sideK = rel == null ? 'dir' + (Math.round(((bearing(N.pos, jp) % 360) + 360) % 360 / 45) % 8) : Math.abs(rel) <= 30 ? 'sd_front' : Math.abs(rel) >= 140 ? 'sd_back' : rel > 0 ? 'sd_right' : 'sd_left';
+    var start = pr.s < 40 && !lg.everOn;
+    arrowTo(rel == null ? bearing(N.pos, jp) : rel, 'mid');
+    card('mid', null, pr.d, lg.everOn ? 'ارجع للطريق' : (start ? 'اوصل لبداية الطريق' : 'اوصل للطريق المتسجّل'), 'الطريق ' + side + (rel == null ? '. امشي كام متر عشان السهم يعرف اتجاهك.' : ''), '');
+    setHtml('nv-then', ''); setHtml('nv-chip', chip('join', lg.everOn ? 'طلعت برّه الطريق' : 'الطريق المتسجّل قريب منك'));
+    if (lg.everOn && !N.off) { N.off = true; N.offTs = now; buzz([300, 150, 300]); speak(['n_off_road', 'n_road', sideK, D(pr.d), 'n_go_back'], 4); lg.joinSaid = now; }
+    else if (!lg.everOn && !lg.joinSaid) { lg.joinSaid = now; speak([start ? 'n_road_start' : 'n_road_rec', sideK, 'n_away', D(pr.d), 'n_join_tail'], 3); }
+    else if (now - lg.joinSaid > 30000) { lg.joinSaid = now; speak(['n_road', sideK, D(pr.d)], 2); }
+  }
+  /* مافيش طريق متسجّل: سهم على خط مستقيم */
+  function directUi(g, hd, now, trend, d, tg) {
+    var br = bearing(N.pos, tg), rel = hd ? norm(br - hd.h) : norm(br), turn = hd ? turnOf(rel) : '';
+    arrowTo(hd ? rel : br, turn ? TURN[turn].c : 'free');
+    var hint = '';
+    if (!hd) hint = 'امشي بالعربية كام متر عشان السهم يعرف اتجاهك. دلوقتي السهم بيشاور على الهدف بالنسبة للشمال (ش).';
+    else if (hd.src === 'compass') hint = 'الاتجاه من البوصلة. جوه العربية بيبقى أدق وانت ماشي.';
+    else if (g.after) hint = 'خلص الطريق المتسجّل. المحطة قدامك على ' + fmtD(d) + '.';
+    else hint = 'خط مستقيم للمكان. امشي على الطرق الممهدة ناحية السهم.';
+    card(turn ? TURN[turn].c : 'free', null, d, turn ? TURN[turn].t : 'الهدف ناحية ' + dirWord(br), hint, !hd && compassNeedsAsk() && !N.compSeen ? ' <button class="nav-wb" data-act="nav_compass">شغّل البوصلة</button>' : '');
+    setHtml('nv-then', '');
+    setHtml('nv-chip', g.after ? chip('road', 'بعد الطريق المتسجّل') : chip('direct', 'مافيش طريق متسجّل — خط مستقيم'));
+    /* خارج الخط (للخطوط من غير طريق متسجّل) */
+    var off = false;
+    if (N.mode === 'route' && !N.back && N.prevPt && N.base.corridor) {
+      var sg = segInfo(N.pos, N.prevPt, tg);
+      off = sg.d > Math.max(N.base.corridor, Math.min(1500, 0.15 * sg.len)) + Math.min(N.pos.acc, 100);
+    }
+    if (off && !N.off) { N.off = true; N.offTs = now; buzz([300, 150, 300]); speak(['n_off_line'], 4); }
+    else if (!off && N.off && now - N.offTs > 10000) { N.off = false; speak(['n_on_line'], 2); }
+    if (turn) {
+      if (turn !== N.turn) { N.turn = turn; N.turnTs = now; }
+      var gapT = turn === 'back' ? 4000 : 7000;
+      if (now - N.turnTs >= 2500 && N.turnSaid !== turn && now - N.turnSaidTs >= gapT && d > arriveR() * 1.5) {
+        N.turnSaid = turn; N.turnSaidTs = now;
+        if (turn === 'back') buzz([600]);
+        speak([{ straight: 'm_straight', slight_r: 't_slight_r', slight_l: 't_slight_l', right: 'm_turn_r', left: 'm_turn_l', back: 't_back' }[turn]], turn === 'back' ? 4 : 2);
+      }
+    }
+    [5000, 3000, 2000, 1000, 500, 200, 100].forEach(function (m) {
+      if (N.lastD != null && N.lastD > m && d <= m && !N.ms[m]) { N.ms[m] = 1; speak(['n_left', D(m), 'n_to', ST(tg)], 3); }
+    });
+    if (!N.introDone && N.lastD == null) { N.introDone = true; speak([ST(tg), 'n_away', D(d)].concat(hd ? [] : ['dir' + (Math.round(((br % 360) + 360) % 360 / 45) % 8)]), 3); }
+    N.lastD = d;
+    if (trend === 'closer' && turn === 'straight' && now - N.lastSaidTs > 75000) speak(['n_correct', 'n_left', D(d)], 1);
+    if (trend === 'farther') { if (!N.farTs) N.farTs = now; if (now - N.farTs > 20000 && now - N.farSaid > 60000) { N.farSaid = now; speak(['n_farther', ST(tg), 'n_look_arrow'], 3); } }
+    else N.farTs = 0;
+  }
+
+  /* ============ الرسم: منظر قيادة ثلاثي الأبعاد + خريطة كاملة ============ */
+  var THEMES = {
+    night: { sky0: '#01040A', sky1: '#0C2038', gnd0: '#0B1A2D', gnd1: '#03070D', grid: 'rgba(95,160,235,.17)', road: '#1F6FFF', roadPast: 'rgba(130,150,180,.32)', edge: 'rgba(255,255,255,.92)', chev: 'rgba(255,255,255,.9)', glow: 'rgba(40,130,255,.9)', direct: '#FFB020', trail: '#46C2FF', car: '#FFFFFF', carEdge: '#1F6FFF', pin: '#2FD27A', pinRing: 'rgba(47,210,122,.55)', label: 'rgba(8,16,28,.94)', labelTxt: '#F5F8FB', labelSub: '#9FB0C4', man: '#0B7A4B', mark: '#F2A900', other: 'rgba(170,190,220,.55)', horizon: 'rgba(80,150,255,.45)', stars: 1, map: '#07101B' },
+    day: { sky0: '#8DBDEB', sky1: '#E4EEF7', gnd0: '#EADBB9', gnd1: '#D5BC8B', grid: 'rgba(120,88,40,.17)', road: '#175CD3', roadPast: 'rgba(80,80,80,.25)', edge: 'rgba(255,255,255,.96)', chev: 'rgba(255,255,255,.96)', glow: 'rgba(0,0,0,0)', direct: '#C46F00', trail: '#0A74C8', car: '#FFFFFF', carEdge: '#175CD3', pin: '#0B8A42', pinRing: 'rgba(11,138,66,.45)', label: 'rgba(255,255,255,.96)', labelTxt: '#0A0D11', labelSub: '#56606C', man: '#0B7A4B', mark: '#B86E00', other: 'rgba(60,70,90,.5)', horizon: 'rgba(255,255,255,.7)', stars: 0, map: '#EFE6D2' }
+  };
+  var FONT = 'Cairo, "Segoe UI", Tahoma, Arial, sans-serif', P2D = {};
+  function themeCols() { if (N) N.col = THEMES[N.night ? 'night' : 'day']; }
+  function path2d(d) { if (!W.Path2D) return null; return P2D[d] || (P2D[d] = new W.Path2D(d)); }
+
+  function loop() {
+    if (!N || N.raf) return;
+    var step = function (t) {
+      if (!N) return;
+      N.raf = 0;
+      if (document.hidden || !document.getElementById('nav')) return;
+      if (t - N.lastFrame >= 33) { var dt = N.lastFrame ? Math.min(0.2, (t - N.lastFrame) / 1000) : 0.033; N.lastFrame = t; try { frame(dt); } catch (e) { if (!N.drawErr) { N.drawErr = 1; if (W.console) W.console.warn(e); } } }
+      N.raf = W.requestAnimationFrame(step);
+    };
+    N.raf = W.requestAnimationFrame(step);
+  }
+  function frame(dt) {
+    var cv = document.getElementById('nv-cv'); if (!cv) return;
+    var box = cv.parentNode, w = box.clientWidth, h = box.clientHeight;
+    if (w < 40 || h < 40) return;
+    var dpr = Math.min(2, W.devicePixelRatio || 1);
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; }
+    var g = cv.getContext('2d'); if (!g) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    themeCols();
+    /* المكان المعروض بيتحرك بنعومة بين قراءتين GPS */
+    if (N.anim) {
+      var k = Math.min(1, (Date.now() - N.anim.t0) / 900), a = N.anim.from, b = N.anim.to;
+      N.dpos = { lat: a.lat + (b.lat - a.lat) * k, lng: a.lng + (b.lng - a.lng) * k, acc: b.acc };
+    }
+    var hd = N.pos ? heading() : null, G = N.G;
+    var want = hd ? hd.h : (G && G.road && (G.kind === 'road' || G.kind === 'wrong') ? bearingAt(G.road, G.s) : (N.dpos && G && G.tg ? bearing(N.dpos, G.joinPt || G.tg) : 0));
+    N.camH = N.camH == null ? want : (N.camH + norm(want - N.camH) * Math.min(1, dt * 4) + 360) % 360;
+    N.chev = (N.chev + dt * Math.max(5, (N.speed || 0) * 1.1)) % 16;
+    var north = document.getElementById('nv-north');
+    if (north) north.style.transform = 'rotate(' + (N.view === 'map' ? 0 : -N.camH).toFixed(1) + 'deg)';
+    var auto = '';
+    if (N.view !== 'map' && G && N.dpos) {
+      var gp = G.kind === 'join' ? G.joinPt : (G.kind === 'direct' || G.kind === 'far') ? (G.kind === 'far' && G.road ? G.road.pts[0] : G.tg) : null;
+      if (G.kind === 'join') auto = 'radar';
+      else if (gp && Math.abs(norm(bearing(N.dpos, gp) - N.camH)) > 100 && dist(N.dpos, gp) > 40) auto = 'radar';
+    }
+    N.auto = auto;
+    if (N.view === 'map') draw2D(g, w, h, hd, 'north'); else if (auto) draw2D(g, w, h, hd, 'radar'); else draw3D(g, w, h, hd);
+  }
+
+  function draw3D(g, w, h, hd) {
+    var C = N.col, P0 = N.dpos, G = N.G;
+    var spd = Math.max(0, Math.min(25, N.speed || 0));
+    var wantB = 34 + spd * 1.4;
+    if (G && G.kind === 'road' && G.man && G.man.type !== 'arrive' && G.manD < 600) wantB = Math.max(wantB, Math.min(170, G.manD * 0.75));
+    N.camB = N.camB ? N.camB + (wantB - N.camB) * 0.06 : wantB;
+    var back = N.camB, camH = 17 + spd * 0.9, near = 2.5;
+    var hy = Math.round(h * 0.19), yCar = h * 0.8, F = (yCar - hy) * back / camH, cx = w / 2;
+    /* السما والأرض */
+    var sky = g.createLinearGradient(0, 0, 0, hy); sky.addColorStop(0, C.sky0); sky.addColorStop(1, C.sky1);
+    g.fillStyle = sky; g.fillRect(0, 0, w, hy + 1);
+    if (C.stars) { g.fillStyle = 'rgba(255,255,255,.55)'; for (var si = 0; si < 26; si++) { var sx = ((si * 97.3 + (N.camH || 0) * 3) % (w + 20)) - 10, sy = (si * 37.7) % (hy - 6) + 3; g.fillRect(sx, sy, si % 3 ? 1 : 1.6, si % 3 ? 1 : 1.6); } }
+    var gr = g.createLinearGradient(0, hy, 0, h); gr.addColorStop(0, C.gnd0); gr.addColorStop(1, C.gnd1);
+    g.fillStyle = gr; g.fillRect(0, hy, w, h - hy);
+    if (!P0) { g.fillStyle = C.labelSub; g.font = '800 15px ' + FONT; g.textAlign = 'center'; g.direction = 'rtl'; g.fillText('بندوّر على إشارة الموقع…', cx, h * 0.55); return; }
+    var th = N.camH * D2R, sn = Math.sin(th), cs = Math.cos(th);
+    function car(p) { var l = local(P0, p); return { r: l.x * cs - l.y * sn, f: l.x * sn + l.y * cs }; }
+    function scr(r, f) { var z = f + back; if (z < near) return null; return { x: cx + r * F / z, y: hy + camH * F / z, k: F / z }; }
+    function clipSeg(a, b) {
+      var m = near + 0.3, za = a.f + back, zb = b.f + back;
+      if (za < m && zb < m) return null;
+      if (za < m) { var t = (m - za) / (zb - za); a = { r: a.r + (b.r - a.r) * t, f: a.f + (b.f - a.f) * t }; }
+      else if (zb < m) { var t2 = (m - zb) / (za - zb); b = { r: b.r + (a.r - b.r) * t2, f: b.f + (a.f - b.f) * t2 }; }
+      return [scr(a.r, a.f), scr(b.r, b.f)];
+    }
+    function clipPoly(poly) {
+      var out = [], m = near + 0.3;
+      for (var i = 0; i < poly.length; i++) {
+        var a = poly[i], b = poly[(i + 1) % poly.length], ia = a.f + back >= m, ib = b.f + back >= m;
+        if (ia) out.push(a);
+        if (ia !== ib) { var t = (m - (a.f + back)) / ((b.f + back) - (a.f + back)); out.push({ r: a.r + (b.r - a.r) * t, f: a.f + (b.f - a.f) * t }); }
+      }
+      return out;
+    }
+    function line(pts, close) { var started = false; g.beginPath(); for (var i = 0; i + 1 < pts.length; i++) { var s = clipSeg(pts[i], pts[i + 1]); if (!s) { started = false; continue; } if (!started) { g.moveTo(s[0].x, s[0].y); started = true; } g.lineTo(s[1].x, s[1].y); if (pts[i + 1].f + back < near + 0.3) started = false; } if (close) g.closePath(); }
+    /* شبكة الأرض ثابتة في المكان، فبتتحرك تحت العربية وتدي إحساس بالسرعة والعمق */
+    var org = N.org || (N.org = { lat: P0.lat, lng: P0.lng }), o = local(org, P0), GS = 40, RG = 520;
+    g.strokeStyle = C.grid; g.lineWidth = 1;
+    g.beginPath();
+    for (var gx = Math.floor((o.x - RG) / GS) * GS; gx <= o.x + RG; gx += GS) {
+      var a1 = rot(gx - o.x, -RG), b1 = rot(gx - o.x, RG), s1 = clipSeg(a1, b1); if (s1) { g.moveTo(s1[0].x, s1[0].y); g.lineTo(s1[1].x, s1[1].y); }
+    }
+    for (var gy = Math.floor((o.y - RG) / GS) * GS; gy <= o.y + RG; gy += GS) {
+      var a2 = rot(-RG, gy - o.y), b2 = rot(RG, gy - o.y), s2 = clipSeg(a2, b2); if (s2) { g.moveTo(s2[0].x, s2[0].y); g.lineTo(s2[1].x, s2[1].y); }
+    }
+    g.stroke();
+    var fog = g.createLinearGradient(0, hy, 0, hy + (yCar - hy) * 0.3); fog.addColorStop(0, C.gnd0); fog.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = fog; g.fillRect(0, hy, w, (yCar - hy) * 0.3);
+    function rot(x, y) { return { r: x * cs - y * sn, f: x * sn + y * cs }; }
+    /* شريط الطريق */
+    function ribbon(rd, s0, s1, width, fill, edge, glowOn, dashed) {
+      s0 = Math.max(0, s0); s1 = Math.min(rd.len, s1);
+      if (s1 - s0 < 1) return;
+      var c = [], step = Math.max(4, Math.min(12, (s1 - s0) / 120));
+      for (var s = s0; s < s1; s += step) c.push(car(pointAt(rd, s)));
+      c.push(car(pointAt(rd, s1)));
+      var Lp = [], Rp = [];
+      for (var i = 0; i < c.length; i++) {
+        var a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)], dr = b.r - a.r, df = b.f - a.f, n = Math.sqrt(dr * dr + df * df) || 1, nr = df / n, nf = -dr / n;
+        Lp.push({ r: c[i].r - nr * width / 2, f: c[i].f - nf * width / 2 }); Rp.push({ r: c[i].r + nr * width / 2, f: c[i].f + nf * width / 2 });
+      }
+      g.beginPath();
+      for (var q = 0; q + 1 < c.length; q++) {
+        var poly = clipPoly([Lp[q], Lp[q + 1], Rp[q + 1], Rp[q]]);
+        if (poly.length < 3) continue;
+        for (var j = 0; j < poly.length; j++) { var p = scr(poly[j].r, poly[j].f); if (j) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }
+        g.closePath();
+      }
+      if (glowOn && C.glow !== 'rgba(0,0,0,0)') { g.shadowColor = C.glow; g.shadowBlur = 18; }
+      g.fillStyle = fill; g.fill('nonzero');
+      g.shadowBlur = 0; g.shadowColor = 'transparent';
+      if (edge) {
+        g.strokeStyle = edge; g.lineWidth = 2; if (dashed) g.setLineDash([10, 8]);
+        line(Lp); g.stroke(); line(Rp); g.stroke();
+        g.setLineDash([]);
+      }
+    }
+    function chevrons(rd, s0, s1, width, col) {
+      var start = Math.ceil((s0 - N.chev) / 16) * 16 + N.chev, n = 0;
+      g.strokeStyle = col; g.lineCap = 'round'; g.lineJoin = 'round';
+      for (var s = start; s < Math.min(s1, rd.len - 4) && n < 40; s += 16, n++) {
+        var tip = car(pointAt(rd, s + 2.4)), bc = car(pointAt(rd, s - 1.4)), dr = tip.r - bc.r, df = tip.f - bc.f, L = Math.sqrt(dr * dr + df * df) || 1, nr = df / L, nf = -dr / L, ww = width * 0.28;
+        var p1 = scr(bc.r - nr * ww, bc.f - nf * ww), p2 = scr(tip.r, tip.f), p3 = scr(bc.r + nr * ww, bc.f + nf * ww);
+        if (!p1 || !p2 || !p3) continue;
+        g.globalAlpha = Math.max(0.15, Math.min(1, p2.k / 4));
+        g.lineWidth = Math.max(1.4, p2.k * 0.7);
+        g.beginPath(); g.moveTo(p1.x, p1.y); g.lineTo(p2.x, p2.y); g.lineTo(p3.x, p3.y); g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    var RW = 9, ahead = Math.max(450, Math.min(1500, spd * 70));
+    /* طرق تانية متسجّلة لنفس المحطة: خفيفة */
+    var lg = leg();
+    if (lg && G) lg.roads.forEach(function (rd) { if (rd !== G.road || G.kind === 'far') ribbon(rd, 0, rd.len, 4, C.other, null, false); });
+    var drawnRoad = null;
+    if (G && G.road && G.kind !== 'far') {
+      var rd = G.road, sc = G.kind === 'join' ? G.pr.s : G.s;
+      if (G.kind === 'join') { ribbon(rd, sc - 400, sc + ahead, RW, C.road, C.edge, true); chevrons(rd, sc - 400, sc + ahead, RW, C.chev); }
+      else { ribbon(rd, sc - 120, sc + 1, RW, C.roadPast, null, false); ribbon(rd, sc, sc + ahead, RW, C.road, C.edge, true); chevrons(rd, sc + 3, sc + ahead, RW, C.chev); }
+      drawnRoad = rd;
+    }
+    /* خط مستقيم للهدف (مافيش طريق، أو بعد آخر الطريق) */
+    if (G && G.tg && (!drawnRoad || G.kind === 'direct')) {
+      var sr = mkLine(P0, G.kind === 'far' && G.road ? G.road.pts[0] : G.tg);
+      if (sr) { ribbon(sr, 0, Math.min(sr.len, 3000), 6, 'rgba(255,176,32,.20)', C.direct, false, true); chevrons(sr, 6, Math.min(sr.len, 600), 6, C.direct); }
+    }
+    /* باقي النقط: خطوط رفيعة */
+    if (N.targets.length > N.idx + 1) {
+      g.strokeStyle = C.other; g.lineWidth = 2; g.setLineDash([6, 8]);
+      line(N.targets.slice(N.idx).map(car)); g.stroke(); g.setLineDash([]);
+    }
+    /* خط الرجوع للطريق */
+    if (G && G.kind === 'join' && G.joinPt) {
+      var jp = car(G.joinPt);
+      g.strokeStyle = C.direct; g.lineWidth = 4; g.setLineDash([12, 9]); g.lineDashOffset = -N.chev * 1.5;
+      line([{ r: 0, f: 0 }, jp]); g.stroke(); g.setLineDash([]); g.lineDashOffset = 0;
+      ring(jp, 7 + 2 * Math.sin(Date.now() / 220), C.direct, 3);
+    }
+    /* الأثر */
+    g.fillStyle = C.trail;
+    var tp = TR.pts, t0 = Math.max(0, tp.length - 260);
+    for (var ti = t0; ti < tp.length; ti++) { var cp = car(tp[ti]); if (cp.f < -back + near + 1 || Math.abs(cp.r) > 600 || cp.f > 600) continue; var q2 = scr(cp.r, cp.f); if (!q2) continue; g.globalAlpha = 0.25 + 0.5 * (ti - t0) / (tp.length - t0 + 1); g.beginPath(); g.arc(q2.x, q2.y, Math.max(1.2, q2.k * 0.9), 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
+    /* ضباب الأفق */
+    g.strokeStyle = C.horizon; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, hy + 0.5); g.lineTo(w, hy + 0.5); g.stroke();
+    /* اللفة الجاية: سهم مرسوم على الطريق + لافتة جنبه */
+    if (G && G.road && G.kind === 'road' && G.man && G.man.type !== 'arrive' && G.manD < 700) {
+      var M = G.man, rd2 = G.road;
+      var shaft = [car(pointAt(rd2, M.s - 16)), car(pointAt(rd2, M.s)), car(pointAt(rd2, Math.min(rd2.len, M.s + 11)))];
+      var pm = scr(shaft[1].r, shaft[1].f);
+      if (pm) {
+        g.strokeStyle = '#FFFFFF'; g.lineWidth = Math.max(3, pm.k * 1.7); g.lineCap = 'round'; g.lineJoin = 'round';
+        line(shaft); g.stroke();
+        var e1 = shaft[1], e2 = shaft[2], dr = e2.r - e1.r, df = e2.f - e1.f, L = Math.sqrt(dr * dr + df * df) || 1, ur = dr / L, uf = df / L;
+        var hA = scr(e2.r - ur * 4 + uf * 3, e2.f - uf * 4 - ur * 3), hB = scr(e2.r + ur * 1.5, e2.f + uf * 1.5), hC = scr(e2.r - ur * 4 - uf * 3, e2.f - uf * 4 + ur * 3);
+        if (hA && hB && hC) { g.fillStyle = '#FFFFFF'; g.beginPath(); g.moveTo(hA.x, hA.y); g.lineTo(hB.x, hB.y); g.lineTo(hC.x, hC.y); g.closePath(); g.fill(); }
+        var side = M.a > 0 ? 1 : -1, bb = car(pointAt(rd2, M.s));
+        var dd0 = car(pointAt(rd2, Math.max(0, M.s - 5))), d1 = car(pointAt(rd2, Math.min(rd2.len, M.s + 5))), ndr = d1.r - dd0.r, ndf = d1.f - dd0.f, nl = Math.sqrt(ndr * ndr + ndf * ndf) || 1;
+        billboard({ r: bb.r + (ndf / nl) * (RW * 0.9) * side, f: bb.f - (ndr / nl) * (RW * 0.9) * side }, GLY[M.type], 48, C.man, 48, 22, fmtD(G.manD));
+      }
+    }
+    /* العلامات على الطريق */
+    if (drawnRoad && G.kind !== 'far') {
+      var sNow = G.kind === 'join' ? G.pr.s : G.s;
+      drawnRoad.marks.forEach(function (mk) {
+        if (mk.s < sNow - 30 || mk.s > sNow + 450) return;
+        var c0 = car(pointAt(drawnRoad, mk.s)), c1 = car(pointAt(drawnRoad, Math.min(drawnRoad.len, mk.s + 4))), mr = c1.r - c0.r, mf = c1.f - c0.f, ml = Math.sqrt(mr * mr + mf * mf) || 1;
+        billboard({ r: c0.r - (mf / ml) * (RW * 0.95), f: c0.f + (mr / ml) * (RW * 0.95) }, LGLY[mk.k] || LGLY.note, 24, C.mark, 24, 14, mk.t || MARKS[mk.k]);
+      });
+    }
+    /* النقط اللي بعد كده (رقم صغير) والهدف الحالي (عمود ولافتة) */
+    N.targets.forEach(function (p, j) { if (j > N.idx) pin(car(p), String(j + 1), '', false); });
+    var tgt = G && G.tg ? G.tg : cur();
+    if (tgt) {
+      var ct = car(tgt);
+      if (!pin(ct, tgt.name, G ? fmtD(dist(P0, tgt)) : '', true)) edgeArrow(ct);
+    }
+    /* العربية */
+    var acc = P0.acc || 0;
+    if (acc > 12) { g.fillStyle = 'rgba(80,160,255,.13)'; poly(circ(0, 0, Math.min(acc, 150), 28)); g.fill(); }
+    g.fillStyle = 'rgba(0,0,0,.35)'; poly(circ(0, -0.6, 3.3, 18)); g.fill();
+    if (hd) {
+      var S = 1.05, chv = [{ r: 0, f: 5.2 * S }, { r: 3.1 * S, f: -3.4 * S }, { r: 0, f: -1.5 * S }, { r: -3.1 * S, f: -3.4 * S }];
+      if (C.glow !== 'rgba(0,0,0,0)') { g.shadowColor = C.glow; g.shadowBlur = 16; }
+      g.fillStyle = C.car; poly(chv); g.fill(); g.shadowBlur = 0; g.shadowColor = 'transparent';
+      g.strokeStyle = C.carEdge; g.lineWidth = 3; poly(chv); g.stroke();
+    } else {
+      var pc = scr(0, 0); g.fillStyle = C.carEdge; g.strokeStyle = '#fff'; g.lineWidth = 3;
+      g.beginPath(); g.arc(pc.x, pc.y, 11, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+
+    function circ(r0, f0, rad, n) { var out = []; for (var i = 0; i < n; i++) { var an = i / n * Math.PI * 2; out.push({ r: r0 + Math.cos(an) * rad, f: f0 + Math.sin(an) * rad }); } return out; }
+    function poly(pts) { var pp = clipPoly(pts); g.beginPath(); for (var i = 0; i < pp.length; i++) { var p = scr(pp[i].r, pp[i].f); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); } g.closePath(); }
+    function ring(c, rad, col, lw) { g.strokeStyle = col; g.lineWidth = lw; poly(circ(c.r, c.f, rad, 24)); g.stroke(); }
+    function billboard(c, d, vb, bg, maxR, poleM, text) {
+      var b = scr(c.r, c.f); if (!b || b.x < -40 || b.x > w + 40 || b.y > h + 20) return;
+      var rad = Math.max(10, Math.min(maxR / 2, b.k * 3.2)), pole = Math.max(12, Math.min(90, b.k * poleM)), top = b.y - pole;
+      g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = Math.max(1.5, b.k * 0.25);
+      g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x, top + rad); g.stroke();
+      g.fillStyle = bg; g.strokeStyle = '#FFFFFF'; g.lineWidth = 2.5;
+      g.beginPath(); g.arc(b.x, top, rad, 0, Math.PI * 2); g.fill(); g.stroke();
+      var p = path2d(d);
+      if (p) { var sc = rad * 1.25 / vb; g.save(); g.translate(b.x - vb * sc / 2, top - vb * sc / 2); g.scale(sc, sc); g.strokeStyle = '#FFFFFF'; g.lineWidth = vb === 48 ? 5 : 2.4; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(p); g.restore(); }
+      if (text && rad >= 12) { var fz = Math.round(Math.max(11, Math.min(15, rad * 0.62))); g.font = '800 ' + fz + 'px ' + FONT; g.textAlign = 'center'; g.direction = 'rtl'; g.textBaseline = 'top'; tag(text, b.x, top + rad + 4, C.label, C.labelTxt, fz); }
+    }
+    function tag(t, x, y, bg, fg, fz) {
+      var tw = g.measureText(t).width + 14, th2 = (fz || 12) + 9;
+      x = Math.max(tw / 2 + 4, Math.min(w - tw / 2 - 4, x));
+      g.fillStyle = bg; rr(x - tw / 2, y, tw, th2, 7); g.fill();
+      g.fillStyle = fg; g.fillText(t, x, y + 4);
+    }
+    function rr(x, y, ww, hh, r) { g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + ww - r, y); g.quadraticCurveTo(x + ww, y, x + ww, y + r); g.lineTo(x + ww, y + hh - r); g.quadraticCurveTo(x + ww, y + hh, x + ww - r, y + hh); g.lineTo(x + r, y + hh); g.quadraticCurveTo(x, y + hh, x, y + hh - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath(); }
+    function pin(c, label, sub, big) {
+      var b = scr(c.r, c.f); if (!b || b.x < -50 || b.x > w + 50 || b.y > h + 30 || c.f > 9000) return false;
+      if (big) ring(c, 10 + 3 * Math.sin(Date.now() / 260), C.pinRing, 4);
+      var pole = big ? Math.max(48, Math.min(150, b.k * 28)) : Math.max(18, Math.min(60, b.k * 12)), rad = big ? Math.max(11, Math.min(22, b.k * 4)) : 9, top = b.y - pole;
+      var lgr = g.createLinearGradient(0, b.y, 0, top); lgr.addColorStop(0, 'rgba(255,255,255,.1)'); lgr.addColorStop(1, C.pin);
+      g.strokeStyle = lgr; g.lineWidth = big ? 4 : 2; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x, top); g.stroke();
+      g.fillStyle = C.pin; g.strokeStyle = '#FFFFFF'; g.lineWidth = 3; g.beginPath(); g.arc(b.x, top, rad, 0, Math.PI * 2); g.fill(); g.stroke();
+      if (!big) { g.fillStyle = '#FFFFFF'; g.font = '900 11px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, b.x, top + 0.5); g.textBaseline = 'alphabetic'; return true; }
+      g.save(); g.translate(b.x, top); g.fillStyle = '#FFFFFF'; g.beginPath(); g.moveTo(-rad * 0.35, rad * 0.45); g.lineTo(-rad * 0.35, -rad * 0.55); g.lineTo(rad * 0.5, -rad * 0.3); g.lineTo(-rad * 0.35, -rad * 0.05); g.closePath(); g.fill(); g.restore();
+      g.font = '900 15px ' + FONT; g.textAlign = 'center'; g.direction = 'rtl'; g.textBaseline = 'top';
+      var t1 = label.length > 26 ? label.slice(0, 25) + '…' : label, tw = Math.max(g.measureText(t1).width, sub ? 60 : 0) + 20, y0 = Math.max(76, top - rad - (sub ? 50 : 32)), lx = Math.max(tw / 2 + 4, Math.min(w - tw / 2 - 4, b.x));
+      g.fillStyle = C.label; rr(lx - tw / 2, y0, tw, sub ? 44 : 28, 10); g.fill();
+      g.fillStyle = C.labelTxt; g.fillText(t1, lx, y0 + 4);
+      if (sub) { g.font = '800 12.5px ' + FONT; g.fillStyle = C.labelSub; g.fillText(sub, lx, y0 + 24); }
+      g.textBaseline = 'alphabetic';
+      return true;
+    }
+    function edgeArrow(c) {
+      var an = Math.atan2(c.r, c.f), behind = Math.abs(an) > Math.PI * 0.6;
+      if (G && G.kind === 'road') g.globalAlpha = 0.7;
+      var x = cx + Math.sin(an) * (w / 2 - 34), y = behind ? h - 34 : Math.max(hy + 30, yCar - Math.cos(an) * (yCar - hy - 30));
+      if (behind) x = cx + (an > 0 ? 1 : -1) * (w / 2 - 44);
+      g.save(); g.translate(x, y); g.rotate(an);
+      g.fillStyle = C.pin; g.strokeStyle = '#FFFFFF'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(0, -20); g.lineTo(14, 12); g.lineTo(0, 5); g.lineTo(-14, 12); g.closePath(); g.fill(); g.stroke();
+      g.restore();
+      g.font = '800 12.5px ' + FONT; g.textAlign = 'center'; g.direction = 'rtl'; g.textBaseline = 'top';
+      tag(behind ? 'المحطة وراك' : 'المحطة', x, y + 18, C.label, C.labelTxt, 12.5); g.textBaseline = 'alphabetic'; g.globalAlpha = 1;
+    }
+  }
+  function mkLine(a, b) {
+    var L = dist(a, b); if (L < 1) return null;
+    return { pts: [a, b], cum: [0, L], len: L, marks: [], pass: [], man: [] };
+  }
+
+  /* منظر من فوق. north: الخريطة كلها والشمال لفوق. radar: اتجاهك لفوق ومكانك في النص — بيظهر لوحده لما تطلع برّه الطريق
+     أو الهدف يبقى وراك، عشان تشوف الطريق فين منك بالظبط */
+  var NICE = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000];
+  function draw2D(g, w, h, hd, mode) {
+    var C = N.col, P0 = N.dpos, G = N.G, radar = mode === 'radar';
+    var bgr = g.createRadialGradient(w / 2, h * 0.6, 10, w / 2, h * 0.6, Math.max(w, h)); bgr.addColorStop(0, C.gnd0); bgr.addColorStop(1, C.map);
+    g.fillStyle = bgr; g.fillRect(0, 0, w, h);
+    if (!P0) return;
+    var th = (radar ? N.camH : 0) * D2R, cs = Math.cos(th), sn = Math.sin(th);
+    function rf(p) { var l = local(P0, p); return { r: l.x * cs - l.y * sn, f: l.x * sn + l.y * cs }; }
+    var lg = leg(), inc = [], gp = null;
+    if (G) gp = G.kind === 'join' ? G.joinPt : G.kind === 'far' && G.road ? G.road.pts[0] : G.tg;
+    if (radar) {
+      if (gp) inc.push(gp);
+      if (G && G.road) { var s0 = G.pr ? G.pr.s : G.s; for (var s = Math.max(0, s0 - 250); s <= Math.min(G.road.len, s0 + 400); s += 25) inc.push(pointAt(G.road, s)); }
+      if (G && G.tg && dist(P0, G.tg) < 2500) inc.push(G.tg);
+    } else {
+      N.targets.slice(N.idx).forEach(function (p) { inc.push(p); });
+      if (lg) lg.roads.forEach(function (rd) { for (var i = 0; i < rd.pts.length; i += Math.max(1, Math.floor(rd.pts.length / 60))) inc.push(rd.pts[i]); inc.push(rd.pts[rd.pts.length - 1]); });
+    }
+    var cx, cy, k, xs = inc.map(rf);
+    if (radar) {
+      cx = w / 2; cy = h * 0.6;
+      var need = 60;
+      xs.forEach(function (q) { need = Math.max(need, Math.abs(q.r) * 1.0, q.f > 0 ? q.f * (w / 2) / (cy - 36) : -q.f * (w / 2) / (h - cy - 36)); });
+      k = (w / 2 - 34) / need;
+    } else {
+      var minX = 0, maxX = 0, minY = 0, maxY = 0;
+      xs.forEach(function (q) { minX = Math.min(minX, q.r); maxX = Math.max(maxX, q.r); minY = Math.min(minY, q.f); maxY = Math.max(maxY, q.f); });
+      k = Math.min((w - 76) / Math.max(60, maxX - minX), (h - 110) / Math.max(60, maxY - minY));
+      cx = w / 2 - (minX + maxX) / 2 * k; cy = h / 2 + 8 + (minY + maxY) / 2 * k;
+    }
+    function P(p) { var q = rf(p); return [cx + q.r * k, cy - q.f * k]; }
+    /* دواير المسافة حوالين مكانك */
+    var sm = NICE[0]; for (var i = 0; i < NICE.length; i++) if (NICE[i] * k <= Math.min(w, h) * 0.32) sm = NICE[i];
+    g.strokeStyle = C.grid; g.lineWidth = 1;
+    for (var rr = 1; rr <= 4; rr++) { g.beginPath(); g.arc(cx, cy, sm * k * rr, 0, Math.PI * 2); g.stroke(); }
+    function path(pts) { g.beginPath(); pts.forEach(function (p, j) { var q = P(p); if (j) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); }); }
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    if (lg) lg.roads.forEach(function (rd) {
+      var main = G && rd === G.road;
+      if (main && C.glow !== 'rgba(0,0,0,0)') { g.shadowColor = C.glow; g.shadowBlur = 14; }
+      g.strokeStyle = main ? C.road : C.other; g.lineWidth = main ? 9 : 5; path(rd.pts); g.stroke();
+      g.shadowBlur = 0; g.shadowColor = 'transparent';
+      if (main) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2; g.setLineDash([2, 14]); g.lineDashOffset = -N.chev * 2; path(rd.pts); g.stroke(); g.setLineDash([]); g.lineDashOffset = 0; }
+      rd.marks.forEach(function (mk) { var q = P(mk); g.fillStyle = C.mark; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(q[0], q[1], 6, 0, Math.PI * 2); g.fill(); g.stroke(); });
+    });
+    /* الخط المستقيم (مافيش طريق) أو خط الرجوع للطريق */
+    g.strokeStyle = C.direct; g.lineWidth = 3; g.setLineDash([9, 8]); g.lineDashOffset = -N.chev * 1.5;
+    if (G && G.kind === 'join' && G.joinPt) { path([P0, G.joinPt]); g.stroke(); }
+    else if (!(G && G.road && (G.kind === 'road' || G.kind === 'wrong'))) { path([P0].concat(G && G.kind === 'far' && G.road ? [G.road.pts[0]] : N.targets.slice(N.idx))); g.stroke(); }
+    g.setLineDash([]); g.lineDashOffset = 0;
+    if (G && G.kind === 'join' && G.joinPt) { var jq = P(G.joinPt); g.strokeStyle = C.direct; g.lineWidth = 3; g.beginPath(); g.arc(jq[0], jq[1], 9 + 3 * Math.sin(Date.now() / 220), 0, Math.PI * 2); g.stroke(); }
+    g.fillStyle = C.trail; TR.pts.slice(-400).forEach(function (p, j, arr) { var q = P(p); g.globalAlpha = 0.25 + 0.6 * j / arr.length; g.beginPath(); g.arc(q[0], q[1], 2.2, 0, Math.PI * 2); g.fill(); });
+    g.globalAlpha = 1;
+    g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    N.targets.forEach(function (p, j) {
+      if (j < N.idx) return;
+      var q = P(p), big = j === N.idx;
+      var off = q[0] < 8 || q[0] > w - 8 || q[1] < 8 || q[1] > h - 8;
+      if (off && big) { /* الهدف برّه الشاشة: سهم على الحافة */
+        var an = Math.atan2(q[0] - cx, cy - q[1]), ex = Math.max(26, Math.min(w - 26, cx + Math.sin(an) * w)), ey = Math.max(60, Math.min(h - 70, cy - Math.cos(an) * h));
+        g.save(); g.translate(ex, ey); g.rotate(an); g.fillStyle = C.pin; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -16); g.lineTo(12, 10); g.lineTo(0, 4); g.lineTo(-12, 10); g.closePath(); g.fill(); g.stroke(); g.restore();
+        return;
+      }
+      g.fillStyle = C.pin; g.strokeStyle = '#FFFFFF'; g.lineWidth = 3;
+      g.beginPath(); g.arc(q[0], q[1], big ? 14 : 10, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = '#FFFFFF'; g.font = '900 12px ' + FONT; g.fillText(String(j + 1), q[0], q[1] + 0.5);
+      if (big) {
+        var t = p.name.length > 24 ? p.name.slice(0, 23) + '…' : p.name; g.font = '800 13px ' + FONT;
+        var tw = g.measureText(t).width + 16, lx = Math.max(tw / 2 + 4, Math.min(w - tw / 2 - 4, q[0])), ly = q[1] - 30;
+        g.fillStyle = C.label; g.beginPath(); g.rect(lx - tw / 2, ly - 11, tw, 22); g.fill();
+        g.fillStyle = C.labelTxt; g.fillText(t, lx, ly + 0.5);
+      }
+    });
+    var me = [cx, cy];
+    g.save(); g.translate(me[0], me[1]);
+    if (P0.acc > 12) { g.fillStyle = 'rgba(80,160,255,.14)'; g.beginPath(); g.arc(0, 0, Math.min(P0.acc * k, w), 0, Math.PI * 2); g.fill(); }
+    if (hd || radar) {
+      g.rotate(radar ? 0 : hd.h * D2R);
+      if (C.glow !== 'rgba(0,0,0,0)') { g.shadowColor = C.glow; g.shadowBlur = 12; }
+      g.fillStyle = C.car; g.strokeStyle = C.carEdge; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -17); g.lineTo(12, 12); g.lineTo(0, 6); g.lineTo(-12, 12); g.closePath(); g.fill(); g.shadowBlur = 0; g.stroke();
+    } else { g.fillStyle = C.carEdge; g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); g.stroke(); }
+    g.restore();
+    g.textBaseline = 'alphabetic'; g.font = '800 12px ' + FONT; g.textAlign = 'center'; g.direction = 'rtl';
+    var cap = (radar ? 'منظر من فوق · اتجاهك لفوق' : 'الخريطة كلها · الشمال لفوق') + ' · الدايرة ' + fmtD(sm);
+    var cw = g.measureText(cap).width + 18;
+    g.fillStyle = C.label; g.globalAlpha = 0.9; g.beginPath(); g.rect(w / 2 - cw / 2, h - 86, cw, 22); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = C.labelSub; g.fillText(cap, w / 2, h - 70);
+  }
+
+  /* ---------- «أنا تايه» ---------- */
+  H.nav_lost = function () {
+    if (!N) return;
+    var p = N.pos, g = N.G || {}, route = N.mode === 'route';
+    var ll = p ? p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) : '';
+    var lg = leg(), hasRoad = lg && lg.roads.length && g.pr;
+    speak(['n_lost'], 6);
+    A.sheet('<h2>ولا يهمك — هنرجّعك</h2>' +
+      '<div class="lost-calm">' + ic('shield', 'sm') + '<span>اقف على جنب في مكان آمن وشغّل الفلاشر. الموبايل بيحدد مكانك من الأقمار الصناعية حتى من غير إنترنت.</span></div>' +
+      '<div class="lost-list">' +
+      (hasRoad ? '<button class="lost-b go" data-act="nav_lost_road">' + glyph('straight') + '<span><b>رجّعني لأقرب نقطة على الطريق</b><small>الطريق المتسجّل على بعد ' + esc(fmtD(g.pr.d)) + '</small></span></button>' : '') +
+      '<button class="lost-b" data-act="nav_back">' + glyph('uturn') + '<span><b>' + (N.back ? 'كمّل للوجهة' : 'رجّعني من نفس الطريق اللي جيت منه') + '</b><small>' + (N.back ? 'ارجع للتوجيه للمحطة' : 'على الأثر اللي الموبايل سجّله وانت ماشي') + '</small></span></button>' +
+      ((route || A.routeCall) ? '<button class="lost-b red" data-act="nav_lost_send">' + ic('warn', 'sm') + '<span><b>ابعت مكاني للمسؤول</b><small>هيوصله تنبيه «ضياع في الطريق» ومعاه مكانك على الخريطة</small></span></button>' : '') +
+      hotLinks('dk') +
+      '</div>' +
+      (ll ? '<div class="lost-ll"><div class="xs mut">مكانك دلوقتي — اقرأه للمسؤول في التليفون</div><b dir="ltr">' + esc(ll) + '</b><div class="row" style="gap:6px;justify-content:center;flex-wrap:wrap"><button class="btn xs gh" data-act="nav_copy_ll" data-ll="' + esc(ll) + '">انسخ</button><a class="btn xs gh" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + esc(ll.replace(' ', '')) + '">شوف مكانك على خرائط جوجل</a></div></div>' : '') +
+      '<button class="btn gh" data-act="closesheet" style="margin-top:10px">تمام</button>');
+  };
+  H.nav_lost_road = function () {
+    A.closeSheet();
+    if (!N) return;
+    var g = N.G || {};
+    if (g.kind === 'road') { A.toast('إنت على الطريق دلوقتي. كمّل على الكارت اللي فوق', 'ok'); speak(['n_ok', 'n_cont'], 6); return; }
+    var lg = leg(); if (lg) lg.joinSaid = 0;
+    update();
+  };
+  H.nav_lost_send = function (el) {
+    if (!N || !A.routeCall) return;
+    if (el) el.disabled = true;
+    var p = N.pos || { lat: 0, lng: 0, acc: 1000 };
+    A.routeCall('routeEmergency', { lat: p.lat, lng: p.lng, acc: p.acc, reason: 'ضياع في الطريق' }).then(function (r) {
+      if (el) el.disabled = false;
+      if (!r || !r.ok) { A.toast((r && r.msg) || 'ماقدرناش نبعت دلوقتي (ممكن مافيش شبكة). اتصل بالمسؤول', 'err'); return; }
+      A.closeSheet(); A.toast('اتبعت مكانك للمسؤول. خليك مكانك أو كمّل على الطريق', 'ok');
+      speak(['n_sent'], 6);
+    });
+  };
+  H.nav_copy_ll = function (el) {
+    var t = el.dataset.ll || '';
+    try { navigator.clipboard.writeText(t).then(function () { A.toast('اتنسخ مكانك', 'ok'); }, function () { A.toast(t, ''); }); } catch (e) { A.toast(t, ''); }
+  };
+
+  /* ---------- الأزرار ---------- */
+  H.nav_close = function () { close(); };
+  H.nav_theme = function () { if (!N) return; N.night = !N.night; lsSet('c3a_nav_theme', N.night ? 'night' : 'day'); themeCols(); update(); };
+  H.nav_view = function () { if (!N) return; N.view = N.view === 'map' ? '3d' : 'map'; lsSet('c3a_nav_view', N.view); update(); };
+  H.nav_voice = function () {
+    if (!N) return;
+    N.voice = !N.voice; lsSet('c3a_nav_voice', N.voice ? '1' : '0');
+    if (!N.voice) { try { W.speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+    else { var g = N.G; speak(N.pos && g ? ['n_voice_on', ST(g.tg), 'n_away', D(g.rem)] : ['n_voice_on'], 6); }
+    update();
+  };
+  H.nav_radar = H.nav_view;
+  H.nav_next = function () { if (!N || N.idx >= N.targets.length - 1) return; advance('manual'); update(); };
+  H.nav_compass = function () { if (N) askCompass(); };
+  H.nav_start = function () { if (H.rt_start) H.rt_start(); };
+  H.nav_sos = function () { if (H.rt_sos_open) H.rt_sos_open(); };
+  /* رجّعني من نفس طريقي: الأثر بيتحوّل لطريق متسجّل بالعكس، والتوجيه لفة بلفة عليه */
+  H.nav_back = function () {
+    A.closeSheet();
+    if (!N) return;
+    if (N.back) {
+      N.targets = N.back.targets; N.legs = N.back.legs; N.idx = N.back.idx; N.prevPt = N.back.prevPt; N.back = null;
+      N.done = false; N.arrivedTs = 0; N.totalMax = 0; resetLegVoice();
+      speak(['n_back_dest', ST(cur())], 6); update(); return;
+    }
+    var pts = TR.pts;
+    if (!pts || pts.length < 2) { A.toast('لسه مافيش طريق متسجّل. التسجيل بيبدأ أول ما تتحرك والملاحة أو الرحلة شغالة', 'err'); return; }
+    var rd = mkRoad({ id: 'trail', name: 'طريقك اللي جيت منه', pts: pts.slice().reverse().map(function (p) { return [p.lat, p.lng]; }), trail: true });
+    if (!rd) { A.toast('الأثر قصير قوي', 'err'); return; }
+    var first = pts[0];
+    N.back = { targets: N.targets, legs: N.legs, idx: N.idx, prevPt: N.prevPt };
+    N.targets = [{ lat: first.lat, lng: first.lng, name: 'أول نقطة بدأت منها', sid: 'trail' }];
+    N.legs = [{ roads: [rd], road: null, onRoad: false, everOn: false, sLast: null, offTs: 0, offSaid: 0, joinSaid: 0 }];
+    N.idx = 0; N.prevPt = N.pos; N.done = false; N.arrivedTs = 0; N.totalMax = 0; resetLegVoice();
+    speak(['n_trail'], 6);
+    update();
+  };
+
+  A.nav = {
+    open: open, close: close, isOpen: function () { return !!N; },
+    state: function () { return N; },
+    _m: { dist: dist, bearing: bearing, norm: norm, turnOf: turnOf, segInfo: segInfo, fmtD: fmtD, sayD: sayD, fmtT: fmtT, dirWord: dirWord, backTargets: backTargets, eg: eg, mkRoad: mkRoad, project: project, pointAt: pointAt, maneuvers: maneuvers, manText: manText, mtype: mtype }
+  };
+})();
+
+/* ============================================================
+   «وصّلني» — الشاشة الرئيسية: رايح فين؟
+   قائمة الأماكن (محطات «شريك الدفاع» + مواقع التطبيق المضيف اللي ليها إحداثيات)،
+   الأقرب ليك، وعلامة «طريق متسجّل»، وبعدين الملاحة نفسها (APP.nav) بالصوت المصري المتسجّل.
+   ============================================================ */
+(function () {
+  'use strict';
+  var W = window, A = W.APP, H = A.handlers, esc = A.esc, ic = A.ic, CFG = A.cfg || {};
+  var R = 6371000, D2R = Math.PI / 180;
+  function dist(a, b) {
+    var dLat = (b.lat - a.lat) * D2R, dLng = (b.lng - a.lng) * D2R;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function fmtD(m) { if (m >= 10000) return Math.round(m / 1000) + ' كم'; if (m >= 1000) return (Math.round(m / 100) / 10).toFixed(1) + ' كم'; if (m >= 100) return Math.round(m / 10) * 10 + ' م'; return Math.round(m) + ' م'; }
+  var STOP = /موقوف|مغلق|إنذار|انذار|حجر|ممنوع/;
+
+  var D = { places: [], roads: [], ts: 0, q: '', pos: null, loading: true, err: '' };
+  try { var c = JSON.parse(A.lsGet('wsl_places') || 'null'); if (c && c.places) { D.places = c.places; D.roads = c.roads || []; D.ts = c.ts || 0; D.loading = false; } } catch (e) { /* ignore */ }
+
+  function roadsFor(sid, kind) { return sid ? D.roads.filter(function (r) { return r && r.sid === sid && (!kind || (r.kind || 'dirty') === kind); }) : []; }
+  /* محطة التسمين ليها طريقين: كلين (من بوابة تطهير الكلين أو المركزية للبوابة الأمامية) وديرتي (من المبيع للبوابة الخلفية) */
+  function isStation(p) { return /تسمين|محطة|أمهات|امهات|تربية/.test(String(p.name || '') + ' ' + String(p.type || '')) && p.kind !== 'disinfect' && p.kind !== 'service'; }
+  var KIND_T = { clean: 'الطريق الكلين', dirty: 'الطريق الديرتي' };
+  function byId(id) { return D.places.filter(function (p) { return p.id === id; })[0]; }
+  function kindIc(p) { return p.kind === 'disinfect' ? 'biohaz' : p.kind === 'service' ? 'truck' : 'pin'; }
+
+  /* ---------- البناء ---------- */
+  function shell() {
+    var root = document.getElementById('wsl');
+    root.innerHTML =
+      '<header class="wh">' +
+        '<div class="wh-top">' + (CFG.logo ? '<img src="' + CFG.logo + '" alt="كايرو ثري ايه">' : '') + '<span class="wh-tag">' + esc(CFG.brand || 'منظومة الأمن الحيوي') + '</span></div>' +
+        '<div class="wh-ttl"><span class="wh-pin">' + ic('nav') + '</span><div><h1>وصّلني</h1><p>ملاحة لفة بلفة جوه القطاعات الصحراوية — بالصوت، وبالليل، ومن غير إنترنت</p></div></div>' +
+        '<label class="wh-search">' + ic('search') + '<input id="w_q" type="search" autocomplete="off" placeholder="رايح فين؟ اكتب اسم المزرعة أو المحطة"></label>' +
+      '</header>' +
+      '<div class="wv" id="w_stat"></div>' +
+      '<main class="wm">' +
+        '<div id="w_near"></div>' +
+        '<div id="w_list"></div>' +
+      '</main>' +
+      '<footer class="wf">' +
+        '<div class="wf-who"><label for="w_who">اسمك أو رقم العربية <small>(بيوصل للمسؤول لو استخدمت «أنا تايه»)</small></label><input id="w_who" maxlength="40" placeholder="مثال: أحمد — ن ق ط 1234"></div>' +
+        '<p>' + esc(CFG.footer || 'خدمة من كايرو ثري ايه · منظومة الأمن الحيوي') + '</p>' +
+      '</footer>';
+    var q = document.getElementById('w_q');
+    q.addEventListener('input', function () { D.q = q.value.trim(); list(); });
+    var who = document.getElementById('w_who');
+    who.value = A.lsGet('wsl_who') || '';
+    who.addEventListener('change', function () { A.lsSet('wsl_who', who.value.trim().slice(0, 40)); A.toast('اتحفظ', 'ok'); });
+  }
+
+  function stat() {
+    var n = A.vp ? A.vp.count() : 0, sync = A.vp && A.vp._busy;
+    var gps = D.pos ? '<span class="ok">' + ic('loc', 'sm') + 'مكانك معروف</span>' : '<button class="wv-b" data-act="w_locate">' + ic('loc', 'sm') + 'حدّد مكاني</button>';
+    var vo = n ? '<span class="ok">' + ic('speaker', 'sm') + 'الصوت جاهز · ' + n + ' جملة</span>' : (navigator.onLine === false ? '<span>' + ic('speaker', 'sm') + 'الصوت هيتحمّل مع أول إنترنت</span>' : '<span>' + ic('speaker', 'sm') + 'بيحمّل الصوت…</span>');
+    var off = '<span>' + ic('wifi', 'sm') + 'بيشتغل من غير نت</span>';
+    var el = document.getElementById('w_stat'); if (el) el.innerHTML = gps + vo + off;
+    if (sync) { /* ignore */ }
+  }
+
+  function item(p) {
+    var d = D.pos ? dist(D.pos, p) : null, rd = roadsFor(p.sid).length, stop = STOP.test(String(p.status || ''));
+    var kc = roadsFor(p.sid, 'clean').length, kd = roadsFor(p.sid, 'dirty').length;
+    return '<button class="wp' + (stop ? ' stop' : '') + '" data-act="w_pick" data-id="' + esc(p.id) + '">' +
+      '<span class="wp-ic ' + esc(p.kind || '') + '">' + ic(kindIc(p)) + '</span>' +
+      '<span class="wp-t"><b>' + esc(p.name) + '</b><small>' + esc([p.type, p.sector].filter(Boolean).join(' · ')) + '</small>' +
+        (isStation(p) && rd ? '<span class="wp-k">' + (kc ? '<i class="c">كلين ✓</i>' : '') + (kd ? '<i class="d">ديرتي ✓</i>' : '') + '</span>' : rd ? '<i class="wp-road">' + ic('check', 'sm') + 'طريق متسجّل · لفة بلفة</i>' : '') + (stop ? '<i class="wp-stop">' + ic('warn', 'sm') + esc(p.status) + '</i>' : '') + '</span>' +
+      (d != null ? '<span class="wp-d"><em>' + esc(fmtD(d)) + '</em></span>' : '') +
+    '</button>';
+  }
+  function norm(s) { return String(s || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').toLowerCase(); }
+  function list() {
+    var box = document.getElementById('w_list'), near = document.getElementById('w_near');
+    if (!box) return;
+    stat();
+    if (D.loading && !D.places.length) { box.innerHTML = '<div class="w-empty"><div class="spin"></div>بيحمّل الأماكن…</div>'; near.innerHTML = ''; return; }
+    if (!D.places.length) { box.innerHTML = '<div class="w-empty">' + esc(D.err || 'مافيش أماكن ليها إحداثيات لسه.') + '</div>'; near.innerHTML = ''; return; }
+    var q = norm(D.q), arr = D.places.filter(function (p) { return !q || norm(p.name + ' ' + (p.sector || '') + ' ' + (p.type || '')).indexOf(q) >= 0; });
+    if (D.pos) arr = arr.slice().sort(function (a, b) { return dist(D.pos, a) - dist(D.pos, b); });
+    /* الأقرب ليك */
+    if (D.pos && !q && arr.length) {
+      var n = arr[0], dn = dist(D.pos, n);
+      near.innerHTML = '<div class="w-near"><div class="w-near-l">' + ic('loc', 'sm') + 'الأقرب ليك دلوقتي</div>' + item(n) + (dn > 3000 ? '<div class="w-near-n">' + ic('map', 'sm') + 'المكان بعيد عن هنا؟ وصّلني هيفتحلك خرائط جوجل لحد ما تقرّب، وبعدين يكمّل هو جوه القطاع.</div>' : '') + '</div>';
+    } else near.innerHTML = '';
+    if (!arr.length) { box.innerHTML = '<div class="w-empty">مالقيناش «' + esc(D.q) + '». جرّب جزء من الاسم.</div>'; return; }
+    /* مجموعات حسب القطاع */
+    var groups = {}, order = [];
+    arr.forEach(function (p) { var g = p.sector || 'أماكن أخرى'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(p); });
+    box.innerHTML = order.map(function (g) {
+      return '<section class="wg"><h2 class="wg-t">' + esc(g) + '<span>' + groups[g].length + '</span></h2>' + groups[g].map(item).join('') + '</section>';
+    }).join('');
+  }
+
+  /* ---------- تحميل الأماكن ---------- */
+  function load() {
+    return A.rawCall('places', {}).then(function (r) {
+      D.loading = false;
+      if (r && r.ok && r.data && r.data.places) {
+        D.places = r.data.places; D.roads = r.data.roads || []; D.ts = Date.now();
+        if (r.data.hotline && !CFG.hotline) CFG.hotline = r.data.hotline;
+        if (r.data.hotlines && r.data.hotlines.length) CFG.hotlines = r.data.hotlines;
+        A.lsSet('wsl_places', JSON.stringify({ places: D.places, roads: D.roads, ts: D.ts }));
+      } else if (!D.places.length) D.err = (r && r.msg) || 'ماقدرناش نحمّل الأماكن. اتأكد من الإنترنت وجرّب تاني.';
+      list();
+    });
+  }
+
+  /* ---------- المكان ---------- */
+  function locate(quiet) {
+    if (!navigator.geolocation) { if (!quiet) A.toast('الموبايل ده مافيهوش تحديد مكان', 'err'); return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+      D.pos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }; list();
+    }, function (e) {
+      if (!quiet) A.toast(e && e.code === 1 ? 'اسمح للتطبيق يعرف مكانك من إعدادات المتصفح' : 'إشارة الموقع ضعيفة. جرّب في مكان مفتوح', 'err');
+    }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 });
+  }
+  H.w_locate = function () { locate(false); };
+
+  H.w_pick = function (el) {
+    var p = byId(el.dataset.id); if (!p) return;
+    var d = D.pos ? dist(D.pos, p) : null, rd = roadsFor(p.sid), stop = STOP.test(String(p.status || ''));
+    var gm = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + (+p.lat).toFixed(6) + ',' + (+p.lng).toFixed(6);
+    A.sheet('<div class="wps">' +
+      '<div class="wps-h"><span class="wp-ic ' + esc(p.kind || '') + '">' + ic(kindIc(p)) + '</span><div><h2>' + esc(p.name) + '</h2><div class="xs mut">' + esc([p.type, p.sector, d != null ? 'على بعد ' + fmtD(d) : ''].filter(Boolean).join(' · ')) + '</div></div></div>' +
+      (stop ? '<div class="wps-n bad">' + ic('warn', 'sm') + '<span><b>حالة الموقع: ' + esc(p.status) + '</b>ممنوع الدخول من غير تصريح من الأمن الحيوي. كلّم المسؤول قبل ما تتحرك.</span></div>' : '') +
+      (isStation(p) ? (function () {
+        var kc = roadsFor(p.sid, 'clean').length, kd = roadsFor(p.sid, 'dirty').length;
+        return '<div class="wps-n">' + ic('road', 'sm') + '<span><b>اختار الطريق حسب حركتك</b>كل محطة ليها طريقين ومايتلخبطوش: الكلين للبوابة الأمامية والديرتي للبوابة الخلفية.</span></div>' +
+          '<div class="wk"><button class="wk-b clean" data-act="w_go" data-id="' + esc(p.id) + '" data-k="clean"><span class="wk-ic">ك</span><span><b>الطريق الكلين ← البوابة الأمامية</b><small>من بوابة تطهير الكلين أو المركزية · سيارات الشركة والعاملين والكتاكيت والعلف</small><em class="' + (kc ? 'y' : '') + '">' + (kc ? 'متسجّل · لفة بلفة بالصوت' : 'لسه مش متسجّل · سهم على خط مستقيم') + '</em></span></button>' +
+          '<button class="wk-b dirty" data-act="w_go" data-id="' + esc(p.id) + '" data-k="dirty"><span class="wk-ic">د</span><span><b>الطريق الديرتي ← البوابة الخلفية</b><small>من طريق المبيع · التجار والنافق والسبلة والخدمات</small><em class="' + (kd ? 'y' : '') + '">' + (kd ? 'متسجّل · لفة بلفة بالصوت' : 'لسه مش متسجّل · سهم على خط مستقيم') + '</em></span></button></div>';
+      })() : (rd.length ? '<div class="wps-n ok">' + ic('road', 'sm') + '<span><b>ليه طريق متسجّل</b>هيوجّهك لفة بلفة على نفس الطريق اللي المشرف سجّله بالعربية، وينبّهك أول ما تطلع منه.</span></div>'
+        : '<div class="wps-n">' + ic('nav', 'sm') + '<span><b>مافيش طريق متسجّل لسه</b>هيوجّهك بسهم كبير على خط مستقيم للمكان، وامشي على الطرق الممهدة ناحية السهم.</span></div>')) +
+      '<div class="wps-n bio">' + ic('shield', 'sm') + '<span><b>قبل ما تدخل</b>عدّي على منطقة التطهير والتزم بتعليمات البوابة. الأمن الحيوي بيحمي الكل.</span></div>' +
+      (isStation(p) ? '' : '<button class="btn" data-act="w_go" data-id="' + esc(p.id) + '">' + ic('nav') + '<span>ابدأ وصّلني</span></button>') +
+      (CFG.demo ? '<button class="btn dk" data-act="w_sim" data-id="' + esc(p.id) + '" style="margin-top:8px">' + ic('play') + '<span>جرّب رحلة تجريبية (محاكاة)</span></button>' : '') +
+      '<a class="btn gh" target="_blank" rel="noopener" href="' + gm + '" style="margin-top:8px">' + ic('map') + '<span>افتح في خرائط جوجل</span></a>' +
+    '</div>');
+  };
+  function go(p, kind) {
+    A.closeSheet();
+    if (!A.nav) return;
+    if (isStation(p) && !kind) kind = 'clean';
+    var rs = kind ? roadsFor(p.sid, kind) : roadsFor(p.sid), tg = { lat: +p.lat, lng: +p.lng, name: p.name, sid: p.sid || '' };
+    /* الوجهة = آخر نقطة في الطريق المتسجّل (البوابة الأمامية أو الخلفية) مش نص المحطة */
+    if (rs.length) { try { var pp = W.C3A.U.polyDec(rs[0].poly), e = pp[pp.length - 1]; if (e) { tg.lat = +e[0]; tg.lng = +e[1]; } } catch (x) { /* ignore */ } }
+    var nm = kind ? p.name + ' · ' + (kind === 'clean' ? 'البوابة الأمامية (كلين)' : 'البوابة الخلفية (ديرتي)') : p.name;
+    tg.name = nm;
+    A.nav.open({ mode: 'free', title: nm, targets: [tg], roads: rs, hotline: CFG.hotline || '' });
+  }
+  H.w_go = function (el) { var p = byId(el.dataset.id); if (p) go(p, el.dataset.k || ''); };
+
+  /* ---------- محاكاة رحلة (النسخة التجريبية بس): موقع وهمي بيمشي على الطريق ---------- */
+  var SIM = null;
+  function simPath(p) {
+    var rd = roadsFor(p.sid, isStation(p) ? 'clean' : '')[0], pts = [];
+    if (rd) pts = (rd.pts || W.C3A.U.polyDec(rd.poly)).map(function (a) { return { lat: +a[0], lng: +a[1] }; });
+    else { pts = [{ lat: +p.lat - 0.006, lng: +p.lng + 0.007 }, { lat: +p.lat, lng: +p.lng }]; }
+    var out = [pts[0]];
+    for (var i = 1; i < pts.length; i++) {
+      var a = pts[i - 1], b = pts[i], n = Math.max(1, Math.round(dist(a, b) / 4));
+      for (var k = 1; k <= n; k++) out.push({ lat: a.lat + (b.lat - a.lat) * k / n, lng: a.lng + (b.lng - a.lng) * k / n });
+    }
+    return out;
+  }
+  function brg(a, b) { var y = Math.sin((b.lng - a.lng) * D2R) * Math.cos(b.lat * D2R), x = Math.cos(a.lat * D2R) * Math.sin(b.lat * D2R) - Math.sin(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.cos((b.lng - a.lng) * D2R); return (Math.atan2(y, x) / D2R + 360) % 360; }
+  function simInstall() {
+    var g = navigator.geolocation; if (!g || g.__sim) return;
+    var real = { w: g.watchPosition.bind(g), c: g.clearWatch.bind(g), g: g.getCurrentPosition.bind(g) };
+    var cbs = {}, seq = 1;
+    g.watchPosition = function (ok) { if (!SIM) return real.w.apply(null, arguments); var id = seq++; cbs[id] = ok; return id; };
+    g.clearWatch = function (id) { if (cbs[id]) delete cbs[id]; else real.c(id); };
+    g.__sim = { emit: function (pos) { Object.keys(cbs).forEach(function (k) { try { cbs[k](pos); } catch (e) { /* ignore */ } }); } };
+  }
+  H.w_sim = function (el) {
+    var p = byId(el.dataset.id); if (!p) return;
+    simInstall();
+    var path = simPath(p), i = 0, wait = 4;
+    SIM = { path: path };
+    go(p);
+    var t = setInterval(function () {
+      if (!A.nav.isOpen()) { clearInterval(t); SIM = null; return; }
+      if (wait > 0) { wait--; } else i = Math.min(path.length - 1, i + 4);
+      var a = path[i], b = path[Math.min(path.length - 1, i + 1)], h = brg(i ? path[i - 1] : a, b);
+      navigator.geolocation.__sim.emit({ coords: { latitude: a.lat, longitude: a.lng, accuracy: 6, speed: wait > 0 ? 0 : 16, heading: wait > 0 ? null : h }, timestamp: Date.now() });
+      if (i >= path.length - 1) { clearInterval(t); setTimeout(function () { SIM = null; }, 15000); }
+    }, 1000);
+    A.toast('محاكاة: الموقع هيتحرك لوحده على الطريق', 'ok');
+  };
+
+  /* ---------- الإقلاع ---------- */
+  function boot() {
+    shell(); list();
+    load();
+    if (A.vp && A.vp.sync) { var s = A.vp.sync(true); if (s && s.then) s.then(function () { stat(); }); }
+    setInterval(stat, 4000);
+    try {
+      if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'geolocation' }).then(function (r) { if (r.state === 'granted') locate(true); }, function () { /* ignore */ });
+    } catch (e) { /* ignore */ }
+    W.addEventListener('online', function () { load(); if (A.vp) A.vp.sync(true); });
+    if (CFG.start) { var sk = String(CFG.start), km = /:(clean|dirty)$/.exec(sk), p = byId(km ? sk.slice(0, -km[0].length) : sk); if (p) { if (km) go(p, km[1]); else H.w_pick({ dataset: { id: p.id } }); } }
+  }
+  A.wsl = { boot: boot, data: function () { return D; }, go: go };
+})();
+</script><script>APP.wsl.boot();</script></body></html>
