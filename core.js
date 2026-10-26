@@ -813,7 +813,7 @@ function BIO_api(store, deps) {
       var pd = BIO_PERMS.filter(function (x) { return x.k === need; })[0];
       throw new Error('ليست لديك صلاحية: ' + (pd ? pd.label : need) + '. اطلبها من مدير الأمن الحيوي');
     }
-    var out = { id: BIO_norm(u.id), name: u.name, role: r.k, roleLabel: r.label, gateId: BIO_norm(u.gate), phone: u.phone, isManager: isMgr, isAdmin: r.k === BIO.ROLE_MANAGER, reportsOnly: !!r.reportsOnly, pestOnly: !!r.pestOnly, perms: perms, hide: r.k === BIO.ROLE_MANAGER ? [] : BIO_list(u.hide), prints: r.k === BIO.ROLE_MANAGER ? ['*'] : BIO_list(u.prints) };
+    var out = { id: BIO_norm(u.id), name: u.name, role: r.k, roleLabel: r.label, gateId: BIO_norm(u.gate), phone: u.phone, isManager: isMgr, isAdmin: r.k === BIO.ROLE_MANAGER, reportsOnly: !!r.reportsOnly, pestOnly: !!r.pestOnly, perms: perms, hide: BIO_hideEff(u), allowMode: !!BIO_allowOf(u), prints: r.k === BIO.ROLE_MANAGER ? ['*'] : BIO_list(u.prints) };
     out.scope = isMgr ? scopeOf(u, sitesById()) : null;
     return out;
   }
@@ -969,7 +969,7 @@ function BIO_api(store, deps) {
   function session(u) {
     var sites = sitesById(), gate = gateFor(u, sites), st = settings();
     return {
-      user: { id: u.id, name: u.name, role: u.role, roleLabel: u.roleLabel, isManager: u.isManager, isAdmin: !!u.isAdmin, reportsOnly: !!u.reportsOnly, pestOnly: !!u.pestOnly, perms: u.perms || [], hide: u.hide || [], prints: u.prints || [], scope: u.scope ? { all: u.scope.all, sectors: u.scope.sectors, sites: u.scope.sites, label: u.scope.label } : null },
+      user: { id: u.id, name: u.name, role: u.role, roleLabel: u.roleLabel, isManager: u.isManager, isAdmin: !!u.isAdmin, reportsOnly: !!u.reportsOnly, pestOnly: !!u.pestOnly, perms: u.perms || [], hide: u.hide || [], allowMode: !!u.allowMode, navOnly: u.role === BIO.ROLE_NAV, prints: u.prints || [], scope: u.scope ? { all: u.scope.all, sectors: u.scope.sectors, sites: u.scope.sites, label: u.scope.label } : null },
       gate: { id: gate.id, name: gate.name, sector: gate.sector, siteIds: gate.sites.map(function (s) { return s.id; }) },
       company: st.COMPANY || '', managerPhone: st.MANAGER_PHONE || '', managerEmail: st.MANAGER_EMAIL || ''
     };
@@ -1026,7 +1026,7 @@ function BIO_api(store, deps) {
     var sc = r.k === BIO.ROLE_GUARD ? null : scopeOf(x, sites), own = BIO_list(x.perms);
     return { id: BIO_norm(x.id), name: x.name, role: r.k, roleLabel: r.label, gate: BIO_norm(x.gate), gateName: g ? g.name || '' : '', sector: g ? g.sector || '' : '',
       scope: BIO_list(x.scope).map(String), scopeLabel: sc ? sc.label : '', perms: BIO_userPerms({ role: r.k, perms: x.perms }), custom: r.k !== BIO.ROLE_MANAGER && r.k !== BIO.ROLE_GUARD && own.length > 0,
-      phone: x.phone ? String(x.phone) : '', hide: r.k === BIO.ROLE_MANAGER ? [] : BIO_list(x.hide), prints: r.k === BIO.ROLE_MANAGER ? ['*'] : BIO_list(x.prints), active: !(x.active != null && String(x.active).trim() === BIO.NO), demoPin: ['1111', '2222', '3333', '9999'].indexOf(String(x.pin).trim()) >= 0 };
+      phone: x.phone ? String(x.phone) : '', hide: BIO_hideEff(x), allowMode: !!BIO_allowOf(x), prints: r.k === BIO.ROLE_MANAGER ? ['*'] : BIO_list(x.prints), active: !(x.active != null && String(x.active).trim() === BIO.NO), demoPin: ['1111', '2222', '3333', '9999'].indexOf(String(x.pin).trim()) >= 0 };
   }
 
   /* ---------- نموذج الخطر والالتزام (مركز القيادة) ---------- */
@@ -1139,6 +1139,8 @@ function BIO_api(store, deps) {
       var newPin = '';
       if (!existing || row.newPin) { do { newPin = String(100000 + Math.floor(Math.random() * 900000)); } while (userByPin(newPin)); }
       var obj = { id: id, name: name, role: role.k, gate: gate, phone: String(row.phone || '').replace(/[^\d+]/g, ''), scope: scope.join(','), perms: same ? '' : perms.join(','), hide: role.k === BIO.ROLE_MANAGER ? '' : (row.hide || []).map(String).filter(function (k) { return BIO_SCREENS.some(function (x) { return x.k === k; }); }).join(','), active: row.active === false ? BIO.NO : BIO.YES };
+      /* v33.4: الشاشات المسموحة صريحة: اللي مش مختار مقفول، حتى الشاشات اللي هتتضاف بعدين */
+      if (Array.isArray(row.hide)) { var hid = obj.hide ? obj.hide.split(',') : []; obj.allow = role.k === BIO.ROLE_MANAGER ? '' : '@' + BIO_scrKeys().filter(function (k) { return hid.indexOf(k) < 0; }).join(','); }
       if (row.prints != null) obj.prints = role.k === BIO.ROLE_MANAGER ? '' : (row.prints || []).map(String).filter(function (k) { return k === '*' || BIO_PRINT_CATS.some(function (c) { return c.k === k; }); }).join(',');
       if (newPin) obj.pin = newPin;
       deps.lock(function () {
@@ -3187,6 +3189,7 @@ function BIO_vrBridge(api, H) {
   /** يفتح تطبيق التقارير للمستخدم: يرجع الرابط ومعه تذكرة دخول تُستخدم مرة واحدة خلال 10 دقائق */
   api.vrOpen = function (pin) {
     var u = H.auth(pin, 'vr'), role = BIO_vrRole(u.perms);
+    if (!u.reportsOnly && (u.hide || []).indexOf('vr') >= 0) throw new Error('شاشة «تقارير الأمن الحيوي» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
     if (!role) throw new Error('ليست لديك صلاحية على تقارير الأمن الحيوي. اطلبها من مدير الأمن الحيوي');
     var url = String(H.settings().REPORTS_URL || BIO_REPORTS_URL).trim();
     var vr = u.perms.filter(function (p) { return p.indexOf('vr_') === 0; });
@@ -4845,7 +4848,7 @@ function BIO_v17(api, H) {
   for (i = 0; i < itf.length; i++) if (itf[i].k === 'name') { itf.splice(i + 1, 0, { k: 'title', hint: 'للأفراد: المسمى الوظيفي، مثل: مشرف عنابر، فني صيانة، معاون أمن حيوي' }); break; }
   TABLES.attendance = { sheet: 'الحضور والانصراف', key: 'id', cols: { id: 'الرقم', day: 'اليوم', code: 'كود الموظف', name: 'الاسم', status: 'الحالة', inAt: 'وقت الحضور', outAt: 'وقت الانصراف', note: 'ملاحظات', importId: 'رقم الاستيراد', time: 'آخر تحديث' } };
   TABLES.attImports = { sheet: 'سجل ملفات الحضور', key: 'id', cols: { id: 'الرقم', time: 'الوقت', file: 'الملف', from: 'من يوم', to: 'إلى يوم', days: 'عدد الأيام', people: 'عدد الموظفين', added: 'سجلات جديدة', updated: 'سجلات معدلة', by: 'رفعه' } };
-  TABLES.routes = { sheet: 'المسارات المعتمدة', key: 'id', cols: { id: 'الرقم', name: 'اسم المسار', fromId: 'من (كود)', toId: 'إلى (كود)', pts: 'نقاط المسار', km: 'الطول (كم)', by: 'بواسطة', time: 'آخر تعديل', note: 'ملاحظات' } };
+  TABLES.routes = { sheet: 'المسارات المعتمدة', key: 'id', cols: { id: 'الرقم', name: 'اسم المسار', fromId: 'من (كود)', toId: 'إلى (كود)', pts: 'نقاط المسار', km: 'الطول (كم)', by: 'بواسطة', time: 'آخر تعديل', note: 'ملاحظات', driver: 'السائق', driverPhone: 'رقم السائق' } };
   TABLES.tours = { sheet: 'جولات المركبات متعددة المحطات', key: 'id', cols: { id: 'الرقم', time: 'وقت الإنشاء', day: 'اليوم', itemId: 'كود المركبة', itemName: 'المركبة', plate: 'رقم اللوحة', purpose: 'الغرض', inside: 'دخول حرم المزرعة', order: 'طريقة الترتيب', stops: 'المحطات بالترتيب', status: 'الحالة', by: 'أنشأها', byId: 'كود المنشئ', sup: 'اعتماد المشرف أو المسؤول', supAt: 'وقت اعتماد المشرف', mgr: 'اعتماد مدير الإدارة', mgrAt: 'وقت اعتماد المدير', reason: 'سبب الرفض', tripId: 'رحلة الإرشاد', note: 'ملاحظات' } };
   TABLES.trips.cols.route = 'خط السير';
   TABLES.trips.cols.tourId = 'الجولة';
@@ -5151,12 +5154,13 @@ function BIO_v18(api, H) {
   api.sync = function (pin, p) { var r = sync17(pin, p); r.epoch = num(st().DATA_EPOCH, 0); return r; };
 
   /* ---------- 4) المسارات المعتمدة على الخريطة + إرشاد المركبة بخط السير ---------- */
-  function canRouteEdit(u) { return !!u && u.isManager && (u.isAdmin || isSupLike(u)); }
-  function canGuide(u) { return !!u && !u.reportsOnly && (isGuard(u) || u.isAdmin || isSupLike(u)); }
+  function scrOk(u, k) { return !!u && !!u.allowMode && (u.hide || []).indexOf(k) < 0; }
+  function canRouteEdit(u) { return !!u && u.isManager && (u.isAdmin || isSupLike(u) || u.role === BIO.ROLE_NAV || scrOk(u, 'routes')); }
+  function canGuide(u) { return !!u && !u.reportsOnly && (isGuard(u) || u.isAdmin || isSupLike(u) || u.role === BIO.ROLE_NAV || scrOk(u, 'routes')); }
   /** مناطق التطهير والبوابات: نقاط عبور وليست محطات ممنوعة */
   function isCP(s) { return /تطهير|بوابة|إدار|ادار/.test(String(s.type || '') + ' ' + String(s.name || '')) || /-CP\d|ADMIN/i.test(String(s.id)); }
   function geoSites() { var s = H.sitesById(); return { by: s, list: H.sitesList(s).filter(function (x) { return !x.external && x.lat != null && x.lng != null; }) }; }
-  function routeOut(r) { return { id: r.id, name: String(r.name || ''), fromId: BIO_norm(r.fromId), toId: BIO_norm(r.toId), pts: json(r.pts, []), km: num(r.km, 0), by: String(r.by || ''), time: BIO_ms(r.time), note: String(r.note || '') }; }
+  function routeOut(r) { return { id: r.id, name: String(r.name || ''), fromId: BIO_norm(r.fromId), toId: BIO_norm(r.toId), pts: json(r.pts, []), km: num(r.km, 0), by: String(r.by || ''), time: BIO_ms(r.time), note: String(r.note || ''), driver: String(r.driver || ''), driverPhone: String(r.driverPhone || '') }; }
   function pathKmLen(pts) { var k = 0; for (var i = 1; i < pts.length; i++) k += BIO_km(pts[i - 1], pts[i]); return Math.round(k * 100) / 100; }
   function findRoute(a, b) {
     var L = rows('routes').map(routeOut), r = L.filter(function (x) { return x.fromId === a && x.toId === b; })[0];
@@ -5178,7 +5182,7 @@ function BIO_v18(api, H) {
     if (!a || !b || a.id === b.id) throw new Error('اختر نقطة البداية والوجهة');
     var pts = (Array.isArray(r.pts) ? r.pts : []).slice(0, 400).map(function (p) { return [Math.round(num(p[0], 0) * 1e6) / 1e6, Math.round(num(p[1], 0) * 1e6) / 1e6]; }).filter(function (p) { return p[0] > 21 && p[0] < 32.5 && p[1] > 24 && p[1] < 37; });
     if (pts.length < 2) throw new Error('ارسم المسار بنقطتين على الأقل على الخريطة');
-    var row = { id: clean(r.id, 30) || deps.id('RT'), name: clean(r.name, 80) || (a.name + ' ← ' + b.name), fromId: a.id, toId: b.id, pts: JSON.stringify(pts), km: pathKmLen(pts), by: u.name, time: deps.now(), note: clean(r.note, 200) };
+    var row = { id: clean(r.id, 30) || deps.id('RT'), name: clean(r.name, 80) || (a.name + ' ← ' + b.name), fromId: a.id, toId: b.id, pts: JSON.stringify(pts), km: pathKmLen(pts), by: u.name, time: deps.now(), note: clean(r.note, 200), driver: clean(r.driver, 60), driverPhone: String(r.driverPhone || '').replace(/[^\d+]/g, '').slice(0, 20) };
     deps.lock(function () {
       var ex = store.find('routes', row.id) || rows('routes').filter(function (x) { return BIO_norm(x.fromId) === a.id && BIO_norm(x.toId) === b.id; })[0];
       if (ex) { row.id = ex.id; store.update('routes', ex.id, row); } else store.append('routes', row);
@@ -5403,6 +5407,51 @@ var BIO_DIS_KINDS = ['وارد', 'صرف', 'تالف', 'جرد'];
 var BIO_DIS_CHECKS = ['تغيير مغطس أقدام', 'تغيير مغطس عجلات', 'تحضير محلول رش', 'قراءة تركيز'];
 TABLES.users.cols.hide = 'الشاشات المحجوبة';
 TABLES.users.cols.prints = 'صلاحية طباعة التقارير';
+/* ============================ v33.4: صلاحيات الشاشات كاملة + دور «الملاح» ============================
+   كل شاشة في القائمة بقت في القائمة دي، ومدير الإدارة بيختار اللي يظهر لكل مستخدم.
+   أي مستخدم اتحفظ من شاشة المستخدمين بعد التحديث بيتسجّل له «الشاشات المسموحة» (عمود allow يبدأ بـ @):
+   أي شاشة مش مختارة له، أو شاشة جديدة تتضاف بعدين، بتفضل مقفولة عليه لحد ما المدير يفتحها. */
+BIO.ROLE_NAV = 'ملاح';
+var BIO_SCR_V334 = ['dash', 'twin', 'vrcorr', 'notices', 'inbox', 'cheer', 'vr', 'calc', 'wassalni', 'stroads', 'prints', 'online'];
+BIO_SCREENS.push(
+  { k: 'dash', label: 'غرفة القرار', g: 'القيادة والمتابعة' }, { k: 'twin', label: 'التوأم الرقمي', g: 'القيادة والمتابعة' },
+  { k: 'vrcorr', label: 'تحليل التقارير مع النافق والبوابات', g: 'القيادة والمتابعة' },
+  { k: 'notices', label: 'القرارات والتعليمات', g: 'التواصل والفريق' }, { k: 'inbox', label: 'رسائل الإدارة', g: 'التواصل والفريق' }, { k: 'cheer', label: 'إنجازات الفريق', g: 'التواصل والفريق' },
+  { k: 'vr', label: 'تقارير الأمن الحيوي', g: 'الأمن الحيوي والتشغيل' }, { k: 'calc', label: 'حاسبة التطهير', g: 'الأمن الحيوي والتشغيل' },
+  { k: 'wassalni', label: 'وصّلني (الملاحة)', g: 'الحركة والمركبات' }, { k: 'stroads', label: 'طرق المحطات (كلين وديرتي)', g: 'الحركة والمركبات' },
+  { k: 'prints', label: 'طباعة التقارير', g: 'البيانات' }, { k: 'online', label: 'حالة الاتصال', g: 'البيانات' }
+);
+BIO_ROLES.push({ k: BIO.ROLE_NAV, label: 'ملاح', desc: 'يسجّل طرق المحطات (كلين وديرتي) وخطوط السير لخدمة «وصّلني»، ويحدد السائق ورقمه لكل طريق', scope: 'optional', perms: [], navOnly: true });
+try { ADMIN.users.fields.filter(function (f) { return f.k === 'role'; })[0].opts.push(BIO.ROLE_NAV); } catch (e) { }
+/** الشاشات الافتراضية للملاح لو المدير ما اختارش له شاشات */
+var BIO_NAV_SCREENS = ['stroads', 'routes', 'wassalni', 'inbox'];
+TABLES.users.cols.allow = 'الشاشات المسموحة';
+function BIO_scrKeys() { return BIO_SCREENS.map(function (s) { return s.k; }); }
+/** قائمة الشاشات المسموحة لو المستخدم اتحفظ بالنظام الجديد، وإلا null (النظام القديم: الشاشات المحجوبة بس) */
+function BIO_allowOf(x) {
+  if (!x) return null;
+  var a = String(x.allow == null ? '' : x.allow).trim();
+  if (a.charAt(0) === '@') return BIO_list(a.slice(1));
+  if (String(x.role).trim() === BIO.ROLE_NAV) return BIO_NAV_SCREENS.slice();
+  /* حساب قديم المدير قافل عليه أغلب الشاشات: الشاشات الجديدة تتقفل عليه هي كمان بدل ما تظهر لوحدها */
+  var hid = BIO_list(x.hide), old = BIO_scrKeys().filter(function (k) { return BIO_SCR_V334.indexOf(k) < 0; });
+  if (hid.length && hid.length * 2 >= old.length) return old.filter(function (k) { return hid.indexOf(k) < 0; });
+  return null;
+}
+/** هل الشاشة مقفولة على المستخدم (مدير الإدارة مفيش حاجة مقفولة عليه) */
+function BIO_hidden(x, k) {
+  if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return false;
+  var al = BIO_allowOf(x);
+  if (al) return BIO_scrKeys().indexOf(k) >= 0 && al.indexOf(k) < 0;
+  return BIO_list(x.hide).indexOf(k) >= 0;
+}
+/** الشاشات المقفولة فعلياً (اللي بتتبعت للتطبيق) */
+function BIO_hideEff(x) {
+  if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return [];
+  var al = BIO_allowOf(x);
+  if (al) return BIO_scrKeys().filter(function (k) { return al.indexOf(k) < 0; });
+  return BIO_list(x.hide);
+}
 TABLES.disProducts = { sheet: 'المطهرات - المنتجات', key: 'id', cols: { id: 'كود المنتج', name: 'الاسم التجاري', group: 'مجموعة المادة الفعالة', active: 'المادة الفعالة والتركيز', unit: 'الوحدة', price: 'سعر الوحدة (جنيه)', uses: 'الاستخدامات', dil: 'نسب التخفيف % (لكل استخدام)', contact: 'زمن التلامس (دقيقة)', supplier: 'المورد', minDays: 'حد إعادة الطلب (يوم)', status: 'الحالة', note: 'ملاحظات' } };
 TABLES.disMoves = { sheet: 'المطهرات - الحركة', key: 'id', cols: { id: 'الرقم', time: 'الوقت', kind: 'النوع', productId: 'كود المنتج', productName: 'المنتج', batch: 'رقم الدفعة', expiry: 'تاريخ الصلاحية', qty: 'الكمية (مركّز)', price: 'سعر الوحدة', pointId: 'كود النقطة أو الموقع', pointName: 'النقطة أو الموقع', use: 'الاستخدام', solution: 'المحلول المحضر (لتر)', by: 'سجّلها', byId: 'كود المسجل', note: 'ملاحظات' } };
 TABLES.disChecks = { sheet: 'المطهرات - التشغيل', key: 'id', cols: { id: 'الرقم', time: 'الوقت', kind: 'النوع', pointId: 'كود النقطة أو الموقع', pointName: 'النقطة أو الموقع', productId: 'كود المنتج', productName: 'المنتج', reading: 'القراءة', unit: 'الوحدة', result: 'النتيجة', by: 'سجّلها', byId: 'كود المسجل', note: 'ملاحظات' } };
@@ -5431,7 +5480,7 @@ function BIO_v19(api, H) {
       var orig = api[fn]; if (typeof orig !== 'function' || orig.__scr) return;
       var w = function (pin) {
         var x = H.userByPin(pin);
-        if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf(scr) >= 0) throw new Error('شاشة «' + ((BIO_SCREENS.filter(function (s) { return s.k === scr; })[0] || {}).label || scr) + '» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
+        if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_hidden(x, scr)) throw new Error('شاشة «' + ((BIO_SCREENS.filter(function (s) { return s.k === scr; })[0] || {}).label || scr) + '» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
         return orig.apply(null, arguments);
       };
       w.__scr = scr; api[fn] = w;
@@ -5849,7 +5898,7 @@ function BIO_v19(api, H) {
   ['opsMap', 'league', 'disData', 'disProductSave', 'disMove', 'disCheck', 'disDelete', 'disSettings', 'epiData', 'epiReport', 'epiDelete', 'epiRefresh', 'epiLab', 'epiImport', 'epiVerify', 'epiFeeds'].forEach(function (fn) {
     var scr = Object.keys(BIO_SCREEN_API).filter(function (k) { return BIO_SCREEN_API[k].indexOf(fn) >= 0; })[0], orig = api[fn];
     if (!scr || orig.__scr) return;
-    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf(scr) >= 0) throw new Error('هذه الشاشة غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
+    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_hidden(x, scr)) throw new Error('هذه الشاشة غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
     api[fn].__scr = scr;
   });
 }
@@ -6936,7 +6985,7 @@ function BIO_v21(api, H) {
   };
   ['planImport', 'disProgram', 'disProgSave'].forEach(function (fn) {
     var orig = api[fn];
-    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf('stations') >= 0) throw new Error('هذه الشاشة غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
+    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_hidden(x, 'stations')) throw new Error('هذه الشاشة غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
     api[fn].__scr = 'stations';
   });
 
@@ -7081,7 +7130,7 @@ function BIO_v22(api, H) {
   function extra(p) { return { kind: String(p.kind || ''), conc: String(p.conc || ''), prep: String(p.prep || ''), places: String(p.places || ''), method: String(p.method || ''), prog: String(p.prog || '') }; }
   function screenOk(pin) {
     var x = H.userByPin(pin);
-    if (x && role(x) !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf('dis') >= 0) throw new Error('شاشة «المطهرات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
+    if (x && role(x) !== BIO.ROLE_MANAGER && BIO_hidden(x, 'dis')) throw new Error('شاشة «المطهرات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
   }
 
   var dd = api.disData;
@@ -7243,7 +7292,7 @@ function BIO_v26(api, H) {
   function log(u, t, k, a, b, c) { if (api._log) try { api._log(u, t, k, a, b, c); } catch (e) { } }
   function code(v) { return String(v == null ? '' : v).replace(/^'/, '').trim().toUpperCase(); }
   function nk(s) { return BIO_disNameKey(String(s || '').replace(/[-–_]/g, ' ')).toLowerCase().replace(/o/g, '0'); }
-  function hide(pin, scr, label) { var x = H.userByPin(pin); if (x && role(x) !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf(scr) >= 0) throw new Error('شاشة «' + label + '» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); }
+  function hide(pin, scr, label) { var x = H.userByPin(pin); if (x && role(x) !== BIO.ROLE_MANAGER && BIO_hidden(x, scr)) throw new Error('شاشة «' + label + '» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); }
   function storeUser(pin) { hide(pin, 'store', 'المخازن والأرصدة'); var u = H.auth(pin, true); if (!canStore(u)) throw new Error('المخازن والأرصدة للمشرف والمسؤول ومدير الأمن الحيوي فقط'); return u; }
   var seq = 0;
   function uid(p) { return p + deps.now().toString(36).toUpperCase() + (++seq) + Math.floor(Math.random() * 90 + 10); }
@@ -7693,7 +7742,7 @@ function BIO_v27(api, H) {
   var MET = ['mortPct', 'liv', 'w1Pct', 'dead', 'soldPct', 'days', 'rest', 'wKg'];
   api.cycleData = function (pin) {
     var u = H.auth(pin, true), x = H.userByPin(pin);
-    if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf('cmp') >= 0) throw new Error('شاشة «مقارنة الدورات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
+    if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_hidden(x, 'cmp')) throw new Error('شاشة «مقارنة الدورات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
     var sites = H.sitesById(), now = deps.now(), today = cairoDay(now), FN = BIO_farmNow(rows('daily'), rows('cycles'));
     var farms = H.sitesList(sites).filter(function (s) { return BIO_isCycleSite(s) && H.inScope(u, s.id, sites); });
     var ids = {}; farms.forEach(function (s) { ids[s.id] = s; });
@@ -8372,7 +8421,7 @@ function BIO_v30(api, H) {
   // تخضع لحجب الشاشات زي باقي العمليات
   ['opsRoom', 'opsRoomRefresh'].forEach(function (fn) {
     var orig = api[fn];
-    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_list(x.hide).indexOf('ops') >= 0) throw new Error('شاشة «غرفة العمليات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
+    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && BIO_hidden(x, 'ops')) throw new Error('شاشة «غرفة العمليات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); return orig.apply(null, arguments); };
     api[fn].__scr = 'ops';
   });
 }
@@ -9561,7 +9610,7 @@ function BIO_v31pc(api, H) {
   // شاشة «مكافحة الآفات» تخضع لحجب الشاشات لحسابات الأمن الحيوي (حسابات شركة المكافحة مقصورة عليها أصلاً)
   ['pcData', 'pcPlanSave', 'pcTeamSet', 'pcPointsAdd', 'pcPointSet', 'pcChemSave', 'pcCheckin', 'pcVisitSave', 'pcVisit', 'pcVisitReview', 'pcComplaintAdd', 'pcComplaintResp', 'pcComplaintClose', 'pcSourceAdd', 'pcSourceFwd', 'pcSourceDone', 'pcEvalSave', 'pcSettings', 'pcAccounts', 'pcMembers', 'pcMemberSave', 'pcMemberDelete', 'pcPointDelete', 'pcChemDelete', 'pcPlanCancel', 'pcVisitCancel', 'pcComplaintEdit', 'pcSourceEdit', 'pcEvalDelete'].forEach(function (fn) {
     var orig = api[fn];
-    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && !BIO_isPc(String(x.role).trim()) && BIO_list(x.hide).indexOf('pc') >= 0) throw new Error('شاشة «مكافحة الآفات» غير متاحة لحسابك'); return orig.apply(null, arguments); };
+    api[fn] = function (pin) { var x = H.userByPin(pin); if (x && String(x.role).trim() !== BIO.ROLE_MANAGER && !BIO_isPc(String(x.role).trim()) && BIO_hidden(x, 'pc')) throw new Error('شاشة «مكافحة الآفات» غير متاحة لحسابك'); return orig.apply(null, arguments); };
     api[fn].__scr = 'pc';
   });
 }
@@ -9612,7 +9661,7 @@ BIO_seed = function (now) { var s = BIO_seedPrevPc_(now); try { BIO_seedPc(s, no
    - كلين: من بوابة تطهير الكلين أو المركزية ← البوابة الأمامية للمحطة (سيارات الشركة والعاملين والكتاكيت والعلف).
    - ديرتي: من طريق المبيع ← البوابة الخلفية (التجار والنافق والسبلة والخدمات).
    الطريق بيتسجّل بالـ GPS من الموبايل وهو ماشي فعلاً، ويتحفظ في ورقة «طرق المحطات». «وصّلني» بيقراه ويوجّه على نوعه بس. */
-TABLES.stroads = { sheet: 'طرق المحطات', key: 'id', cols: { id: 'رقم الطريق', siteId: 'كود الموقع', siteName: 'الموقع', kind: 'النوع', name: 'الاسم', poly: 'المسار (مرمّز)', marks: 'العلامات', lenM: 'الطول (متر)', nPts: 'عدد النقاط', active: 'نشط', byId: 'كود المسجّل', by: 'سجّله', time: 'وقت التسجيل', updatedAt: 'آخر تعديل' } };
+TABLES.stroads = { sheet: 'طرق المحطات', key: 'id', cols: { id: 'رقم الطريق', siteId: 'كود الموقع', siteName: 'الموقع', kind: 'النوع', name: 'الاسم', poly: 'المسار (مرمّز)', marks: 'العلامات', lenM: 'الطول (متر)', nPts: 'عدد النقاط', active: 'نشط', byId: 'كود المسجّل', by: 'سجّله', time: 'وقت التسجيل', updatedAt: 'آخر تعديل', driver: 'السائق', driverPhone: 'رقم السائق' } };
 var BIO_ROAD_KINDS = { clean: 'كلين', dirty: 'ديرتي' };
 var BIO_ROAD_MARKS = { fork: 'المفرق', turn: 'اللفّة', gate: 'البوابة', tank: 'خزان المية', sign: 'اللافتة', guard: 'كشك الأمن', tower: 'البرج', bump: 'المطب', danger: 'المكان الخطر', note: 'علامة' };
 /** ترميز المسار بنفس صيغة «شريك الدفاع» (Encoded Polyline بدقة 1e-5) */
@@ -9636,17 +9685,17 @@ function BIO_v333roads(api, H) {
   var store = H.store, deps = H.deps, R = 6371000, DG = Math.PI / 180;
   function dist(a, b) { var dLa = (b.lat - a.lat) * DG, dLo = (b.lng - a.lng) * DG, h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a.lat * DG) * Math.cos(b.lat * DG) * Math.sin(dLo / 2) * Math.sin(dLo / 2); return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
   function me(pin) { var u = H.auth(pin, 'login'); if (u.pestOnly) throw new Error('حسابك مخصص لقسم مكافحة الآفات فقط'); return u; }
-  function canEdit(u) { return !!u.isAdmin || [BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_SECTOR].indexOf(u.role) >= 0; }
+  function canEdit(u) { if ((u.hide || []).indexOf('stroads') >= 0) return false; return !!u.isAdmin || [BIO.ROLE_OFFICER, BIO.ROLE_SUPERVISOR, BIO.ROLE_INSPECTOR, BIO.ROLE_SECTOR, BIO.ROLE_NAV].indexOf(u.role) >= 0 || !!u.allowMode; }
   function sites() {
     var L = (store.all('sites') || []).map(function (s) { return { id: BIO_norm(s.id), name: String(s.name || s.id), sector: String(s.sector || ''), type: String(s.type || ''), level: s.level, external: s.external, lat: s.lat, lng: s.lng }; });
     return BIO_fixGeo(L).filter(function (s) { return !BIO_isYes(s.external) && s.lat != null && s.lng != null; })
       .sort(function (a, b) { var ra = BIO_placeRank(a), rb = BIO_placeRank(b); return (a.sector || '').localeCompare(b.sector || '', 'ar') || (ra == null ? 999 : ra) - (rb == null ? 999 : rb) || a.name.localeCompare(b.name, 'ar'); });
   }
   function rows() { try { return (store.all('stroads') || []).filter(function (r) { return String(r.active).trim() !== BIO.NO && String(r.active) !== '0'; }); } catch (e) { return []; } }
-  function out(r) { var mk = []; try { mk = typeof r.marks === 'string' ? JSON.parse(r.marks || '[]') : (r.marks || []); } catch (e) { mk = []; } return { id: String(r.id), siteId: BIO_norm(r.siteId), siteName: String(r.siteName || ''), kind: BIO_roadKind(r.kind), name: String(r.name || ''), poly: String(r.poly || ''), marks: mk, lenM: Number(r.lenM) || 0, nPts: Number(r.nPts) || 0, by: String(r.by || ''), updatedAt: BIO_ms(r.updatedAt) || BIO_ms(r.time) || 0 }; }
+  function out(r) { var mk = []; try { mk = typeof r.marks === 'string' ? JSON.parse(r.marks || '[]') : (r.marks || []); } catch (e) { mk = []; } return { id: String(r.id), siteId: BIO_norm(r.siteId), siteName: String(r.siteName || ''), kind: BIO_roadKind(r.kind), name: String(r.name || ''), poly: String(r.poly || ''), marks: mk, lenM: Number(r.lenM) || 0, nPts: Number(r.nPts) || 0, by: String(r.by || ''), driver: String(r.driver || ''), driverPhone: String(r.driverPhone || ''), updatedAt: BIO_ms(r.updatedAt) || BIO_ms(r.time) || 0 }; }
   function flush() { try { if (deps.wslFlush) deps.wslFlush(); } catch (e) {} }
   api.roadsList = function (pin) {
-    var u = me(pin);
+    var u = me(pin); if ((u.hide || []).indexOf('stroads') >= 0) throw new Error('شاشة «طرق المحطات» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي');
     return { canEdit: canEdit(u), kinds: BIO_ROAD_KINDS, marks: BIO_ROAD_MARKS, sites: sites(), roads: rows().map(out) };
   };
   /** p = { siteId, kind: clean|dirty, name, pts: [[lat,lng],...] بترتيب السواقة من أول الطريق للمحطة, marks: [{lat,lng,k,t}] } */
@@ -9681,7 +9730,7 @@ function BIO_v333roads(api, H) {
     var t = deps.now(), name = String(p.name || '').trim().slice(0, 60) || ((kind === 'clean' ? 'الطريق الكلين لـ ' : 'الطريق الديرتي لـ ') + st.name);
     /* طريق واحد شغال لكل نوع في كل محطة: التسجيل الجديد بيحل محل القديم (والقديم بيفضل في الشيت متعلّم «لا») */
     rows().filter(function (r) { return BIO_norm(r.siteId) === st.id && BIO_roadKind(r.kind) === kind; }).forEach(function (r) { store.update('stroads', r.id, { active: BIO.NO, updatedAt: t }); });
-    var row = { id: deps.id('RD-'), siteId: st.id, siteName: st.name, kind: BIO_ROAD_KINDS[kind], name: name, poly: poly, marks: JSON.stringify(marks), lenM: Math.round(L), nPts: pts.length, active: BIO.YES, byId: u.id, by: u.name, time: t, updatedAt: t };
+    var row = { id: deps.id('RD-'), siteId: st.id, siteName: st.name, kind: BIO_ROAD_KINDS[kind], name: name, poly: poly, marks: JSON.stringify(marks), lenM: Math.round(L), nPts: pts.length, active: BIO.YES, byId: u.id, by: u.name, time: t, updatedAt: t, driver: String(p.driver || '').trim().slice(0, 60), driverPhone: String(p.driverPhone || '').replace(/[^\d+]/g, '').slice(0, 20) };
     store.append('stroads', row);
     flush();
     return { road: out(row), roads: rows().map(out) };

@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.3</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.4</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -472,7 +472,7 @@
       if (!sameUser) { S.moves = {}; S.lastSync = 0; S.notices = []; S.approvals = {}; S.seenNotices = {}; S.dash = null; S.comms = null; S.chats = {}; }
       S.session = Object.assign({ pin: pin }, sess);
       S.siteId = ''; S.route = ''; S.vrFrame = null;
-      try { history.replaceState(null, '', location.pathname + location.search + (sess.user.reportsOnly ? '#vr' : sess.user.isManager && (sess.user.perms || []).some(function (p) { return p.indexOf('vr_') === 0; }) ? '#portal' : '')); } catch (e) { location.hash = ''; }
+      try { history.replaceState(null, '', location.pathname + location.search + (sess.user.reportsOnly ? '#vr' : sess.user.isManager && (sess.user.perms || []).some(function (p) { return p.indexOf('vr_') === 0; }) && (sess.user.hide || []).indexOf('vr') < 0 ? '#portal' : '')); } catch (e) { location.hash = ''; }
       persist();
       return sync().then(startApp);
     }).catch(function (e) {
@@ -503,9 +503,11 @@
   function isAdmin() { var u = S.session && S.session.user; return !!(u && u.isManager && (u.isAdmin || !u.perms)); }
   /** تقارير الأمن الحيوي: صلاحيات المستخدم عليها، وهل حسابه للتقارير فقط */
   function vrPerms() { var u = S.session && S.session.user; return u && u.isManager && u.perms ? u.perms.filter(function (p) { return p.indexOf('vr_') === 0; }) : (u && u.isManager && !u.perms ? ['vr_write', 'vr_view', 'vr_review', 'vr_approve'] : []); }
-  function hasVr() { return vrPerms().length > 0; }
+  function hasVr() { return vrPerms().length > 0 && (vrOnly() || !hiddenScr('vr')); }
   function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
-  function canRoads() { var u = S.session && S.session.user; if (!u) return false; return !!u.isAdmin || ['مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مفتش أمن حيوي', 'مدير قطاع'].indexOf(u.role) >= 0; }
+  function canRoads() { var u = S.session && S.session.user; if (!u) return false; return !!u.isAdmin || !!u.allowMode || ['مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مفتش أمن حيوي', 'مدير قطاع', 'ملاح'].indexOf(u.role) >= 0; }
+  /** v33.4: أول شاشة متاحة للمستخدم (لو غرفة القرار مقفولة عليه) */
+  function homeRoute() { if (pcOnly()) return 'pc'; if (vrOnly()) return 'vr'; if (!S.session.user.isManager) return 'gate'; var a = navItems().map(function (n) { return n[0]; }).filter(function (k) { return k !== 'more'; }); if (S.session.user.role === 'ملاح' && a.indexOf('stroads') >= 0) return 'stroads'; return a.indexOf('dash') >= 0 ? 'dash' : a[0] || 'more'; }
   function navItems() {
     var a = navItems0();
     /* 25/10: «وصّلني» (ملاحة لفة بلفة بالصوت جوه القطاعات) لكل الأدوار ماعدا شركة المكافحة وتقارير الزيارة فقط */
@@ -527,6 +529,7 @@
   function bottomItems() {
     var all = navItems(), pick = pcOnly() ? ['pc', 'more'] : vrOnly() ? ['vr', 'calc', 'more'] : S.session.user.isManager ? (isAdmin() ? ['dash', 'twin', 'requests', 'stations', 'comms', 'missions', 'notices', 'more'] : ['dash', 'stations', 'store', 'calc', 'more']) : ['gate', 'missions', 'comms', 'notices', 'log', 'more'];
     var got = pick.map(function (k) { return all.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean);
+    if (S.session.user.isManager && got.length < 3) { var mo = all.filter(function (n) { return n[0] === 'more'; }); got = all.filter(function (n) { return n[0] !== 'more'; }).slice(0, 4).concat(mo); }
     if (S.session.user.isManager && got.length > 5) got = got.slice(0, 4).concat(got.slice(-1));
     return got.map(function (n) { return [n[0], n[1], n[2], S.session.user.isManager || n[0] === 'log' || n[0] === 'calc' ? NAV_SHORT[n[0]] || n[1] : n[1]]; });
   }
@@ -659,7 +662,7 @@
     var allowed = navItems().map(function (n) { return n[0]; }).concat(hasVr() && !vrOnly() ? ['portal'] : [], S.session.user.isManager ? ['history', 'ref'].concat(can('analytics') ? ['map', 'trace', 'plan', 'network', 'audit'] : [], can('data') || can('admin') ? ['table', 'cards', 'external', 'selfpoints'] : can('sites') ? ['selfpoints'] : [], ['tv'], isAdmin() ? ['backup', 'codes'] : []) : ['ref', 'passport', 'disposal']);
     var base = r.split('/')[0];
     if (base && hiddenScr(base)) { toast('هذه الشاشة غير متاحة لحسابك'); allowed = []; }
-    if (allowed.indexOf(base) < 0) return pcOnly() ? 'pc' : vrOnly() ? 'vr' : S.session.user.isManager ? 'dash' : 'gate';
+    if (allowed.indexOf(base) < 0) return homeRoute();
     return r;
   }
   function render() {
@@ -2968,7 +2971,7 @@
   }
   /* ============================ المستخدمون والصلاحيات ============================ */
   var PERM_SHORT = { decide: 'قرار الاستثناء', reports: 'البلاغات والرسائل', notices: 'إصدار القرارات', sites: 'إنذار وإغلاق المواقع', data: 'الأفراد والكروت', analytics: 'التحليل والتتبع', admin: 'إدارة النظام', vr_write: 'تحرير التقارير', vr_view: 'الاطلاع على التقارير', vr_review: 'مراجعة التقارير', vr_approve: 'اعتماد التقارير' };
-  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye', 'مفتش أمن حيوي': 'clip', 'مسؤول أمن حيوي': 'edit', 'مشرف أمن حيوي': 'network' };
+  var ROLE_ICONS = { 'مدير': 'shield', 'مدير قطاع': 'map', 'مدير موقع': 'pin', 'أمن بوابة': 'scan', 'متابعة فقط': 'eye', 'مفتش أمن حيوي': 'clip', 'مسؤول أمن حيوي': 'edit', 'مشرف أمن حيوي': 'network', 'ملاح': 'nav' };
   function userAccessMsg(u, pin, appUrl) {
     var scope = u.role === 'أمن بوابة' ? 'البوابة: ' + (u.gateName || '') : u.scopeLabel ? 'نطاق الإدارة: ' + u.scopeLabel : 'نطاق الإدارة: كل القطاعات';
     return 'مرحباً ' + u.name + '\nتم تجهيز حسابك على تطبيق الأمن الحيوي - ' + (S.session.company || CFG.COMPANY || '') + '\n\nالدور: ' + u.roleLabel + '\n' + scope +
@@ -3043,7 +3046,7 @@
       if ($('uGate')) $('uGate').onchange = function () { st.gate = this.value; };
       $('uScope').querySelectorAll('[data-sc]').forEach(function (x) { x.onclick = function () { var k = x.dataset.sc, i = st.scope.indexOf(k); if (i >= 0) st.scope.splice(i, 1); else st.scope.push(k); x.classList.toggle('on', i < 0); }; });
       var locked = r.k === 'مدير' || r.k === 'أمن بوابة';
-      $('uPerms').innerHTML = r.k === 'أمن بوابة' ? '<div class="infobox small">' + icon('scan') + ' أمن البوابة يسجل الدخول والخروج، ويرسل البلاغات العاجلة والرسائل للمدير، ويطّلع على القرارات.</div>' :
+      $('uPerms').innerHTML = r.navOnly ? '<div class="infobox small">' + icon('nav') + ' الملاح بيسجّل طرق المحطات (كلين وديرتي) وخطوط السير لخدمة «وصّلني»، ويكتب اسم السائق ورقمه لكل طريق. الشاشات اللي تحت مختارة له تلقائياً، وتقدر تزوّد أو تشيل.</div>' : r.k === 'أمن بوابة' ? '<div class="infobox small">' + icon('scan') + ' أمن البوابة يسجل الدخول والخروج، ويرسل البلاغات العاجلة والرسائل للمدير، ويطّلع على القرارات.</div>' :
         '<div class="field"><div class="spread"><label>الصلاحيات</label>' + (locked ? '' : '<button type="button" class="btn sm ghost" id="uReset">' + icon('refresh') + ' صلاحيات الدور الافتراضية</button>') + '</div>' + [['', 'صلاحيات نظام الأمن الحيوي', 'shield'], ['vr', 'صلاحيات تقارير الأمن الحيوي', 'clip']].map(function (g) {
           var ps = perms.filter(function (p) { return (p.group || '') === g[0]; });
           if (!ps.length || (g[0] === '' && r.reportsOnly)) return '';
@@ -3057,7 +3060,7 @@
       $('uScr').innerHTML = scrEditorHtml(meta.screens || [], r, st.hide); scrEditorBind($('uScr'), meta.screens || [], r, st);
       prnEditor($('uPrn'), meta.printCats || [], r, st);
     }
-    document.querySelectorAll('#uRoles [data-role]').forEach(function (x) { x.onclick = function () { if (x.disabled || st.role === x.dataset.role) return; st.role = x.dataset.role; st.scope = []; st.perms = roleDef(st.role).perms.slice(); drawRole(); }; });
+    document.querySelectorAll('#uRoles [data-role]').forEach(function (x) { x.onclick = function () { if (x.disabled || st.role === x.dataset.role) return; st.role = x.dataset.role; st.scope = []; st.perms = roleDef(st.role).perms.slice(); if (roleDef(st.role).navOnly) st.hide = (meta.screens || []).map(function (s) { return s.k; }).filter(function (k) { return NAV_SCREENS.indexOf(k) < 0; }); drawRole(); }; });
     ['uNewPin', 'uStop'].forEach(function (id) { if ($(id)) $(id).onclick = function () { this.classList.toggle('on'); }; });
     drawRole();
   }
@@ -4863,13 +4866,13 @@
     var dr = rdDraftGet();
     var h = (dr && dr.pts && dr.pts.length > 1 ? '<div class="card rd-draft">' + icon('alert') + '<div><b>فيه تسجيل ما اتحفظش</b><span>' + esc(dr.siteName || '') + ' · ' + esc(RD_KIND[dr.kind] ? RD_KIND[dr.kind].l : '') + ' · ' + rdFmt(dr.len) + ' · ' + dr.pts.length + ' نقطة</span></div><div class="row"><button class="btn primary sm" type="button" id="rdDrSave">' + icon('check') + ' احفظه دلوقتي</button><button class="btn sm ghost" type="button" id="rdDrDel">' + icon('trash') + ' امسحه</button></div></div>' : '') +
       '<div class="card rd-sum"><div class="rd-k"><b class="mono">' + nC + '/' + st.length + '</b><span><i class="rd-dot clean"></i> طرق كلين متسجّلة</span></div><div class="rd-k"><b class="mono">' + nD + '/' + st.length + '</b><span><i class="rd-dot dirty"></i> طرق ديرتي متسجّلة</span></div>' +
-      (d.canEdit ? '<button class="btn primary big" type="button" id="rdNew">' + icon('plus') + ' سجّل طريق جديد</button>' : '<p class="small muted">التسجيل للمدير والمسؤول والمشرف والمعاون ومدير القطاع.</p>') + '</div>' +
+      (d.canEdit ? '<button class="btn primary big" type="button" id="rdNew">' + icon('plus') + ' سجّل طريق جديد</button>' : '<p class="small muted">التسجيل للمدير والمسؤول والمشرف والمعاون ومدير القطاع والملاح.</p>') + '</div>' +
       '<div class="rd-list">' + st.concat(other).map(function (x) {
         var b = by[x.id] || {}, polys = ['clean', 'dirty'].filter(function (k) { return b[k]; }).map(function (k) { return { kind: k, pts: rdPolyDec(b[k].poly) }; });
         var cell = function (k) {
           var r = b[k], K = RD_KIND[k];
           return '<div class="rd-c ' + k + (r ? ' on' : '') + '"><div class="rd-ct"><i class="rd-dot ' + k + '"></i><b>' + K.l + '</b></div>' +
-            (r ? '<span class="small">' + rdFmt(r.lenM) + ' · ' + esc(r.by || '') + ' · ' + esc(ago(r.updatedAt)) + (r.marks && r.marks.length ? ' · ' + r.marks.length + ' علامة' : '') + '</span>' : '<span class="small muted">لسه مش متسجّل</span>') +
+            (r ? '<span class="small">' + rdFmt(r.lenM) + ' · ' + esc(r.by || '') + ' · ' + esc(ago(r.updatedAt)) + (r.marks && r.marks.length ? ' · ' + r.marks.length + ' علامة' : '') + '</span>' + (r.driver || r.driverPhone ? '<span class="small rd-drv">' + icon('truck') + ' السائق: ' + esc(r.driver || '—') + (r.driverPhone ? ' · <a dir="ltr" href="tel:' + esc(r.driverPhone) + '">' + esc(r.driverPhone) + '</a> · <a target="_blank" rel="noopener" href="' + esc(waTo(r.driverPhone, 'أهلاً ' + (r.driver || '') + '، بخصوص تسجيل ' + RD_KIND[k].l + ' لـ ' + x.name)) + '">واتساب</a>' : '') + '</span>' : '') : '<span class="small muted">لسه مش متسجّل</span>') +
             (d.canEdit ? '<div class="row"><button class="btn sm' + (r ? '' : ' primary') + '" type="button" data-rdrec="' + esc(x.id) + '" data-k="' + k + '">' + icon('route') + ' ' + (r ? 'سجّله تاني' : 'سجّله') + '</button>' + (r ? '<button class="btn sm ghost" type="button" data-rddel="' + esc(r.id) + '">' + icon('trash') + '</button>' : '') + '</div>' : '') + '</div>';
         };
         return '<article class="card rd-it"><div class="rd-h"><div><b>' + esc(x.name) + '</b><small>' + esc([x.sector, x.type].filter(Boolean).join(' · ')) + '</small></div>' + (polys.length ? rdSvg(polys, x) : '') + '</div><div class="rd-cs">' + cell('clean') + cell('dirty') + '</div></article>';
@@ -4891,6 +4894,7 @@
       '<div class="field"><label for="rdSite">المحطة</label><select id="rdSite"><option value="">اختار المحطة</option>' + d.sites.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === siteId ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label>نوع الطريق</label><div class="rd-kinds">' + ['clean', 'dirty'].map(function (k) { var K = RD_KIND[k]; return '<button type="button" class="rd-kb ' + k + (kind === k ? ' on' : '') + '" data-rk="' + k + '"><i class="rd-dot ' + k + '"></i><b>' + K.l + '</b><span>' + K.d + '</span><small>' + K.who + '</small></button>'; }).join('') + '</div></div>' +
       '<div class="field"><label for="rdName">اسم الطريق (اختياري)</label><input id="rdName" maxlength="60" placeholder="مثال: من الكلين عند خزان المية"></div>' +
+      '<div class="row"><div class="field grow"><label for="rdDrv">السائق اللي هيسوق التسجيل</label><input id="rdDrv" maxlength="60" value="' + esc(S.rdDrv ? S.rdDrv.n : '') + '" placeholder="اسم السائق"></div><div class="field grow"><label for="rdDrvP">رقم موبايل السائق</label><input id="rdDrvP" type="tel" dir="ltr" maxlength="20" value="' + esc(S.rdDrv ? S.rdDrv.p : '') + '" placeholder="01xxxxxxxxx"></div></div>' +
       '<div class="rd-tip">' + icon('info') + '<span>شغّل الـ GPS، وخلي الشاشة منوّرة والموبايل في مكان ثابت. ابدأ من <b>أول الطريق</b> (بوابة الكلين أو المركزية للكلين، والمبيع للديرتي) واسوق بالسرعة العادية. عند أي مفرق أو خزان أو بوابة اضغط علامتها علشان «وصّلني» يقولها للسواق.</span></div>' +
       '<button class="btn primary big" type="button" data-a="go">' + icon('route') + ' ابدأ التسجيل</button><button class="btn ghost" type="button" data-a="x">إلغاء</button></div>', function (a, el) {
       if (a === 'x') return closeSheet();
@@ -4898,15 +4902,16 @@
         var sid = $('rdSite').value, k = (document.querySelector('.rd-kb.on') || {}).dataset; k = k && k.rk;
         if (!sid) return toast('اختار المحطة'); if (!k) return toast('اختار نوع الطريق: كلين ولا ديرتي');
         var site = d.sites.filter(function (x) { return x.id === sid; })[0];
-        closeSheet(); rdRecord(site, k, $('rdName') ? $('rdName').value.trim() : '');
+        var dv = { n: ($('rdDrv') || {}).value ? $('rdDrv').value.trim() : '', p: ($('rdDrvP') || {}).value ? $('rdDrvP').value.replace(/[^\d+]/g, '') : '' }; S.rdDrv = dv;
+        closeSheet(); rdRecord(site, k, $('rdName') ? $('rdName').value.trim() : '', dv);
       }
     });
     document.querySelectorAll('.rd-kb').forEach(function (b) { b.onclick = function () { document.querySelectorAll('.rd-kb').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
   }
   /** شاشة التسجيل الحي */
-  function rdRecord(site, kind, name) {
+  function rdRecord(site, kind, name, dv) {
     if (!navigator.geolocation) return toast('الموبايل ده مافيهوش تحديد مكان');
-    var R = { siteId: site.id, siteName: site.name, kind: kind, name: name, pts: [], marks: [], len: 0, t0: Date.now(), acc: null }, wid = null, lock = null, tick = null;
+    var R = { siteId: site.id, siteName: site.name, kind: kind, name: name, driver: dv ? dv.n : '', driverPhone: dv ? dv.p : '', pts: [], marks: [], len: 0, t0: Date.now(), acc: null }, wid = null, lock = null, tick = null;
     var el = document.createElement('div'); el.id = 'rdRec'; el.className = 'rd-rec ' + kind; document.body.appendChild(el);
     el.innerHTML = '<div class="rr-h"><span class="rr-live"><i></i> بيسجّل</span><div><b>' + esc(RD_KIND[kind].l) + '</b><small>' + esc(site.name) + '</small></div></div>' +
       '<div class="rr-big"><div><b class="mono" id="rrLen">0 م</b><span>المسافة</span></div><div><b class="mono" id="rrPts">0</b><span>نقطة</span></div><div><b class="mono" id="rrTime">0:00</b><span>الوقت</span></div></div>' +
@@ -4949,7 +4954,7 @@
   function rdSave(R, btn) {
     if (!R) return; if (btn) btn.disabled = true;
     toast('بيحفظ الطريق…');
-    remote('roadSave', [S.session.pin, { siteId: R.siteId, kind: R.kind, name: R.name, pts: R.pts, marks: R.marks }]).then(function (r) {
+    remote('roadSave', [S.session.pin, { siteId: R.siteId, kind: R.kind, name: R.name, pts: R.pts, marks: R.marks, driver: R.driver || '', driverPhone: R.driverPhone || '' }]).then(function (r) {
       rdDraftSet(null); toast('اتحفظ ' + (RD_KIND[R.kind] ? RD_KIND[R.kind].l : 'الطريق') + ' لـ ' + R.siteName + ' · ' + rdFmt(r.road.lenM) + '. «وصّلني» هيستخدمه على طول', 6000);
       if (S.rd) { S.rd.roads = r.roads; if (S.route.split('/')[0] === 'stroads') rdDraw(S.rd); } else go('stroads');
     }).catch(function (e) { if (btn) btn.disabled = false; toast(errText(e) + ' · التسجيل محفوظ على الموبايل، تقدر تحفظه تاني من «طرق المحطات»', 8000); if (S.route.split('/')[0] === 'stroads' && S.rd) rdDraw(S.rd); });
@@ -7438,7 +7443,7 @@
     var html = kpiRow([['k-brand', 'nav', d.list.length, 'مسار معتمد'], ['k-ok', 'pin', d.sites.length, 'موقع له إحداثيات'], ['k-warn', 'alert', d.offM + ' م', 'حد الخروج عن الطريق'], ['k-bad', 'shield', d.zoneM + ' م', 'نطاق المحطات الممنوعة']]);
     if (!d.sites.length) html += '<div class="infobox">' + icon('pin') + ' لا توجد مواقع لها إحداثيات. أضف الإحداثيات من «البيانات ← المواقع» أو من رادار الطيور.</div>';
     html += '<div class="card"><div class="card-head"><div><span class="kick">الخطوط الزرقاء: مسارات معتمدة · النقاط: المواقع</span><h2>' + icon('map') + ' خريطة الموقع</h2></div></div><div class="rt-map" id="rtMap" dir="ltr"></div></div>';
-    html += '<div class="card"><div class="card-head"><h2>' + icon('route') + ' المسارات المعتمدة</h2><span class="badge">' + d.list.length + '</span></div>' + (d.list.length ? '<div class="list">' + d.list.map(function (r) { return '<div class="li"><span class="av">' + icon('nav') + '</span><div class="t"><b>' + esc(r.name) + '</b><span>' + r.km + ' كم · ' + r.pts.length + ' نقطة · ' + esc(r.by) + ' · ' + esc(ago(r.time)) + '</span></div><div class="meta">' + (d.canEdit ? '<button type="button" class="btn sm" data-rte="' + esc(r.id) + '">' + icon('edit') + '</button><button type="button" class="btn sm ghost" data-rtx="' + esc(r.id) + '" aria-label="حذف">' + icon('trash') + '</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد مسارات معتمدة بعد. بدونها يرسل التطبيق خطاً مباشراً تقريبياً بين النقاط، والأفضل أن يرسم المشرف الطرق الفعلية مرة واحدة.</p>') + '</div>';
+    html += '<div class="card"><div class="card-head"><h2>' + icon('route') + ' المسارات المعتمدة</h2><span class="badge">' + d.list.length + '</span></div>' + (d.list.length ? '<div class="list">' + d.list.map(function (r) { return '<div class="li"><span class="av">' + icon('nav') + '</span><div class="t"><b>' + esc(r.name) + '</b><span>' + r.km + ' كم · ' + r.pts.length + ' نقطة' + (r.driver || r.driverPhone ? ' · السائق: ' + esc(r.driver || '') + (r.driverPhone ? ' <a dir="ltr" href="tel:' + esc(r.driverPhone) + '">' + esc(r.driverPhone) + '</a>' : '') : '') + ' · ' + esc(r.by) + ' · ' + esc(ago(r.time)) + '</span></div><div class="meta">' + (d.canEdit ? '<button type="button" class="btn sm" data-rte="' + esc(r.id) + '">' + icon('edit') + '</button><button type="button" class="btn sm ghost" data-rtx="' + esc(r.id) + '" aria-label="حذف">' + icon('trash') + '</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="empty">لا توجد مسارات معتمدة بعد. بدونها يرسل التطبيق خطاً مباشراً تقريبياً بين النقاط، والأفضل أن يرسم المشرف الطرق الفعلية مرة واحدة.</p>') + '</div>';
     html += '<div class="card"><h2>' + icon('book') + ' كيف يعمل الإرشاد</h2><div class="st-how">' + [['send', 'إرسال خط السير', 'اختر المركبة ونقطة البداية والمحطات بالترتيب، فيصل للسائق رابط على واتساب.'], ['map', 'خريطة للسائق', 'يرى الطريق المسموح والمحطة التالية والمسافة إليها، والمحطات الممنوعة باللون الأحمر.'], ['alert', 'تنبيه فوري', 'لو ابتعد عن الطريق أكثر من ' + d.offM + ' م أو اقترب من محطة غير مسموحة لمسافة ' + d.zoneM + ' م: يهتز الموبايل ويصل تنبيه للمشرف والإدارة.'], ['scan', 'البوابة', 'عند وصوله يمسح على البوابة كالمعتاد، وتظهر رحلته كاملة في «رحلات المركبات».']].map(function (x) { return '<div><span class="ki">' + icon(x[0]) + '</span><b>' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div></div>';
     out.innerHTML = html;
     out.querySelectorAll('[data-rte]').forEach(function (b) { b.onclick = function () { routeEditor(d.list.filter(function (r) { return r.id === b.dataset.rte; })[0]); }; });
@@ -7454,18 +7459,19 @@
   }
   function routeEditor(r) {
     var d = S.rtData; if (!d) return;
-    var R = { id: r.id || '', fromId: r.fromId || '', toId: r.toId || '', pts: (r.pts || []).slice(), name: r.name || '' }, map = null, line = null, marks = [];
+    var R = { id: r.id || '', fromId: r.fromId || '', toId: r.toId || '', pts: (r.pts || []).slice(), name: r.name || '', driver: r.driver || '', driverPhone: r.driverPhone || '' }, map = null, line = null, marks = [];
     openSheet('<div class="sheet-head sh-brand"><h2>' + icon('edit') + ' ' + (R.id ? 'تعديل مسار معتمد' : 'رسم مسار معتمد') + '</h2><span class="small">اختر البداية والوجهة، ثم اضغط على الخريطة على طول الطريق الفعلي بالترتيب</span></div><div class="sheet-body">' +
       '<div class="row"><div class="field grow"><label for="reF">من</label><select id="reF"><option value="">اختر</option>' + siteOptions(d.sites, R.fromId) + '</select></div><div class="field grow"><label for="reT">إلى</label><select id="reT"><option value="">اختر</option>' + siteOptions(d.sites, R.toId) + '</select></div></div>' +
       '<div class="rt-edit" id="reMap" dir="ltr"></div><div class="spread"><span class="xs muted" id="reInfo"></span><div class="row"><button type="button" class="btn sm" data-a="undo">' + icon('back') + ' تراجع</button><button type="button" class="btn sm ghost" data-a="clear">' + icon('trash') + ' مسح</button></div></div>' +
       '<div class="field"><label for="reN">اسم المسار (اختياري)</label><input id="reN" maxlength="80" value="' + esc(R.name) + '" placeholder="مثال: الطريق الخلفي من البوابة لمحطة 12"></div>' +
+      '<div class="row"><div class="field grow"><label for="reD">السائق</label><input id="reD" maxlength="60" value="' + esc(R.driver) + '" placeholder="اسم السائق اللي بيسلك المسار"></div><div class="field grow"><label for="reDP">رقم موبايل السائق</label><input id="reDP" type="tel" dir="ltr" maxlength="20" value="' + esc(R.driverPhone) + '" placeholder="01xxxxxxxxx"></div></div>' +
       '<button class="btn primary big" data-a="save">' + icon('check') + ' حفظ المسار المعتمد</button><button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, el) {
       if (a === 'close') return closeSheet();
       if (a === 'undo') { R.pts.pop(); return paint(); }
       if (a === 'clear') { R.pts = []; return paint(); }
       if (a !== 'save') return;
       el.disabled = true;
-      remote('routeSave', [S.session.pin, { id: R.id, fromId: $('reF').value, toId: $('reT').value, pts: R.pts, name: $('reN').value }]).then(function (x) { closeSheet(); toast('حُفظ المسار المعتمد · ' + x.route.km + ' كم'); viewRoutes(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
+      remote('routeSave', [S.session.pin, { id: R.id, fromId: $('reF').value, toId: $('reT').value, pts: R.pts, name: $('reN').value, driver: $('reD').value.trim(), driverPhone: $('reDP').value.trim() }]).then(function (x) { closeSheet(); toast('حُفظ المسار المعتمد · ' + x.route.km + ' كم'); viewRoutes(); }).catch(function (e) { el.disabled = false; toast(errText(e)); });
     });
     $('sheetWrap').dataset.lock = 1;
     var by = {}; d.sites.forEach(function (s) { by[s.id] = s; });
@@ -7802,10 +7808,11 @@
   }
   /** v22: شاشات أُلغيت بقرار المستخدم (دوري الأمن الحيوي، الأكاديمية لحين تطويرها لاحقاً) */
   function removedScr(k) { return k === 'league'; }
-  function hiddenScr(k) { if (removedScr(k)) return true; if (k === 'calc' || k === 'prints') return false; var u = S.session && S.session.user; return !!(u && u.hide && u.hide.length && !isAdmin() && u.hide.indexOf(k) >= 0); }
+  function hiddenScr(k) { if (removedScr(k)) return true; var u = S.session && S.session.user; return !!(u && u.hide && u.hide.length && !isAdmin() && u.hide.indexOf(k) >= 0); }
   function arDay(ms) { try { return new Date(ms).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) { return fmt(ms); } }
   function num19(v, d) { return v == null || v === '' || isNaN(v) ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d }); }
-  var GUARD_SCREENS = ['missions', 'comms', 'log', 'tours', 'routes', 'dis'];
+  var GUARD_SCREENS = ['missions', 'comms', 'log', 'tours', 'routes', 'dis', 'inbox', 'cheer', 'wassalni', 'calc'];
+  var NAV_SCREENS = ['stroads', 'routes', 'wassalni', 'inbox'];
 
   /* ---------- 1) شاشة المستخدمين: الشاشات المتاحة لكل فرد ---------- */
   function scrEditorHtml(screens, role, hide) {
@@ -7820,7 +7827,7 @@
           var on = hide.indexOf(s.k) < 0;
           return '<button type="button" class="scr-chip' + (on ? ' on' : '') + '" data-scr="' + esc(s.k) + '" aria-pressed="' + on + '">' + icon(on ? 'eye' : 'eyeoff') + '<span>' + esc(s.label) + '</span></button>';
         }).join('') + '</div></div>';
-      }).join('') + '<span class="hint">الشاشة المخفية تختفي من قائمته ولا يستطيع فتحها حتى برابط مباشر، والخادم يرفض عملياتها. ' + (role.scope === 'gate' ? 'شاشة البوابة والقرارات متاحة دائماً لأمن البوابة.' : 'مركز القيادة والقرارات متاحة دائماً.') + '</span></div>';
+      }).join('') + '<span class="hint">الشاشة المخفية تختفي من قائمته ولا يستطيع فتحها حتى برابط مباشر، والخادم يرفض عملياتها. ' + (role.scope === 'gate' ? 'شاشة البوابة والقرارات متاحة دائماً لأمن البوابة.' : 'أي شاشة مش مختارة بتتقفل عليه، وأي شاشة جديدة تتضاف للمنظومة بعدين بتفضل مقفولة لحد ما تفتحها له. بعض الشاشات محتاجة كمان الصلاحية المناسبة من فوق (زي الطلبات والتحليل).') + '</span></div>';
   }
   /** v27: صلاحية طباعة التقارير لكل مستخدم بالتصنيف (يمنحها مدير الإدارة) */
   function prnEditor(box, cats, role, st) {
