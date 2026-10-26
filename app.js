@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 33.4</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 34.1</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -507,13 +507,15 @@
   function vrOnly() { var u = S.session && S.session.user; return !!(u && u.reportsOnly); }
   function canRoads() { var u = S.session && S.session.user; if (!u) return false; return !!u.isAdmin || !!u.allowMode || ['مسؤول أمن حيوي', 'مشرف أمن حيوي', 'مفتش أمن حيوي', 'مدير قطاع', 'ملاح'].indexOf(u.role) >= 0; }
   /** v33.4: أول شاشة متاحة للمستخدم (لو غرفة القرار مقفولة عليه) */
-  function homeRoute() { if (pcOnly()) return 'pc'; if (vrOnly()) return 'vr'; if (!S.session.user.isManager) return 'gate'; var a = navItems().map(function (n) { return n[0]; }).filter(function (k) { return k !== 'more'; }); if (S.session.user.role === 'ملاح' && a.indexOf('stroads') >= 0) return 'stroads'; return a.indexOf('dash') >= 0 ? 'dash' : a[0] || 'more'; }
+  function homeRoute() { if (pcOnly()) return 'pc'; if (vrOnly()) return 'vr'; if (!S.session.user.isManager) return 'gate'; var a = navItems().map(function (n) { return n[0]; }).filter(function (k) { return k !== 'more'; }); if (S.session.user.role === 'ملاح' && a.indexOf('stroads') >= 0) return 'stroads'; if (S.session.user.role === 'مفتش أمن حيوي' && a.indexOf('myday') >= 0) return 'myday'; return a.indexOf('home') >= 0 ? 'home' : a.indexOf('dash') >= 0 ? 'dash' : a[0] || 'more'; }
   function navItems() {
     var a = navItems0();
     /* 25/10: «وصّلني» (ملاحة لفة بلفة بالصوت جوه القطاعات) لكل الأدوار ماعدا شركة المكافحة وتقارير الزيارة فقط */
     if (!pcOnly() && !a.some(function (n) { return n && n[0] === 'wassalni'; })) { var mi = a.map(function (n) { return n && n[0]; }).indexOf('more'), it = ['wassalni', 'وصّلني (الملاحة)', 'nav']; if (mi >= 0) a.splice(mi, 0, it); else a.push(it); }
     /* v33.3: تسجيل طرق المحطات (كلين وديرتي) */
     if (!pcOnly() && canRoads() && !a.some(function (n) { return n && n[0] === 'stroads'; })) { var mj = a.map(function (n) { return n && n[0]; }).indexOf('more'), it2 = ['stroads', 'طرق المحطات (كلين وديرتي)', 'route']; if (mj >= 0) a.splice(mj, 0, it2); else a.push(it2); }
+    /* v34: الرئيسية وصفحة المحطة وخريطة القيادة ويومي */
+    v34Extra().forEach(function (it) { if (a.some(function (n) { return n && n[0] === it[0]; })) return; if (it[0] === 'home') a.unshift(it); else { var at = a.map(function (n) { return n && n[0]; }).indexOf(it[0] === 'site' ? 'stations' : it[0] === 'mapc' ? 'twin' : 'vr'); if (at >= 0) a.splice(at, 0, it); else a.splice(Math.max(0, a.length - 1), 0, it); } });
     return a.filter(function (n) { return !hiddenScr(n[0]); });
   }
   function navItems0() {
@@ -560,7 +562,7 @@
   }
   function navGroupOf(k) { var g = NAV_GROUPS.filter(function (x) { return x[3].indexOf(k) >= 0; })[0]; return g ? g[0] : 'admin'; }
   function navBtn(n, fav) {
-    return '<button class="navbtn" type="button" data-go="' + n[0] + '" data-q="' + esc(n[1]) + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span>' +
+    return '<button class="navbtn" type="button" data-go="' + n[0] + '" data-q="' + esc(n[4] || n[1]) + '">' + icon(n[2]) + '<span>' + n[1] + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span>' +
       (n[0] === 'more' ? '' : '<span class="nv-star' + (fav ? ' on' : '') + '" data-fav="' + n[0] + '" title="' + (fav ? 'إزالة من المفضلة' : 'تثبيت في المفضلة') + '">' + icon('star') + '</span>') + '</button>';
   }
   function sideNavHtml() {
@@ -629,20 +631,21 @@
       '<div class="app"><header class="topbar"><div class="topbar-in"><div class="logo">' + logoImg() + '</div>' +
       '<div class="brandtxt"><b>' + esc(me.company || CFG.COMPANY || 'الأمن الحيوي') + '</b><span id="subTitle"></span></div>' +
       (liteOnly() ? '' : '<button class="cmdk-btn" type="button" id="cmdBtn" aria-label="ابحث أو نفّذ أمراً">' + icon('search') + '<span>ابحث أو نفّذ أمراً</span><kbd>Ctrl K</kbd></button>') + '<div class="top-actions">' + (hasVr() && !vrOnly() ? '<button class="netchip portal-chip" type="button" id="portalChip">' + icon('layers') + '<span>المنصة</span></button>' : '') + (instCan() ? '<button class="netchip inst-chip" type="button" data-install="1">' + icon('download') + '<span>تثبيت</span></button>' : '') + '<button class="netchip" id="netChip" type="button"></button>' +
-      '<button class="iconbtn" id="themeBtn" type="button"></button>' + printBtnTop() + '<button class="iconbtn" id="bellBtn" type="button" aria-label="القرارات">' + icon('bell') + '<span class="badge" id="bellBadge" hidden></span></button></div></div></header>' +
-      '<div class="shell"><nav class="sidenav" id="sideNav" aria-label="التنقل"></nav><div class="maincol"><main class="main" id="main"></main><div class="vr-host" id="vrHost" hidden></div></div></div>' +
+      (liteOnly() ? '' : '<button class="iconbtn menu-sm" id="moreBtn" type="button" aria-label="كل الأقسام">' + icon('menu') + '</button>') + '<button class="iconbtn" id="themeBtn" type="button"></button>' + printBtnTop() + '<button class="iconbtn" id="bellBtn" type="button" aria-label="القرارات">' + icon('bell') + '<span class="badge" id="bellBadge" hidden></span></button></div></div></header>' +
+      '<div class="shell"><nav class="sidenav" id="sideNav" aria-label="التنقل"></nav><div class="maincol"><div class="hubtabs" id="hubTabs" hidden></div><main class="main" id="main"></main><div class="vr-host" id="vrHost" hidden></div></div></div>' +
       '<nav class="bottomnav" id="bottomNav" aria-label="التنقل"></nav></div><div class="toasts" id="toasts" aria-live="polite"></div><div id="sheetRoot"></div>';
     bindDemoStrip();
     document.onkeydown = function (e) { if (e.key === 'Escape') { if ($('cmdk')) cmdClose(); else closeSheet(); } };
     cmdKeys(); themeBtnPaint();
     $('themeBtn').onclick = themeCycle; if ($('cmdBtn')) $('cmdBtn').onclick = cmdOpen;
     buildSideNav();
-    $('bottomNav').innerHTML = bottomItems().map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '" aria-label="' + esc(n[1]) + '">' + icon(n[2]) + '<span class="nl">' + esc(n[3] || n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
+    $('bottomNav').innerHTML = (liteOnly() ? bottomItems() : bottomItemsV34()).map(function (n) { return '<button class="navbtn" type="button" data-go="' + n[0] + '" aria-label="' + esc(n[1]) + '">' + icon(n[2]) + '<span class="nl">' + esc(n[3] || n[1]) + '</span><span class="badge" data-badge="' + n[0] + '" hidden></span></button>'; }).join('');
     $('bottomNav').querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
     $('netChip').onclick = function () { sync(); go('more'); };
     if ($('portalChip')) $('portalChip').onclick = function () { go('portal'); };
     if (liteOnly()) { $('netChip').hidden = true; $('bellBtn').hidden = true; }
     $('bellBtn').onclick = function () { go('notices'); };
+    if ($('moreBtn')) $('moreBtn').onclick = function () { go('more'); };
     printBind();
     if (MODE === 'web') setTimeout(pushCfgLoad, 3000);
     render();
@@ -686,7 +689,9 @@
     var bn = $('bottomNav'); if (bn && !bn.querySelector('.navbtn.on') && bn.querySelector('[data-go="more"]')) bn.querySelector('[data-go="more"]').classList.add('on');
     var views = { gate: viewGate, notices: viewNotices, log: viewLog, more: viewMore, dash: viewDash, requests: viewRequests, data: viewData, table: viewTable, cards: viewCards, history: viewHistory, trace: viewTrace, map: viewMap, comms: viewComms, ref: viewRef, sim: viewSim, report: viewReport, missions: viewMissions, passport: viewPassport, external: viewExternal, insights: viewInsights, users: viewUsers, plan: viewPlan, network: viewNetwork, audit: viewAudit, birds: viewBirds, wx: viewWx, disposal: viewDisposal, companies: viewCompanies, inspect: viewInspect, backup: viewBackup, tv: viewTv, portal: viewPortal, vr: viewVr, codes: viewCodes, stations: viewStations, fleet: viewFleet, contractors: viewContractors, cams: viewCams, trips: viewTrips, ews: viewEws, farm: viewFarm, selfpoints: viewSelfPoints, tours: viewTours, routes: viewRoutes, attend: viewAttend, purge: viewPurge, ops: viewOpsRoom, academy: viewAcademy, vrcorr: viewVrCorr, pushset: viewPushSet, wassalni: viewWassalni, stroads: viewStRoads, inbox: viewInbox, cheer: viewCheer, pc: viewPc, twin: viewTwin, iso: viewIso, gates: viewGates, ucards: viewUcards, shield: viewShield, cmp: viewCmp, integ: viewInteg, board: viewBoard, calc: viewCalc, store: viewStore, evals: viewEvals, prints: viewPrints, online: viewOnline, dis: viewDis, epi: viewEpi };
     $('main').innerHTML = '';
+    views.home = viewHome; views.site = viewSite; views.mapc = viewMapC; views.myday = viewMyDay;
     views[base](r.split('/').slice(1));
+    hubTabsDraw(base);
     renderBadges(); renderSub();
     window.scrollTo(0, 0);
   }
@@ -1428,7 +1433,7 @@
       '<button type="button" class="portal-card vr" data-pt="vr"><span class="pc-ico">' + icon('clip') + '</span><span class="pc-k">التقارير</span><b>تقارير زيارات الأمن الحيوي</b><span class="pc-d">' + VR_TYPES.map(function (x) { return x[1]; }).join(' · ') + '، مع دورة المراجعة والاعتماد وملفات PDF.</span>' +
         '<span class="pc-tags"><i>دورك: ' + esc(VR_ROLE_TXT[role]) + '</i></span><span class="pc-go">فتح التقارير ' + icon('chev') + '</span></button>' +
       '</div><div class="portal-tools">' + [['calc', 'flask', 'حاسبة التطهير', 1], ['store', 'box', 'المخازن والأرصدة', storeRole()], ['evals', 'award', 'تقييمات الموظفين', storeRole()], ['prints', 'printer', 'طباعة التقارير', canPrint('')]].filter(function (x) { return x[3] && !hiddenScr(x[0]); }).map(function (x) { return '<button type="button" class="portal-tool" data-pt="' + x[0] + '">' + icon(x[1]) + '<span>' + x[2] + '</span></button>'; }).join('') + '</div><p class="xs muted portal-note">' + icon('lock') + ' دخول واحد للمنصة كلها. صلاحياتك في النظام والتقارير يحددها مدير الأمن الحيوي من شاشة المستخدمين.</p></section>';
-    $('main').querySelectorAll('[data-pt]').forEach(function (b) { b.onclick = function () { go(b.dataset.pt); }; });
+    $('main').querySelectorAll('[data-pt]').forEach(function (b) { b.onclick = function () { go(b.dataset.pt === 'dash' ? homeRoute() : b.dataset.pt); }; });
   }
   /** يفتح تطبيق التقارير داخل المنصة بتذكرة دخول تُستخدم مرة واحدة (بدون رقم سري ثانٍ) */
   function vrExtPref() { try { return localStorage.getItem('bio_vr_ext') === '1'; } catch (e) { return false; } }
@@ -12181,6 +12186,354 @@
         if (me) sync();
       }, 350);
     };
+  }
+
+  /* ============================ v34: الهيكل الجديد ============================
+     13 قسم في 6 مجموعات. كل قسم بيضم شاشات قديمة كتبويبات (الشاشة نفسها والصلاحية بتاعتها زي ما هي)،
+     والشاشات الجديدة: الرئيسية (نموذج أ)، صفحة المحطة (نموذج ب ومعاها التحليلين)، خريطة القيادة (نموذج ج)، يومي (نموذج د). */
+  var HUBS = {
+    home: { label: 'الرئيسية', icon: 'dash', tabs: ['home', 'dash', 'shield', 'report', 'insights', 'board', 'prints'] },
+    msgs: { label: 'الوارد والرسائل', icon: 'inbox', tabs: ['requests', 'comms', 'notices', 'inbox'] },
+    maphub: { label: 'الخريطة', icon: 'map', tabs: ['mapc', 'twin', 'ops', 'map'] },
+    radar: { label: 'الرادار والإنذار المبكر', icon: 'radar', tabs: ['ews', 'epi', 'birds', 'wx', 'academy'] },
+    outbreak: { label: 'تحقيق التفشي', icon: 'trace', tabs: ['trace', 'sim'] },
+    sites: { label: 'المحطات والإنتاج', icon: 'layers', tabs: ['site', 'stations', 'farm', 'cmp', 'vrcorr', 'disposal'] },
+    quality: { label: 'التفتيش والجودة', icon: 'clip', tabs: ['myday', 'vr', 'inspect', 'integ', 'pc'] },
+    gatesh: { label: 'البوابات', icon: 'scan', tabs: ['gate', 'gates', 'log', 'missions', 'passport'] },
+    roads: { label: 'الطرق والملاحة', icon: 'nav', tabs: ['wassalni', 'stroads', 'routes', 'tours'] },
+    vehicles: { label: 'المركبات والجهات الخارجية', icon: 'truck', tabs: ['fleet', 'trips', 'companies', 'contractors'] },
+    stock: { label: 'المخازن والمطهرات', icon: 'box', tabs: ['store', 'dis', 'calc'] },
+    team: { label: 'الفريق', icon: 'user', tabs: ['evals', 'attend', 'cheer'] },
+    settings: { label: 'الإعدادات', icon: 'tool', tabs: ['users', 'ucards', 'pushset', 'iso', 'data', 'online', 'purge', 'cams'] }
+  };
+  var HUB_GROUPS = [['lead', 'القيادة', 'dash', ['home', 'msgs']], ['field', 'الميدان والمخاطر', 'alert', ['maphub', 'radar', 'outbreak']], ['st', 'المحطات', 'layers', ['sites', 'quality']], ['mv', 'الحركة', 'truck', ['gatesh', 'roads', 'vehicles']], ['res', 'الموارد', 'box', ['stock', 'team']], ['adm', 'الإعدادات', 'db', ['settings']]];
+  var HUB_TAB_LABEL = { home: 'اليوم', dash: 'غرفة القرار', board: 'وضع العرض للإدارة العليا', prints: 'الطباعة', site: 'صفحة المحطة', stations: 'حالة كل المحطات', mapc: 'خريطة القيادة', requests: 'يحتاج قرارك', comms: 'البلاغات', notices: 'القرارات الصادرة', inbox: 'رسائل الإدارة', myday: 'يومي', gate: 'تسجيل البوابة' };
+  NAV_GROUPS = HUB_GROUPS.map(function (g) { var t = []; g[3].forEach(function (h) { t = t.concat(HUBS[h].tabs); }); return [g[0], g[1], g[2], t]; });
+  function hubOf(k) { if (k === 'table' || k === 'cards' || k === 'history' || k === 'external' || k === 'selfpoints') k = 'data'; if (k === 'codes') k = 'users'; for (var h in HUBS) if (HUBS[h].tabs.indexOf(k) >= 0) return h; return ''; }
+  function hubTabs(h) { var have = navItems().map(function (n) { return n[0]; }); return HUBS[h] ? HUBS[h].tabs.filter(function (k) { return have.indexOf(k) >= 0; }) : []; }
+  function v34Extra() {
+    var u = S.session && S.session.user; if (!u || !u.isManager || liteOnly()) return [];
+    var a = [['home', 'الرئيسية', 'dash'], ['site', 'صفحة المحطة', 'layers'], ['mapc', 'خريطة القيادة', 'map']];
+    if (['مفتش أمن حيوي', 'مشرف أمن حيوي', 'مسؤول أمن حيوي'].indexOf(u.role) >= 0 || isAdmin()) a.push(['myday', 'يومي', 'calendar']);
+    return a;
+  }
+  navGrouped = function () {
+    var all = navItems(), keys = all.map(function (n) { return n[0]; }), used = { more: 1 };
+    var gs = HUB_GROUPS.map(function (g) {
+      return { k: g[0], label: g[1], icon: g[2], items: g[3].map(function (hk) {
+        var h = HUBS[hk], t = h.tabs.filter(function (k) { return keys.indexOf(k) >= 0; }); t.forEach(function (k) { used[k] = 1; });
+        if (!t.length) return null;
+        return [t[0], h.label, h.icon, hk, h.label + ' ' + t.map(function (k) { var n = all.filter(function (x) { return x[0] === k; })[0]; return n ? n[1] : ''; }).join(' ')];
+      }).filter(Boolean) };
+    });
+    var rest = all.filter(function (n) { return !used[n[0]]; });
+    if (rest.length) gs[gs.length - 1].items = gs[gs.length - 1].items.concat(rest);
+    return gs.filter(function (g) { return g.items.length; });
+  };
+  navGroupOf = function (k) { var h = hubOf(k); for (var i = 0; i < HUB_GROUPS.length; i++) if (HUB_GROUPS[i][3].indexOf(h) >= 0) return HUB_GROUPS[i][0]; return 'adm'; };
+  /** شريط تبويبات القسم فوق الشاشة */
+  function hubTabsDraw(base) {
+    var box = $('hubTabs'); if (!box) return;
+    var h = hubOf(base), t = h && navGroupedOn() ? hubTabs(h) : [];
+    if (t.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
+    var all = navItems(), cur = base === 'codes' ? 'users' : /^(table|cards|history|external|selfpoints)$/.test(base) ? 'data' : base;
+    box.hidden = false;
+    box.innerHTML = '<span class="ht-name">' + icon(HUBS[h].icon) + ' ' + esc(HUBS[h].label) + '</span><div class="ht-tabs" role="tablist">' + t.map(function (k) {
+      var n = all.filter(function (x) { return x[0] === k; })[0];
+      return '<button type="button" role="tab" class="ht-tab' + (k === cur ? ' on' : '') + '" aria-selected="' + (k === cur) + '" data-ht="' + k + '">' + esc(HUB_TAB_LABEL[k] || (n ? n[1] : k)) + '<span class="badge" data-badge="' + k + '" hidden></span></button>';
+    }).join('') + '</div>';
+    box.querySelectorAll('[data-ht]').forEach(function (b) { b.onclick = function () { go(b.dataset.ht); }; });
+    var on = box.querySelector('.ht-tab.on'); if (on && on.scrollIntoView) try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) {}
+    var nav = $('sideNav'); if (nav) nav.querySelectorAll('[data-go]').forEach(function (b) { if (hubOf(b.dataset.go) === h && navGroupedOn()) b.classList.add('on'); });
+  }
+  /** الشريط السفلي للموبايل حسب الدور (نموذج د): 4 أزرار، والباقي من زرار القائمة فوق */
+  function bottomItemsV34() {
+    var u = S.session.user, all = navItems(), have = all.map(function (n) { return n[0]; });
+    var pick = function (L) { var out = [], seen = {}; L.forEach(function (alt) { var k = (Array.isArray(alt) ? alt : [alt]).filter(function (x) { return have.indexOf(x) >= 0 && !seen[x]; })[0]; if (k) { seen[k] = 1; out.push(k); } }); return out; };
+    var SH = { home: 'الرئيسية', requests: 'الوارد', comms: 'الوارد', notices: 'الوارد', inbox: 'الرسائل', site: 'المحطات', stations: 'المحطات', mapc: 'الخريطة', twin: 'الخريطة', myday: 'اليوم', vr: 'التقارير', stroads: 'الطرق', wassalni: 'وصّلني', routes: 'خطوط السير', gate: 'البوابة', log: 'السجل', dash: 'القرار' };
+    var L;
+    if (!u.isManager) { SH.comms = 'المدير'; SH.notices = 'القرارات'; L = pick(['gate', 'log', 'inbox', ['comms', 'notices']]); }
+    else if (u.role === 'ملاح') L = pick([['stroads', 'routes'], ['routes', 'wassalni'], 'wassalni', 'inbox']);
+    else if (u.role === 'مفتش أمن حيوي') L = pick([['myday', 'home'], 'vr', ['stroads', 'wassalni'], 'inbox']);
+    else L = pick([['home', 'dash'], ['requests', 'comms', 'notices', 'inbox'], ['site', 'stations'], ['mapc', 'twin', 'ops']]);
+    if (L.length < 4) all.forEach(function (n) { if (L.length < 4 && n[0] !== 'more' && L.indexOf(n[0]) < 0) L.push(n[0]); });
+    return L.map(function (k) { var n = all.filter(function (x) { return x[0] === k; })[0]; return [k, n[1], n[2], SH[k] || NAV_SHORT[k] || n[1]]; });
+  }
+
+  /* ---------- مساعدات الرسم المشتركة ---------- */
+  function v34n(v, d) { return v == null || v === '' || isNaN(v) ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d, minimumFractionDigits: d || 0 }); }
+  function v34sgn(v, d) { if (v == null || isNaN(v)) return ''; var s = Math.abs(v).toFixed(d == null ? 1 : d); return (v > 0 ? '+' : v < 0 ? '−' : '') + s; }
+  function v34pct(x, lo, hi) { return Math.max(0, Math.min(100, (x - lo) / (hi - lo) * 100)); }
+  function v34LS(k, v) { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ''; } return v; }
+  function v34Msg(kind, html) { return '<div class="v34-msg ' + kind + '">' + html + '</div>'; }
+  function v34T(ms, withDay) { try { return new Date(ms).toLocaleString('ar-EG-u-nu-latn', Object.assign(withDay ? { weekday: 'short', hour: 'numeric', minute: '2-digit' } : { hour: 'numeric', minute: '2-digit' }, TZ)); } catch (e) { return fmt(ms); } }
+  function v34Empty(t) { return '<p class="v34-empty">' + icon('eye') + ' ' + t + '</p>'; }
+
+  /* ============================ الرئيسية (نموذج أ) ============================ */
+  function viewHome() {
+    var u = S.session.user, h = new Date().toLocaleString('en-US', Object.assign({ hour: 'numeric', hour12: false }, TZ)) | 0;
+    var hi = (h < 12 ? 'صباح الخير' : 'مساء الخير') + '، ' + esc(String(u.name || '').split(' ')[0]);
+    var have = navItems().map(function (n) { return n[0]; });
+    $('main').innerHTML = '<section class="view v34 hm">' +
+      '<header class="hm-head"><div><span class="hm-date">' + esc(arDay(Date.now())) + ' · ' + esc(u.scope && !u.scope.all ? u.scope.label : 'كل القطاعات') + '</span><h1 id="hmTitle">' + hi + '</h1></div><div class="hm-btns">' +
+      (have.indexOf('board') >= 0 ? '<button type="button" class="btn" data-go2="board">' + icon('award') + ' وضع العرض للإدارة العليا</button>' : '') +
+      (have.indexOf('report') >= 0 ? '<button type="button" class="btn primary" data-go2="report">' + icon('file') + ' التقرير التنفيذي PDF</button>' : '') + '</div></header>' +
+      '<div class="hm-acts" id="hmActs">' + v5Spin() + '</div><div class="hm-kpis" id="hmKpi"></div>' +
+      '<div class="hm-grid"><section class="card hm-st"><div class="card-head"><h2>' + icon('layers') + ' المحطات بترتيب التسكين</h2>' + (have.indexOf('site') >= 0 ? '<a href="#site" class="small">صفحة المحطة</a>' : '') + '</div><div class="hm-tiles" id="hmSt">' + v5Spin() + '</div></section>' +
+      '<section class="card hm-feed"><div class="card-head"><h2>' + icon('history') + ' آخر الأحداث</h2></div><div id="hmFeed"></div></section></div></section>';
+    $('main').querySelectorAll('[data-go2]').forEach(function (b) { b.onclick = function () { go(b.dataset.go2); }; });
+    var can2 = function (k) { return have.indexOf(k) >= 0; };
+    Promise.all([remote('dashboard', [S.session.pin]).catch(function () { return null; }), remote('stationStatus', [S.session.pin]).catch(function () { return null; }), can2('shield') ? remote('shield', [S.session.pin]).catch(function () { return null; }) : Promise.resolve(null)]).then(function (R) {
+      if (S.route.split('/')[0] !== 'home') return;
+      var d = R[0], ss = R[1], sh = R[2], acts = [];
+      if (!d) { $('hmActs').innerHTML = offlineCard('الرئيسية'); return; }
+      (d.ews || []).filter(function (e) { return e.status !== 'مغلق'; }).slice(0, 2).forEach(function (e) {
+        acts.push({ lv: /حرج|عالي/.test(e.level) ? 'bad' : 'warn', k: 'إنذار نافق · ' + shortSite(e.siteName), t: 'النافق ' + v34n(e.ratio, 1) + ' ضعف المعتاد', d: e.why, b: [[can2('site') ? 'site/' + e.siteId : 'ews', 'افتح المحطة', 1], ['ews', 'الإنذار المبكر']] });
+      });
+      (d.pending || []).slice(0, 2).forEach(function (a) { acts.push({ lv: 'warn', k: 'طلب استثناء · ' + esc(a.checkpoint || a.siteName || ''), t: (a.itemName || 'طلب دخول') + ' طالب دخول استثنائي', d: (a.reasons || []).join('، ') || a.reason || '', b: [['requests', 'افتح الطلبات', 1]] }); });
+      if (d.reports && d.reports.open && d.reports.open.length) acts.push({ lv: 'bad', k: 'بلاغات مفتوحة', t: d.reports.open.length + ' بلاغ من البوابات محتاج تتعامل معاه', d: (d.reports.open[0] && (d.reports.open[0].type || d.reports.open[0].title)) || '', b: [['comms', 'افتح البلاغات', 1]] });
+      if (d.missions && d.missions.late) acts.push({ lv: 'info', k: 'مأموريات', t: d.missions.late + ' مأمورية متأخرة محتاجة قرار', d: 'المأموريات اللي اتأخر وصولها أو محتاجة استثناء', b: [['missions', 'افتح المأموريات', 1]] });
+      if (!acts.length && d.brief) { var act = (d.brief.filter ? d.brief : []).filter(function (b) { return b.k === 'act'; })[0]; if (act) acts.push({ lv: 'info', k: 'المطلوب النهارده', t: 'من موجز الموقف', d: act.text, b: [['dash', 'غرفة القرار', 1]] }); }
+      acts = acts.filter(function (a) { return a.b.some(function (x) { return can2(x[0].split('/')[0]); }); }).slice(0, 3);
+      var n = acts.length;
+      $('hmTitle').innerHTML = hi + '، ' + (n ? (n === 1 ? 'حاجة واحدة محتاجة قرارك' : n + ' حاجات محتاجة قرارك') : 'مفيش حاجة مستنية قرارك');
+      $('hmActs').innerHTML = n ? acts.map(function (a) {
+        return '<div class="hm-act ' + a.lv + '"><span class="hm-tag">' + a.k + '</span><b>' + esc(a.t) + '</b><span class="hm-d">' + esc(a.d || '') + '</span><div class="hm-ab">' + a.b.filter(function (x) { return can2(x[0].split('/')[0]); }).map(function (x) { return '<button type="button" class="btn sm' + (x[2] ? ' dark' : '') + '" data-go2="' + esc(x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div></div>';
+      }).join('') : '<div class="hm-act ok"><span class="hm-tag">تمام</span><b>مفيش إنذارات ولا طلبات مستنية</b><span class="hm-d">أي إنذار أو طلب جديد هيظهر هنا الأول.</span></div>';
+      $('hmActs').querySelectorAll('[data-go2]').forEach(function (b) { b.onclick = function () { go(b.dataset.go2); }; });
+      var st = d.stats || {}, ent = (st.allowed || 0) + (st.denied || 0), dead = d.extra && d.extra.deadToday != null ? (typeof d.extra.deadToday === 'object' ? d.extra.deadToday.n || d.extra.deadToday.dead : d.extra.deadToday) : null;
+      var K = [];
+      if (sh && sh.shield) K.push(['درع الأمن الحيوي', sh.shield.score, sh.shield.grade ? sh.shield.grade.label : '', 'من 100', 'ok']);
+      K.push(['دخول البوابات النهارده', ent, st.denied ? st.denied + ' مرفوض' : 'مفيش رفض', (st.violations || 0) + ' مخالفة', st.denied ? 'bad' : 'ok']);
+      if (dead != null && !isNaN(dead)) K.push(['نافق القطاع (آخر يوم)', dead, '', 'طائر', 'n']);
+      if (d.threatTop && d.threatScale) { var tl = d.threatScale.filter(function (x) { return x.n === d.threatTop.level; })[0]; K.push(['مستوى التهديد', tl ? tl.label : d.threatTop.level, '', 'من رادار المخاطر', d.threatTop.level >= 4 ? 'bad' : d.threatTop.level >= 3 ? 'warn' : 'ok']); }
+      $('hmKpi').innerHTML = K.map(function (k) { return '<div class="card hm-k"><span>' + k[0] + '</span><div><b class="' + (typeof k[1] === 'number' ? 'mono' : '') + '">' + (typeof k[1] === 'number' ? v34n(k[1], 0) : esc(k[1])) + '</b><em class="' + k[4] + '">' + esc(k[2]) + '</em></div><small>' + esc(k[3]) + '</small></div>'; }).join('');
+      var rows = ss && ss.rows ? ss.rows.filter(function (r) { return r.cycle; }) : [];
+      $('hmSt').innerHTML = rows.length ? rows.map(function (r) {
+        var lv = r.ews || r.spike ? 'bad' : r.risk >= 50 ? 'warn' : 'ok', t = lv === 'bad' ? 'إنذار' : lv === 'warn' ? 'مراقبة' : 'على المسار';
+        return '<button type="button" class="hm-tile ' + lv + '" data-go2="' + (can2('site') ? 'site/' + esc(r.id) : 'stations') + '"><b>' + esc(shortSite(r.name)) + '</b><span>' + (r.age ? 'عمر ' + r.age : esc(r.phase || '')) + '</span><em>' + t + '</em></button>';
+      }).join('') : v34Empty('مفيش محطات في نطاقك');
+      $('hmSt').querySelectorAll('[data-go2]').forEach(function (b) { b.onclick = function () { go(b.dataset.go2); }; });
+      var F = (d.alerts || []).slice(0, 7);
+      $('hmFeed').innerHTML = F.length ? F.map(function (a) { return '<div class="hm-f"><span>' + esc(v34T(a.time)) + '</span><i class="' + (a.level || 'info') + '"></i><div><b>' + esc(a.title) + '</b><span>' + esc(a.body || '') + '</span></div></div>'; }).join('') : v34Empty('مفيش أحداث مهمة النهارده');
+    });
+  }
+
+  /* ============================ صفحة المحطة (نموذج ب) ============================ */
+  var SITE_TABS = [['over', 'نظرة عامة'], ['econ', 'الإنتاج والاقتصاد'], ['causes', 'الدورات والأسباب'], ['moves', 'الحركة والبوابات'], ['inspect', 'التفتيش والملاحظات'], ['roads', 'الطرق']];
+  function viewSite(args) {
+    var id = args && args[0] ? decodeURIComponent(args[0]) : (S.siteSel || ''), tab = args && args[1] || 'over';
+    var tabs = SITE_TABS.filter(function (t) { return !((t[0] === 'econ' || t[0] === 'causes') && hiddenScr(t[0])); });
+    if (!tabs.some(function (t) { return t[0] === tab; })) tab = 'over';
+    $('main').innerHTML = '<section class="view v34 sp"><div class="sp-chips" id="spChips"></div><div id="spHead">' + v5Spin() + '</div><nav class="sp-tabs" id="spTabs" aria-label="تبويبات المحطة"></nav><div id="spBody"></div></section>';
+    remote('stationStatus', [S.session.pin]).then(function (ss) {
+      if (S.route.split('/')[0] !== 'site') return;
+      var rows = (ss.rows || []).filter(function (r) { return r.cycle; });
+      if (!rows.length) { $('spHead').innerHTML = v34Empty('مفيش محطات تسمين في نطاقك'); return; }
+      var row = rows.filter(function (r) { return r.id === id; })[0] || rows.filter(function (r) { return r.ews || r.spike; })[0] || rows[0];
+      S.siteSel = row.id;
+      $('spChips').innerHTML = rows.map(function (r) { var lv = r.ews || r.spike ? 'bad' : r.risk >= 50 ? 'warn' : 'ok'; return '<button type="button" class="sp-chip' + (r.id === row.id ? ' on' : '') + '" data-sid="' + esc(r.id) + '"><i class="' + lv + '"></i>' + esc(shortSite(r.name)) + '</button>'; }).join('');
+      $('spChips').querySelectorAll('[data-sid]').forEach(function (b) { b.onclick = function () { go('site/' + encodeURIComponent(b.dataset.sid) + '/' + tab); }; });
+      var on = $('spChips').querySelector('.on'); if (on && on.scrollIntoView) try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) {}
+      var lv = row.ews || row.spike ? 'bad' : row.risk >= 50 ? 'warn' : 'ok';
+      var meta = [esc(row.sector ? 'قطاع ' + row.sector : ''), row.age ? 'عمر ' + row.age + ' يوم' : esc(row.phase || ''), row.birds ? v34n(row.birds, 0) + ' طائر' : '', row.farm && row.farm.source ? 'المصدر: ' + esc(row.farm.source) : ''].filter(Boolean).join(' · ');
+      $('spHead').innerHTML = '<div class="sp-head"><div><div class="sp-tl"><h1>' + esc(shortSite(row.name)) + '</h1><span class="sp-badge ' + lv + '">' + (lv === 'bad' ? 'إنذار' : lv === 'warn' ? 'مراقبة' : 'على المسار') + '</span></div><span class="sp-meta">' + meta + '</span></div><div class="sp-hk">' +
+        '<div><span>نافق النهارده</span><b class="mono ' + (row.spike ? 'bad' : '') + '">' + v34n(row.dead, 0) + '</b></div><div><span>المعتاد</span><b class="mono">' + v34n(row.deadAvg, 0) + '</b></div>' +
+        '<div><span>آخر تقرير زيارة</span><b class="mono">' + (row.report && row.report.score != null ? row.report.score + '%' : '—') + '</b></div><div><span>درجة الخطر</span><b class="mono ' + (row.risk >= 50 ? 'warn' : '') + '">' + v34n(row.risk, 0) + '</b></div></div></div>';
+      $('spTabs').innerHTML = tabs.map(function (t) { return '<button type="button" class="sp-tab' + (t[0] === tab ? ' on' : '') + '" data-st="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+      $('spTabs').querySelectorAll('[data-st]').forEach(function (b) { b.onclick = function () { go('site/' + encodeURIComponent(row.id) + '/' + b.dataset.st); }; });
+      var body = $('spBody'); body.innerHTML = v5Spin();
+      if (tab === 'econ' || tab === 'causes') return remote('prodAnalytics', [S.session.pin]).then(function (A) { if (!$('spBody')) return; body.innerHTML = tab === 'econ' ? econHtml(A, row.id) : causesHtml(A, row.id); bindEcon(A); }).catch(function (e) { body.innerHTML = e.net ? offlineCard('التحليلات') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+      remote('siteCard', [S.session.pin, row.id]).then(function (c) { if ($('spBody')) body.innerHTML = siteTabHtml(tab, c, row); bindSiteTab(body); }).catch(function (e) { body.innerHTML = e.net ? offlineCard('صفحة المحطة') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+    }).catch(function (e) { $('spHead').innerHTML = e.net ? offlineCard('صفحة المحطة') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+  function bindSiteTab(box) { box.querySelectorAll('[data-go2]').forEach(function (b) { b.onclick = function () { go(b.dataset.go2); }; }); }
+  function siteTabHtml(tab, c, row) {
+    var have = navItems().map(function (n) { return n[0]; }), lnk = function (k, t) { return have.indexOf(k) >= 0 ? '<button type="button" class="btn sm" data-go2="' + k + '">' + t + '</button>' : ''; };
+    var houses = '<section class="card"><div class="card-head"><h2>' + icon('grid') + ' العنابر في آخر يوم</h2><span class="small muted">نافق % · كام ضعف وسيط العنابر</span></div>' + (c.houses.length ? '<div class="sp-houses">' + c.houses.map(function (h) {
+      var cls = h.x >= 3 ? 'bad' : h.x >= 2 ? 'warn' : ''; return '<div class="sp-h ' + cls + '"><span>عنبر ' + esc(String(h.h).replace(/^H0?/, '')) + '</span><b class="mono">' + (h.p == null ? '—' : v34n(h.p, 2) + '%') + '</b><em>' + (h.x >= 2 ? '×' + v34n(h.x, 1) : 'طبيعي') + '</em></div>';
+    }).join('') + '</div>' : v34Empty(c.stale ? 'مفيش بيانات عنابر حديثة للمحطة دي في ملف المزارع' : 'الملف مافيهوش تفاصيل العنابر')) + '</section>';
+    var mx = Math.max.apply(null, c.mort.map(function (m) { return m.mort; }).concat([1])), avgM = c.mort.length > 3 ? c.mort.slice(0, -1).reduce(function (a, m) { return a + m.mort; }, 0) / (c.mort.length - 1) : null;
+    var mort = '<section class="card"><div class="card-head"><h2>' + icon('bars') + ' النافق آخر 14 يوم</h2><span class="small muted">طائر/يوم · الخط = ضعف المتوسط</span></div>' + (c.mort.length ? '<div class="sp-bars">' + (avgM ? '<span class="sp-lim" style="bottom:' + Math.min(100, avgM * 2 / mx * 100).toFixed(1) + '%"></span>' : '') + c.mort.map(function (m) {
+      var cls = avgM && m.mort > avgM * 2 ? 'bad' : avgM && m.mort > avgM * 1.4 ? 'warn' : ''; return '<span class="' + cls + '" style="height:' + Math.max(2, m.mort / mx * 100).toFixed(1) + '%" title="' + esc(m.day + ' · ' + m.mort) + '"></span>';
+    }).join('') + '</div><div class="sp-bx"><span>' + esc(c.mort[0].day) + '</span><span>' + esc(c.mort[c.mort.length - 1].day) + '</span></div>' : v34Empty('مفيش نافق مسجل حديثاً للمحطة دي')) + '</section>';
+    var moves = '<section class="card"><div class="card-head"><h2>' + icon('scan') + ' مين دخل المحطة آخر 72 ساعة</h2>' + lnk('gates', 'سجل البوابات') + '</div>' + (c.moves.length ? c.moves.map(function (m) {
+      var bad = !m.ok || m.flag; return '<div class="sp-mv"><span>' + esc(v34T(m.time, 1)) + '</span><div><b>' + esc(m.name) + '</b><span>' + esc([m.checkpoint, m.reason].filter(Boolean).join(' · ')) + '</span></div><em class="' + (bad ? 'bad' : 'ok') + '">' + esc(m.flag ? 'مخالفة' : m.decision) + '</em></div>';
+    }).join('') : v34Empty('مفيش دخول للمحطة في آخر 72 ساعة')) + '</section>';
+    var R = c.roads, road = function (k, t) { var r = R[k]; return '<div class="sp-road ' + (r ? 'ok' : 'no') + '"><span>' + t + '</span><b>' + (r ? 'متسجل · ' + v34n(r.lenM / 1000, 1) + ' كم' : 'مش متسجل') + '</b>' + (r && r.driver ? '<small>السائق: ' + esc(r.driver) + (r.driverPhone ? ' · <a href="tel:' + esc(r.driverPhone) + '" dir="ltr">' + esc(r.driverPhone) + '</a>' : '') + '</small>' : '') + '</div>'; };
+    var insp = '<section class="card"><div class="card-head"><h2>' + icon('clip') + ' التفتيش والطرق</h2>' + lnk('vr', 'تقارير الزيارة') + '</div><div class="sp-two"><div class="sp-rep"><span>آخر تقرير زيارة</span><b class="mono">' + (row.report && row.report.score != null ? row.report.score + '%' : '—') + '</b><small>' + (row.report ? esc((row.report.type || '') + ' · ' + ago(row.report.time)) : 'مفيش تقرير') + '</small></div>' + road('clean', 'الطريق الكلين') + road('dirty', 'الطريق الديرتي') + '</div>' +
+      (c.actions.length ? c.actions.map(function (a) { return '<div class="sp-act"><em>' + esc(a.status || 'مفتوحة') + '</em><span>' + esc(a.finding || a.action) + '</span><small>' + esc(a.due ? 'الموعد ' + a.due : '') + '</small></div>'; }).join('') : v34Empty('مفيش إجراءات تصحيحية مفتوحة')) + (have.indexOf('stroads') >= 0 && (!R.clean || !R.dirty) ? '<button type="button" class="btn sm" data-go2="stroads">' + icon('route') + ' سجّل الطريق الناقص</button>' : '') + '</section>';
+    var ik = c.intake || [], ikl = ik[ik.length - 1], ikmx = Math.max.apply(null, ik.map(function (x) { return Math.max(x.g, x.std || 0); }).concat([1]));
+    var feed = '<section class="card"><div class="card-head"><h2>' + icon('box') + ' العلف مقابل معيار هابرد</h2><span class="small muted">جم/طائر/يوم · العمود = الفعلي · الخط = المعيار عند نفس العمر</span></div>' + (ik.length ? '<div class="sp-feed">' + ik.map(function (x) { var lv = x.pct == null ? 'young' : x.pct < 85 ? 'bad' : x.pct < 95 ? 'warn' : ''; return '<div><span class="std" style="bottom:' + ((x.std || 0) / ikmx * 100).toFixed(1) + '%"></span><span class="act ' + lv + '" style="height:' + (x.g / ikmx * 100).toFixed(1) + '%" title="' + esc('عمر ' + x.age + ': ' + x.g + ' جم مقابل ' + x.std) + '"></span></div>'; }).join('') + '</div>' + (ikl && ikl.pct == null ? v34Msg('info', 'الدورة لسه تحت عمر 7 أيام: العلف المصروف في الأيام الأولى بيتحط في المعالف ومش بيعبّر عن الأكل الفعلي، فالمقارنة بتبدأ من عمر 7.') : '') + (ikl && ikl.pct != null ? v34Msg(ikl.pct < 85 ? 'bad' : ikl.pct < 95 ? 'warn' : 'info', 'آخر يوم (عمر ' + ikl.age + '): <b>' + ikl.g + ' جم/طائر</b> مقابل ' + ikl.std + ' في المعيار = <b>' + ikl.pct + '%</b>' + (ikl.pct < 85 ? '. قلة الأكل من أول علامات المرض أو مشكلة في العلف أو الحرارة.' : '')) : '') : v34Empty('مفيش علف يومي للدورة الحالية في ملف المزارع')) + '</section>';
+    var ews = c.ews && Date.now() - c.ews.time < 3 * 864e5 ? v34Msg('bad', '<b>إنذار ' + esc(c.ews.level) + '</b> · ' + esc(c.ews.why)) : '';
+    if (tab === 'moves') return '<div class="sp-grid one">' + moves + '</div>';
+    if (tab === 'inspect') return '<div class="sp-grid one">' + insp + '</div>';
+    if (tab === 'roads') return '<div class="sp-grid one"><section class="card"><div class="card-head"><h2>' + icon('route') + ' طرق المحطة</h2></div><div class="sp-two">' + road('clean', 'الطريق الكلين ← البوابة الأمامية') + road('dirty', 'الطريق الديرتي ← البوابة الخلفية') + '</div><div class="row">' + lnk('stroads', 'طرق المحطات') + lnk('wassalni', 'وصّلني') + lnk('routes', 'خطوط السير') + '</div></section></div>';
+    return ews + '<div class="sp-grid">' + houses + mort + feed + insp + moves + '</div>';
+  }
+
+  /* ---------- الأداء الإنتاجي والاقتصادي (R2) ---------- */
+  function econHtml(A, sid) {
+    var T = A.targets, S2 = A.sector, st = A.stations, h = '';
+    var kgP = Number(v34LS('bio-kg-price')) || 0, fdP = Number(v34LS('bio-feed-price')) || 0;
+    h += '<div class="v34-top"><div><h2 class="v34-h">' + icon('bars') + ' الأداء الإنتاجي والاقتصادي</h2><span class="v34-sub">آخر دورة مقفولة لكل محطة · المعيار القياسي: ' + esc(A.stdName || '') + ' · الأزرق أحسن من المستهدف، والبرتقالي أسوأ</span></div><div class="v34-prices"><label>سعر كيلو الحي<input id="v34Kg" type="number" min="0" step="0.5" value="' + (kgP || '') + '" placeholder="جنيه"></label><label>سعر طن العلف<input id="v34Fd" type="number" min="0" step="50" value="' + (fdP || '') + '" placeholder="جنيه"></label>' + (A.canSetTargets ? '<button type="button" class="btn sm" id="v34T">' + icon('tool') + ' المستهدفات</button>' : '') + '</div></div>';
+    if (!S2) return h + v34Msg('info', 'مفيش دورات مقفولة لسه في البيانات. أول ما ملف المزارع يغطي دورة كاملة لحد البيع، الشاشة دي هتتملي.');
+    var SRC = A.tsrc || {}, bul = function (t, v, tg, lo, hi, dec, lower, unit, key) {
+      if (v == null) return '<div class="bul na"><div class="bul-t"><span>' + t + '</span></div><b class="mono">—</b><small>محتاج ' + (unit || 'بيانات') + '</small></div>';
+      var better = lower ? v <= tg : v >= tg, P = function (x) { return lower ? v34pct(hi - x + lo, lo, hi) : v34pct(x, lo, hi); };
+      return '<div class="bul"><div class="bul-t"><span>' + t + '</span><em class="' + (better ? 'g' : 'b') + '">' + v34sgn(v - tg, dec) + '</em></div><b class="mono">' + v34n(v, dec) + '</b><div class="bul-bar"><i class="z"></i><i class="v ' + (better ? 'g' : 'b') + '" style="width:' + P(v).toFixed(1) + '%"></i><i class="tg" style="right:' + P(tg).toFixed(1) + '%"></i></div><small>المستهدف ' + v34n(tg, dec) + (key && SRC[key] ? ' · ' + esc(SRC[key]) : '') + '</small></div>';
+    };
+    h += '<section class="card"><div class="card-head"><h2>مؤشرات القطاع مقابل المستهدف</h2><span class="small muted">' + S2.n + ' دورة مقفولة</span></div><div class="bul-row">' +
+      bul('الحيوية %', S2.liv, T.T_LIV, 90, 99, 1, false, '', 'T_LIV') + bul('وزن البيع كجم', S2.avgW, T.T_W, 1.6, 3, 2, false, 'وزن الحصاد في ملف المزارع', 'T_W') + bul('معامل التحويل', S2.fcr, T.T_FCR, 1.2, 2, 2, true, 'العلف ووزن الحصاد', 'T_FCR') + bul('مؤشر الكفاءة الأوروبي', S2.epef, T.T_EPEF, 200, 520, 0, false, 'الوزن والعلف', 'T_EPEF') + bul('نافق أول أسبوع %', S2.fw, T.T_FW, 0, 3, 2, true, '', 'T_FW') + bul('أيام الراحة', S2.rest, T.T_REST, 0, 25, 0, false, '', 'T_REST') + '</div></section>';
+    var sp = S2.split;
+    if (sp) {
+      var other = Math.max(0, sp.potential - sp.sold - sp.stdMort - sp.exMort - sp.under), P = sp.potential || 1;
+      var seg = [['اتباع فعلاً', sp.sold, 'sold', 'لحم حي اتباع'], ['نافق في حدود المستهدف', sp.stdMort, 'std', 'مسموح بيه'], ['وزن ناقص عن المستهدف', sp.under, 'under', 'الوزن ' + v34n(S2.avgW, 2) + ' بدل ' + v34n(T.T_W, 2)], ['نافق زيادة عن المستهدف', sp.exMort, 'exm', 'الحيوية ' + v34n(S2.liv, 1) + '% بدل ' + v34n(T.T_LIV, 1) + '%'], ['فرق تاني', other, 'oth', 'تقريب وأيام ناقصة في الملف']].filter(function (s) { return s[1] > 0; });
+      h += '<section class="card"><div class="card-head"><h2>الإنتاج المحتمل راح فين؟</h2><span class="small muted">' + v34n(sp.potential, 0) + ' طن لحم حي كانت ممكنة بالمستهدف</span></div><div class="split-bar">' + seg.map(function (s) { var p = s[1] / P * 100; return '<div class="' + s[2] + '" style="flex:' + Math.max(p, 1.2).toFixed(2) + ' 1 0">' + (p > 4 ? '<b class="mono">' + p.toFixed(1) + '%</b>' : '') + '</div>'; }).join('') + '</div><div class="split-leg">' + seg.map(function (s) {
+        return '<div><i class="' + s[2] + '"></i><span>' + s[0] + '</span><b><span class="mono">' + v34n(s[1], 0) + '</span> طن</b><small>' + s[3] + (kgP && s[2] !== 'sold' ? ' · ≈ ' + v34n(s[1] * 1000 * kgP / 1e6, 2) + ' مليون جنيه' : '') + '</small></div>';
+      }).join('') + '</div>' + (sp.feedEx ? v34Msg('warn', '<b>علف زيادة عن المستهدف: ' + v34n(sp.feedEx, 0) + ' طن</b> بسبب معامل تحويل ' + v34n(S2.fcr, 2) + ' بدل ' + v34n(T.T_FCR, 2) + (fdP ? ' · ≈ ' + v34n(sp.feedEx * fdP / 1e6, 2) + ' مليون جنيه' : '') + '.') : '') + '</section>';
+    } else h += v34Msg('info', 'تقسيم الإنتاج بالطن محتاج «وزن البيع» في ملف المزارع اليومي. لما العمود ده يتضاف، الشاشة هتحسب الوزن الناقص والعلف الزيادة بالطن والجنيه.');
+    var L = st.filter(function (s) { return s.last; });
+    var cell = function (act, tg, lo, hi, lower, dec) {
+      if (act == null) return '<div class="db"><div class="db-t"><span class="ax"></span></div><span class="db-d mono">—</span></div>';
+      var d = act - tg, better = lower ? d <= 0 : d >= 0, a = v34pct(act, lo, hi), s = v34pct(tg, lo, hi), mn = Math.min(a, s);
+      return '<div class="db"><div class="db-t"><span class="ax"></span><span class="ln ' + (better ? 'g' : 'b') + '" style="right:' + mn.toFixed(1) + '%;width:' + Math.abs(a - s).toFixed(1) + '%"></span><span class="sd" style="right:calc(' + s.toFixed(1) + '% - 8px)"></span><span class="ad ' + (better ? 'g' : 'b') + '" style="right:calc(' + a.toFixed(1) + '% - 9px)"></span></div><span class="db-d mono ' + (better ? 'g' : 'b') + '">' + v34sgn(d, dec) + '</span></div>';
+    };
+    h += '<section class="card"><div class="card-head"><h2>كل محطة قصاد المستهدف</h2><span class="small muted">الدايرة الفاضية = المستهدف (الوزن ومعامل التحويل = معيار هابرد عند عمر بيع المحطة نفسها) · المليانة = الفعلي · الرقم = الفرق</span></div><div class="db-wrap"><div class="db-tbl"><div class="db-row hd"><span></span><b>الحيوية %</b><b>وزن البيع كجم</b><b>معامل التحويل (الأقل أحسن)</b></div>' +
+      L.map(function (s) { return '<div class="db-row' + (s.id === sid ? ' me' : '') + '"><b>' + esc(shortSite(s.name)) + '</b>' + cell(s.last.liv, T.T_LIV, 90, 99, false, 1) + cell(s.last.avgW, s.last.stdW || T.T_W, 1.7, 3, false, 2) + cell(s.last.fcr, s.last.stdFcr || T.T_FCR, 1.25, 1.95, true, 2) + '</div>'; }).join('') + '</div></div></section>';
+    var IK = st.filter(function (s) { return s.cur && s.cur.intake && !s.cur.closed; });
+    h += '<section class="card"><div class="card-head"><h2>استهلاك العلف في الدورة الحالية مقابل معيار هابرد</h2><span class="small muted">جرام/طائر/يوم · متوسط آخر 7 أيام كنسبة من المعيار عند نفس العمر · أقل من 85% = إنذار مبكر</span></div>' + (IK.length ? '<div class="ik">' + IK.map(function (s) {
+      var k = s.cur.intake, lv = k.pct < 85 ? 'b' : k.pct < 95 ? 'w' : 'g';
+      return '<div class="ik-row' + (s.id === sid ? ' me' : '') + '"><b>' + esc(shortSite(s.name)) + '</b><small>عمر ' + k.age + '</small><div class="ik-t"><i class="' + lv + '" style="width:' + Math.min(100, k.pct / 1.2).toFixed(1) + '%"></i><span class="ik-100" style="right:' + (100 / 1.2).toFixed(1) + '%"></span></div><span class="mono">' + k.g + ' / ' + (k.std || '—') + ' جم</span><b class="mono ' + lv + '">' + k.pct + '%</b></div>';
+    }).join('') + '</div>' : v34Empty('مفيش دورات حالية فيها العلف اليومي في الملف')) + '</section>';
+    var useE = L.filter(function (s) { return s.last.epef != null; }).length >= 3, key = useE ? 'epef' : 'liv', lab = useE ? 'مؤشر الكفاءة' : 'الحيوية %';
+    var V = L.filter(function (s) { return s.last[key] != null; }), av = V.length ? V.reduce(function (a, s) { return a + s.last[key]; }, 0) / V.length : 0, mxd = Math.max.apply(null, V.map(function (s) { return Math.abs(s.last[key] - av); }).concat([0.0001]));
+    var divR = V.slice().sort(function (a, b) { return b.last[key] - a.last[key]; }).map(function (s) { var d = s.last[key] - av, w = (Math.abs(d) / mxd * 82).toFixed(1), dec = useE ? 0 : 1; return '<div class="dv-row' + (s.id === sid ? ' me' : '') + '"><b>' + esc(shortSite(s.name)) + '</b><div class="dv-l">' + (d > 0 ? '<em class="g mono">' + v34sgn(d, dec) + '</em><i class="g" style="width:' + w + '%"></i>' : '') + '</div><div class="dv-r">' + (d < 0 ? '<i class="b" style="width:' + w + '%"></i><em class="b mono">' + v34sgn(d, dec) + '</em>' : '') + '</div><span class="mono">' + v34n(s.last[key], dec) + '</span></div>'; }).join('');
+    var C = L.filter(function (s) { return s.lastPrev && s.last[key] != null && s.lastPrev[key] != null; }), mxc = Math.max.apply(null, C.map(function (s) { return Math.abs(s.last[key] - s.lastPrev[key]); }).concat([0.0001]));
+    var chg = C.sort(function (a, b) { return (b.last[key] - b.lastPrev[key]) - (a.last[key] - a.lastPrev[key]); }).map(function (s) { var d = s.last[key] - s.lastPrev[key], w = (Math.abs(d) / mxc * 80).toFixed(1), dec = useE ? 0 : 1; return '<div class="ch-row' + (s.id === sid ? ' me' : '') + '"><b>' + esc(shortSite(s.name)) + '</b><span class="mono muted">' + v34n(s.lastPrev[key], dec) + '</span><div class="dv-l">' + (d > 0 ? '<em class="g mono">' + v34sgn(d, dec) + '</em><i class="g" style="width:' + w + '%"></i>' : '') + '</div><div class="dv-r">' + (d < 0 ? '<i class="b" style="width:' + w + '%"></i><em class="b mono">' + v34sgn(d, dec) + '</em>' : '') + '</div><b class="mono">' + v34n(s.last[key], dec) + '</b></div>'; }).join('');
+    h += '<div class="v34-2">' + '<section class="card"><div class="card-head"><h2>' + lab + ': فوق ولا تحت متوسط القطاع؟</h2><span class="small muted">المتوسط ' + v34n(av, useE ? 0 : 1) + '</span></div>' + (V.length ? '<div class="dv">' + divR + '</div><div class="dv-leg"><span class="g">أحسن من المتوسط</span><span class="b">أضعف من المتوسط</span></div>' : v34Empty('مفيش بيانات كفاية')) + '</section>' +
+      '<section class="card"><div class="card-head"><h2>آخر دورة مقابل اللي قبلها</h2><span class="small muted">' + lab + '</span></div>' + (C.length ? '<div class="ch-hd"><span></span><span>السابقة</span><span class="g">اتحسنت</span><span class="b">ساءت</span><span>الأخيرة</span></div><div class="dv">' + chg + '</div>' : v34Empty('محتاج دورتين مقفولتين على الأقل لكل محطة')) + '</section></div>';
+    var useEff = A.effTiers.some(function (t) { return t.n; }), TT = useEff ? A.effTiers : A.tiers, tv = TT.map(function (t) { return useEff ? t.v : t.mort; }), tmx = Math.max.apply(null, tv.filter(function (v) { return v != null; }).concat([0.0001]));
+    h += '<section class="card"><div class="card-head"><h2>هل الأمن الحيوي بيفرق؟</h2><span class="small muted">' + (useEff ? 'متوسط مؤشر الكفاءة حسب درجة آخر تقرير زيارة قبل البيع' : 'متوسط النافق اليومي % حسب درجة آخر تقرير زيارة (الأقل أحسن)') + '</span></div>' + (TT.some(function (t) { return t.n; }) ? '<div class="col-ch">' + TT.map(function (t, i) { var v = tv[i]; return '<div><b class="mono">' + (v == null ? '—' : v34n(v, useEff ? 0 : 3)) + '</b><span class="' + (useEff ? (i === 3 ? 'g' : i === 0 ? 'b' : 'l') : (i === 0 ? 'b' : i === 3 ? 'g' : 'l')) + '" style="height:' + (v == null ? 0 : Math.max(4, v / tmx * 100)).toFixed(1) + '%"></span></div>'; }).join('') + '</div><div class="col-x">' + TT.map(function (t) { return '<div><b>' + t.t + '</b><small>' + (useEff ? t.n + ' دورة' : t.n + ' يوم') + '</small></div>'; }).join('') + '</div>' : v34Empty('محتاج تقارير زيارة مربوطة بالمحطات')) + '</section>';
+    return h;
+  }
+  function bindEcon(A) {
+    var kg = $('v34Kg'), fd = $('v34Fd'), redo = function () { v34LS('bio-kg-price', kg.value); v34LS('bio-feed-price', fd.value); render(); };
+    if (kg) kg.onchange = redo; if (fd) fd.onchange = redo;
+    if ($('v34T')) $('v34T').onclick = function () {
+      var T = A.targets, F = [['T_LIV', 'الحيوية المستهدفة %'], ['T_W', 'وزن البيع المستهدف كجم'], ['T_FCR', 'معامل التحويل المستهدف'], ['T_EPEF', 'مؤشر الكفاءة المستهدف'], ['T_FW', 'أقصى نافق أول أسبوع %'], ['T_REST', 'أقل أيام راحة']];
+      var SR = A.tsrc || {}, man = function (k) { return SR[k] === 'حددها مدير الإدارة'; };
+      openSheet('<div class="sheet-head sh-brand"><h2>المستهدفات</h2><span class="small">المنظومة بتحسبها لوحدها من معيار هابرد ومن بيانات دوراتك. اكتب قيمة بس لو عايز تغيّر التلقائي</span></div><div class="sheet-body">' + F.map(function (f) { return '<div class="field"><label for="t_' + f[0] + '">' + f[1] + '</label><input id="t_' + f[0] + '" type="number" step="any" value="' + (man(f[0]) ? T[f[0]] : '') + '" placeholder="تلقائي: ' + T[f[0]] + '"><span class="hint">' + esc(SR[f[0]] || '') + '</span></div>'; }).join('') + '<div class="login-err" id="tErr" role="alert"></div><button class="btn primary big" data-a="save">' + icon('check') + ' حفظ</button><button class="btn" data-a="reset">' + icon('refresh') + ' رجوع للتلقائي في الكل</button><button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, b) {
+        if (a === 'close') return closeSheet();
+        if (a !== 'save' && a !== 'reset') return; var o = a === 'reset' ? { reset: true } : {}; if (a === 'save') F.forEach(function (f) { o[f[0]] = $('t_' + f[0]).value; }); b.disabled = true;
+        remote('prodTargets', [S.session.pin, o]).then(function () { closeSheet(); toast('اتحفظت المستهدفات'); rcClear(); render(); }).catch(function (e) { b.disabled = false; $('tErr').textContent = errText(e); });
+      });
+    };
+  }
+
+  /* ---------- الدورات والمصادر وأسباب النافق (R34) ---------- */
+  function causesHtml(A, sid) {
+    var T = A.targets, h = '<div class="v34-top"><div><h2 class="v34-h">' + icon('pulse') + ' الدورات والمصادر وأسباب النافق</h2><span class="v34-sub">' + A.nCycles + ' دورة · ' + v34n(A.nDays, 0) + ' يوم-محطة من ملف المزارع</span></div></div>';
+    h += '<h3 class="v34-sec">١ · إيه اللي اتغير</h3><div class="v34-2">';
+    var cy = A.stations.filter(function (s) { return s.atAge; });
+    var P = function (x) { return v34pct(x, 0, Math.max.apply(null, cy.map(function (s) { return Math.max(s.atAge.cur, s.atAge.prev); }).concat([1])) * 1.1); };
+    h += '<section class="card"><div class="card-head"><h2>النافق التراكمي: الدورة دي مقابل اللي فاتت عند نفس العمر</h2></div>' + (cy.length ? '<div class="v34-key"><span><i class="dot g"></i>اتحسنت</span><span><i class="dot b"></i>ساءت</span><span><i class="dot o"></i>السابقة</span></div>' + cy.map(function (s) {
+      var a = s.atAge, d = a.cur - a.prev, better = d <= 0, pa = P(a.cur), pp = P(a.prev), mn = Math.min(pa, pp);
+      return '<div class="cy-row' + (s.id === sid ? ' me' : '') + '"><b>' + esc(shortSite(s.name)) + '</b><small>عمر ' + a.age + (a.adjacent ? '' : ' · مقابل دورة ' + esc(a.prevCycle)) + '</small><div class="db-t"><span class="ax"></span><span class="ln ' + (better ? 'g' : 'b') + '" style="right:' + mn.toFixed(1) + '%;width:' + Math.abs(pa - pp).toFixed(1) + '%"></span><span class="sd" style="right:calc(' + pp.toFixed(1) + '% - 8px)"></span><span class="ad ' + (better ? 'g' : 'b') + '" style="right:calc(' + pa.toFixed(1) + '% - 9px)"></span></div><span class="mono ' + (better ? 'g' : 'b') + '">' + v34sgn(d, 2) + '%</span></div>';
+    }).join('') : v34Empty('محتاج دورة حالية ودورة سابقة ليهم بيانات يومية لنفس العمر')) + '</section>';
+    var sr = A.sources, smx = Math.max.apply(null, sr.map(function (s) { return s.max; }).concat([T.T_FW * 2])) * 1.05, Q = function (x) { return v34pct(x, 0, smx); };
+    h += '<section class="card"><div class="card-head"><h2>مصادر الكتاكيت: نافق أول أسبوع</h2><span class="small muted">النقطة = المتوسط · الخط = أحسن وأسوأ دورة · الأحمر = المستهدف ' + v34n(T.T_FW, 1) + '%</span></div>' + (sr.length ? '<div class="db-wrap"><div class="src-tbl">' + sr.map(function (s) {
+      var over = s.fw > T.T_FW; return '<div class="src-row"><div><b>' + esc(s.name) + '</b><small>' + s.n + ' دورة</small></div><div class="db-t"><span class="ax"></span><span class="tgl" style="right:' + Q(T.T_FW).toFixed(1) + '%"></span><span class="ln ' + (over ? 'b' : 'g') + '" style="right:' + Q(s.min).toFixed(1) + '%;width:' + (Q(s.max) - Q(s.min)).toFixed(1) + '%"></span><span class="ad ' + (over ? 'b' : 'g') + '" style="right:calc(' + Q(s.fw).toFixed(1) + '% - 9px)"></span></div><b class="mono ' + (over ? 'b' : 'g') + '">' + v34n(s.fw, 2) + '%</b><span class="grade ' + s.grade + '">' + s.grade + '</span></div>';
+    }).join('') + '</div></div>' : v34Empty('محتاج دورات فيها مصدر الكتاكيت ونافق أول أسبوع')) + '</section></div>';
+    var rb = A.rest, rmx = Math.max.apply(null, rb.map(function (b) { return b.fw || 0; }).concat([T.T_FW * 1.2]));
+    h += '<div class="v34-2"><section class="card"><div class="card-head"><h2>أيام الراحة قبل الدورة ونافق أول أسبوع</h2><span class="small muted">الخط الأحمر = المستهدف</span></div>' + (rb.some(function (b) { return b.n; }) ? '<div class="col-ch"><span class="col-tg" style="bottom:' + (T.T_FW / rmx * 100).toFixed(1) + '%"></span>' + rb.map(function (b) { return '<div><b class="mono">' + (b.fw == null ? '—' : v34n(b.fw, 2) + '%') + '</b><span class="' + (b.fw > T.T_FW ? 'b' : 'g') + '" style="height:' + (b.fw == null ? 0 : Math.max(3, b.fw / rmx * 100)).toFixed(1) + '%"></span></div>'; }).join('') + '</div><div class="col-x">' + rb.map(function (b) { return '<div><b>' + b.t + '</b><small>' + b.n + ' دورة</small></div>'; }).join('') + '</div>' : v34Empty('محتاج دورات متتالية في الملف')) + '</section>';
+    var se = A.season, seAvg = se.length ? se.reduce(function (a, m) { return a + m.avg; }, 0) / se.length : 0, lo = Math.min.apply(null, se.map(function (m) { return m.min; }).concat([T.T_LIV])) - 0.5, hi = Math.max.apply(null, se.map(function (m) { return m.max; }).concat([T.T_LIV])) + 0.3, Z = function (v) { return v34pct(v, lo, hi); };
+    var MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    h += '<section class="card"><div class="card-head"><h2>الموسمية: حيوية الدورات حسب شهر التسكين</h2><span class="small muted">العمود = المتوسط · الخط = أحسن وأسوأ دورة · البرتقالي = أقل من متوسط السنة · المتقطع = المستهدف</span></div>' + (se.length ? '<div class="col-ch season"><span class="col-tg" style="bottom:' + Z(T.T_LIV).toFixed(1) + '%"></span>' + se.map(function (m) { var low = m.avg < seAvg - 0.4; return '<div><span class="wh" style="bottom:' + Z(m.min).toFixed(1) + '%;height:' + (Z(m.max) - Z(m.min)).toFixed(1) + '%"></span><b class="mono ' + (low ? 'b' : '') + '" style="bottom:calc(' + Z(m.max).toFixed(1) + '% + 4px)">' + v34n(m.avg, 1) + '</b><span class="' + (low ? 'b' : 'l') + '" style="height:' + Math.max(3, Z(m.avg)).toFixed(1) + '%"></span></div>'; }).join('') + '</div><div class="col-x">' + se.map(function (m) { return '<div><b>' + MN[Number(m.m.slice(5, 7)) - 1] + '</b><small>' + m.n + ' دورة</small></div>'; }).join('') + '</div>' : v34Empty('محتاج دورات مقفولة على مدار شهور')) + '</section></div>';
+    h += '<h3 class="v34-sec">٢ · ليه حصل</h3>';
+    var F = A.factors, fmx = Math.max.apply(null, F.map(function (f) { return f.ratio; }).concat([1.5]));
+    var grp = function (g, t, cls) { var L = F.filter(function (f) { return f.g === g; }); return '<div class="fx-g"><div class="fx-h ' + cls + '"><span>' + t + '</span><b>' + L.length + ' عامل</b></div>' + (L.length ? L.map(function (f) { return '<div class="fx-r"><div><b>' + esc(f.t) + '</b><small>' + esc(f.s) + ' · ' + f.n + ' حالة</small></div><div class="fx-b"><i class="' + cls + '" style="width:' + Math.max(4, (f.ratio - 1) / (fmx - 1 || 1) * 82).toFixed(1) + '%"></i><b class="mono">×' + v34n(f.ratio, 2) + '</b></div></div>'; }).join('') : v34Empty('مفيش بيانات كفاية لسه')) + '</div>'; };
+    var top = F[0];
+    h += '<section class="card"><div class="card-head"><h2>إيه اللي بيرفع النافق، وقد إيه؟</h2><span class="small muted">الرقم = كام ضعف النافق لما العامل ده موجود، مقارنة بغيابه</span></div><div class="v34-2 tight">' + grp('bio', 'في إيد الأمن الحيوي', 'r') + grp('env', 'بيئي وإنتاجي', 'g') + '</div>' + (top ? v34Msg(top.g === 'bio' ? 'bad' : 'info', '<b>أكبر عامل دلوقتي: ' + esc(top.t) + ' (×' + v34n(top.ratio, 2) + ')</b>. الأرقام بتوضح اتجاه، والتأكيد بيكون من الميدان والمعمل.') : '') + '</section>';
+    var lg = A.lag.filter(function (l) { return l.r != null; }), lmx = Math.max.apply(null, lg.map(function (l) { return Math.abs(l.r); }).concat([0.05])), peak = lg.slice().sort(function (a, b) { return b.r - a.r; })[0];
+    h += '<div class="v34-2"><section class="card"><div class="card-head"><h2>مخالفة العزل بتبان في النافق بعد كام يوم؟</h2><span class="small muted">قوة العلاقة بين المخالفة ونافق المحطة بعد 0 لـ 10 أيام</span></div>' + (lg.length ? '<div class="lol">' + A.lag.map(function (l) { var pk = peak && l.d === peak.d && l.r > 0.05, v = l.r == null ? 0 : Math.max(0, l.r); return '<div><span class="ld ' + (pk ? 'pk' : v > 0.05 ? 'md' : '') + '"></span><span class="ls ' + (pk ? 'pk' : v > 0.05 ? 'md' : '') + '" style="height:' + (v / lmx * 100).toFixed(1) + '%"></span></div>'; }).join('') + '</div><div class="col-x lolx">' + A.lag.map(function (l) { return '<div><b class="mono">' + l.d + '</b></div>'; }).join('') + '</div><p class="v34-ax">أيام بعد المخالفة</p>' + (peak && peak.r > 0.05 ? v34Msg('bad', '<b>الأثر بيوصل للذروة بعد ' + peak.d + ' أيام.</b> أي مخالفة عزل تستاهل متابعة نافق المحطة الأسبوع اللي بعدها.') : v34Msg('info', 'مفيش علاقة واضحة لسه بين المخالفات والنافق في البيانات المتاحة.')) : v34Empty('محتاج بيانات نافق يومي ومخالفات بوابات لنفس المحطات')) + '</section>';
+    var ht = A.heat, hmx = Math.max(ht.hot || 0, ht.normal || 0, 0.0001);
+    h += '<section class="card"><div class="card-head"><h2>الحر والنافق</h2><span class="small muted">متوسط نافق اليوم التالي · أيام الحر من تنبيهات THI ≥ 79 (' + ht.hotDays + ' يوم)</span></div>' + (ht.hot != null && ht.normal != null ? '<div class="col-ch two">' + [['أيام عادية', ht.normal, ht.nNormal, 'l'], ['بعد يوم حر', ht.hot, ht.nHot, 'r']].map(function (x) { return '<div><b class="mono">' + v34n(x[1], 3) + '%</b><span class="' + x[3] + '" style="height:' + Math.max(4, x[1] / hmx * 100).toFixed(1) + '%"></span></div>'; }).join('') + '</div><div class="col-x two"><div><b>أيام عادية</b><small>' + ht.nNormal + ' يوم-محطة</small></div><div><b>بعد يوم حر</b><small>' + ht.nHot + ' يوم-محطة</small></div></div>' + (ht.ratio ? v34Msg(ht.ratio >= 1.3 ? 'bad' : 'info', '<b>النافق بعد يوم الحر ×' + v34n(ht.ratio, 2) + '.</b> لما الطقس يتوقع THI فوق 79، تشغيل التبريد بدري بيستاهل.') : '') : v34Empty('أيام الحر بتتسجل تلقائياً من تنبيه الحر اليومي. هتظهر هنا مع الوقت.')) + '</section></div>';
+    return h;
+  }
+
+  /* ============================ خريطة القيادة (نموذج ج) ============================ */
+  function viewMapC(args) {
+    $('main').innerHTML = '<section class="view v34 mc"><div class="mc-top"><b class="mc-ttl">' + icon('map') + ' خريطة القيادة</b><div class="mc-layers" id="mcLy"></div><div class="mc-sec" id="mcSec"></div></div><div class="mc-body"><aside class="mc-side" id="mcSide">' + v5Spin() + '</aside><div class="mc-mapw"><div class="mc-map" id="mcMap"></div><div id="mcLeg"></div><div class="mc-days" id="mcDays"></div></div></div></section>';
+    var LY = S.mcLy || (S.mcLy = { risk: 1, roads: 1, moves: 1, ext: 0 });
+    v5Load('mapData', [], function (d) {
+      if (!$('mcMap')) return;
+      var secs = []; d.sites.forEach(function (s) { if (!s.external && s.sector && secs.indexOf(s.sector) < 0) secs.push(s.sector); });
+      var hot = d.sites.filter(function (s) { return s.ews; })[0];
+      var sec = S.mcSec && secs.indexOf(S.mcSec) >= 0 ? S.mcSec : hot ? hot.sector : secs[0];
+      var sel = S.mcSel;
+      function draw() {
+        $('mcLy').innerHTML = [['risk', 'الخطر'], ['roads', 'الطرق كلين وديرتي'], ['moves', 'الحركة النهارده'], ['ext', 'المواقع الخارجية']].map(function (l) { return '<button type="button" class="mc-ly' + (LY[l[0]] ? ' on' : '') + '" data-ly="' + l[0] + '" aria-pressed="' + !!LY[l[0]] + '">' + l[1] + '</button>'; }).join('');
+        $('mcSec').innerHTML = secs.length > 1 ? secs.map(function (s) { return '<button type="button" class="mc-ly' + (s === sec ? ' on' : '') + '" data-sec="' + esc(s) + '">قطاع ' + esc(s) + '</button>'; }).join('') : '';
+        var pts = d.sites.filter(function (s) { return s.external ? LY.ext : s.sector === sec; });
+        var inSec = d.sites.filter(function (s) { return !s.external && s.sector === sec; });
+        var roads = d.roads.filter(function (r) { return inSec.some(function (s) { return s.id === r.siteId; }); }).map(function (r) { return { kind: r.kind, pts: rdPolyDec(r.poly) }; });
+        var all = inSec.map(function (s) { return [s.lat, s.lng]; }); roads.forEach(function (r) { all = all.concat(r.pts); });
+        if (LY.ext) pts.filter(function (s) { return s.external; }).forEach(function (s) { all.push([s.lat, s.lng]); });
+        if (!all.length) { $('mcMap').innerHTML = v34Empty('مفيش مواقع ليها إحداثيات في القطاع ده'); return; }
+        var la = all.map(function (p) { return p[0]; }), lo = all.map(function (p) { return p[1]; }), la0 = Math.min.apply(null, la), la1 = Math.max.apply(null, la), lo0 = Math.min.apply(null, lo), lo1 = Math.max.apply(null, lo);
+        var narrow = ($('mcMap').clientWidth || 1000) < 640, fs = narrow ? 24 : 15, k = Math.cos((la0 + la1) / 2 * Math.PI / 180), W = narrow ? 560 : 1000, Hh = narrow ? 500 : 620, pad = narrow ? 50 : 60, sx = (W - 2 * pad) / Math.max((lo1 - lo0) * k, 1e-4), sy = (Hh - 2 * pad) / Math.max(la1 - la0, 1e-4), sc = Math.min(sx, sy);
+        var ox = (W - (lo1 - lo0) * k * sc) / 2, oy = (Hh - (la1 - la0) * sc) / 2;
+        var X = function (lng) { return ox + (lng - lo0) * k * sc; }, Y = function (lat) { return Hh - oy - (lat - la0) * sc; };
+        var path = function (P) { return P.map(function (p, i) { return (i ? 'L' : 'M') + X(p[1]).toFixed(1) + ' ' + Y(p[0]).toFixed(1); }).join(' '); };
+        var grid = ''; for (var g = 0; g <= W; g += 50) grid += 'M' + g + ' 0V' + Hh + 'M0 ' + g + 'H' + W;
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="خريطة قطاع ' + esc(sec) + '"><path d="' + grid + '" class="mc-grid"></path>';
+        if (LY.roads) roads.forEach(function (r) { svg += '<path d="' + path(r.pts) + '" class="mc-road ' + (r.kind === 'dirty' ? 'dirty' : 'clean') + '"></path>'; });
+        pts.forEach(function (s) {
+          var x = X(s.lng), y = Y(s.lat), lv = s.ews ? 'bad' : s.deny ? 'warn' : 'ok', st = s.cycle, r = (st ? 9 : 7) * (narrow ? 1.5 : 1), cls = s.external ? 'ext' : LY.risk ? lv : 'ok';
+          if (LY.risk && s.ews) svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="46" class="mc-ring"></circle>';
+          if (LY.moves && s.today) svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (12 + Math.min(22, Math.sqrt(s.today) * 4)).toFixed(1) + '" class="mc-mv"></circle>';
+          svg += '<g class="mc-pt' + (sel === s.id ? ' sel' : '') + '" data-id="' + esc(s.id) + '" tabindex="0" role="button" aria-label="' + esc(s.name) + '">' + (st ? '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" class="dot ' + cls + '"></circle>' : '<rect x="' + (x - r).toFixed(1) + '" y="' + (y - r).toFixed(1) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" class="dot ' + cls + '"></rect>') +
+            '<title>' + esc(s.name) + '</title>' + (st || sel === s.id || s.ews ? '<text x="' + x.toFixed(1) + '" y="' + (y + r + fs + 3).toFixed(1) + '" text-anchor="middle" style="font-size:' + fs + 'px">' + esc(narrow ? shortSite(s.name).replace(/^محطة /, 'م ') : shortSite(s.name)) + '</text>' : '') + '</g>';
+        });
+        svg += '</svg>';
+        $('mcMap').innerHTML = svg; $('mcLeg').innerHTML = '<div class="mc-leg"><span><i class="cl"></i> طريق كلين · بوابة أمامية</span><span><i class="dr"></i> طريق ديرتي · بوابة خلفية</span><span><i class="mv"></i> دخول النهارده</span></div>';
+        $('mcMap').querySelectorAll('.mc-pt').forEach(function (g) { var f = function () { sel = S.mcSel = g.dataset.id; draw(); }; g.onclick = f; g.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+        var s0 = d.sites.filter(function (s) { return s.id === sel; })[0], side = '';
+        if (s0) side += '<div class="mc-card ' + (s0.ews ? 'bad' : '') + '"><div class="mc-ch"><b>' + esc(shortSite(s0.name)) + '</b>' + (s0.ews ? '<em>إنذار</em>' : '') + '</div>' + (s0.ews ? '<p>' + esc(s0.ews.why) + '</p>' : '') + '<div class="mc-k"><div><span>دخول 24 ساعة</span><b class="mono">' + s0.today + '</b></div><div><span>مرفوض</span><b class="mono">' + s0.deny + '</b></div><div><span>الطرق</span><b>' + (['clean', 'dirty'].map(function (kk) { return d.roads.some(function (r) { return r.siteId === s0.id && r.kind === kk; }) ? (kk === 'clean' ? 'كلين ✓' : 'ديرتي ✓') : (kk === 'clean' ? 'كلين ✗' : 'ديرتي ✗'); }).join(' · ')) + '</b></div></div>' + (s0.cycle && !hiddenScr('site') ? '<button type="button" class="btn sm light" data-go2="site/' + esc(s0.id) + '">صفحة المحطة</button>' : '') + '</div>';
+        var now = [];
+        d.sites.filter(function (s) { return s.ews && s.sector === sec; }).forEach(function (s) { now.push(['bad', shortSite(s.name) + ' · إنذار نافق', s.ews.why]); });
+        d.sites.filter(function (s) { return s.deny && s.sector === sec; }).forEach(function (s) { now.push(['warn', shortSite(s.name) + ' · ' + s.deny + ' رفض دخول', 'آخر 24 ساعة']); });
+        inSec.filter(function (s) { return s.cycle && !(d.roads.some(function (r) { return r.siteId === s.id && r.kind === 'clean'; }) && d.roads.some(function (r) { return r.siteId === s.id && r.kind === 'dirty'; })); }).slice(0, 4).forEach(function (s) { now.push(['info', shortSite(s.name) + ' · طرقها ناقصة', 'وصّلني مش هيقدر يوجّه للبوابتين']); });
+        side += '<span class="mc-sub">على الخريطة دلوقتي</span>' + (now.length ? now.map(function (n) { return '<div class="mc-it"><i class="' + n[0] + '"></i><div><b>' + esc(n[1]) + '</b><span>' + esc(n[2]) + '</span></div></div>'; }).join('') : '<p class="mc-sub">مفيش تنبيهات في القطاع ده</p>');
+        $('mcSide').innerHTML = side; bindSiteTab($('mcSide'));
+        var mxd = Math.max.apply(null, d.days.map(function (x) { return x.n; }).concat([1]));
+        $('mcDays').innerHTML = '<span class="mc-sub">آخر 7 أيام · دخول (والمرفوض بالأحمر)</span><div class="mc-dd">' + d.days.map(function (x, i) { return '<div class="' + (i === d.days.length - 1 ? 'on' : '') + '"><span>' + esc(i === d.days.length - 1 ? 'النهارده' : arDay(Date.parse(x.day + 'T12:00:00Z')).split('،')[0]) + '</span><i style="height:' + Math.max(2, x.n / mxd * 54).toFixed(0) + 'px"><em style="height:' + (x.n ? x.bad / x.n * 100 : 0).toFixed(0) + '%"></em></i><b class="mono">' + x.n + '</b></div>'; }).join('') + '</div>';
+        $('mcLy').querySelectorAll('[data-ly]').forEach(function (b) { b.onclick = function () { LY[b.dataset.ly] = LY[b.dataset.ly] ? 0 : 1; draw(); }; });
+        $('mcSec').querySelectorAll('[data-sec]').forEach(function (b) { b.onclick = function () { sec = S.mcSec = b.dataset.sec; sel = S.mcSel = ''; draw(); }; });
+      }
+      if (!sel && hot) sel = hot.id;
+      draw();
+    }, 'خريطة القيادة', 'mcSide');
+  }
+
+  /* ============================ يومي (نموذج د للمعاون) ============================ */
+  function viewMyDay() {
+    var have = navItems().map(function (n) { return n[0]; });
+    $('main').innerHTML = '<section class="view v34 md"><header><span class="hm-date">' + esc(arDay(Date.now())) + '</span><h1 id="mdTitle">خطة النهارده</h1><p class="v34-sub">المحطات مرتبة بالأولوية: الإنذار الأول، وبعدها اللي عدّى عليها أطول وقت من غير زيارة.</p></header><div id="mdList">' + v5Spin() + '</div></section>';
+    remote('stationStatus', [S.session.pin]).then(function (ss) {
+      if (!$('mdList')) return;
+      var now = Date.now(), rows = (ss.rows || []).filter(function (r) { return r.cycle; }).map(function (r) {
+        var last = r.report ? r.report.time : 0, days = last ? Math.floor((now - last) / 864e5) : 99, pr = (r.ews || r.spike ? 1000 : 0) + (r.risk || 0) + Math.min(60, days * 3) + (/تربية|استقبال/.test(r.phase || '') ? 20 : 0);
+        return { r: r, days: days, pr: pr, why: r.ews || r.spike ? 'متابعة بعد إنذار نافق' : !last ? 'مفيش تقرير زيارة مسجل' : 'آخر زيارة من ' + days + ' يوم' + (r.report.score != null ? ' · ' + r.report.score + '%' : '') };
+      }).sort(function (a, b) { return b.pr - a.pr; }).slice(0, 4);
+      $('mdTitle').textContent = rows.length ? rows.length + ' زيارات مقترحة النهارده' : 'مفيش زيارات مقترحة';
+      $('mdList').innerHTML = rows.map(function (x, i) {
+        return '<div class="md-card' + (i === 0 ? ' now' : '') + '"><div class="md-h"><b>' + esc(shortSite(x.r.name)) + '</b><span class="' + (x.r.ews || x.r.spike ? 'bad' : '') + '">' + esc(x.r.phase || '') + (x.r.age ? ' · عمر ' + x.r.age : '') + '</span></div><p>' + esc(x.why) + '</p><div class="md-b">' +
+          (have.indexOf('vr') >= 0 ? '<button type="button" class="btn ' + (i === 0 ? 'primary' : 'dark') + '" data-go2="vr">' + icon('edit') + ' ابدأ التقرير</button>' : '') + (have.indexOf('wassalni') >= 0 ? '<button type="button" class="btn" data-go2="wassalni">' + icon('nav') + ' وصّلني</button>' : '') + (have.indexOf('site') >= 0 ? '<button type="button" class="btn ghost" data-go2="site/' + esc(x.r.id) + '">المحطة</button>' : '') + '</div></div>';
+      }).join('') || v34Empty('مفيش محطات في نطاقك');
+      bindSiteTab($('mdList'));
+    }).catch(function (e) { $('mdList').innerHTML = e.net ? offlineCard('خطة اليوم') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
   }
 
   if (document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);

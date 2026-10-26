@@ -2176,6 +2176,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v33corr === 'function') BIO_v33corr(api, H_);
   if (typeof BIO_v33push === 'function') BIO_v33push(api, H_);
   if (typeof BIO_v333roads === 'function') BIO_v333roads(api, H_);
+  if (typeof BIO_v34 === 'function') BIO_v34(api, H_);
   return api;
 }
 
@@ -9741,4 +9742,312 @@ function BIO_v333roads(api, H) {
     store.update('stroads', r.id, { active: BIO.NO, updatedAt: deps.now() }); flush();
     return { roads: rows().map(out) };
   };
+}
+
+/* ============================ v34: الهيكل الجديد (الرئيسية، صفحة المحطة، خريطة القيادة، يومي) + تحليلات الإنتاج والأسباب ============================
+   الشاشات الجديدة اتضافت لقايمة الصلاحيات: أي مستخدم محفوظ بنظام «الشاشات المسموحة» بتفضل مقفولة عليه لحد ما المدير يفتحها.
+   التحليلات كلها محسوبة من: البيانات اليومية للمزارع (daily)، ودورات المحطات (cycles)، وحركة البوابات، وتقارير الزيارة، وأيام الحر المسجلة. */
+BIO_SCREENS.push(
+  { k: 'home', label: 'الرئيسية (اليوم)', g: 'القيادة والمتابعة' }, { k: 'site', label: 'صفحة المحطة', g: 'القيادة والمتابعة' },
+  { k: 'econ', label: 'الأداء الإنتاجي والاقتصادي', g: 'القيادة والمتابعة' }, { k: 'causes', label: 'الدورات والمصادر وأسباب النافق', g: 'القيادة والمتابعة' },
+  { k: 'mapc', label: 'خريطة القيادة', g: 'القيادة والمتابعة' }, { k: 'myday', label: 'يومي (خطة زيارات المعاون)', g: 'الأمن الحيوي والتشغيل' }
+);
+BIO_SCR_V334.push('home', 'site', 'econ', 'causes', 'mapc', 'myday');
+var BIO_PROD_T = { T_LIV: 96.5, T_W: 2.3, T_FCR: 1.55, T_EPEF: 400, T_FW: 1, T_REST: 10 };
+
+function BIO_v34(api, H) {
+  var store = H.store, deps = H.deps, D = 864e5;
+  function num(v, d) { var n = Number(v); return v === '' || v == null || isNaN(n) ? d : n; }
+  function rows(t) { try { return store.all(t) || []; } catch (e) { return []; } }
+  function avg(a) { var x = a.filter(function (n) { return n != null && !isNaN(n); }); return x.length ? x.reduce(function (s, n) { return s + n; }, 0) / x.length : null; }
+  function r1(x) { return x == null ? null : Math.round(x * 10) / 10; }
+  function r2(x) { return x == null ? null : Math.round(x * 100) / 100; }
+  function r3(x) { return x == null ? null : Math.round(x * 1000) / 1000; }
+  function dk(v) { return BIO_dayOf(v); }
+  function dT(day) { var t = Date.parse(String(day).slice(0, 10) + 'T12:00:00Z'); return isNaN(t) ? 0 : t; }
+  function hid(u, k) { return !u.isAdmin && (u.hide || []).indexOf(k) >= 0; }
+  function need(u, keys, label) { if (keys.every(function (k) { return hid(u, k); })) throw new Error('شاشة «' + label + '» غير متاحة لحسابك. اطلبها من مدير إدارة الأمن الحيوي'); }
+  function pctl(a, q) { var x = a.filter(function (n) { return n != null && !isNaN(n); }).sort(function (p, r) { return p - r; }); if (!x.length) return null; var i = (x.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return x[lo] + (x[hi] - x[lo]) * (i - lo); }
+  /** المستهدفات التلقائية: الوزن ومعامل التحويل من معيار هابرد عند متوسط عمر البيع الفعلي، والحيوية ونافق أول أسبوع من أفضل ربع في دورات الشركة.
+      لو المدير حط قيمة بنفسه في الإعدادات بتتقدّم على التلقائي. */
+  function targets(M) {
+    var s = H.settings(), T = {}, src = {}, closed = [];
+    if (M) M.sites.forEach(function (x) { x.cycles.forEach(function (c) { if (c.closed) closed.push(c); }); });
+    var sw = 0, sa = 0; closed.forEach(function (c) { if (c.saleAge && c.sold > 0) { sw += c.sold; sa += c.sold * c.saleAge; } });
+    var age = sw ? sa / sw : (closed.length ? avg(closed.map(function (c) { return c.maxAge; })) : 35);
+    var livs = closed.map(function (c) { return c.liv; }).filter(function (v) { return v != null; }), fws = closed.map(function (c) { return c.fw; }).filter(function (v) { return v != null; });
+    var auto = {
+      T_W: [BIO_hepAt('w', age) / 1000, 'معيار هابرد عند عمر ' + Math.round(age) + ' يوم'],
+      T_FCR: [BIO_hepAt('fcr', age), 'معيار هابرد عند عمر ' + Math.round(age) + ' يوم'],
+      T_LIV: livs.length >= 3 ? [pctl(livs, 0.75), 'أفضل ربع في ' + livs.length + ' دورة عندك'] : [BIO_PROD_T.T_LIV, 'قيمة مبدئية لحد ما تتجمع 3 دورات'],
+      T_FW: fws.length >= 3 ? [pctl(fws, 0.25), 'أفضل ربع في ' + fws.length + ' دورة عندك'] : [BIO_PROD_T.T_FW, 'قيمة مبدئية لحد ما تتجمع 3 دورات'],
+      T_REST: [BIO_PROD_T.T_REST, 'الحد الأدنى للراحة في الأمن الحيوي']
+    };
+    Object.keys(auto).forEach(function (k) { var v = num(s[k], null); if (v != null && v > 0) { T[k] = v; src[k] = 'حددها مدير الإدارة'; } else { T[k] = auto[k][0]; src[k] = auto[k][1]; } });
+    var e = num(s.T_EPEF, null);
+    if (e != null && e > 0) { T.T_EPEF = e; src.T_EPEF = 'حددها مدير الإدارة'; } else { T.T_EPEF = T.T_LIV * T.T_W / (age * T.T_FCR) * 100; src.T_EPEF = 'محسوب من المستهدفات دي عند عمر ' + Math.round(age) + ' يوم'; }
+    Object.keys(T).forEach(function (k) { T[k] = k === 'T_EPEF' || k === 'T_REST' ? Math.round(T[k]) : Math.round(T[k] * 100) / 100; });
+    T.age = Math.round(age * 10) / 10; T.std = BIO_HEP.name;
+    return { T: T, src: src };
+  }
+  function pearson(xs, ys) {
+    var n = xs.length; if (n < 12) return null;
+    var mx = avg(xs), my = avg(ys), a = 0, b = 0, c = 0;
+    for (var i = 0; i < n; i++) { var dx = xs[i] - mx, dy = ys[i] - my; a += dx * dy; b += dx * dx; c += dy * dy; }
+    return b && c ? a / Math.sqrt(b * c) : null;
+  }
+  function srcList(v) { return String(v || '').split(/[،,;\/]+/).map(function (x) { return x.replace(/\s+/g, ' ').trim(); }).filter(function (x) { return x && x !== '-'; }); }
+
+  /** كل الدورات لكل محطة: من جدول الدورات + البيانات اليومية (الدورة الحالية بتتبني من اليومي لو مش في الجدول) */
+  function model(u) {
+    var sites = H.sitesById(), list = H.sitesList(sites).filter(function (s) { return BIO_isCycleSite(s) && H.inScope(u, s.id, sites); })
+      .sort(function (a, b) { var pa = BIO_placeRank(a), pb = BIO_placeRank(b); return String(a.sector).localeCompare(String(b.sector), 'ar') || (pa == null ? 999 : pa) - (pb == null ? 999 : pb); });
+    var ids = {}; list.forEach(function (s) { ids[s.id] = s; });
+    var daily = {}, latest = '';
+    rows('daily').forEach(function (x) {
+      var sid = BIO_norm(x.siteId); if (!ids[sid]) return; var day = dk(x.day); if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+      var o = { day: day, cycle: String(x.cycle || ''), age: num(x.age, 0), stock: num(x.stock, 0), placed: num(x.placed, 0), mort: num(x.dead, 0) + num(x.killed, 0), feed: num(x.feed, 0), sold: num(x.sold, 0), soldKg: num(x.soldKg, 0), source: String(x.source || ''), status: String(x.status || ''), detail: (function () { try { return typeof x.detail === 'string' ? JSON.parse(x.detail || '[]') : (x.detail || []); } catch (e) { return []; } })() };
+      (daily[sid] = daily[sid] || []).push(o); if (day > latest) latest = day;
+    });
+    Object.keys(daily).forEach(function (k) { daily[k].sort(function (a, b) { return a.day < b.day ? -1 : 1; }); });
+    var cyc = {};
+    rows('cycles').forEach(function (c) {
+      var sid = BIO_norm(c.siteId); if (!ids[sid]) return;
+      (cyc[sid] = cyc[sid] || {})[String(c.cycle)] = { cycle: String(c.cycle), first: dk(c.first), last: dk(c.last), saleFrom: dk(c.saleFrom), placed: num(c.placed, 0), sold: num(c.sold, 0), dead: num(c.dead, 0), maxAge: num(c.maxAge, 0), sources: srcList(c.sources), houses: num(c.houses, 0) };
+    });
+    var out = list.map(function (s) {
+      var dl = daily[s.id] || [], byC = {}, C = cyc[s.id] || {};
+      dl.forEach(function (r) { (byC[r.cycle] = byC[r.cycle] || []).push(r); });
+      Object.keys(byC).forEach(function (k) {
+        var rr = byC[k], c = C[k] || (C[k] = { cycle: k, first: rr[0].day, last: rr[rr.length - 1].day, saleFrom: '', placed: 0, sold: 0, dead: 0, maxAge: 0, sources: [], fromDaily: true });
+        var pl = Math.max.apply(null, rr.map(function (r) { return r.placed; })) || (rr[0].stock + rr[0].mort);
+        if (c.fromDaily) { c.placed = pl; c.dead = rr.reduce(function (a, r) { return a + r.mort; }, 0); c.sold = rr.reduce(function (a, r) { return a + r.sold; }, 0); c.maxAge = Math.max.apply(null, rr.map(function (r) { return r.age; })); c.sources = srcList(rr[rr.length - 1].source); c.last = rr[rr.length - 1].day; if (rr.some(function (r) { return r.sold > 0; })) c.saleFrom = rr.filter(function (r) { return r.sold > 0; })[0].day; }
+        c.rows = rr; c.feed = rr.reduce(function (a, r) { return a + r.feed; }, 0); c.soldKg = rr.reduce(function (a, r) { return a + r.soldKg; }, 0);
+        var sd = rr.filter(function (r) { return r.sold > 0 && r.age > 0; }), sdn = sd.reduce(function (a, r) { return a + r.sold; }, 0);
+        c.saleAge = sdn ? sd.reduce(function (a, r) { return a + r.sold * r.age; }, 0) / sdn : null;
+        var ik = rr.filter(function (r) { return r.age >= 7 && r.age <= 56 && r.stock > 1000 && r.feed > 0 && !r.sold; }).map(function (r) { var g = r.feed * 1000 / r.stock, sg = BIO_hepAt('feed', r.age); return [r.age, Math.round(g), sg ? Math.round(sg) : null, sg ? Math.round(g / sg * 100) : null, r.day]; });
+        c.intake = ik;
+        c.cover = c.maxAge ? rr.length / c.maxAge : 0;
+        var w1 = rr.filter(function (r) { return r.age >= 1 && r.age <= 7; });
+        if (w1.length >= 5 && c.placed > 0) c.fw = w1.reduce(function (a, r) { return a + r.mort; }, 0) / c.placed * 100;
+        var cum = 0; c.curve = rr.filter(function (r) { return r.age > 0; }).map(function (r) { cum += r.mort; return [r.age, r2(cum / (c.placed || 1) * 100)]; });
+      });
+      var L = Object.keys(C).map(function (k) { return C[k]; }).sort(function (a, b) { return a.first < b.first ? -1 : a.first > b.first ? 1 : num(a.cycle, 0) - num(b.cycle, 0); });
+      L.forEach(function (c, i) {
+        var prev = L[i - 1]; c.rest = prev && prev.last && c.first ? Math.round((dT(c.first) - dT(prev.last)) / D) : null;
+        c.closed = i < L.length - 1 || (c.sold > 0 && c.sold + c.dead >= c.placed * 0.97);
+        c.liv = c.placed > 0 ? (1 - c.dead / c.placed) * 100 : null;
+        c.avgW = c.sold > 0 && c.soldKg > 0 ? c.soldKg / c.sold : null;
+        c.fcr = c.soldKg > 0 && c.feed > 0 && c.cover >= 0.8 ? c.feed / c.soldKg : null;
+        c.epef = c.liv != null && c.avgW && c.fcr && c.maxAge ? c.liv * c.avgW / (c.maxAge * c.fcr) * 100 : null;
+        c.month = c.first ? c.first.slice(0, 7) : '';
+        var ag = c.saleAge || (c.closed ? c.maxAge : null);
+        c.stdW = ag ? BIO_hepAt('w', ag) / 1000 : null; c.stdFcr = ag ? BIO_hepAt('fcr', ag) : null;
+        c.wPct = c.avgW && c.stdW ? c.avgW / c.stdW * 100 : null;
+      });
+      return { id: s.id, name: s.name, sector: s.sector || '', no: BIO_stNoOf ? BIO_stNoOf(s) : null, cycles: L, daily: dl };
+    });
+    return { sites: out, latest: latest, sitesById: sites };
+  }
+  function cycOut(c) {
+    if (!c) return null;
+    var ik = (c.intake || []).slice(-7), ikp = ik.filter(function (x) { return x[3] != null; });
+    return { saleAge: c.saleAge == null ? null : Math.round(c.saleAge * 10) / 10, stdW: r2(c.stdW), stdFcr: r2(c.stdFcr), wPct: r1(c.wPct), intake: ikp.length ? { age: ik[ik.length - 1][0], g: ik[ik.length - 1][1], std: ik[ik.length - 1][2], pct: Math.round(avg(ikp.map(function (x) { return x[3]; }))), last: ik[ik.length - 1][3], series: (c.intake || []).map(function (x) { return [x[0], x[1], x[2]]; }) } : null, cycle: c.cycle, first: c.first, last: c.last, placed: c.placed, dead: c.dead, sold: c.sold, maxAge: c.maxAge, sources: c.sources, closed: !!c.closed, rest: c.rest, liv: r2(c.liv), avgW: r2(c.avgW), fcr: r2(c.fcr), epef: c.epef == null ? null : Math.round(c.epef), fw: r2(c.fw), feed: Math.round(c.feed || 0), soldKg: Math.round(c.soldKg || 0), curve: c.curve || [] };
+  }
+
+  /** الأداء الإنتاجي والاقتصادي + الدورات والأسباب (للقطاع كله، وصفحة المحطة بتعلّم على محطتها) */
+  api.prodAnalytics = function (pin) {
+    var u = H.auth(pin, true); need(u, ['econ', 'causes', 'site'], 'الأداء الإنتاجي والأسباب');
+    var M = model(u), TT = targets(M), T = TT.T, now = deps.now();
+    var stations = M.sites.map(function (s) {
+      var L = s.cycles, cur = L[L.length - 1] || null, prev = L.length > 1 ? L[L.length - 2] : null, lastClosed = L.filter(function (c) { return c.closed && c.avgW; }).pop() || L.filter(function (c) { return c.closed; }).pop() || null;
+      var prevClosed = lastClosed ? L.filter(function (c) { return c.closed && c !== lastClosed && c.first < lastClosed.first && (!lastClosed.avgW || c.avgW); }).pop() || L.filter(function (c) { return c.closed && c !== lastClosed && c.first < lastClosed.first; }).pop() || null : null;
+      var atAge = null;
+      var prevC = L.slice(0, -1).filter(function (c) { return c.curve && c.curve.length && cur && cur.curve && cur.curve.length && c.curve[c.curve.length - 1][0] >= cur.curve[cur.curve.length - 1][0] - 2; }).pop() || null;
+      if (cur && cur.curve && cur.curve.length && prevC) { var prev0 = prev; prev = prevC;
+        var a = cur.curve[cur.curve.length - 1][0], pc = prev.curve.filter(function (p) { return p[0] <= a; }).pop();
+        if (pc && pc[0] >= a - 2) atAge = { age: a, cur: cur.curve[cur.curve.length - 1][1], prev: pc[1], prevCycle: prev.cycle, adjacent: prev === prev0 };
+        prev = prev0;
+      }
+      return { id: s.id, name: s.name, sector: s.sector, cur: cycOut(cur), prev: cycOut(prev), last: cycOut(lastClosed), lastPrev: cycOut(prevClosed), atAge: atAge, nCycles: L.length };
+    });
+    // القطاع: آخر دورة مقفولة لكل محطة
+    var closed = stations.map(function (s) { return s.last; }).filter(Boolean), sec = null;
+    if (closed.length) {
+      var P = closed.reduce(function (a, c) { return a + c.placed; }, 0), Dd = closed.reduce(function (a, c) { return a + c.dead; }, 0), S = closed.reduce(function (a, c) { return a + c.sold; }, 0);
+      var kgC = closed.filter(function (c) { return c.soldKg > 0; }), KG = kgC.reduce(function (a, c) { return a + c.soldKg; }, 0), SK = kgC.reduce(function (a, c) { return a + c.sold; }, 0);
+      var fc = closed.filter(function (c) { return c.fcr; }), ep = closed.filter(function (c) { return c.epef; });
+      var w = SK ? KG / SK : null, liv = P ? (1 - Dd / P) * 100 : null;
+      sec = { n: closed.length, placed: P, dead: Dd, sold: S, liv: r2(liv), avgW: r2(w), fcr: r2(avg(fc.map(function (c) { return c.fcr; }))), epef: ep.length ? Math.round(avg(ep.map(function (c) { return c.epef; }))) : null, age: r1(avg(closed.map(function (c) { return c.saleAge || c.maxAge; }))), wPct: r1(avg(closed.map(function (c) { return c.wPct; }))), rest: r1(avg(closed.map(function (c) { return c.rest; }))), fw: r2(avg(closed.map(function (c) { return c.fw; }))) };
+      if (w) {
+        var pot = P * T.T_W / 1000, stdM = P * (1 - T.T_LIV / 100) * w / 1000, exM = Math.max(0, (Dd - P * (1 - T.T_LIV / 100))) * w / 1000, under = Math.max(0, S * (T.T_W - w)) / 1000;
+        sec.split = { potential: Math.round(pot), sold: Math.round(KG / 1000), stdMort: Math.round(stdM), exMort: Math.round(exM), under: Math.round(under), feedEx: fc.length && sec.fcr ? Math.round(Math.max(0, (sec.fcr - T.T_FCR)) * KG / 1000) : null };
+      }
+    }
+    // الأسباب
+    var allC = []; M.sites.forEach(function (s) { s.cycles.forEach(function (c) { allC.push({ s: s, c: c }); }); });
+    var bySrc = {};
+    allC.forEach(function (x) { if (x.c.fw == null) return; x.c.sources.forEach(function (n) { (bySrc[n] = bySrc[n] || []).push(x.c.fw); }); });
+    var sources = Object.keys(bySrc).map(function (n) {
+      var a = bySrc[n], m = avg(a); return { name: n, n: a.length, fw: r2(m), min: r2(Math.min.apply(null, a)), max: r2(Math.max.apply(null, a)), grade: m <= T.T_FW * 0.8 ? 'A' : m <= T.T_FW * 1.2 ? 'B' : 'C' };
+    }).sort(function (a, b) { return a.fw - b.fw; });
+    var BINS = [['أقل من 8', 0, 7], ['8 – 9', 8, 9], ['10 – 11', 10, 11], ['12 – 14', 12, 14], ['15 وأكتر', 15, 999]];
+    var rest = BINS.map(function (b) { var a = allC.filter(function (x) { return x.c.rest != null && x.c.rest >= b[1] && x.c.rest <= b[2] && x.c.fw != null; }).map(function (x) { return x.c.fw; }); return { t: b[0], n: a.length, fw: r2(avg(a)) }; });
+    var months = {}; allC.forEach(function (x) { if (!x.c.closed || x.c.liv == null || !x.c.month) return; (months[x.c.month] = months[x.c.month] || []).push(x.c.liv); });
+    var season = Object.keys(months).sort().slice(-12).map(function (m) { var a = months[m]; return { m: m, n: a.length, avg: r2(avg(a)), min: r2(Math.min.apply(null, a)), max: r2(Math.max.apply(null, a)) }; });
+    // يومي: نسبة النافق (بعد أول 3 أيام) + المخالفات + الحر + درجة التقرير
+    var day = {}, pct = {};
+    M.sites.forEach(function (s) { s.daily.forEach(function (r) { if (r.age > 3 && !r.sold && r.stock > 1000 && !/بيع/.test(r.status)) (pct[s.id] = pct[s.id] || {})[r.day] = r.mort / (r.stock + r.mort) * 100; }); });
+    var viol = {};
+    H.allMoves().forEach(function (m) {
+      if (!pct[m.siteId] || m.dir !== BIO.IN) return; var bad = (!BIO_counted(m) && m.decision !== BIO.PENDING && m.decision !== BIO.CANCELLED && m.decision !== BIO.VOID) || !!m.flag; if (!bad) return;
+      var k = dk(m.time); (viol[m.siteId] = viol[m.siteId] || {})[k] = ((viol[m.siteId] || {})[k] || 0) + 1;
+    });
+    var shift = function (d, n) { return new Date(dT(d) + n * D).toISOString().slice(0, 10); };
+    var lag = [];
+    for (var L = 0; L <= 10; L++) {
+      var xs = [], ys = [];
+      Object.keys(pct).forEach(function (sid) {
+        var P = pct[sid], keys = Object.keys(P), mu = avg(keys.map(function (k) { return P[k]; })), sd = Math.sqrt(avg(keys.map(function (k) { return (P[k] - mu) * (P[k] - mu); })) || 0) || 1;
+        keys.forEach(function (d) { var vd = shift(d, -L); xs.push((viol[sid] || {})[vd] || 0); ys.push((P[d] - mu) / sd); });
+      });
+      lag.push({ d: L, r: r2(pearson(xs, ys)), n: xs.length });
+    }
+    var hot = {}; rows('cheerlog').forEach(function (x) { var m = /^HEAT-(\d{4}-\d{2}-\d{2})/.exec(String(x.id)); if (m) hot[m[1]] = 1; });
+    var hotV = [], normV = [];
+    Object.keys(pct).forEach(function (sid) { Object.keys(pct[sid]).forEach(function (d) { (hot[shift(d, -1)] ? hotV : normV).push(pct[sid][d]); }); });
+    var heat = { hotDays: Object.keys(hot).length, hot: r3(avg(hotV)), normal: r3(avg(normV)), nHot: hotV.length, nNormal: normV.length };
+    heat.ratio = heat.hot != null && heat.normal ? r2(heat.hot / heat.normal) : null;
+    // درجة تقرير الزيارة قبل كل يوم
+    var rep = []; try { rep = deps.visitReports ? deps.visitReports() || [] : []; } catch (e) { rep = []; }
+    var lst = M.sites.map(function (s) { return M.sitesById[s.id]; }).filter(Boolean), repBy = {};
+    rep.forEach(function (r) { var s = BIO_matchSite(r.station, r.farmCode, lst); var sc = Number(r.score); if (!s || r.score === '' || r.score == null || isNaN(sc) || !/تربية/.test(String(r.type || ''))) return; var t = BIO_ms(r.date) || BIO_ms(r.updatedAt); if (t) (repBy[s.id] = repBy[s.id] || []).push({ t: t, sc: sc }); });
+    Object.keys(repBy).forEach(function (k) { repBy[k].sort(function (a, b) { return a.t - b.t; }); });
+    var TIERS = [['أقل من 70%', 0, 70], ['70 – 80%', 70, 80], ['80 – 90%', 80, 90], ['فوق 90%', 90, 101]], tierV = TIERS.map(function () { return []; });
+    Object.keys(pct).forEach(function (sid) { var R = repBy[sid]; if (!R) return; Object.keys(pct[sid]).forEach(function (d) { var t = dT(d), last = R.filter(function (x) { return x.t <= t && t - x.t <= 30 * D; }).pop(); if (!last) return; TIERS.forEach(function (T0, i) { if (last.sc >= T0[1] && last.sc < T0[2]) tierV[i].push(pct[sid][d]); }); }); });
+    var tiers = TIERS.map(function (t, i) { return { t: t[0], n: tierV[i].length, mort: r3(avg(tierV[i])) }; });
+    // تأثير كل عامل: كام ضعف، وكام طائر زيادة تقريباً
+    var factors = [], birdsOf = function (vals, base) { return 0; };
+    var vAfter = [], vNone = [];
+    Object.keys(pct).forEach(function (sid) { Object.keys(pct[sid]).forEach(function (d) { var hit = [4, 5].some(function (n) { return (viol[sid] || {})[shift(d, -n)]; }); (hit ? vAfter : vNone).push(pct[sid][d]); }); });
+    if (vAfter.length >= 3 && vNone.length >= 10 && avg(vNone)) factors.push({ k: 'viol', g: 'bio', t: 'مخالفات العزل على البوابة', s: 'نافق المحطة بعد 4 لـ 5 أيام من المخالفة', ratio: r2(avg(vAfter) / avg(vNone)), n: vAfter.length });
+    var tLo = [].concat(tierV[0], tierV[1]), tHi = [].concat(tierV[2], tierV[3]);
+    if (tLo.length >= 5 && tHi.length >= 5 && avg(tHi)) factors.push({ k: 'report', g: 'bio', t: 'درجة تقرير الزيارة', s: 'أقل من 80% مقابل 80% وأكتر', ratio: r2(avg(tLo) / avg(tHi)), n: tLo.length });
+    var rLo = allC.filter(function (x) { return x.c.rest != null && x.c.rest < T.T_REST && x.c.fw != null; }).map(function (x) { return x.c.fw; }), rHi = allC.filter(function (x) { return x.c.rest != null && x.c.rest >= T.T_REST && x.c.fw != null; }).map(function (x) { return x.c.fw; });
+    if (rLo.length >= 2 && rHi.length >= 2 && avg(rHi)) factors.push({ k: 'rest', g: 'bio', t: 'أيام الراحة قبل الدورة', s: 'أقل من ' + T.T_REST + ' أيام مقابل ' + T.T_REST + ' وأكتر (نافق أول أسبوع)', ratio: r2(avg(rLo) / avg(rHi)), n: rLo.length });
+    if (heat.ratio && heat.nHot >= 5) factors.push({ k: 'heat', g: 'env', t: 'الإجهاد الحراري', s: 'نافق اليوم التالي ليوم THI فيه 79 أو أكتر', ratio: heat.ratio, n: heat.nHot });
+    var gA = sources.filter(function (x) { return x.grade === 'A'; }), gC = sources.filter(function (x) { return x.grade === 'C'; });
+    if (gA.length && gC.length) factors.push({ k: 'source', g: 'env', t: 'مصدر الكتكوت', s: 'مصادر تقييمها C مقابل A (نافق أول أسبوع)', ratio: r2(avg(gC.map(function (x) { return x.fw; })) / avg(gA.map(function (x) { return x.fw; }))), n: gC.reduce(function (a, x) { return a + x.n; }, 0) });
+    factors.sort(function (a, b) { return b.ratio - a.ratio; });
+    // آخر تقرير لكل محطة (لصفحة المحطة والترتيب)
+    stations.forEach(function (s) { var R = repBy[s.id]; s.report = R && R.length ? { sc: R[R.length - 1].sc, t: R[R.length - 1].t } : null; });
+    // الكفاءة حسب درجة التقرير (الدورات المقفولة)
+    var effT = TIERS.map(function () { return []; });
+    allC.forEach(function (x) { if (!x.c.closed) return; var R = repBy[x.s.id]; if (!R) return; var t = dT(x.c.last), last = R.filter(function (r) { return r.t <= t; }).pop(); if (!last) return; var v = x.c.epef != null ? x.c.epef : null; if (v == null) return; TIERS.forEach(function (T0, i) { if (last.sc >= T0[1] && last.sc < T0[2]) effT[i].push(v); }); });
+    var effTiers = TIERS.map(function (t, i) { return { t: t[0], n: effT[i].length, v: effT[i].length ? Math.round(avg(effT[i])) : null }; });
+    return { now: now, latest: M.latest, targets: T, tsrc: TT.src, stdName: BIO_HEP.name, canSetTargets: !!u.isAdmin, stations: stations, sector: sec, sources: sources, rest: rest, season: season, lag: lag, heat: heat, tiers: tiers, effTiers: effTiers, factors: factors, nDays: Object.keys(pct).reduce(function (a, k) { return a + Object.keys(pct[k]).length; }, 0), nCycles: allC.length };
+  };
+  api.prodTargets = function (pin, t) {
+    var u = H.auth(pin, true); if (!u.isAdmin) throw new Error('المستهدفات بيعدلها مدير إدارة الأمن الحيوي');
+    t = t || {}; var out = {};
+    Object.keys(BIO_PROD_T).forEach(function (k) {
+      var v = t.reset ? '' : t[k]; if (v == null) return;
+      if (v !== '') { v = Number(v); if (isNaN(v) || v <= 0) throw new Error('قيمة غير صحيحة'); }
+      out[k] = v; if (store.find('settings', k)) store.update('settings', k, { value: v }); else if (v !== '') store.append('settings', { key: k, value: v, note: 'مستهدف الأداء الإنتاجي (فاضي = تلقائي من معيار هابرد وبيانات الشركة)' });
+    });
+    return { ok: true };
+  };
+
+  /** صفحة المحطة (نموذج ب): العنابر النهارده، نافق 14 يوم، مين دخل آخر 72 ساعة، الملاحظات المفتوحة، الطرق */
+  api.siteCard = function (pin, siteId) {
+    var u = H.auth(pin, true); need(u, ['site'], 'صفحة المحطة');
+    var sites = H.sitesById(), sid = BIO_norm(siteId), s = sites[sid]; if (!s || !H.inScope(u, sid, sites)) throw new Error('المحطة غير موجودة أو خارج نطاقك');
+    var now = deps.now(), dl = rows('daily').filter(function (x) { return BIO_norm(x.siteId) === sid; }).map(function (x) { return { day: dk(x.day), age: num(x.age, 0), stock: num(x.stock, 0), mort: num(x.dead, 0) + num(x.killed, 0), placed: num(x.placed, 0), feed: num(x.feed, 0), sold: num(x.sold, 0), cycle: String(x.cycle || ''), source: String(x.source || ''), detail: (function () { try { return typeof x.detail === 'string' ? JSON.parse(x.detail || '[]') : (x.detail || []); } catch (e) { return []; } })() }; }).sort(function (a, b) { return a.day < b.day ? -1 : 1; });
+    var last = dl[dl.length - 1] || null;
+    var houses = last ? last.detail.map(function (h) { var s0 = num(h.s, 0), d0 = num(h.d, 0); return { h: String(h.h || ''), s: s0, d: d0, p: s0 + d0 > 0 ? r3(d0 / (s0 + d0) * 100) : null }; }) : [];
+    var ps = houses.map(function (h) { return h.p; }).filter(function (p) { return p != null; }).sort(function (a, b) { return a - b; }), med = ps.length ? ps[Math.floor(ps.length / 2)] : null;
+    houses.forEach(function (h) { h.x = med && h.p != null ? r1(h.p / med) : null; });
+    var from14 = last ? new Date(Date.parse(last.day + 'T12:00:00Z') - 13 * D).toISOString().slice(0, 10) : '';
+    var mort = dl.filter(function (r) { return r.day >= from14; }).map(function (r) { return { day: r.day, mort: r.mort, age: r.age }; });
+    var ews = rows('ews').filter(function (e) { return BIO_norm(e.siteId) === sid; }).sort(function (a, b) { return BIO_ms(b.time) - BIO_ms(a.time); })[0] || null;
+    var moves = H.allMoves().filter(function (m) { return m.siteId === sid && m.dir === BIO.IN && m.time >= now - 72 * BIO.HOUR; }).sort(function (a, b) { return b.time - a.time; }).slice(0, 12).map(function (m) {
+      return { time: m.time, name: m.itemName || m.itemId, kind: m.kind || '', checkpoint: m.checkpoint || '', decision: m.decision, ok: BIO_counted(m), flag: !!m.flag, reason: String(m.reason || '').slice(0, 140) };
+    });
+    var acts = rows('actions').filter(function (a) { return BIO_norm(a.siteId) === sid && !/مغلق|تم/.test(String(a.status || '')); }).slice(-6).map(function (a) { return { finding: String(a.finding || ''), action: String(a.action || ''), due: dk(a.due), status: String(a.status || ''), time: BIO_ms(a.time) }; });
+    var roads = { clean: null, dirty: null };
+    rows('stroads').forEach(function (r) { if (BIO_norm(r.siteId) !== sid || String(r.active).trim() === BIO.NO) return; var k = BIO_roadKind(r.kind); if (k === 'clean' || k === 'dirty') roads[k] = { lenM: num(r.lenM, 0), driver: String(r.driver || ''), driverPhone: String(r.driverPhone || ''), by: String(r.by || '') }; });
+    var lat = rows('daily').reduce(function (a, x) { var d = dk(x.day); return d > a ? d : a; }, ''), stale = !last || !lat || (Date.parse(lat) - Date.parse(last.day)) / D > 3;
+    var ik = last ? dl.filter(function (r) { return r.day >= from14 && r.cycle === last.cycle && r.age > 0 && r.stock > 1000 && r.feed > 0 && !r.sold; }).map(function (r) { var g = r.feed * 1000 / r.stock, sg = BIO_hepAt('feed', r.age); return { day: r.day, age: r.age, g: Math.round(g), std: sg ? Math.round(sg) : null, pct: sg && r.age >= 7 ? Math.round(g / sg * 100) : null }; }) : [];
+    if (stale) { houses = []; mort = []; ik = []; }
+    return { now: now, id: sid, name: s.name, sector: s.sector || '', stale: stale, intake: ik, stdName: BIO_HEP.name, latest: lat, last: last ? { day: last.day, age: last.age, stock: last.stock, mort: last.mort, placed: last.placed, cycle: last.cycle, source: last.source } : null, houses: houses, median: med, mort: mort,
+      ews: ews ? { level: String(ews.level || ''), why: String(ews.why || ''), time: BIO_ms(ews.time), ratio: num(ews.ratio, null) } : null, moves: moves, actions: acts, roads: roads };
+  };
+
+  /** خريطة القيادة (نموذج ج): المواقع بإحداثياتها وحالتها، والطرق كلين وديرتي، وحركة آخر 7 أيام */
+  api.mapData = function (pin) {
+    var u = H.auth(pin, true); need(u, ['mapc'], 'خريطة القيادة');
+    var sites = H.sitesById(), now = deps.now(), list = BIO_fixGeo(H.sitesList(sites)).filter(function (s) { return s.lat != null && s.lng != null && (BIO_isYes(s.external) || H.inScope(u, s.id, sites)); });
+    var ews = {}; rows('ews').forEach(function (e) { var t = BIO_ms(e.time); if (t >= now - 48 * BIO.HOUR) { var k = BIO_norm(e.siteId); if (!ews[k] || t > ews[k].t) ews[k] = { t: t, level: String(e.level || ''), why: String(e.why || '') }; } });
+    var mv = H.allMoves().filter(function (m) { return m.time >= now - 7 * D && m.dir === BIO.IN; }), today = {}, deny = {}, days = [];
+    for (var i = 6; i >= 0; i--) days.push({ day: dk(now - i * D), n: 0, bad: 0 });
+    mv.forEach(function (m) { var d = dk(m.time), dd = days.filter(function (x) { return x.day === d; })[0]; var bad = !BIO_counted(m) && m.decision !== BIO.PENDING && m.decision !== BIO.CANCELLED; if (dd) { dd.n++; if (bad) dd.bad++; } if (m.time >= now - 24 * BIO.HOUR) { today[m.siteId] = (today[m.siteId] || 0) + 1; if (bad) deny[m.siteId] = (deny[m.siteId] || 0) + 1; } });
+    var roads = rows('stroads').filter(function (r) { return String(r.active).trim() !== BIO.NO && sites[BIO_norm(r.siteId)] && H.inScope(u, BIO_norm(r.siteId), sites); }).map(function (r) { return { siteId: BIO_norm(r.siteId), kind: BIO_roadKind(r.kind), poly: String(r.poly || ''), driver: String(r.driver || ''), driverPhone: String(r.driverPhone || '') }; });
+    return { now: now, sites: list.map(function (s) { return { id: s.id, name: s.name, sector: s.sector || '', level: Number(s.level), type: s.type || '', lat: Number(s.lat), lng: Number(s.lng), external: BIO_isYes(s.external), infra: !!BIO_infra(s), cycle: BIO_isCycleSite(s), ews: ews[s.id] || null, today: today[s.id] || 0, deny: deny[s.id] || 0 }; }), roads: roads, days: days };
+  };
+}
+
+/** v34 (نسخة العرض فقط، مش بيتنادى في التثبيت الحقيقي): تاريخ دورات سابقة يومي بيوم علشان تحليلات الإنتاج والأسباب يبان فيها شكل حقيقي */
+function BIO_demoHistV34(s, now) {
+  var D = 864e5, seed = 17, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  var dk = function (t) { return new Date(t + 3 * 36e5).toISOString().slice(0, 10); };
+  var dT = function (d) { return Date.parse(d + 'T12:00:00Z'); };
+  var SRC = [['Wahat 3', 0.55], ['Wahat 5', 0.7], ['Wahat 7', 0.95], ['Wahat 8', 1.05], ['مورد خارجي (أ)', 1.45], ['مورد خارجي (ب)', 1.85]];
+  var hot = {}, viol = [], reps = [];
+  for (var i = 15; i < 220; i++) { var t = now - i * D, m = new Date(t).getUTCMonth(); if (m >= 5 && m <= 8 && rnd() < 0.42) hot[dk(t)] = 1; }
+  s.cheerlog = s.cheerlog || [];
+  Object.keys(hot).forEach(function (d) { s.cheerlog.push({ id: 'HEAT-' + d, time: dT(d), kind: 'حر', note: 'THI ' + (79 + rnd() * 6).toFixed(1) }); });
+  var tpl = (s.moves || []).filter(function (m) { return m.dir === BIO.IN; })[0] || {};
+  (s.sites || []).filter(function (x) { return /^W-F\d/.test(x.id); }).forEach(function (site, si) {
+    var mine = (s.cycles || []).filter(function (c) { return c.siteId === site.id; }).sort(function (a, b) { return a.first < b.first ? -1 : 1; });
+    if (!mine.length) return;
+    var end = dT(mine[0].first) - (8 + Math.floor(rnd() * 8)) * D, c0 = Number(mine[0].cycle) || 46, quality = 0.85 + rnd() * 0.4 + (site.id === 'W-F17' ? 0.25 : 0);
+    var made = [];
+    for (var k = 1; k <= 4; k++) {
+      var age = 35 + Math.floor(rnd() * 6), last = end, first = last - (age - 1) * D, rest = 6 + Math.floor(rnd() * 11);
+      var src = SRC[Math.floor(rnd() * SRC.length)], placed = 300000 + Math.floor(rnd() * 120000), stock = placed, dead = 0, sold = 0, soldKg = 0, feed = 0, rows = [];
+      var restPen = rest < 10 ? 1.45 : 1, w = 2.05 + rnd() * 0.3 - (quality - 1) * 0.25;
+      for (var a = 1; a <= age; a++) {
+        var t = first + (a - 1) * D, d = dk(t);
+        var base = a <= 7 ? (0.26 - a * 0.025) * src[1] * restPen : 0.045 + a * 0.0016;
+        base *= quality * (0.8 + rnd() * 0.4);
+        if (hot[dk(t - D)] && a > 7) base *= 2 + rnd() * 0.6;
+        if (viol.some(function (v) { return v.site === site.id && (t - v.t) / D >= 3.5 && (t - v.t) / D <= 5.5; })) base *= 1.8;
+        var m = Math.round(stock * base / 100), fd = Math.round(stock * (8 + a * 4.4) / 1000), sd = 0, sk = 0;
+        if (a >= age - 2) { sd = a === age ? stock - m : Math.round((stock - m) * 0.4); sk = Math.round(sd * (w - (age - a) * 0.08)); }
+        if (rnd() < 0.05 && a > 8 && a < age - 3) viol.push({ site: site.id, t: t });
+        stock -= m + sd; dead += m; sold += sd; soldKg += sk; feed += fd;
+        rows.push({ id: d + '|' + site.id, day: d, siteId: site.id, siteName: site.name, farm: 'Wahat ' + Number(site.id.slice(3)), cycle: c0 - k, status: sd ? 'بيع' : a <= 2 ? 'استلام' : 'تسمين', age: a, houses: 12, stock: Math.max(0, stock), placed: a === 1 ? placed : 0, dead: m, killed: 0, inj: 0, feed: fd, sold: sd, soldKg: sk, source: src[0], breed: 'Ross 308', detail: '[]', importId: 'FI-HIST34', time: now });
+      }
+      s.daily = rows.concat(s.daily || []);
+      made.push({ id: site.id + '|' + (c0 - k), siteId: site.id, siteName: site.name, cycle: c0 - k, houses: 12, first: dk(first), last: dk(last), saleFrom: dk(last - 2 * D), placed: placed, sold: sold, dead: dead, maxAge: age, sources: src[0], importId: 'FI-HIST34', time: now });
+      var sc = Math.round(Math.max(55, Math.min(97, 96 - (quality - 0.85) * 60 - rnd() * 12)));
+      reps.push({ id: 'h34-' + site.id + k, no: 'VR-H' + si + k, type: 'أثناء التربية', station: 'محطة ' + Number(site.id.slice(3)), farmCode: '', date: first + 15 * D, visitType: 'دورية', by: 'معاون أمن حيوي (مثال)', score: sc, grade: '', critical: sc < 70 ? 1 : 0, status: 'معتمد' });
+      end = first - rest * D;
+    }
+    s.cycles = made.concat(s.cycles || []);
+  });
+  s.moves = s.moves || [];
+  viol.forEach(function (v, i) { s.moves.push(Object.assign({}, tpl, { id: 'H34-V' + i, time: v.t + 9 * 36e5, siteId: v.site, siteName: ((s.sites || []).filter(function (x) { return x.id === v.site; })[0] || {}).name || v.site, dir: BIO.IN, decision: BIO.DENY, reason: 'لم تكتمل فترة العزل (تاريخ تجريبي)', flag: '' })); });
+  s.__vr34 = reps;
+  return s;
+}
+
+/* ============================ v34.1: المعيار القياسي لسلالة هابرد إيفيشنسي بلس (تسمين، مختلط) ============================
+   المصدر: Hubbard Efficiency Plus – Broiler performance objectives 2023 (V-2023-01)، الجدول المختلط as-hatched.
+   الوزن (جم) والعلف اليومي (جم/طائر) من عمر 0 لـ 56، ومعامل التحويل التراكمي من عمر 15 (زي ما هو مطبوع في الدليل).
+   الدليل مافيهوش حيوية ولا مؤشر كفاءة: الحيوية ونافق أول أسبوع المستهدفين بيتحسبوا من أفضل ربع في دورات الشركة نفسها. */
+var BIO_HEP = { name: 'هابرد إيفيشنسي بلس (دليل 2023)', w: [43.5, 62.6, 82.1, 103.4, 126.6, 153.3, 184.2, 215.9, 251.7, 290.3, 333.4, 379.6, 429.5, 483.5, 541.6, 602.8, 667.2, 733.9, 805.1, 879.1, 955.7, 1034.7, 1116.7, 1200.2, 1285.0, 1373.5, 1463.7, 1554.5, 1647.0, 1741.3, 1836.6, 1932.8, 2031.2, 2130.5, 2228.9, 2329.6, 2429.9, 2529.2, 2630.8, 2730.2, 2830.0, 2928.4, 3028.2, 3126.2, 3225.0, 3322.6, 3418.7, 3514.9, 3609.2, 3704.0, 3796.6, 3887.7, 3977.1, 4066.5, 4153.5, 4238.8, 4323.6], feed: [0, 11.8, 16.3, 20.0, 24.9, 27.7, 30.8, 34.5, 38.6, 42.6, 47.6, 51.3, 58.1, 63.5, 68.0, 73.5, 79.4, 84.8, 91.6, 97.5, 103.4, 108.4, 114.7, 120.2, 126.1, 132.0, 137.9, 142.9, 148.3, 153.3, 158.8, 164.2, 170.1, 174.2, 178.7, 182.8, 187.3, 191.4, 195.0, 198.7, 201.8, 205.9, 208.2, 211.4, 214.1, 215.5, 219.1, 220.4, 222.7, 224.1, 225.0, 227.2, 227.7, 228.2, 230.0, 229.1, 229.5], fcr: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1.01, 1.03, 1.05, 1.07, 1.09, 1.11, 1.13, 1.15, 1.17, 1.19, 1.21, 1.23, 1.25, 1.27, 1.29, 1.31, 1.33, 1.35, 1.37, 1.39, 1.41, 1.43, 1.45, 1.46, 1.48, 1.5, 1.52, 1.54, 1.56, 1.58, 1.6, 1.62, 1.63, 1.65, 1.67, 1.69, 1.71, 1.73, 1.75, 1.77, 1.78, 1.8] };
+function BIO_hepAt(key, age) {
+  var a = BIO_HEP[key], n = Number(age); if (!a || isNaN(n)) return null; if (n <= 0) return a[0]; if (n >= a.length - 1) return a[a.length - 1];
+  var i = Math.floor(n), f = n - i, x = a[i], y = a[i + 1]; if (x == null) return y == null ? null : (f >= 0.5 ? y : null); if (y == null) return x; return x + (y - x) * f;
 }
