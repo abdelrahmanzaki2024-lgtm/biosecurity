@@ -5863,3 +5863,18 @@ body.wsl-driving #bottomNav { display: none !important; }
 .rs-t em { font-style: normal; font-size: .76rem; font-weight: 700; color: var(--b34-ink, #a3530f); }
 .rs-rd .btn { flex: none; }
 @media (max-width: 560px) { .rs-rd { flex-wrap: wrap; } .rs-rd .rs-t { flex-basis: calc(100% - 24px); } .rs-rd .btn { flex: 1 1 100%; justify-content: center; } .rs-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* v35.1: استيراد الدورات السابقة */
+.fx-hist { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0 0; color: var(--muted); flex-basis: 100%; }
+.fx-hist.on { color: var(--ink); background: var(--info-soft); border-radius: 8px; padding: 6px 8px; }
+.fx-hist .ico, .fx-hres .ico { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.fx-hres { display: flex; gap: 6px; align-items: flex-start; text-align: start; }
+.fx-hres.bad { color: var(--bad, #b91c1c); }
+.cy-arch { margin-top: 12px; }
+.cy-arch > summary { cursor: pointer; font-weight: 700; padding: 10px 14px; list-style: none; display: flex; gap: 8px; align-items: center; }
+.cy-arch > summary::-webkit-details-marker { display: none; }
+.cy-arch .cy-yr { font-size: 12px; color: var(--muted); padding: 8px 14px 2px; font-weight: 700; }
+.cy-s.arch { color: var(--muted); }
+.cy-arch > summary { flex-wrap: wrap; }
+.cy-arch > summary > span:first-of-type { white-space: nowrap; }
+.cy-arch > summary small { flex-basis: 100%; font-weight: 400; }

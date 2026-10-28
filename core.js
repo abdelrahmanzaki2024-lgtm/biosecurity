@@ -4542,7 +4542,49 @@ function BIO_v15(api, H) {
   api.farmMeta = function (pin) {
     var u = H.auth(pin, true), sites = H.sitesById();
     var imp = has('imports') ? store.all('imports').map(importOut).sort(function (a, b) { return b.time - a.time; }) : [];
-    return { sites: farmSites(u, sites), map: json(st().IMPORT_MAP, {}), aliases: json(st().IMPORT_SITES, {}), last: imp[0] || null, canImport: canImport(u), window: num(st().IMPORT_DAYS, 14) };
+    return { sites: farmSites(u, sites), map: json(st().IMPORT_MAP, {}), aliases: json(st().IMPORT_SITES, {}), last: imp[0] || null, canImport: canImport(u), window: num(st().IMPORT_DAYS, 14), hist: histMeta(u, sites) };
+  };
+  /** v35.1: من أول تاريخ للأرشيف (الافتراضي أول 2023) والأيام المحفوظة لكل محطة كفترات متصلة، علشان التطبيق يبعت الناقص بس */
+  function histFrom() { var f = String(st().HIST_FROM || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : '2023-01-01'; }
+  function histMeta(u, sites) {
+    var by = {}, from = histFrom();
+    if (has('daily')) store.all('daily').forEach(function (x) { var sid = BIO_norm(x.siteId), d = dk(x.day); if (!d || d < from || !H.inScope(u, sid, sites)) return; (by[sid] = by[sid] || []).push(d); });
+    var ranges = {};
+    Object.keys(by).forEach(function (sid) {
+      var L = by[sid].sort(), R = [], a = L[0], b = L[0];
+      for (var i = 1; i < L.length; i++) { if (L[i] === b) continue; if (dayT(L[i]) - dayT(b) <= D * 1.5) b = L[i]; else { R.push([a, b]); a = b = L[i]; } }
+      R.push([a, b]); ranges[sid] = R;
+    });
+    return { from: from, ranges: ranges, done: String(st().HIST_DONE || '') === from };
+  }
+
+  /** v35.1: استيراد الأيام السابقة من ملف المزارع (من أول 2023) على دفعات. بيضيف الأيام الناقصة بس:
+      ما بيغيرش يوم محفوظ، وما بيحركش مراحل المحطات ولا بيطلع إنذار مبكر على أيام قديمة */
+  api.farmHistory = function (pin, p) {
+    var u = H.auth(pin, true); if (!canImport(u)) throw new Error('رفع ملف البيانات للمدير فقط');
+    if (!has('daily')) throw new Error('جدول البيانات اليومية مش موجود');
+    p = p || {};
+    var sites = H.sitesById(), now = deps.now(), from = histFrom(), list = Array.isArray(p.days) ? p.days.slice(0, 2500) : [], have = {}, adds = [], skipped = {}, dup = 0;
+    store.all('daily').forEach(function (x) { have[dk(x.day) + '|' + BIO_norm(x.siteId)] = 1; });
+    var imp = clean(p.id, 40) || deps.id('IH');
+    list.forEach(function (r) {
+      var sid = BIO_norm(r.siteId), s = sites[sid], day = String(r.day || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < from) return;
+      if (!s || s.external || !H.inScope(u, sid, sites)) { skipped[clean(r.farm || sid, 40)] = 1; return; }
+      var id = day + '|' + sid; if (have[id]) { dup++; return; }
+      var o = { id: id, day: day, siteId: sid, siteName: s.name, farm: clean(r.farm, 40), status: clean(r.status, 20), breed: clean(r.breed, 60), source: clean(r.source, 120), detail: JSON.stringify((Array.isArray(r.detail) ? r.detail : []).slice(0, 40)).slice(0, 4000) };
+      NUMS.forEach(function (k) { o[k] = Math.round(num(r[k], 0) * 100) / 100; });
+      o.hash = BIO_hash ? BIO_hash(JSON.stringify([o.status, o.breed, o.source, o.detail].concat(NUMS.map(function (k) { return o[k]; })))) : '';
+      o.importId = imp; o.time = now; have[id] = 1; adds.push(o);
+    });
+    if (adds.length) deps.lock(function () { if (store.appendMany) store.appendMany('daily', adds); else adds.forEach(function (o) { store.append('daily', o); }); });
+    if (p.last) setSetting('HIST_DONE', from, 'اتستورد أرشيف ملف المزارع من التاريخ ده (بعده بيتقري آخر 80 يوم بس من الملف)');
+    if (p.last && has('imports') && (adds.length || num(p.added, 0))) {
+      var tot = num(p.total, 0);
+      store.append('imports', { id: imp, time: now, file: clean(p.file, 120), day: clean(p.to, 10), from: clean(p.from, 10) || from, rows: tot, sites: '', added: num(p.added, 0) + adds.length, updated: 0, dead: 0, alerts: 0 });
+      log(u, 'daily', imp, 'استيراد الدورات السابقة من ملف المزارع', null, { from: p.from || from, to: p.to, added: num(p.added, 0) + adds.length });
+    }
+    return { ok: true, added: adds.length, existing: dup, skipped: Object.keys(skipped) };
   };
 
   /** حفظ ما قرأه التطبيق من الملف: ملخص كل محطة في كل يوم (يُحدَّث إن تغيّر)، ثم المرحلة والإنذار المبكر */
@@ -10184,17 +10226,47 @@ function BIO_v34(api, H) {
     var o = { id: String(r.id), siteId: BIO_norm(r.siteId), site: String(r.siteName || ''), cycle: String(r.cycle || ''), first: dk(r.first), last: dk(r.last), madeAt: BIO_ms(r.madeAt), grade: String(r.grade || ''), approvedBy: String(r.approvedBy || ''), approvedAt: BIO_ms(r.approvedAt) || 0, comment: String(r.comment || '') };
     if (full) o.data = d; return o;
   }
+  /** v35.1: الدورات المقفولة القديمة (من أول الأرشيف، الافتراضي 2023) اللي ملهاش تقرير محفوظ: بتتحسب وقت الفتح من غير ما تتخزن ولا تتبعت */
+  var cyAdmin = { scope: { all: true }, isManager: true, isAdmin: true, perms: [], hide: [] };
+  function cyHistFrom() { var f = String((H.settings() || {}).HIST_FROM || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : '2023-01-01'; }
+  function cyArchOk(c, hf) { return c.closed && c.last && c.last >= hf && c.placed && c.cover >= 0.6; }
+  function cyArch(u, sites, sid, have) {
+    var M = model(cyAdmin), hf = cyHistFrom(), closed = [], out = [];
+    M.sites.forEach(function (x) { x.cycles.forEach(function (c) { if (c.closed) closed.push(c); }); });
+    var ep = closed.map(function (x) { return x.epef; }), lv = closed.map(function (x) { return x.liv; });
+    M.sites.forEach(function (s) {
+      if (!sites[s.id] || !H.inScope(u, s.id, sites) || (sid && s.id !== sid)) return;
+      s.cycles.forEach(function (c) {
+        var id = s.id + '|' + c.cycle; if (have[id] || !cyArchOk(c, hf)) return;
+        var rk = pRank(ep, c.epef); if (rk == null) rk = pRank(lv, c.liv);
+        out.push({ id: id, siteId: s.id, site: s.name, cycle: String(c.cycle), first: c.first, last: c.last, madeAt: 0, grade: rk == null ? '—' : rk >= 0.75 ? 'A' : rk >= 0.5 ? 'B+' : rk >= 0.25 ? 'B' : 'C', approvedBy: '', approvedAt: 0, comment: '', arch: true });
+      });
+    });
+    return out;
+  }
   api.cycleReports = function (pin, siteId) {
     var u = H.auth(pin, true); need(u, ['cyrep', 'site'], 'المحطة بالأرقام');
     if (!has('cyrep')) return { items: [], canApprove: !!u.isAdmin };
     if (!siteId && u.isAdmin) { try { cyrepMake(deps.now()); } catch (e) {} }   // بيتعمل كل يوم 2 الصبح، وكمان لما المدير يفتح القايمة علشان مايستناش
     var sites = H.sitesById(), sid = siteId ? BIO_norm(siteId) : '';
-    var items = rows('cyrep').filter(function (r) { var k = BIO_norm(r.siteId); return sites[k] && H.inScope(u, k, sites) && (!sid || k === sid); }).map(function (r) { return cyOut(r, false); }).sort(function (a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : 0; });
-    return { items: items, canApprove: !!u.isAdmin };
+    var have = {}, items = rows('cyrep').filter(function (r) { have[String(r.id)] = 1; var k = BIO_norm(r.siteId); return sites[k] && H.inScope(u, k, sites) && (!sid || k === sid); }).map(function (r) { return cyOut(r, false); });
+    var arch = []; try { arch = cyArch(u, sites, sid, have); } catch (e) { arch = []; }
+    items = items.concat(arch).sort(function (a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : 0; });
+    return { items: items, canApprove: !!u.isAdmin, histFrom: cyHistFrom() };
   };
   api.cycleReport = function (pin, id) {
     var u = H.auth(pin, true); need(u, ['cyrep', 'site'], 'المحطة بالأرقام');
-    var r = store.find('cyrep', String(id)); if (!r) throw new Error('التقرير مش موجود');
+    var r = store.find('cyrep', String(id));
+    if (!r) {   // تقرير أرشيف: بيتحسب دلوقتي من البيانات اليومية المحفوظة
+      var sites0 = H.sitesById(), pp = String(id).split('|'), sid0 = BIO_norm(pp[0]), cn = pp.slice(1).join('|');
+      if (!sites0[sid0] || !H.inScope(u, sid0, sites0)) throw new Error('التقرير مش موجود');
+      var M = model(cyAdmin), T = targets(M).T, closed = [], s0 = null;
+      M.sites.forEach(function (x) { if (x.id === sid0) s0 = x; x.cycles.forEach(function (c) { if (c.closed) closed.push(c); }); });
+      var ci = s0 ? s0.cycles.map(function (c) { return String(c.cycle); }).indexOf(cn) : -1, c0 = ci >= 0 ? s0.cycles[ci] : null;
+      if (!c0 || !cyArchOk(c0, cyHistFrom())) throw new Error('التقرير مش موجود أو بيانات الدورة اليومية ناقصة');
+      var snap = cycSnap(M, T, s0, c0, s0.cycles[ci - 1] || null, closed);
+      return { id: String(id), siteId: sid0, site: s0.name, cycle: String(c0.cycle), first: c0.first, last: c0.last, madeAt: 0, grade: snap.grade, approvedBy: '', approvedAt: 0, comment: '', data: snap, arch: true, canApprove: false };
+    }
     var sites = H.sitesById(), k = BIO_norm(r.siteId); if (!H.inScope(u, k, sites)) throw new Error('المحطة خارج نطاقك');
     var o = cyOut(r, true); o.canApprove = !!u.isAdmin; return o;
   };

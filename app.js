@@ -6957,7 +6957,7 @@
   function drawFarmUp() {
     var box = $('farmUp'), m = S.farmMeta; if (!box || !m) return;
     if (!m.canImport) { box.innerHTML = ''; return; }
-    box.innerHTML = '<div class="card fx-up"><label class="fx-drop" for="fxFile" id="fxDrop"><span class="fx-ico">' + icon('upload') + '</span><b>اختر ملف بيانات المزارع أو اسحبه هنا</b><span class="small muted">ملف الإكسيل كما يصلك (xlsx أو csv). يُقرأ على جهازك حتى لو كان كبيراً، ولا يُحفظ منه إلا ملخص آخر ' + (m.window || 14) + ' يوماً.</span>' +
+    box.innerHTML = '<div class="card fx-up"><label class="fx-drop" for="fxFile" id="fxDrop"><span class="fx-ico">' + icon('upload') + '</span><b>اختر ملف بيانات المزارع أو اسحبه هنا</b><span class="small muted">ملف الإكسيل كما يصلك (xlsx أو csv). يُقرأ على جهازك حتى لو كان كبيراً، ولا يُحفظ منه إلا ملخص آخر ' + (m.window || 14) + ' يوماً' + (m.hist && !m.hist.done ? '، ومعاه أول مرة الدورات السابقة من ' + esc(fxDayLabel(m.hist.from)) + ' (بتاخد دقيقة أو اتنين)' : '') + '.</span>' +
       (m.last ? '<span class="xs fx-last">' + icon('history') + ' آخر ملف: ' + esc(m.last.file) + ' · بيانات ' + esc(fxDayLabel(m.last.day)) + ' · رفعه ' + esc(m.last.by) + ' ' + esc(ago(m.last.time)) + '</span>' : '') + '</label><input id="fxFile" type="file" accept=".xlsx,.xlsm,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>' +
       (MODE === 'demo' ? '<button class="btn ghost sm fx-demo" type="button" id="fxDemo">' + icon('play') + ' جرّب بملف تجريبي (نسخة العرض)</button>' : '') + '</div>';
     var inp = $('fxFile'), drop = $('fxDrop');
@@ -7003,7 +7003,9 @@
         return probe(0).then(function (hit) {
           if (!hit) throw appErr('لم أجد في الملف ورقة بها أعمدة التاريخ والمزرعة والنافق. أرسل الملف لفريق الدعم لضبط القراءة عليه.');
           X.sheet = hit.sh.name; X.hdr = hit.hd; X.map0 = hit.map;
-          var L = XL.colName(hit.map.day), cutoff = serialOf(todayKey()) - 80, hr = hit.hd.row + 1;
+          var HM = (S.farmMeta || {}).hist, L = XL.colName(hit.map.day), cutoff = serialOf(todayKey()) - 80, hr = hit.hd.row + 1;
+          // v35.1: لحد ما الأرشيف يتستورد مرة (من أول 2023)، بيتقري الملف من أول الأرشيف
+          if (HM && !HM.done) { cutoff = Math.min(cutoff, serialOf(HM.from)); X.histRead = HM.from; }
           // فلترة سريعة بالتاريخ: لا يُفك إلا صفوف آخر 80 يوماً (الدورة الحالية) من ملف قد يحمل سنوات
           return XL.scan(z, hit.sh, info.ss, hr, function (xml, no) {
             var v = XL.quickCell(xml, L, no, info.ss);
@@ -7039,6 +7041,8 @@
     var W = m.window || 14, from = X.day ? dayShift(X.day, -(W - 1)) : '';
     var win = B.days.filter(function (d) { return d.day >= from && d.day <= X.day; });
     var farmsWin = {}; win.forEach(function (d) { farmsWin[d.farm] = 1; });
+    var HM = m.hist, hist = HM ? farmHistDays(X, siteOf) : [];
+    if (HM) B.days.forEach(function (d) { if (d.day >= HM.from && d.day < from) farmsWin[d.farm] = 1; });
     var today = win.filter(function (d) { return d.day === X.day && siteOf(d.farm); });
     var F = X.day ? farmAnalyze({ days: win }, siteOf, siteName, X.day) : [];
     X.F = F; X.win = win; X.from = from;
@@ -7047,7 +7051,8 @@
     var unknown = Object.keys(farmsWin).filter(function (f) { return !siteOf(f) && X.aliases[fNorm(f)] !== '-'; });
     var h = '<div class="card fx-imp"><div class="card-head"><div><span class="kick">' + esc(X.file) + ' · ' + (X.size / 1048576).toFixed(1) + ' ميجا · ورقة «' + esc(X.sheet) + '» · ' + (X.total || 0).toLocaleString('en') + ' صف، قُرئت في ' + Math.max(1, Math.round(X.ms / 1000)) + ' ث</span><h2>' + icon('sheet') + ' مراجعة الملف قبل الحفظ</h2></div><button class="btn sm ghost" type="button" id="fxCancel">' + icon('x') + ' إلغاء</button></div>';
     h += '<div class="fx-row"><div class="field"><label for="fxDay">تاريخ البيانات</label><select id="fxDay">' + Object.keys(B.days.reduce(function (a, d) { a[d.day] = 1; return a; }, {})).sort().reverse().slice(0, 21).map(function (d) { return '<option value="' + d + '"' + (d === X.day ? ' selected' : '') + '>' + esc(fxDayLabel(d)) + (d === B.latest ? ' (أحدث يوم في الملف)' : '') + '</option>'; }).join('') + '</select></div>' +
-      '<p class="xs muted fx-win">' + icon('history') + ' يُحفظ ملخص كل محطة من ' + esc(fxDayLabel(from)) + ' حتى ' + esc(fxDayLabel(X.day)) + ' (' + W + ' يوماً). الأيام المحفوظة سابقاً تُحدَّث فقط إن تغيرت أرقامها في الملف.</p></div>';
+      '<p class="xs muted fx-win">' + icon('history') + ' يُحفظ ملخص كل محطة من ' + esc(fxDayLabel(from)) + ' حتى ' + esc(fxDayLabel(X.day)) + ' (' + W + ' يوماً). الأيام المحفوظة سابقاً تُحدَّث فقط إن تغيرت أرقامها في الملف.</p>' +
+      (HM ? '<p class="xs fx-hist ' + (hist.length ? 'on' : '') + '">' + icon('history') + '<span>' + (hist.length ? '<b>الدورات السابقة:</b> هيتضاف كمان ' + hist.length.toLocaleString('en') + ' يوم من ' + esc(fxDayLabel(hist[0].day)) + ' لـ ' + esc(fxDayLabel(hist[hist.length - 1].day)) + ' مش محفوظين في المنظومة لسه (الأرشيف من ' + esc(fxDayLabel(HM.from)) + '). بيتحفظوا على دفعات بعد بيانات اليوم، ومن غير إنذار مبكر ولا تغيير مراحل.' : 'الدورات السابقة من ' + esc(fxDayLabel(HM.from)) + ' محفوظة كلها في المنظومة.') + '</span></p>' : '') + '</div>';
     h += kpiRow([['k-brand', 'layers', today.length, 'محطة في هذا اليوم'], ['k-ok', 'shield', birds >= 1e6 ? (Math.round(birds / 1e4) / 100) + ' مليون' : birds >= 1000 ? Math.round(birds / 1000) + ' ألف' : birds, 'طائر في المحطات'], ['k-warn', 'box', dead.toLocaleString('en'), 'نافق اليوم'], ['k-bad', 'siren', nBad, 'ملاحظة مهمة'], ['k-warn', 'alert', nWarn, 'تنبيه'], ['k-brand', 'sheet', win.length, 'يوم-محطة سيُحفظ']]);
     if (unknown.length) h += '<div class="cc-alert a-warn">' + icon('alert') + '<span><b>' + plural(unknown.length, 'اسم مزرعة', 'أسماء مزارع') + ' في الملف غير مربوط بموقع في التطبيق</b>. اختر الموقع المقابل في «ربط المزارع» بالأسفل أو اختر «تجاهل».</span></div>';
     h += '<h3 class="fx-h">' + icon('pulse') + ' نتيجة التحليل · ' + esc(fxDayLabel(X.day)) + '</h3>' + (F.length ? '<div class="fx-finds">' + F.map(function (f) { var L = FL[f.lv] || FL.info; return '<div class="fx-f ' + f.lv + '"><span class="pill ' + L[0] + '">' + icon(L[1]) + ' ' + L[2] + '</span><div><b>' + esc(f.site) + '</b><span>' + esc(f.text) + '</span></div></div>'; }).join('') + '</div>' : '<p class="empty">' + icon('check') + '<b>لا توجد ملاحظات</b><span class="xs">النافق والعلف في حدودهما الطبيعية في كل المحطات</span></p>');
@@ -7080,16 +7085,45 @@
     btn.disabled = true; btn.innerHTML = '<span class="spin"></span> جارٍ الحفظ وتحليل الإنذار المبكر…';
     X.id = X.id || 'IM' + Date.now().toString(36).toUpperCase();
     remote('farmImport', [S.session.pin, { id: X.id, file: X.file, from: X.from, rows: X.rows.length, days: days, map: mapKeys, aliases: aliases, findings: X.F, cycles: farmCycles(X, siteOf) }]).then(function (r) {
+      return farmHistSave(X, siteOf, btn).then(function (h) { r.hist = h; return r; });
+    }).then(function (r) {
       S.farmX = null; if (S.farmMeta) { S.farmMeta.map = mapKeys; S.farmMeta.aliases = aliases; }
       farmResultSheet(r); remote('farmMeta', [S.session.pin]).then(function (m) { S.farmMeta = m; drawFarmUp(); }).catch(function () { drawFarmUp(); });
       v5Load('farmData', [14], drawFarm, 'بيانات المزارع'); sync();
     }).catch(function (e) { btn.disabled = false; btn.innerHTML = icon('check') + ' حفظ وإضافة البيانات للتطبيق'; toast(e.net ? 'لا يوجد اتصال. احفظ عند عودة الإنترنت' : errText(e), 6000); });
+  }
+  /** v35.1: الأيام السابقة (من أول الأرشيف، الافتراضي 2023) اللي في الملف ومش محفوظة في المنظومة */
+  function farmDayOut(d, sid, det) {
+    return { day: d.day, siteId: sid, farm: d.farm, cycle: d.cycle, status: d.status, age: d.age, houses: d.houses, stock: d.stock, placed: d.placed, dead: d.dead, killed: d.killed, inj: d.inj, lab: d.lab, feed: d.feed, sold: d.sold, soldKg: d.soldKg, culls: d.culls, cum: d.cum, breed: d.breed, source: d.source, detail: det ? d.detail.map(function (x) { return { h: x.h, d: x.d, s: x.s, f: x.f, a: x.a, st: x.st, lab: x.lab, sold: x.sold, est: x.est || 0 }; }) : [] };
+  }
+  function farmHistDays(X, siteOf) {
+    var HM = (S.farmMeta || {}).hist; if (!HM || !X.B) return [];
+    var R = HM.ranges || {}, to = X.from || X.day || '', near = X.B.latest ? dayShift(X.B.latest, -30) : '';
+    var inR = function (sid, d) { var L = R[sid]; if (!L) return false; for (var i = 0; i < L.length; i++) if (d >= L[i][0] && d <= L[i][1]) return true; return false; };
+    return X.B.days.filter(function (d) { if (d.day < HM.from || (to && d.day >= to)) return false; var sid = siteOf(d.farm); return sid && !inR(sid, d.day); })
+      .sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; })
+      .map(function (d) { return farmDayOut(d, siteOf(d.farm), d.day >= near); });
+  }
+  function farmHistSave(X, siteOf, btn) {
+    var L = farmHistDays(X, siteOf), HM = (S.farmMeta || {}).hist;
+    if (!L.length) return HM && !HM.done && X.histRead ? remote('farmHistory', [S.session.pin, { days: [], last: true }]).then(function () { return null; }, function () { return null; }) : Promise.resolve(null);
+    var N = 1500, parts = [], added = 0, i = 0, id = 'IH' + Date.now().toString(36).toUpperCase();
+    for (var k = 0; k < L.length; k += N) parts.push(L.slice(k, k + N));
+    var one = function (tries) {
+      if (i >= parts.length) return Promise.resolve({ added: added, days: L.length, from: L[0].day, to: L[L.length - 1].day });
+      if (btn) btn.innerHTML = '<span class="spin"></span> استيراد الدورات السابقة ' + (i + 1) + ' من ' + parts.length + '…';
+      return remote('farmHistory', [S.session.pin, { id: id, file: X.file, days: parts[i], last: i === parts.length - 1 && !!X.histRead, total: L.length, added: added, from: L[0].day, to: L[L.length - 1].day }]).then(function (r) {
+        added += r.added || 0; i++; return one(0);
+      }, function (e) { if (e && e.net && tries < 2) return one(tries + 1); return { added: added, days: L.length, from: L[0].day, to: L[L.length - 1].day, error: errText(e), done: i, parts: parts.length }; });
+    };
+    return one(0);
   }
   function farmResultSheet(r) {
     var ews = r.ews || [], crit = ews.filter(function (e) { return e.n >= 2; });
     openSheet('<div class="sheet-head ' + (crit.length ? 'sh-bad' : 'sh-ok') + '"><span class="permit">بيانات ' + esc(fxDayLabel(r.day)) + '</span><div class="big-ico">' + icon(crit.length ? 'siren' : 'check') + '</div><h2>' + (r.duplicate ? 'تم حفظ هذا الملف من قبل' : 'تمت إضافة البيانات') + '</h2><p>' + (r.duplicate ? '' : 'بيانات ' + plural(r.sites, 'محطة', 'محطات') + ' · ' + r.added + ' يوم جديد · ' + r.updated + ' يوم عُدِّل' + (r.unchanged ? ' · ' + r.unchanged + ' بلا تغيير' : '')) + '</p></div><div class="sheet-body">' +
       (ews.length ? '<div class="fx-finds">' + ews.map(function (e) { return '<div class="fx-f ' + (e.n >= 2 ? 'bad' : 'warn') + '"><span class="pill ' + EWS_P[e.n] + '">' + icon('pulse') + ' ' + esc(e.level) + '</span><div><b>' + esc(shortSite(e.name)) + '</b><span>' + esc((e.why || []).join(' · ')) + (e.fired ? ' · وصل الإنذار للمدير والطبيب البيطري' : '') + '</span></div></div>'; }).join('') + '</div>' : '<div class="infobox">' + icon('check') + ' الإنذار المبكر: لا توجد زيادة غير معتادة في النافق.</div>') +
       ((r.phases || []).length ? '<p class="small"><b>تحدثت مرحلة المحطات من الملف:</b> ' + r.phases.map(function (p) { return esc(shortSite(p.name)) + ' ← ' + esc(p.phase); }).join('، ') + '</p>' : '') +
+      (r.hist ? '<p class="small fx-hres' + (r.hist.error ? ' bad' : '') + '">' + icon('history') + '<span><b>الدورات السابقة:</b> ' + (r.hist.error ? 'اتحفظ ' + r.hist.added.toLocaleString('en') + ' يوم واتوقف الباقي (' + esc(r.hist.error) + '). ارفع نفس الملف تاني وهيكمّل من مكان ما وقف.' : 'اتضاف ' + r.hist.added.toLocaleString('en') + ' يوم من ' + esc(fxDayLabel(r.hist.from)) + ' لـ ' + esc(fxDayLabel(r.hist.to)) + '. صفحة المحطة و«المحطة بالأرقام» بقوا شايفين الدورات دي.') + '</span></p>' : '') +
       ((r.skipped || []).length ? '<p class="xs muted">تم تجاهل: ' + esc(r.skipped.join('، ')) + ' (خارج نطاق صلاحيتك أو غير مربوطة)</p>' : '') +
       (ews.length ? '<button class="btn bad big" data-a="ews">' + icon('pulse') + ' فتح الإنذار المبكر</button>' : '') + '<button class="btn big" data-a="close">تم</button></div>', function (a) { closeSheet(); if (a === 'ews') go('ews'); });
   }
@@ -9106,7 +9140,7 @@
       String(d.source || '').split(/[،,]/).forEach(function (s) { s = s.trim(); if (s) c.src[s] = 1; });
     });
     return Object.keys(by).map(function (k) {
-      var c = by[k]; if (!c.last) return null;
+      var c = by[k]; if (!c.last) return null; var hf = ((S.farmMeta || {}).hist || {}).from; if (hf && c.last < hf) return null;
       var first = c.ageLast > 0 ? dayShift(c.last, -(c.ageLast - 1)) : c.first;
       return { siteId: c.siteId, cycle: c.cycle, houses: c.houses, first: first < c.first ? first : c.first, last: c.last, saleFrom: c.saleFrom, placed: Math.round(c.placed), sold: Math.round(c.sold), dead: Math.round(c.dead), maxAge: c.maxAge, sources: Object.keys(c.src).join('، ') };
     }).filter(Boolean).slice(0, 400);
@@ -12694,7 +12728,18 @@
       box.appendChild(d); bindCyRows(d);
     }).catch(function () {});
   }
-  function cyRowHtml(r) { return '<button type="button" class="cy-row" data-cy="' + esc(r.id) + '"><span class="cy-g g' + esc(String(r.grade).replace('+', 'p')) + '">' + esc(r.grade || '—') + '</span><span class="cy-n"><b>' + esc(shortSite(r.site)) + ' · الدورة ' + esc(r.cycle) + '</b><small>' + esc(r.first) + ' ← ' + esc(r.last) + '</small></span><span class="cy-s ' + (r.approvedAt ? 'ok' : '') + '">' + (r.approvedAt ? 'معتمد' : 'مستني الاعتماد') + '</span></button>'; }
+  function cyRowHtml(r) { return '<button type="button" class="cy-row" data-cy="' + esc(r.id) + '"><span class="cy-g g' + esc(String(r.grade).replace('+', 'p')) + '">' + esc(r.grade || '—') + '</span><span class="cy-n"><b>' + esc(shortSite(r.site)) + ' · الدورة ' + esc(r.cycle) + '</b><small>' + esc(r.first) + ' ← ' + esc(r.last) + '</small></span>' + (r.arch ? '<span class="cy-s arch">أرشيف</span>' : '<span class="cy-s ' + (r.approvedAt ? 'ok' : '') + '">' + (r.approvedAt ? 'معتمد' : 'مستني الاعتماد') + '</span>') + '</button>'; }
+  /** v35.1: التقارير الجديدة فوق، وأرشيف الدورات السابقة (من ملف المزارع) مقسوم بالسنة تحت */
+  function cyListHtml(L, open) {
+    var cur = L.filter(function (r) { return !r.arch; }), ar = L.filter(function (r) { return r.arch; }), h = '';
+    if (cur.length) h += '<section class="card"><div class="cy-list">' + cur.map(cyRowHtml).join('') + '</div></section>';
+    if (ar.length) {
+      var yrs = {}; ar.forEach(function (r) { var y = String(r.last).slice(0, 4); (yrs[y] = yrs[y] || []).push(r); });
+      h += '<details class="card cy-arch"' + (open || !cur.length ? ' open' : '') + '><summary>' + icon('history') + '<span>أرشيف الدورات السابقة</span><span class="badge">' + ar.length + '</span><small class="muted">محسوبة من ملف المزارع اليومي، ومش محتاجة اعتماد</small></summary>' +
+        Object.keys(yrs).sort().reverse().map(function (y) { return '<div class="cy-yr">' + y + ' · ' + yrs[y].length + ' دورة</div><div class="cy-list">' + yrs[y].map(cyRowHtml).join('') + '</div>'; }).join('') + '</details>';
+    }
+    return h;
+  }
   function bindCyRows(box) { box.querySelectorAll('[data-cy]').forEach(function (b) { b.onclick = function () { go('cyrep/' + encodeURIComponent(b.dataset.cy)); }; }); }
   function viewCyrep(args) {
     var id = args && args[0] ? decodeURIComponent(args[0]) : '';
@@ -12704,8 +12749,8 @@
       if (!$('cyList')) return;
       var st = S.cySite || 'all', sites = []; R.items.forEach(function (r) { if (sites.indexOf(r.siteId) < 0) sites.push(r.siteId); });
       var L = R.items.filter(function (r) { return st === 'all' || r.siteId === st; }), nm = {}; R.items.forEach(function (r) { nm[r.siteId] = r.site; });
-      $('cyList').innerHTML = R.items.length ? '<div class="row cy-f"><button type="button" class="chip' + (st === 'all' ? ' on' : '') + '" data-cys="all">الكل <b class="mono">' + R.items.length + '</b></button>' + sites.map(function (k) { return '<button type="button" class="chip' + (st === k ? ' on' : '') + '" data-cys="' + esc(k) + '">' + esc(shortSite(nm[k])) + '</button>'; }).join('') + '</div><section class="card"><div class="cy-list">' + L.map(cyRowHtml).join('') + '</div></section>' :
-        v34Msg('info', 'مفيش دورات اتقفلت في آخر 4 شهور لسه. أول ما ملف المزارع اليومي يوصل لآخر يوم بيع في أي محطة، التقرير هيتعمل لوحده ويوصلك.');
+      $('cyList').innerHTML = R.items.length ? '<div class="row cy-f"><button type="button" class="chip' + (st === 'all' ? ' on' : '') + '" data-cys="all">الكل <b class="mono">' + R.items.length + '</b></button>' + sites.map(function (k) { return '<button type="button" class="chip' + (st === k ? ' on' : '') + '" data-cys="' + esc(k) + '">' + esc(shortSite(nm[k])) + '</button>'; }).join('') + '</div>' + cyListHtml(L, st !== 'all') :
+        v34Msg('info', 'مفيش دورات مقفولة ليها بيانات يومية كفاية لسه. ارفع ملف المزارع اليومي وهيستورد الدورات السابقة من ' + (R.histFrom ? fxDayLabel(R.histFrom) : 'أول 2023') + ' لوحده، وبعدها التقارير هتظهر هنا.');
       $('cyList').querySelectorAll('[data-cys]').forEach(function (b) { b.onclick = function () { S.cySite = b.dataset.cys; viewCyrep(); }; });
       bindCyRows($('cyList'));
     }).catch(function (e) { $('cyList').innerHTML = e.net ? offlineCard('المحطة بالأرقام') : '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
@@ -12718,7 +12763,7 @@
       if (!$('cyBody')) return;
       var d = R.data; if (!d) { $('cyBody').innerHTML = v34Empty('بيانات التقرير ناقصة'); return; }
       var bar = '<div class="cy-bar no-print"><button type="button" class="btn ghost" id="cyBack">' + icon('back') + ' كل التقارير</button><span class="cy-sp"></span><button type="button" class="btn" id="cyPrint">' + icon('printer') + ' طباعة / PDF</button></div>';
-      var appr = R.approvedAt ? '<div class="v34-msg info no-print"><b>اعتمده ' + esc(R.approvedBy) + '</b> · ' + esc(fmt(R.approvedAt)) + (R.comment ? ' · ' + esc(R.comment) : '') + '</div>' : R.canApprove ? '<section class="card no-print cy-appr"><div class="card-head"><h2>' + icon('check') + ' اعتماد مدير الإدارة</h2></div><textarea id="cyCm" rows="2" placeholder="تعليقك على الدورة (اختياري)"></textarea><button type="button" class="btn primary" id="cyOk">اعتماد التقرير</button></section>' : '<div class="v34-msg warn no-print">التقرير مستني اعتماد مدير الإدارة.</div>';
+      var appr = R.arch ? '<div class="v34-msg info no-print">' + icon('history') + ' تقرير أرشيف: محسوب دلوقتي من البيانات اليومية المحفوظة للدورة دي، ومش محتاج اعتماد. الزيارات والملاحظات بتظهر بس لو كانت متسجلة في المنظومة وقتها.</div>' : R.approvedAt ? '<div class="v34-msg info no-print"><b>اعتمده ' + esc(R.approvedBy) + '</b> · ' + esc(fmt(R.approvedAt)) + (R.comment ? ' · ' + esc(R.comment) : '') + '</div>' : R.canApprove ? '<section class="card no-print cy-appr"><div class="card-head"><h2>' + icon('check') + ' اعتماد مدير الإدارة</h2></div><textarea id="cyCm" rows="2" placeholder="تعليقك على الدورة (اختياري)"></textarea><button type="button" class="btn primary" id="cyOk">اعتماد التقرير</button></section>' : '<div class="v34-msg warn no-print">التقرير مستني اعتماد مدير الإدارة.</div>';
       $('cyBody').innerHTML = bar + appr + '<div class="cy-pages">' + cyPage1(d, R) + cyPage2(d, R) + '</div>';
       $('cyBack').onclick = function () { go('cyrep'); };
       $('cyPrint').onclick = function () { document.body.classList.add('cy-printing'); setTimeout(function () { window.print(); setTimeout(function () { document.body.classList.remove('cy-printing'); }, 400); }, 60); };
