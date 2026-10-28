@@ -5445,6 +5445,7 @@ function BIO_hidden(x, k) {
   if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return false;
   var al = BIO_allowOf(x);
   if (al) return BIO_scrKeys().indexOf(k) >= 0 && al.indexOf(k) < 0;
+  if (typeof BIO_OPTIN !== 'undefined' && BIO_OPTIN.indexOf(k) >= 0) return true;
   return BIO_list(x.hide).indexOf(k) >= 0;
 }
 /** الشاشات المقفولة فعلياً (اللي بتتبعت للتطبيق) */
@@ -5452,7 +5453,9 @@ function BIO_hideEff(x) {
   if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return [];
   var al = BIO_allowOf(x);
   if (al) return BIO_scrKeys().filter(function (k) { return al.indexOf(k) < 0; });
-  return BIO_list(x.hide);
+  var hd = BIO_list(x.hide);
+  if (typeof BIO_OPTIN !== 'undefined') BIO_OPTIN.forEach(function (k) { if (hd.indexOf(k) < 0) hd.push(k); });
+  return hd;
 }
 TABLES.disProducts = { sheet: 'المطهرات - المنتجات', key: 'id', cols: { id: 'كود المنتج', name: 'الاسم التجاري', group: 'مجموعة المادة الفعالة', active: 'المادة الفعالة والتركيز', unit: 'الوحدة', price: 'سعر الوحدة (جنيه)', uses: 'الاستخدامات', dil: 'نسب التخفيف % (لكل استخدام)', contact: 'زمن التلامس (دقيقة)', supplier: 'المورد', minDays: 'حد إعادة الطلب (يوم)', status: 'الحالة', note: 'ملاحظات' } };
 TABLES.disMoves = { sheet: 'المطهرات - الحركة', key: 'id', cols: { id: 'الرقم', time: 'الوقت', kind: 'النوع', productId: 'كود المنتج', productName: 'المنتج', batch: 'رقم الدفعة', expiry: 'تاريخ الصلاحية', qty: 'الكمية (مركّز)', price: 'سعر الوحدة', pointId: 'كود النقطة أو الموقع', pointName: 'النقطة أو الموقع', use: 'الاستخدام', solution: 'المحلول المحضر (لتر)', by: 'سجّلها', byId: 'كود المسجل', note: 'ملاحظات' } };
@@ -9758,6 +9761,10 @@ var BIO_PROD_T = { T_LIV: 96.5, T_W: 2.3, T_FCR: 1.55, T_EPEF: 400, T_FW: 1, T_R
 /* v35: تقرير «المحطة بالأرقام» آخر كل دورة + الملاحظات المفتوحة من تطبيق التقارير */
 BIO_SCREENS.push({ k: 'cyrep', label: 'المحطة بالأرقام (تقرير نهاية الدورة)', g: 'القيادة والمتابعة' });
 BIO_SCR_V334.push('cyrep');
+/* محاكاة الطرق في «وصّلني»: مقفولة على الكل (حتى الحسابات القديمة) لحد ما مدير الإدارة يفتحها لمستخدم بالاسم */
+BIO_SCREENS.push({ k: 'roadsim', label: 'محاكاة الطرق في «وصّلني» (زي ما السواق والتاجر هيشوفها)', g: 'الحركة والمركبات' });
+BIO_SCR_V334.push('roadsim');
+var BIO_OPTIN = ['roadsim'];
 TABLES.cyrep = { sheet: 'تقارير نهاية الدورة', key: 'id', cols: { id: 'الكود', siteId: 'كود المحطة', siteName: 'المحطة', cycle: 'الدورة', first: 'أول يوم', last: 'آخر يوم', madeAt: 'اتعمل في', grade: 'التقييم', data: 'البيانات', approvedBy: 'اعتمده', approvedAt: 'وقت الاعتماد', comment: 'تعليق مدير الإدارة' } };
 /** محاور تقرير الزيارة أثناء التربية (نفس ترتيب تطبيق التقارير) */
 var BIO_VR_AX = { A: 'الموقع والسياج والبوابة', B: 'الملابس والتطهير الشخصي', C: 'العنابر والتحكم في الدخول', D: 'القوارض والحشرات والطيور', E: 'المياه والعلف', F: 'النافق والمخلفات والفرشة', G: 'التحصين والصحة والسجلات', H: 'التطهير بين الدورات والتدريب' };
@@ -10294,6 +10301,15 @@ function BIO_demoFndV35(s, now) {
       out.push({ rid: rid + '-o' + q, rep: 'BS-2026-0' + (300 + si * 3 + q), ty: 'أثناء التربية', stn: stn, dt: dk(dd), by: 'معاون أمن حيوي (مثال)', c: t2[0], t: t2[1], sev: t2[2], d: '', a: t2[3], o: t2[4], u: dk(dd + 7 * D), st: 'مغلقة', at: dk(dd + cl * D) + ' 11:00', bn: 'معاون أمن حيوي (مثال)', n: 'اتصلح', phB: '', phA: '' }); }
   });
   s.__fnd35 = out;
+  // طرق تجريبية (كلين وديرتي) لكام محطة علشان «محاكاة الطرق» تبان في نسخة العرض
+  s.stroads = s.stroads || [];
+  (s.sites || []).filter(function (x) { return /^W-F(05|10|12)$/.test(x.id) && x.lat != null && x.lng != null; }).forEach(function (site, si) {
+    [['clean', 0.011, -0.013], ['dirty', -0.009, 0.012]].forEach(function (k, ki) {
+      var la = Number(site.lat), lo = Number(site.lng), pts = [], n = 36;
+      for (var i = 0; i <= n; i++) { var f = i / n, a = la + k[1] * (1 - Math.min(1, f * 1.6)), b = lo + k[2] * (1 - Math.max(0, (f - 0.45) / 0.55)); pts.push([a + Math.sin(i * 0.7 + si) * 0.00008, b + Math.cos(i * 0.5) * 0.00008]); }
+      s.stroads.push({ id: 'RD-DEMO-' + site.id + '-' + k[0], siteId: site.id, siteName: site.name, kind: BIO_ROAD_KINDS[k[0]], name: (k[0] === 'clean' ? 'من بوابة التطهير الكلين' : 'من المبيع') + ' (مثال)', poly: BIO_polyEnc(pts), marks: '[]', lenM: 0, nPts: pts.length, active: BIO.YES || 'نعم', byId: '', by: 'مشرف (مثال)', time: now - (5 + si) * D, updatedAt: now - (5 + si) * D, driver: '', driverPhone: '' });
+    });
+  });
   return s;
 }
 

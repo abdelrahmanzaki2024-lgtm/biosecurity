@@ -5003,7 +5003,9 @@
   }
   /* v35: «وصّلني» بقى جزء من التطبيق: نفس محرك الملاحة بيتفتح جوه الشاشة على الموبايل والكمبيوتر (مش رابط بيفتح صفحة تانية).
      في نسخة Apps Script ونسخة العرض الصفحة متضمنة في التطبيق (srcdoc)، وفي النسخة المثبتة ملف wassalni.html المحفوظ على الجهاز. */
-  window.BIO_wslHost = function () { return Object.assign({}, S.wslCfg || {}, { start: S.wslStart || '', embedded: true }); };
+  window.BIO_wslHost = function () { return Object.assign({}, S.wslCfg || {}, { start: S.wslStart || '', embedded: true, sim: wslCanSim() }); };
+  /** محاكاة الطرق: مدير الإدارة، ومين ما المدير يفتحله «محاكاة الطرق» من الصلاحيات */
+  function wslCanSim() { return !!(S.session && S.session.user) && (isAdmin() || !hiddenScr('roadsim')); }
   window.BIO_wslCall = function (action, p) {
     return remote('wslCall', [String(action), JSON.stringify(p || {})]).then(function (r) { return r || { ok: false, err: 'server', msg: 'رد فاضي من الخادم' }; },
       function (e) { return { ok: false, err: e && e.net ? 'net' : 'server', msg: e && e.net ? 'مفيش إنترنت دلوقتي' : errText(e) }; });
@@ -5018,14 +5020,17 @@
   function wslCanShare() { var u = S.session && S.session.user; return !!(u && u.isManager); }
   function viewWassalni(args) {
     args = args || [];
-    var tab = args[0] === 'share' ? 'share' : 'nav';
-    S.wslStart = args[0] === 'to' && args[1] ? decodeURIComponent(args[1]).replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 40) : '';
+    var tab = args[0] === 'share' ? 'share' : args[0] === 'roads' && wslCanSim() ? 'roads' : 'nav';
+    S.wslStart = args[0] === 'to' && args[1] ? decodeURIComponent(args[1]).replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 40) : args[0] === 'sim' && args[1] && wslCanSim() ? 'sim:' + decodeURIComponent(args[1]).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 60) : '';
     var bar = '<div class="wsl-bar"><div class="wsl-t">' + icon('nav') + '<div><b>وصّلني</b><span>ملاحة لفة بلفة بالصوت لكل محطات ومواقع القطاع</span></div></div>' +
-      (wslCanShare() ? '<div class="wsl-seg" role="tablist"><button type="button" role="tab" class="' + (tab === 'nav' ? 'on' : '') + '" data-wt="nav">' + icon('nav') + ' الملاحة</button><button type="button" role="tab" class="' + (tab === 'share' ? 'on' : '') + '" data-wt="share">' + icon('share') + ' رابط للزوار</button></div>' : '') +
+      (wslCanShare() || wslCanSim() ? '<div class="wsl-seg" role="tablist"><button type="button" role="tab" class="' + (tab === 'nav' ? 'on' : '') + '" data-wt="nav">' + icon('nav') + ' الملاحة</button>' + (wslCanSim() ? '<button type="button" role="tab" class="' + (tab === 'roads' ? 'on' : '') + '" data-wt="roads">' + icon('play') + ' محاكاة الطرق</button>' : '') + (wslCanShare() ? '<button type="button" role="tab" class="' + (tab === 'share' ? 'on' : '') + '" data-wt="share">' + icon('share') + ' رابط للزوار</button>' : '') + '</div>' : '') +
       (tab === 'nav' ? '<button type="button" class="btn sm ghost wsl-full" id="wslFull" title="ملء الشاشة">' + icon('full') + '<span class="hide-sm"> ملء الشاشة</span></button>' : '') + '</div>';
     if (tab === 'share') {
       $('main').innerHTML = '<section class="view wsl-in">' + bar + wslShareHtml() + '</section>';
       wslShareBind();
+    } else if (tab === 'roads') {
+      $('main').innerHTML = '<section class="view wsl-in">' + bar + '<div id="wslRoads">' + v5Spin() + '</div></section>';
+      wslRoadsDraw();
     } else {
       $('main').innerHTML = '<section class="view wsl-in nav">' + bar + '<div class="wsl-host" id="wslHost"><div class="card vr-wait" id="wslWait"><span class="spin"></span><b>جارٍ فتح «وصّلني»…</b></div></div></section>';
       var open = function () {
@@ -5039,7 +5044,39 @@
       if ($('wslFull')) $('wslFull').onclick = function () { var h = $('wslHost'); if (!h) return; try { (h.requestFullscreen || h.webkitRequestFullscreen).call(h); } catch (e) { h.classList.toggle('max'); wslFit(); } };
       wslFit();
     }
-    $('main').querySelectorAll('[data-wt]').forEach(function (b) { b.onclick = function () { go(b.dataset.wt === 'share' ? 'wassalni/share' : 'wassalni'); }; });
+    $('main').querySelectorAll('[data-wt]').forEach(function (b) { b.onclick = function () { go(b.dataset.wt === 'nav' ? 'wassalni' : 'wassalni/' + b.dataset.wt); }; });
+  }
+  /** «محاكاة الطرق»: كل الطرق المتسجّلة (من المنظومة ومن «شريك الدفاع») وتشغيل كل واحد من أوله لآخره زي ما السواق هيشوفه */
+  function wslDec(str) { var out = [], n = String(str || ''), L = n.length, i = 0, la = 0, lo = 0; while (i < L) { var v = []; for (var k = 0; k < 2; k++) { var r = 0, sh = 0, b; do { if (i >= L) return out; b = n.charCodeAt(i++) - 63; if (b < 0 || b > 63) return out; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20); v.push((r & 1) ? ~(r >> 1) : (r >> 1)); } la += v[0]; lo += v[1]; out.push([la / 1e5, lo / 1e5]); } return out; }
+  function wslLen(pts) { var m = 0, R = Math.PI / 180; for (var i = 1; i < pts.length; i++) { var a = pts[i - 1], b = pts[i], x = Math.sin((b[0] - a[0]) * R / 2), y = Math.sin((b[1] - a[1]) * R / 2); m += 12742000 * Math.asin(Math.min(1, Math.sqrt(x * x + Math.cos(a[0] * R) * Math.cos(b[0] * R) * y * y))); } return m; }
+  function wslRoadsDraw() {
+    window.BIO_wslCall('places', {}).then(function (r) {
+      var box = $('wslRoads'); if (!box) return;
+      if (!r || !r.ok) { box.innerHTML = '<div class="card"><p class="empty">' + esc(r && r.msg || 'تعذر تحميل الطرق') + '</p></div>'; return; }
+      var D = r.data || {}, pl = {}, used = {}, groups = {}, order = [];
+      (D.places || []).forEach(function (p) { if (!pl[p.sid]) pl[p.sid] = p; });
+      (D.roads || []).forEach(function (rd) {
+        var k = rd.sid + '|' + (rd.kind || 'dirty'), on = !used[k]; used[k] = 1;
+        var p = pl[rd.sid]; if (!p) return;
+        if (!groups[rd.sid]) { groups[rd.sid] = []; order.push(rd.sid); }
+        var pts = []; try { pts = wslDec(rd.poly); } catch (e) { pts = []; }
+        groups[rd.sid].push({ rd: rd, on: on, len: wslLen(pts), n: pts.length });
+      });
+      if (!order.length) { box.innerHTML = v34Msg('info', 'مفيش طرق متسجّلة لسه. الطرق بتتسجل من «طرق المحطات» في المنظومة، أو من «شريك الدفاع».'); return; }
+      var all = []; order.forEach(function (sid) { all = all.concat(groups[sid]); });
+      var nOn = all.filter(function (x) { return x.on; }).length;
+      box.innerHTML = '<p class="v34-sub">اختار أي طريق ودوس «شغّل المحاكاة»: «وصّلني» هيمشي عليه من أوله لآخره بنفس الشاشة والأسهم والصوت اللي السواق أو التاجر هيشوفها، والموقع بيتحرك لوحده (مش الـ GPS بتاعك). تقدر تسرّع ×2 و×4 و×8 أو توقف.</p>' +
+        '<div class="kpis rs-k"><div class="card kpi"><div class="l">طرق مستخدمة في الملاحة</div><div class="v mono">' + nOn + '</div></div><div class="card kpi"><div class="l">أماكن ليها طرق</div><div class="v mono">' + order.length + '</div></div>' + (all.length > nOn ? '<div class="card kpi"><div class="l">طرق قديمة (فيه أحدث منها)</div><div class="v mono">' + (all.length - nOn) + '</div></div>' : '') + '</div>' +
+        '<div class="rs-list">' + order.map(function (sid) {
+          var p = pl[sid];
+          return '<section class="card rs-pl"><div class="card-head"><h2>' + icon('pin') + ' ' + esc(p.name) + '</h2><span class="small muted">' + esc([p.type, p.sector].filter(Boolean).join(' · ')) + '</span></div>' + groups[sid].map(function (x) {
+            var k = x.rd.kind === 'clean' ? 'clean' : 'dirty';
+            return '<div class="rs-rd' + (x.on ? '' : ' old') + '"><i class="rd-dot ' + k + '"></i><div class="rs-t"><b>' + (k === 'clean' ? 'الطريق الكلين ← البوابة الأمامية' : 'الطريق الديرتي ← البوابة الخلفية') + '</b><span>' + esc([x.rd.name, x.rd.src === 'shareek' ? 'من «شريك الدفاع»' : 'من المنظومة', (x.len / 1000).toFixed(2) + ' كم', x.rd.ts ? fmt(x.rd.ts) : ''].filter(Boolean).join(' · ')) + '</span>' + (x.on ? '' : '<em>مش مستخدم: فيه طريق أحدث لنفس البوابة</em>') + '</div>' +
+              (x.on ? '<button type="button" class="btn sm primary" data-rsim="' + esc(String(x.rd.id)) + '">' + icon('play') + ' شغّل المحاكاة</button>' : '') + '</div>';
+          }).join('') + '</section>';
+        }).join('') + '</div>';
+      box.querySelectorAll('[data-rsim]').forEach(function (b) { b.onclick = function () { go('wassalni/sim/' + encodeURIComponent(b.dataset.rsim)); }; });
+    });
   }
   function wslFit() {
     var h = $('wslHost'); if (!h) return;
