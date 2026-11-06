@@ -37,14 +37,24 @@ var BIO_ROLES = [
   { k: 'أمن بوابة', label: 'أمن بوابة', desc: 'يسجل الدخول والخروج على بوابة واحدة', scope: 'gate', perms: [] },
   { k: 'متابعة فقط', label: 'متابعة فقط', desc: 'الإدارة العليا أو الطبيب البيطري: يرى ولا يعدّل', scope: 'optional', perms: ['analytics'] }
 ];
-function BIO_role(k) { k = String(k || '').trim(); for (var i = 0; i < BIO_ROLES.length; i++) if (BIO_ROLES[i].k === k) return BIO_ROLES[i]; return null; }
+function BIO_role(k) {
+  k = String(k || '').trim(); for (var i = 0; i < BIO_ROLES.length; i++) if (BIO_ROLES[i].k === k) return BIO_ROLES[i];
+  // v35.2: الدور مكتوب في الشيت بإملاء مختلف (مسئول/مسؤول، أ/ا، ة/ه، مسافات زيادة)
+  var n = function (s) { return String(s || '').replace(/[ئؤ]/g, 'ء').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\u064B-\u0652\u0640]/g, '').replace(/\s+/g, ' ').trim(); }, nk = n(k);
+  if (!nk) return null;
+  for (var j = 0; j < BIO_ROLES.length; j++) if (n(BIO_ROLES[j].k) === nk) return BIO_ROLES[j];
+  return null;
+}
 /** الصلاحيات الفعلية للمستخدم: المكتوبة في عمود الصلاحيات، وإن كان فارغاً فصلاحيات دوره */
 function BIO_userPerms(u) {
   var r = BIO_role(u.role);
   if (!r || r.k === BIO.ROLE_GUARD) return [];
   if (r.k === BIO.ROLE_MANAGER) return r.perms.slice();
   var own = BIO_list(u.perms).map(function (p) { for (var i = 0; i < BIO_PERMS.length; i++) if (BIO_PERMS[i].k === p || BIO_PERMS[i].short === p) return BIO_PERMS[i].k; return ''; }).filter(Boolean);
-  return own.length ? own : r.perms.slice();
+  if (!own.length) return r.perms.slice();
+  // v35.2: صلاحيات مخصصة اتحفظت قبل صلاحيات التقارير: مسؤول ومشرف الأمن الحيوي بياخدوا صلاحيات التقارير بتاعة دورهم
+  if ((r.k === BIO.ROLE_OFFICER || r.k === BIO.ROLE_SUPERVISOR) && !own.some(function (p) { return p.indexOf('vr_') === 0; })) r.perms.forEach(function (p) { if (p.indexOf('vr_') === 0 && own.indexOf(p) < 0) own.push(p); });
+  return own;
 }
 
 var TABLES = {
@@ -5483,8 +5493,11 @@ function BIO_allowOf(x) {
   return null;
 }
 /** هل الشاشة مقفولة على المستخدم (مدير الإدارة مفيش حاجة مقفولة عليه) */
+/** v35.2: اللي معاه صلاحية مراجعة أو اعتماد التقارير، شاشة «تقارير الأمن الحيوي» مايتقفلش عليه (من غيرها مايقدرش يعتمد) */
+function BIO_vrMust(x) { try { var p = BIO_userPerms(x); return p.indexOf('vr_review') >= 0 || p.indexOf('vr_approve') >= 0; } catch (e) { return false; } }
 function BIO_hidden(x, k) {
   if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return false;
+  if (k === 'vr' && BIO_vrMust(x)) return false;
   var al = BIO_allowOf(x);
   if (al) return BIO_scrKeys().indexOf(k) >= 0 && al.indexOf(k) < 0;
   if (typeof BIO_OPTIN !== 'undefined' && BIO_OPTIN.indexOf(k) >= 0) return true;
@@ -5493,9 +5506,9 @@ function BIO_hidden(x, k) {
 /** الشاشات المقفولة فعلياً (اللي بتتبعت للتطبيق) */
 function BIO_hideEff(x) {
   if (!x || String(x.role).trim() === BIO.ROLE_MANAGER) return [];
-  var al = BIO_allowOf(x);
-  if (al) return BIO_scrKeys().filter(function (k) { return al.indexOf(k) < 0; });
-  var hd = BIO_list(x.hide);
+  var al = BIO_allowOf(x), must = BIO_vrMust(x);
+  if (al) return BIO_scrKeys().filter(function (k) { return al.indexOf(k) < 0 && !(must && k === 'vr'); });
+  var hd = BIO_list(x.hide).filter(function (k) { return !(must && k === 'vr'); });
   if (typeof BIO_OPTIN !== 'undefined') BIO_OPTIN.forEach(function (k) { if (hd.indexOf(k) < 0) hd.push(k); });
   return hd;
 }
