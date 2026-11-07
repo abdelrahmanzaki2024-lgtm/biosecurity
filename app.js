@@ -444,7 +444,7 @@
       instBtnHtml() +
       '<button type="button" class="self-cta" id="selfGo">' + icon('calendar') + '<span><b>موظف وعندك مأمورية أو زيارة لموقع؟</b><small>أرسلها من هنا بكودك ورقم هاتفك، بدون رقم سري</small></span>' + icon('chev') + '</button>' +
       '<button type="button" class="self-cta train" id="trainGo">' + icon('grad') + '<span><b>موظف جديد؟ التأهيل الإلزامي للأمن الحيوي</b><small>اقرأ الدروس واجتز الاختبار ليتفعل كارتك</small></span>' + icon('chev') + '</button>' +
-      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 35</p></div></div><div class="toasts" id="toasts"></div>';
+      '</div><p class="login-foot">إدارة الأمن الحيوي · ' + esc(CFG.COMPANY || 'كايرو ثري إيه') + ' · إصدار 36</p></div></div><div class="toasts" id="toasts"></div>';
     bindDemoStrip();
     $('selfGo').onclick = function () { showSelfMission(); };
     $('trainGo').onclick = function () { showSelfTrain(); };
@@ -11680,28 +11680,198 @@
 
   /* ---------- تقييمات موظفي الإدارة ---------- */
   var EV_ST = { 'بانتظار اعتماد المدير': 'p-warn', 'معتمد': 'p-ok', 'مُعاد للمقيّم': 'p-bad', 'مسودة المدير': 'p-n', 'ملغى': 'p-n ev-x' };
-  function evGradeC(t) { return t >= 90 ? 'var(--ok)' : t >= 80 ? '#2e8b57' : t >= 70 ? 'var(--info)' : t >= 60 ? 'var(--warn)' : 'var(--bad)'; }
-  function evRing(t) { var c = evGradeC(t); return '<span class="ev-ring" style="--p:' + t + ';--c:' + c + '"><b class="mono">' + t + '</b></span>'; }
+  /* v36: كل التقييمات بتظهر من 10 بحدود ملف التقييمات (0-4 ضعيف، 5-6 مقبول، 7-8 جيد، 9 جيد جدا، 10 ممتاز). داخلياً لسه من 100 */
+  function evS(t) { if (t == null || t === '' || isNaN(t)) return '—'; var v = Math.round(Number(t) * 10) / 100; return String(v); }
+  function evGradeC(t) { return t >= 100 ? 'var(--ok)' : t >= 90 ? '#2e8b57' : t >= 70 ? 'var(--info)' : t >= 50 ? 'var(--warn)' : 'var(--bad)'; }
+  function evRing(t) { var c = evGradeC(t); return '<span class="ev-ring" style="--p:' + t + ';--c:' + c + '"><b class="mono">' + evS(t) + '</b></span>'; }
   function viewEvals() {
-    $('main').innerHTML = '<section class="view ev-view">' + v5Head('تقييمات موظفي الإدارة', 'award', 'نموذج تقييم لكل وظيفة ببنود وأوزان مجموعها 100. عامل الأمن الحيوي والمعاون يقيّمهم المشرف أو المسئول ويعتمد مدير الإدارة، والمشرف والمسئول تقييمهم ومراجعتهم واعتمادهم لمدير الإدارة فقط.', '<button class="btn primary" type="button" id="evNew">' + icon('plus') + ' تقييم جديد</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
+    $('main').innerHTML = '<section class="view ev-view">' + v5Head('تقييمات موظفي الإدارة', 'award', 'كل التقييمات من 10 (0-4 ضعيف، 5-6 مقبول، 7-8 جيد، 9 جيد جدا، 10 ممتاز، وأقل من 7 دون المستوى). نموذج التقييم من جوه المنظومة ببنود وأوزان مجموعها 100 وبيتقسم على 10، ودرجات ملف التقييمات بتنضم ليه. عامل الأمن الحيوي والمعاون يقيّمهم المشرف أو المسئول ويعتمد مدير الإدارة، والمشرف والمسئول تقييمهم ومراجعتهم واعتمادهم لمدير الإدارة فقط.', '<button class="btn primary" type="button" id="evNew">' + icon('plus') + ' تقييم جديد</button>') + '<div id="v5Out">' + v5Spin() + '</div></section>';
     $('evNew').onclick = function () { if (S.evD) evSheet(null); };
     v5Load('evalData', [], drawEvals, 'التقييمات');
+  }
+  /* ============================ v36: ملف التقييمات (رفع + لوحة الفرق + بطاقة الموظف) ============================ */
+  var EVF_TEAMS = [['all', 'كل الفرق'], ['assistant', 'المعاونون'], ['worker', 'الأمن الحيوي'], ['washer', 'الغسيل والتطهير']];
+  var EVF_GC = { 'ممتاز': 'p-ok', 'جيد جدا': 'p-info', 'جيد': 'p-n', 'مقبول': 'p-warn', 'ضعيف': 'p-bad' };
+  function evfMon(m) { return m ? awMonth(m) : '—'; }
+  function evfPct(r) { return r == null ? '—' : Math.round(r * 100) + '%'; }
+  function evfLoad() {
+    var box = $('evfBox'); if (!box) return;
+    remote('evfData', [S.session.pin, S.evfM || '']).then(function (R) { S.evfR = R; evfDraw(R); }, function (e) { if ($('evfBox')) $('evfBox').innerHTML = '<div class="card"><p class="empty">' + esc(errText(e)) + '</p></div>'; });
+  }
+  function evfUpBtn(can) { return can ? '<label class="btn sm evf-up">' + icon('upload') + ' رفع ملف التقييمات<input type="file" id="evfFile" accept=".xlsx" hidden></label>' : ''; }
+  function evfDraw(R) {
+    var box = $('evfBox'); if (!box) return;
+    if (!R.rows.length) {
+      box.innerHTML = '<div class="card evf"><div class="card-head"><div><span class="kick">المعاونون · الأمن الحيوي · الغسيل والتطهير</span><h2>' + icon('sheet') + ' لوحة الفرق من ملف التقييمات</h2></div>' + evfUpBtn(R.canImport) + '</div><p class="empty">' + icon('upload') + (R.canImport ? ' ارفع ملف التقييمات (xlsx) وهتظهر هنا الدرجات الشهرية واليومية والحضور.' : ' لسه ما اترفعش ملف التقييمات. الرفع لمدير الإدارة والمسؤول.') + '</p></div>';
+      evfBindUp(); return;
+    }
+    var t = S.evfT || 'all', L = R.rows.filter(function (r) { return t === 'all' || r.job === t; });
+    var avg = L.length ? Math.round(L.reduce(function (a, r) { return a + r.score; }, 0) / L.length * 100) / 100 : null;
+    var cnt = function (k) { return k === 'all' ? R.rows.length : R.rows.filter(function (r) { return r.job === k; }).length; };
+    var h = '<div class="card evf"><div class="card-head"><div><span class="kick">من ملف التقييمات · من 10 · المعتمد بس</span><h2>' + icon('sheet') + ' لوحة الفرق</h2></div><div class="row evf-hd">' +
+      '<div class="field"><label for="evfM">الشهر</label><select id="evfM">' + R.months.map(function (m) { return '<option value="' + m + '"' + (m === R.month ? ' selected' : '') + '>' + esc(evfMon(m)) + '</option>'; }).join('') + '</select></div>' + evfUpBtn(R.canImport) + '</div></div>';
+    h += '<div class="chips">' + EVF_TEAMS.map(function (x) { return '<button type="button" class="chip' + (t === x[0] ? ' on' : '') + '" data-evft="' + x[0] + '">' + x[1] + ' <b>' + cnt(x[0]) + '</b></button>'; }).join('') + '</div>';
+    h += kpiRow([['k-brand', 'award', avg == null ? '—' : avg, 'متوسط الشهر' + (avg == null ? '' : ' · ' + BIO_g10(avg))], ['k-bad', 'alert', L.filter(function (r) { return r.score < R.rules.low; }).length, 'دون المستوى (أقل من ' + R.rules.low + ')'],
+      ['k-warn', 'clock', R.pending, 'درجات بانتظار الاعتماد'], ['k-n', 'user', L.filter(function (r) { return r.att != null && r.att < R.rules.att; }).length, 'حضور أقل من ' + Math.round(R.rules.att * 100) + '%']]);
+    h += '<div class="evf-grid"><div class="tbl"><table class="evf-t"><thead><tr><th>#</th><th>الموظف</th><th>الفريق</th><th>الدرجة</th><th>التقدير</th><th>الحضور</th><th>عن الشهر اللي فات</th></tr></thead><tbody>' +
+      L.map(function (r, i) {
+        return '<tr data-evfc="' + esc(r.code) + '"' + (r.approved ? '' : ' class="evf-pend"') + '><td class="mono">' + (i + 1) + '</td><td><button type="button" class="linkish" data-evfc="' + esc(r.code) + '"><b>' + esc(r.name) + '</b></button><span class="xs muted">' + esc(r.kind === 'يومي' ? r.days + ' يوم' + (r.low ? ' · ' + r.low + ' أيام دون ' + R.rules.low : '') : (r.notes || (r.by ? 'المقيّم: ' + r.by : ''))) + '</span></td>' +
+          '<td>' + esc(r.team) + '</td><td class="mono"><b>' + r.score + '</b></td><td><span class="pill ' + (EVF_GC[r.grade] || 'p-n') + '">' + esc(r.grade) + '</span></td>' +
+          '<td class="mono' + (r.att != null && r.att < R.rules.att ? ' tx-warn' : '') + '">' + evfPct(r.att) + '</td><td class="mono">' + (r.trend == null ? '—' : (r.trend > 0 ? '+' : '') + r.trend) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    var teams = t === 'all' ? R.teams : R.teams.filter(function (x) { return x.k === t; });
+    h += '<div class="evf-side"><div class="evf-stars"><b>' + icon('award') + ' أعلى 3 في الشهر</b>' + teams.map(function (x) {
+      return '<div class="evf-st"><span class="xs muted">' + esc(x.label) + (x.avg != null ? ' · متوسط ' + x.avg + ' (' + esc(x.grade) + ')' : '') + '</span>' + (x.top.length ? x.top.map(function (o, i) { return '<button type="button" class="evf-star" data-evfc="' + esc(o.code) + '">' + awMedal(i + 1, 26) + '<span>' + esc(o.name) + '</span><b class="mono">' + o.score + '</b></button>'; }).join('') : '<span class="xs muted">لا توجد درجات معتمدة</span>') + '</div>';
+    }).join('') + '<span class="xs muted">التعادل: الحضور الأعلى الأول، وبعده عدد أيام التقييم.</span></div>';
+    var A = R.alerts.filter(function (a) { return t === 'all' || L.some(function (r) { return r.code === a.code; }); });
+    h += '<div class="evf-al"><b>' + icon('alert') + ' تنبيهات</b>' + (A.length ? A.map(function (a) { return '<button type="button" class="evf-a ' + a.lv + '" data-evfc="' + esc(a.code) + '"><b>' + esc(a.name) + '</b><span>' + esc(a.t) + '</span></button>'; }).join('') : '<span class="xs muted">مفيش تنبيهات الشهر ده</span>') + '</div></div></div></div>';
+    box.innerHTML = h;
+    box.querySelectorAll('[data-evft]').forEach(function (b) { b.onclick = function () { S.evfT = b.dataset.evft; evfDraw(R); }; });
+    box.querySelectorAll('button[data-evfc]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); evfCard(b.dataset.evfc, R.month); }; });
+    if ($('evfM')) $('evfM').onchange = function () { S.evfM = this.value; evfLoad(); };
+    evfBindUp();
+  }
+  function BIO_g10(v) { v = Number(v); return v >= 10 ? 'ممتاز' : v >= 9 ? 'جيد جدا' : v >= 7 ? 'جيد' : v >= 5 ? 'مقبول' : 'ضعيف'; }
+  function evfBindUp() { var f = $('evfFile'); if (f) f.onchange = function () { if (this.files[0]) evfRead(this.files[0]); this.value = ''; }; }
+
+  /* ---------- قراءة الملف على الجهاز ---------- */
+  function evfN(s) { return fNorm(String(s == null ? '' : s).replace(/\n/g, ' ').replace(/\(.*\)/g, '')); }
+  /** يلاقي صف العناوين اللي فيه كل الكلمات المطلوبة، ويرجع رقم عمود كل كلمة (أول ظهور) */
+  function evfHdr(first, want) {
+    for (var r = 0; r < first.length; r++) {
+      var row = first[r] || [], idx = {}, ok = true;
+      Object.keys(want).forEach(function (k) { var w = want[k].map(evfN), at = -1; for (var c = 0; c < row.length && at < 0; c++) { var h = evfN(row[c]); if (h && w.some(function (x) { return h === x || h.indexOf(x) === 0; })) at = c; } if (at < 0 && !/^opt_/.test(k)) ok = false; idx[k.replace(/^opt_/, '')] = at; });
+      if (ok) return { row: r, idx: idx };
+    }
+    return null;
+  }
+  var EVF_SHEETS = {
+    staff: { name: /الاعدادات|الإعدادات/, want: { code: ['الكود الوظيفي'], name: ['اسم الموظف'], team: ['الفريق'], opt_kind: ['نوع التقييم'], opt_active: ['فعال؟', 'فعال'] } },
+    monthly: { name: /التقييم الشهري/, want: { month: ['الشهر'], opt_team: ['الفريق'], name: ['الموظف'], code: ['الكود الوظيفي'], opt_evaluator: ['المقيم'], score: ['درجة التقييم'], opt_notes: ['ملاحظات المقيم'], opt_approvedBy: ['الاعتماد'] } },
+    daily: { name: /التقييم اليومي/, want: { day: ['التاريخ'], name: ['الموظف'], code: ['الكود الوظيفي'], opt_evaluator: ['المقيم'], score: ['درجة التقييم'], opt_notes: ['ملاحظات المقيم'], opt_approvedBy: ['الاعتماد'] } },
+    attend: { name: /بيانات الحضور/, want: { code: ['الكود'], name: ['الاسم'], opt_group: ['المجموعة'], present: ['حضور'], opt_rest: ['راحه', 'راحة'], opt_down: ['نزول'], absent: ['غياب'], opt_sick: ['مرضي'], opt_ratio: ['نسبة الالتزام'], month: ['الشهر'] } }
+  };
+  function evfRead(file) {
+    if (!/\.xlsx$/i.test(file.name)) return toast('ارفع ملف التقييمات بصيغة xlsx', 5000);
+    toast('جارٍ قراءة ملف التقييمات…');
+    var rd = file.arrayBuffer ? file.arrayBuffer() : new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsArrayBuffer(file); });
+    var t0 = Date.now();
+    rd.then(function (buf) {
+      var z = XL.open(buf);
+      return XL.sheets(z).then(function (info) {
+        var P = { file: file.name, sheets: info.sheets.length, found: {}, staff: [], monthly: [], daily: [], attend: [] };
+        var keys = Object.keys(EVF_SHEETS);
+        var one = function (i) {
+          if (i >= keys.length) return Promise.resolve(P);
+          var k = keys[i], spec = EVF_SHEETS[k], cand = info.sheets.filter(function (s) { return spec.name.test(s.name); }).concat(info.sheets.filter(function (s) { return !spec.name.test(s.name) && !s.hidden; }));
+          var tryS = function (j) {
+            if (j >= cand.length) return Promise.resolve(null);
+            return XL.scan(z, cand[j], info.ss, 12, null, null, true).then(function (r) { var hd = evfHdr(r.first, spec.want); return hd ? { sh: cand[j], hd: hd } : (j < 3 ? tryS(j + 1) : null); });
+          };
+          return tryS(0).then(function (hit) {
+            if (!hit) return one(i + 1);
+            P.found[k] = hit.sh.name;
+            return XL.scan(z, hit.sh, info.ss, hit.hd.row + 1).then(function (res) {
+              var I = hit.hd.idx, g = function (c, n) { return n == null || n < 0 ? '' : c[n]; };
+              res.rows.forEach(function (x) {
+                var c = x.cells, o = {}; Object.keys(I).forEach(function (f) { var v = g(c, I[f]); o[f] = typeof v === 'string' ? v.trim() : v; });
+                if (k === 'staff') { if (o.code && o.name) P.staff.push(o); return; }
+                if (k === 'attend') { if (o.code && o.month !== '' && o.month != null) P.attend.push(o); return; }
+                if (!o.name || o.score === '' || o.score == null || isNaN(Number(o.score))) return;
+                if (k === 'daily') { o.day = xlDay(o.day); if (!o.day) return; }
+                P[k].push(o);
+              });
+              return one(i + 1);
+            });
+          });
+        };
+        return one(0);
+      });
+    }).then(function (P) {
+      P.ms = Date.now() - t0;
+      if (!P.monthly.length && !P.daily.length && !P.attend.length) throw appErr('ما لقيتش في الملف أوراق «التقييم الشهري» أو «التقييم اليومي» أو «بيانات الحضور» بعناوينها');
+      var team = {}; P.staff.forEach(function (s) { team[String(s.code)] = s.team; });
+      P.daily.forEach(function (o) { o.team = team[String(o.code)] || 'الغسيل والتطهير'; });
+      evfReview(P);
+    }).catch(function (e) { toast(errText(e), 7000); });
+  }
+  function evfReview(P) {
+    var mons = {}; P.monthly.forEach(function (o) { mons[o.month] = (mons[o.month] || 0) + 1; });
+    var days = P.daily.map(function (o) { return o.day; }).sort(), dEmp = {}; P.daily.forEach(function (o) { dEmp[o.code] = 1; });
+    var pendM = P.monthly.filter(function (o) { return !o.approvedBy; }).length, pendD = P.daily.filter(function (o) { return !o.approvedBy; }).length;
+    var lowM = P.monthly.filter(function (o) { return Number(o.score) < 7; });
+    var att = P.attend.map(function (o) { var p = Number(o.present) || 0, a = Number(o.absent) || 0, s = Number(o.sick) || 0; return { name: o.name, r: p + a + s ? p / (p + a + s) : null }; }).filter(function (x) { return x.r != null && x.r < 0.9; });
+    var lowD = {}; P.daily.forEach(function (o) { if (Number(o.score) < 7) { var k = o.name + '|' + o.day.slice(0, 7); lowD[k] = (lowD[k] || 0) + 1; } });
+    var lowDL = Object.keys(lowD).filter(function (k) { return lowD[k] >= 4; }).map(function (k) { return k.split('|')[0] + ': ' + lowD[k] + ' أيام دون 7 (' + k.split('|')[1] + ')'; });
+    var box = function (n, t, s) { return '<div class="evf-k"><b class="mono">' + n + '</b><span>' + t + '</span><small>' + s + '</small></div>'; };
+    openSheet('<div class="sheet-head sh-brand"><span class="permit" dir="ltr">' + esc(P.file) + '</span><h2>' + icon('sheet') + ' مراجعة ملف التقييمات</h2><span class="small">' + P.sheets + ' ورقة · اتقرا في ' + Math.max(1, Math.round(P.ms / 1000)) + ' ث</span></div><div class="sheet-body">' +
+      '<div class="evf-ks">' + box(P.monthly.length, 'درجة شهرية', Object.keys(mons).join('، ') || '—') + box(P.daily.length, 'درجة يومية', days.length ? days[0] + ' ← ' + days[days.length - 1] + ' · ' + Object.keys(dEmp).length + ' عامل' : '—') + box(P.attend.length, 'سطر حضور', 'من «' + esc(P.found.attend || '—') + '»') + box(P.staff.length, 'موظف', 'من «' + esc(P.found.staff || '—') + '»') + '</div>' +
+      ((pendM || pendD) ? '<p class="infobox warn">' + icon('clock') + ' ' + (pendM ? pendM + ' درجة شهرية' : '') + (pendM && pendD ? ' و' : '') + (pendD ? pendD + ' درجة يومية' : '') + ' من غير اعتماد في الملف: بتتحفظ ومش بتدخل الترتيب ولا النجوم لحد ما تتعتمد.</p>' : '<p class="infobox ok">' + icon('check') + ' كل الدرجات معتمدة في الملف.</p>') +
+      (lowM.length || att.length || lowDL.length ? '<div class="evf-notes">' + lowM.map(function (o) { return '<div class="evf-a warn"><b>' + esc(o.name) + '</b><span>' + o.score + ' من 10 «دون المستوى»' + (o.notes ? ': ' + esc(o.notes) : '') + '</span></div>'; }).join('') +
+        (att.length ? '<div class="evf-a warn"><b>حضور منخفض</b><span>' + att.map(function (x) { return esc(x.name) + ' ' + Math.round(x.r * 100) + '%'; }).join(' · ') + '</span></div>' : '') +
+        lowDL.map(function (s) { return '<div class="evf-a info"><b>الغسيل والتطهير</b><span>' + esc(s) + '</span></div>'; }).join('') + '</div>' : '') +
+      '<p class="xs muted">الرفع التاني لنفس الملف بيضيف الجديد بس، والدرجة اللي اتغيرت بتتحدث. التقييمات اللي اتعملت من جوه المنظومة ما بتتمسحش.</p>' +
+      '<button class="btn primary big" data-a="save" id="evfSave">' + icon('check') + ' حفظ في التقييمات</button><button class="btn ghost" data-a="close">إلغاء</button></div>', function (a, el) {
+      if (a === 'close') return closeSheet();
+      if (a === 'save') evfSave(P, el);
+    });
+  }
+  function evfSave(P, btn) {
+    btn.disabled = true; var id = 'EF' + Date.now().toString(36).toUpperCase(), N = 2000, parts = [];
+    var push = function (key, list) { for (var i = 0; i < list.length; i += N) { var o = {}; o[key] = list.slice(i, i + N); parts.push(o); } };
+    if (P.staff.length) parts.push({ staff: P.staff });
+    push('monthly', P.monthly); push('attend', P.attend); push('daily', P.daily);
+    var tot = { staff: [0, 0, 0], monthly: [0, 0, 0], daily: [0, 0, 0], attend: [0, 0, 0] }, i = 0;
+    var next = function (tries) {
+      if (i >= parts.length) return Promise.resolve();
+      btn.innerHTML = '<span class="spin"></span> جارٍ الحفظ ' + (i + 1) + ' من ' + parts.length + '…';
+      var p = Object.assign({ id: id, file: P.file, last: i === parts.length - 1, totals: { monthly: P.monthly.length, daily: P.daily.length, attend: P.attend.length } }, parts[i]);
+      return remote('evfImport', [S.session.pin, p]).then(function (r) { Object.keys(tot).forEach(function (k) { for (var j = 0; j < 3; j++) tot[k][j] += (r.res[k] || [0, 0, 0])[j]; }); i++; return next(0); },
+        function (e) { if (e && e.net && tries < 2) return next(tries + 1); throw e; });
+    };
+    next(0).then(function () {
+      closeSheet();
+      var line = function (k, l) { return tot[k][0] || tot[k][1] ? l + ': ' + tot[k][0] + ' جديد' + (tot[k][1] ? '، ' + tot[k][1] + ' اتعدّل' : '') : ''; };
+      toast(['اتحفظ ملف التقييمات', line('monthly', 'شهري'), line('daily', 'يومي'), line('attend', 'حضور')].filter(Boolean).join(' · ') || 'الملف ده متحفظ قبل كده ومفيش جديد', 7000);
+      S.evfM = ''; evReload();
+    }).catch(function (e) { btn.disabled = false; btn.innerHTML = icon('check') + ' كمّل الحفظ'; toast((e && e.net ? 'النت قطع. دوس تاني وهيكمّل من غير ما يكرر: ' : '') + errText(e), 7000); });
+  }
+
+  /* ---------- بطاقة الموظف ---------- */
+  function evfCard(code, month) {
+    openSheet('<div class="sheet-body"><p class="empty"><span class="spin"></span></p></div>');
+    remote('evfCard', [S.session.pin, code, month]).then(function (C) {
+      var cell = function (x) { var v = x.s, cls = v >= 9 ? 'g9' : v >= 8 ? 'g8' : v >= 7 ? 'g7' : 'g0'; return '<div class="evf-day ' + cls + (x.ok ? '' : ' pend') + '" title="' + esc(x.d + (x.ev ? ' · ' + x.ev : '') + (x.n ? ' · ' + x.n : '')) + '"><small>' + (+x.d.slice(8)) + '</small><b class="mono">' + v + '</b></div>'; };
+      var A = C.att, aR = A && A.ratio != null ? Math.round(A.ratio * 100) : null, mx = Math.max.apply(null, C.history.map(function (h) { return h.s; }).concat([10]));
+      openSheet('<div class="sheet-head sh-brand"><span class="permit">' + esc(C.team) + ' · كود ' + esc(C.code) + ' · تقييم ' + esc(C.kind) + '</span><h2>' + icon('user') + ' ' + esc(C.name) + '</h2>' +
+        '<span class="small">' + esc(evfMon(C.month)) + ' · ' + (C.score == null ? 'مفيش درجة معتمدة' : '<b class="mono">' + C.score + '</b> من 10 · ' + esc(C.grade)) + '</span></div><div class="sheet-body">' +
+        '<div class="evf-ks">' + (C.kind === 'يومي' ? '<div class="evf-k"><b class="mono' + (C.low >= C.rules.days ? ' tx-bad' : C.low ? ' tx-warn' : '') + '">' + C.low + '</b><span>أيام دون ' + C.rules.low + '</span><small>التنبيه من ' + C.rules.days + '</small></div>' : '') +
+        '<div class="evf-k"><b class="mono' + (aR != null && aR < C.rules.att * 100 ? ' tx-warn' : '') + '">' + (aR == null ? '—' : aR + '%') + '</b><span>الحضور</span><small>' + (A ? A.present + ' حضور · ' + A.absent + ' غياب · ' + A.sick + ' مرضي' : 'مفيش بيانات حضور') + '</small></div>' +
+        '<div class="evf-k"><b class="mono">' + (C.rank || '—') + '</b><span>الترتيب</span><small>من ' + C.of + ' في فريقه</small></div></div>' +
+        (C.monthly ? '<div class="infobox">' + icon('award') + ' <b>' + C.monthly.score + ' من 10</b> · المقيّم: ' + esc(C.monthly.ev || '—') + (C.monthly.appr ? ' · اعتمده ' + esc(C.monthly.appr) : ' · <b>لسه ما اتعتمدش</b>') + (C.monthly.notes ? '<br>' + esc(C.monthly.notes) : '') + '</div>' : '') +
+        (C.days.length ? '<h3 class="evf-h">أيام ' + esc(evfMon(C.month)) + '</h3><div class="evf-cal">' + C.days.map(cell).join('') + '</div><div class="evf-lg"><span><i class="g9"></i>9–10</span><span><i class="g8"></i>8</span><span><i class="g7"></i>7</span><span><i class="g0"></i>أقل من 7</span></div>' : '') +
+        (C.history.length ? '<h3 class="evf-h">آخر ' + C.history.length + ' شهور</h3><div class="evf-hist">' + C.history.map(function (h) { return '<div><small class="mono">' + h.s + '</small><i style="height:' + Math.max(6, Math.round(h.s / mx * 64)) + 'px" class="' + (h.s < 7 ? 'low' : '') + '"></i><span>' + esc(evfMon(h.m).split(' ')[0]) + '</span></div>'; }).join('') + '</div>' : '') +
+        '<button class="btn ghost" data-a="close">تم</button></div>', function (a) { if (a === 'close') closeSheet(); });
+    }, function (e) { closeSheet(); toast(errText(e)); });
   }
   function evReload() { if ((S.route || '').indexOf('evals') === 0) remote('evalData', [S.session.pin]).then(drawEvals, function (e) { toast(errText(e)); }); }
   function drawEvals(d) {
     var out = $('v5Out'); if (!out) return; S.evD = d;
-    var f = S.evF || '', appr = d.evals.filter(function (e) { return e.status === 'معتمد'; }), avg = appr.length ? Math.round(appr.reduce(function (a, e) { return a + e.total; }, 0) / appr.length) : null;
-    var h = kpiRow([['k-brand', 'award', d.evals.filter(function (e) { return e.status !== 'ملغى'; }).length, 'تقييم'], ['k-warn', 'clock', d.pending, 'بانتظار اعتماد المدير'], ['k-ok', 'check', appr.length, 'معتمد'], ['k-n', 'pulse', avg == null ? '—' : avg, 'متوسط النتيجة المعتمدة']]);
-    h += '<div class="ev-flow">' + d.allJobs.map(function (j) { var mg = j.k === 'supervisor' || j.k === 'officer'; return '<div class="ev-job"><b>' + esc(j.label) + '</b><span>' + (mg ? icon('user') + ' التقييم والمراجعة والاعتماد: مدير الإدارة' : icon('user') + ' التقييم: المشرف أو المسئول ← الاعتماد: مدير الإدارة') + '</span></div>'; }).join('') + '</div>';
+    var f = S.evF || '', appr = d.evals.filter(function (e) { return e.status === 'معتمد'; }), avg = appr.length ? Math.round(appr.reduce(function (a, e) { return a + e.total; }, 0) / appr.length * 10) / 10 : null;
+    var h = kpiRow([['k-brand', 'award', d.evals.filter(function (e) { return e.status !== 'ملغى'; }).length, 'تقييم'], ['k-warn', 'clock', d.pending, 'بانتظار اعتماد المدير'], ['k-ok', 'check', appr.length, 'معتمد'], ['k-n', 'pulse', avg == null ? '—' : evS(avg), 'متوسط النتيجة المعتمدة (من 10)']]);
+    h += '<div class="ev-flow">' + d.allJobs.map(function (j) { var mg = j.k === 'supervisor' || j.k === 'officer'; return '<div class="ev-job"><b>' + esc(j.label) + '</b><span>' + (j.k === 'washer' ? icon('user') + ' تقييم يومي من المعاونين ← من ملف التقييمات' : mg ? icon('user') + ' التقييم والمراجعة والاعتماد: مدير الإدارة' : icon('user') + ' التقييم: المشرف أو المسئول ← الاعتماد: مدير الإدارة') + '</span></div>'; }).join('') + '</div>';
+    h += '<div id="evfBox">' + v5Spin() + '</div>';
     h += evAwardsCard(d) + evRankCard(d);
     var chips = [['', 'الكل', d.evals.length], ['بانتظار اعتماد المدير', 'بانتظار الاعتماد', d.pending], ['معتمد', 'معتمد', appr.length], ['مُعاد للمقيّم', 'مُعاد', d.evals.filter(function (e) { return e.status === 'مُعاد للمقيّم'; }).length], ['ملغى', 'ملغى', d.evals.filter(function (e) { return e.status === 'ملغى'; }).length]];
     var L = d.evals.filter(function (e) { return !f || e.status === f; });
     h += '<div class="card"><div class="card-head"><h2>' + icon('award') + ' التقييمات</h2></div><div class="chips">' + chips.map(function (c) { return '<button type="button" class="chip' + (f === c[0] ? ' on' : '') + '" data-evf="' + esc(c[0]) + '">' + c[1] + ' <b>' + c[2] + '</b></button>'; }).join('') + '</div>' +
-      (L.length ? '<div class="ev-list">' + L.map(function (e) { var j = d.allJobs.filter(function (x) { return x.k === e.job; })[0]; return '<button type="button" class="ev-card' + (e.status === 'ملغى' ? ' ev-cx' : '') + '" data-ev="' + esc(e.id) + '">' + evRing(e.total) + '<div class="t"><b>' + esc(e.empName) + '</b><span>' + esc(j ? j.label : e.job) + (e.siteName ? ' · ' + esc(e.siteName) : '') + '</span><span class="xs muted">' + esc(e.period) + ' · المقيّم: ' + esc(e.by) + '</span></div><div class="ev-s"><span class="ev-g" style="color:' + evGradeC(e.total) + '">' + esc(e.grade) + '</span><span class="pill ' + (EV_ST[e.status] || 'p-n') + '">' + esc(e.status) + '</span></div></button>'; }).join('') + '</div>' : '<p class="empty">' + icon('award') + ' لا توجد تقييمات بهذا الفلتر. اضغط «تقييم جديد»</p>') + '</div>';
+      (L.length ? '<div class="ev-list">' + L.map(function (e) { var j = d.allJobs.filter(function (x) { return x.k === e.job; })[0]; return '<button type="button" class="ev-card' + (e.status === 'ملغى' ? ' ev-cx' : '') + '" data-ev="' + esc(e.id) + '">' + evRing(e.total) + '<div class="t"><b>' + esc(e.empName) + '</b><span>' + esc(j ? j.label : e.job) + (e.siteName ? ' · ' + esc(e.siteName) : '') + '</span><span class="xs muted">' + esc(e.period) + (e.src === 'file' ? ' · من ملف التقييمات' + (e.days ? ' · متوسط ' + e.days + ' يوم' : '') : '') + ' · المقيّم: ' + esc(e.by) + '</span></div><div class="ev-s"><span class="ev-g" style="color:' + evGradeC(e.total) + '">' + esc(e.grade) + '</span><span class="pill ' + (EV_ST[e.status] || 'p-n') + '">' + esc(e.status) + '</span></div></button>'; }).join('') + '</div>' : '<p class="empty">' + icon('award') + ' لا توجد تقييمات بهذا الفلتر. اضغط «تقييم جديد»</p>') + '</div>';
     out.innerHTML = h;
     out.querySelectorAll('[data-evf]').forEach(function (b) { b.onclick = function () { S.evF = b.dataset.evf; drawEvals(d); }; });
-    out.querySelectorAll('[data-ev]').forEach(function (b) { b.onclick = function () { evView(d.evals.filter(function (e) { return e.id === b.dataset.ev; })[0]); }; });
+    out.querySelectorAll('[data-ev]').forEach(function (b) { b.onclick = function () { var e = d.evals.filter(function (x) { return x.id === b.dataset.ev; })[0]; if (e && e.src === 'file') return evfCard(e.empCode, e.period); evView(e); }; });
     evAwBind(d);
+    if (S.evfR && $('evfBox') && (!S.evfM || S.evfR.month === S.evfM)) evfDraw(S.evfR);
+    evfLoad();
   }
   /* ============================ الإصدار 28: ترتيب التقييمات وشهادات التقدير الشهرية ============================ */
   var AW_RANK = ['الأول', 'الثاني', 'الثالث'], AW_MED = [['#b8860b', '#f6d365', '#fff3c4'], ['#7d8590', '#d7dde3', '#f4f6f8'], ['#8a4b1f', '#e0a170', '#f8e1cc']];
@@ -11714,9 +11884,10 @@
       var p = String(e.period || '').slice(0, 7); if (e.status !== 'معتمد' || !p || (from && p < from) || (to && p > to) || (jobs && jobs.indexOf(e.job) < 0)) return;
       var k = e.job + '|' + (e.empCode || e.empName.trim()), o = by[k] || (by[k] = { job: e.job, empCode: e.empCode, empName: e.empName, siteName: e.siteName, sum: 0, n: 0, best: 0, months: {} });
       o.sum += e.total; o.n++; o.best = Math.max(o.best, e.total); o.months[p] = 1; if (e.siteName) o.siteName = e.siteName;
+      if (e.att != null) o.att = Math.max(o.att == null ? 0 : o.att, e.att); o.days = (o.days || 0) + (e.days || 0);
     });
     return Object.keys(by).map(function (k) { var o = by[k]; o.total = Math.round(o.sum / o.n * 10) / 10; o.nm = Object.keys(o.months).length; return o; })
-      .sort(function (a, b) { return b.total - a.total || b.n - a.n || b.best - a.best || a.empName.localeCompare(b.empName, 'ar'); });
+      .sort(function (a, b) { return b.total - a.total || (b.att == null ? -1 : b.att) - (a.att == null ? -1 : a.att) || (b.days || 0) - (a.days || 0) || b.n - a.n || b.best - a.best || a.empName.localeCompare(b.empName, 'ar'); });
   }
   function evJobL(d, k) { var j = d.allJobs.filter(function (x) { return x.k === k; })[0]; return j ? j.label : k; }
   function awMedal(r, sz) { var c = AW_MED[(r || 1) - 1] || AW_MED[0], id = 'awm' + r + Math.random().toString(36).slice(2, 6); return '<svg class="aw-medal" viewBox="0 0 100 100" width="' + (sz || 34) + '" height="' + (sz || 34) + '" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c[2] + '"/><stop offset=".55" stop-color="' + c[1] + '"/><stop offset="1" stop-color="' + c[0] + '"/></linearGradient></defs>' +
@@ -11725,27 +11896,27 @@
   function evRankCard(d) {
     var to = S.evTo || new Date(Date.now() + 3 * 36e5).toISOString().slice(0, 7), from = S.evFrom || awShift(to, -2), jf = S.evJ == null ? '' : S.evJ;
     var R = evRank(d.evals, from, to, jf ? [jf] : null), jobs = [['', 'كل الوظائف']].concat(d.allJobs.map(function (j) { return [j.k, j.label]; }));
-    var row = function (o, i) { return '<tr class="' + (i < 3 ? 'top' : '') + '"><td class="rk">' + (i < 3 ? awMedal(i + 1, 30) : '<b class="mono">' + (i + 1) + '</b>') + '</td><td><b>' + esc(o.empName) + '</b><span class="xs muted">' + esc(evJobL(d, o.job)) + (o.siteName ? ' · ' + esc(o.siteName) : '') + '</span></td><td class="mono"><b style="color:' + evGradeC(o.total) + '">' + o.total + '</b></td><td class="mono">' + o.n + '</td><td class="mono">' + o.best + '</td><td><span class="ev-g" style="color:' + evGradeC(o.total) + '">' + esc(evGradeTx(o.total)) + '</span></td></tr>'; };
+    var row = function (o, i) { return '<tr class="' + (i < 3 ? 'top' : '') + '"><td class="rk">' + (i < 3 ? awMedal(i + 1, 30) : '<b class="mono">' + (i + 1) + '</b>') + '</td><td><b>' + esc(o.empName) + '</b><span class="xs muted">' + esc(evJobL(d, o.job)) + (o.siteName ? ' · ' + esc(o.siteName) : '') + '</span></td><td class="mono"><b style="color:' + evGradeC(o.total) + '">' + evS(o.total) + '</b></td><td class="mono">' + o.n + '</td><td class="mono">' + o.best + '</td><td><span class="ev-g" style="color:' + evGradeC(o.total) + '">' + esc(evGradeTx(o.total)) + '</span></td></tr>'; };
     return '<div class="card ev-rank"><div class="card-head"><div><span class="kick">التقييمات المعتمدة فقط · متوسط كل موظف في الفترة</span><h2>' + icon('bars') + ' ترتيب الأعلى تقييماً</h2></div><button class="btn sm hub-print" type="button" id="evRankPrint">' + icon('printer') + ' طباعة الترتيب</button></div>' +
       '<div class="row ev-rf"><div class="field"><label for="evFrom">من شهر</label><input id="evFrom" type="month" value="' + esc(from) + '"></div><div class="field"><label for="evTo">لحد شهر</label><input id="evTo" type="month" value="' + esc(to) + '"></div><div class="field grow"><label for="evJf">الوظيفة</label><select id="evJf">' + jobs.map(function (j) { return '<option value="' + j[0] + '"' + (j[0] === jf ? ' selected' : '') + '>' + esc(j[1]) + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="ev-qp">' + [['هذا الشهر', 0, 0], ['آخر 3 شهور', -2, 0], ['آخر 6 شهور', -5, 0], ['السنة', 'y', 0]].map(function (q) { return '<button type="button" class="chip" data-evq="' + q[1] + '">' + q[0] + '</button>'; }).join('') + '</div>' +
       (R.length ? '<div class="tbl"><table class="ev-rt"><thead><tr><th>المركز</th><th>الموظف</th><th>المتوسط</th><th>تقييمات</th><th>أعلى</th><th>التقدير</th></tr></thead><tbody>' + R.map(row).join('') + '</tbody></table></div>' :
         '<p class="empty">' + icon('award') + ' لا توجد تقييمات معتمدة في الفترة من ' + esc(awMonth(from)) + ' لحد ' + esc(awMonth(to)) + '</p>') + '</div>';
   }
-  function evGradeTx(t) { return t >= 90 ? 'ممتاز' : t >= 80 ? 'جيد جداً' : t >= 70 ? 'جيد' : t >= 60 ? 'مقبول' : 'يحتاج تحسين'; }
+  function evGradeTx(t) { return t >= 100 ? 'ممتاز' : t >= 90 ? 'جيد جدا' : t >= 70 ? 'جيد' : t >= 50 ? 'مقبول' : 'ضعيف'; }
   function evAwardsCard(d) {
     var cfg = d.awardCfg || {}, m = S.awM || cfg.prev, mgr = cfg.isMgr, sg = d.sign || {};
-    var T = evRank(d.evals, m, m, ['worker', 'assistant']), issued = (d.awards || []).filter(function (a) { return a.month === m; });
+    var T = evRank(d.evals, m, m, ['worker', 'assistant', 'washer']), issued = (d.awards || []).filter(function (a) { return a.month === m; });
     var col = function (job) {
       var L = T.filter(function (o) { return o.job === job; }).slice(0, 3);
-      return '<div class="aw-col"><h3>' + esc(evJobL(d, job)) + '</h3>' + (L.length ? L.map(function (o, i) { var a = issued.filter(function (x) { return x.job === job && x.rank === i + 1; })[0]; return '<div class="aw-pod r' + (i + 1) + '">' + awMedal(i + 1, 44) + '<div class="t"><b>' + esc(o.empName) + '</b><span class="xs muted">المركز ' + AW_RANK[i] + ' · ' + o.total + ' من 100' + (o.siteName ? ' · ' + esc(o.siteName) : '') + '</span></div>' + (a ? '<button type="button" class="btn sm" data-awv="' + esc(a.id) + '">' + icon('award') + ' الشهادة</button>' : '<span class="pill p-n">لم تصدر</span>') + '</div>'; }).join('') : '<p class="small muted">لا توجد تقييمات معتمدة في الشهر ده.</p>') + '</div>';
+      return '<div class="aw-col"><h3>' + esc(evJobL(d, job)) + '</h3>' + (L.length ? L.map(function (o, i) { var a = issued.filter(function (x) { return x.job === job && x.rank === i + 1; })[0]; return '<div class="aw-pod r' + (i + 1) + '">' + awMedal(i + 1, 44) + '<div class="t"><b>' + esc(o.empName) + '</b><span class="xs muted">المركز ' + AW_RANK[i] + ' · ' + evS(o.total) + ' من 10' + (o.siteName ? ' · ' + esc(o.siteName) : '') + '</span></div>' + (a ? '<button type="button" class="btn sm" data-awv="' + esc(a.id) + '">' + icon('award') + ' الشهادة</button>' : '<span class="pill p-n">لم تصدر</span>') + '</div>'; }).join('') : '<p class="small muted">لا توجد تقييمات معتمدة في الشهر ده.</p>') + '</div>';
     };
     var hist = {}; (d.awards || []).forEach(function (a) { (hist[a.month] = hist[a.month] || []).push(a); });
     var due = mgr && cfg.prev && cfg.last < cfg.prev;
-    return '<div class="card aw-card"><div class="card-head"><div><span class="kick">أعلى 3 للعمال وأعلى 3 للمعاونين كل شهر · بتوقيع مدير إدارة الأمن الحيوي</span><h2>' + icon('award') + ' شهادات التقدير الشهرية</h2></div>' + (mgr ? '<button class="btn sm" type="button" id="awSign">' + icon('edit') + (sg.has ? ' تغيير التوقيع' : ' توقيع المدير') + '</button>' : '') + '</div>' +
+    return '<div class="card aw-card"><div class="card-head"><div><span class="kick">أعلى 3 للعمال والمعاونين وفريق الغسيل كل شهر · بتوقيع مدير إدارة الأمن الحيوي</span><h2>' + icon('award') + ' شهادات التقدير الشهرية</h2></div>' + (mgr ? '<button class="btn sm" type="button" id="awSign">' + icon('edit') + (sg.has ? ' تغيير التوقيع' : ' توقيع المدير') + '</button>' : '') + '</div>' +
       (due ? '<div class="infobox warn">' + icon('clock') + ' شهادات شهر ' + esc(awMonth(cfg.prev)) + ' لسه ما صدرتش. ' + (cfg.auto && sg.has ? 'هتصدر تلقائياً يوم ' + cfg.day + ' من الشهر، أو اصدرها دلوقتي.' : sg.has ? 'الإصدار التلقائي مقفول. اصدرها بالزر.' : 'سجّل توقيعك الأول عشان تصدر.') + '</div>' : '') +
       '<div class="row ev-rf"><div class="field"><label for="awM">الشهر</label><input id="awM" type="month" value="' + esc(m) + '"></div>' + (mgr ? '<button class="btn primary" type="button" id="awIssue"' + (T.length ? '' : ' disabled') + '>' + icon('check') + (issued.length ? ' إعادة الإصدار والإرسال' : ' إصدار وإرسال الشهادات') + '</button>' : '') + '</div>' +
-      '<div class="aw-cols">' + col('worker') + col('assistant') + '</div>' +
+      '<div class="aw-cols">' + col('worker') + col('assistant') + col('washer') + '</div>' +
       '<p class="xs muted">' + icon('mega') + ' الشهادة بتوصل للموظف في التطبيق أول ما يفتحه، ولعامل البوابة كمان رسالة في محادثة بوابته. ' + (cfg.auto ? 'الإصدار التلقائي شغال: يوم ' + cfg.day + ' من كل شهر عن الشهر اللي فات.' : 'الإصدار التلقائي مقفول.') + (sg.has ? '' : ' لازم توقيع مدير الإدارة قبل الإصدار.') + '</p>' +
       (Object.keys(hist).length ? '<details class="aw-hist"><summary>' + icon('clock') + ' الشهادات الصادرة (' + (d.awards || []).length + ')</summary>' + Object.keys(hist).sort().reverse().map(function (k) { return '<div class="aw-hm"><b>' + esc(awMonth(k)) + '</b>' + hist[k].map(function (a) { return '<button type="button" class="chip" data-awv="' + esc(a.id) + '">' + AW_RANK[a.rank - 1] + ' · ' + esc(a.empName) + '</button>'; }).join('') + '</div>'; }).join('') + '</details>' : '') + '</div>';
   }
@@ -11769,7 +11940,7 @@
   /** الشهادة نفسها: A4 بالعرض، بتتقاس بعرض الحاوية (cqw) فتطلع زي بعضها على الشاشة والطباعة */
   function awCertHtml(a, sg, company) {
     sg = sg || {}; var c = AW_MED[a.rank - 1] || AW_MED[0];
-    var txt = 'للحصول على المركز ' + AW_RANK[a.rank - 1] + ' بين ' + (a.job === 'worker' ? 'عمال الأمن الحيوي' : 'معاوني الأمن الحيوي') + ' في تقييم الأداء الشهري عن ' + awMonth(a.month) + '، بمتوسط تقييم ' + a.total + ' من 100 (' + (a.grade || evGradeTx(a.total)) + ')، تقديراً للتميّز والالتزام بإجراءات الأمن الحيوي والمساهمة في حماية قطعان الشركة.';
+    var txt = 'للحصول على المركز ' + AW_RANK[a.rank - 1] + ' بين ' + (a.job === 'worker' ? 'عمال الأمن الحيوي' : a.job === 'washer' ? 'فريق الغسيل والتطهير' : 'معاوني الأمن الحيوي') + ' في تقييم الأداء الشهري عن ' + awMonth(a.month) + '، بمتوسط تقييم ' + evS(a.total) + ' من 10 (' + (a.grade || evGradeTx(a.total)) + ')، تقديراً للتميّز والالتزام بإجراءات الأمن الحيوي والمساهمة في حماية قطعان الشركة.';
     return '<div class="aw-cert" style="--m1:' + c[0] + ';--m2:' + c[1] + ';--m3:' + c[2] + '"><div class="awc-in">' +
       '<svg class="awc-bg" viewBox="0 0 297 210" preserveAspectRatio="none" aria-hidden="true">' + Array.from({ length: 22 }, function (_, i) { return '<path d="M0 ' + (20 + i * 8) + ' C 70 ' + (8 + i * 8) + ', 150 ' + (34 + i * 8) + ', 297 ' + (14 + i * 8) + '" fill="none" stroke="currentColor" stroke-width=".18"/>'; }).join('') + '</svg>' +
       '<i class="awc-cn tl"></i><i class="awc-cn tr"></i><i class="awc-cn bl"></i><i class="awc-cn br"></i>' +
@@ -11901,7 +12072,7 @@
     if (!d.jobs.length) return toast('لا توجد وظائف متاحة لك للتقييم');
     var jobOf = function () { return d.jobs.filter(function (x) { return x.k === job; })[0]; };
     var total = function () { var j = jobOf(), t = 0; j.crit.forEach(function (c) { if (sc[c.k]) t += sc[c.k] / 5 * c.w; }); return Math.round(t); };
-    var grade = function (t) { return t >= 90 ? 'ممتاز' : t >= 80 ? 'جيد جداً' : t >= 70 ? 'جيد' : t >= 60 ? 'مقبول' : 'يحتاج تحسين'; };
+    var grade = function (t) { return evGradeTx(t); };
     var empOpts = function () { return '<option value="">اختر الموظف</option>' + d.employees.filter(function (x) { return x.job === job; }).map(function (x) { return '<option value="' + esc(x.code) + '" data-n="' + esc(x.name) + '" data-w="' + esc(x.where) + '"' + (e && e.empCode === x.code ? ' selected' : '') + '>' + esc(x.name) + ' · ' + esc(x.code) + '</option>'; }).join('') + '<option value="__">موظف غير موجود بالقائمة (اكتب الاسم)</option>'; };
     var drawCrit = function () {
       var j = jobOf(), t = total();

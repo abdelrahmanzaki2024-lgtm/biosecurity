@@ -2187,6 +2187,7 @@ function BIO_api(store, deps) {
   if (typeof BIO_v33push === 'function') BIO_v33push(api, H_);
   if (typeof BIO_v333roads === 'function') BIO_v333roads(api, H_);
   if (typeof BIO_v34 === 'function') BIO_v34(api, H_);
+  if (typeof BIO_v36ev === 'function') BIO_v36ev(api, H_);
   return api;
 }
 
@@ -7893,7 +7894,7 @@ function BIO_v28(api, H) {
   function cairo(t) { return new Date(t + 3 * 36e5); }
   function prevMonth(t) { var d = cairo(t); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); }
   function log(u, t, k, a, b, c) { if (api._log) try { api._log(u, t, k, a, b, c); } catch (e) { } }
-  function jobLabel(k) { var j = BIO_EVAL_JOBS.filter(function (x) { return x.k === k; })[0]; return j ? j.label : k; }
+  function jobLabel(k) { if (k === 'washer') return 'عامل غسيل وتطهير'; var j = BIO_EVAL_JOBS.filter(function (x) { return x.k === k; })[0]; return j ? j.label : k; }
   function S() { return H.settings(); }
   function awOut(r) { return { id: String(r.id), time: BIO_ms(r.time), month: BIO_monthOf(r.month), job: String(r.job || ''), jobLabel: String(r.jobLabel || jobLabel(r.job)), rank: num(r.rank, 0), empCode: String(r.empCode || ''), empName: String(r.empName || ''), siteName: String(r.siteName || ''), total: num(r.total, 0), evals: num(r.evals, 1), grade: String(r.grade || ''), signBy: String(r.signBy || ''), status: String(r.status || ''), auto: String(r.auto || '') }; }
   function live() { return rows('awards').map(awOut).filter(function (a) { return a.status !== 'ملغاة'; }); }
@@ -7902,16 +7903,18 @@ function BIO_v28(api, H) {
   /** ترتيب الموظفين بمتوسط تقييماتهم المعتمدة في فترة (شهر من / شهر لحد) */
   function ranking(from, to, jobs) {
     var by = {};
-    rows('evals').forEach(function (r) {
+    rows('evals').concat(typeof BIO_evfVirtual === 'function' ? BIO_evfVirtual(store) : []).forEach(function (r) {
       if (String(r.status) !== 'معتمد') return;
       var p = BIO_monthOf(r.period), j = String(r.job || '');
       if (!p || (from && p < from) || (to && p > to) || (jobs && jobs.indexOf(j) < 0)) return;
       var key = j + '|' + (BIO_norm(r.empCode) || String(r.empName).trim());
       var o = by[key] || (by[key] = { job: j, empCode: BIO_norm(r.empCode), empName: String(r.empName || ''), siteName: String(r.siteName || ''), sum: 0, n: 0, best: 0, last: 0 });
       var t = num(r.total, 0); o.sum += t; o.n++; o.best = Math.max(o.best, t); var at = BIO_ms(r.approveAt) || BIO_ms(r.time) || 0; if (at >= o.last) { o.last = at; o.siteName = String(r.siteName || o.siteName); }
+      if (r.att != null && r.att !== '') o.att = Math.max(o.att == null ? 0 : o.att, Number(r.att)); o.days = (o.days || 0) + num(r.days, 0);
     });
+    // v36: التعادل: الحضور الأعلى الأول، وبعده عدد أيام التقييم
     return Object.keys(by).map(function (k) { var o = by[k]; o.total = Math.round(o.sum / o.n * 10) / 10; return o; })
-      .sort(function (a, b) { return b.total - a.total || b.n - a.n || b.best - a.best || a.empName.localeCompare(b.empName, 'ar'); });
+      .sort(function (a, b) { return b.total - a.total || (b.att == null ? -1 : b.att) - (a.att == null ? -1 : a.att) || (b.days || 0) - (a.days || 0) || b.n - a.n || b.best - a.best || a.empName.localeCompare(b.empName, 'ar'); });
   }
   function top3(month) {
     var R = ranking(month, month, BIO_AWARD_JOBS), out = [];
@@ -7935,7 +7938,7 @@ function BIO_v28(api, H) {
         if (u && u.gate && has('messages')) {
           var cp = store.find('checkpoints', u.gate);
           store.append('messages', { id: 'AWM' + now.toString(36) + o.rank + o.job.charAt(0), time: now, gate: BIO_norm(u.gate), gateName: cp ? cp.name : '', fromId: 'AWARD', fromName: sg.name || byName || 'مدير إدارة الأمن الحيوي', fromMgr: BIO.YES,
-            text: '🏅 شهادة تقدير من إدارة الأمن الحيوي: ' + o.empName + ' حصل على المركز ' + ['الأول', 'الثاني', 'الثالث'][o.rank - 1] + ' بين ' + jobLabel(o.job) + ' عن شهر ' + month + ' بمتوسط تقييم ' + o.total + ' من 100. شكراً على التزامك. الشهادة موجودة في التطبيق.', readAt: '' });
+            text: '🏅 شهادة تقدير من إدارة الأمن الحيوي: ' + o.empName + ' حصل على المركز ' + ['الأول', 'الثاني', 'الثالث'][o.rank - 1] + ' بين ' + jobLabel(o.job) + ' عن شهر ' + month + ' بمتوسط تقييم ' + (Math.round(o.total * 10) / 100) + ' من 10. شكراً على التزامك. الشهادة موجودة في التطبيق.', readAt: '' });
         }
       });
       rows('awards').forEach(function (r) { if (BIO_monthOf(r.month) === month && !seen[r.id] && String(r.status) !== 'ملغاة') store.update('awards', r.id, { status: 'ملغاة' }); });
@@ -7996,7 +7999,7 @@ function BIO_seedV28(s, now) {
   var d2 = new Date(d.getTime()); d2.setUTCMonth(d2.getUTCMonth() - 1); var pm2 = d2.toISOString().slice(0, 7);
   var W = [['U01', 'أمن التطهير المركزي - الواحات', 'منطقة التطهير المركزية - الواحات', 95, 91], ['U02', 'أمن تطهير التسمين كلين - الواحات', 'ارج التطهير الكلين', 92, 88], ['', 'محمود عبد الحميد (مثال)', 'محطة 5', 89, 93], ['U03', 'أمن التطهير المركزي - ريجوا', 'منطقة التطهير المركزية - ريجوا', 84, 79], ['', 'سيد فتحي (مثال)', 'محطة 10', 78, 86]];
   var A = [['U13', 'معاون الأمن الحيوي (مثال)', 'الواحات', 94, 90], ['', 'أحمد سمير (مثال)', 'الواحات', 90, 85], ['', 'كريم ناصر (مثال)', 'ريجوا', 86, 92], ['', 'هاني رجب (مثال)', 'الواحات', 81, 77]];
-  var g = function (t) { return t >= 90 ? 'ممتاز' : t >= 80 ? 'جيد جداً' : t >= 70 ? 'جيد' : t >= 60 ? 'مقبول' : 'يحتاج تحسين'; }, n = 0;
+  var g = function (t) { return BIO_evalGrade(t); }, n = 0;
   var ev = function (L, job, col, per, back) { L.forEach(function (x) { n++; s.evals.push({ id: 'EVS' + n, time: now - back * D - n * 36e5, period: per, job: job, empCode: x[0], empName: x[1], siteName: x[2], scores: JSON.stringify(BIO_seedSc(job, x[col], n)), total: x[col], grade: g(x[col]), strengths: '', improve: '', plan: '', recommend: '', status: 'معتمد', by: 'مشرف أمن حيوي (مثال)', byId: '', byRole: 'مشرف أمن حيوي', reviewBy: 'مدير الأمن الحيوي', approveBy: 'مدير الأمن الحيوي', approveAt: now - (back - 1) * D }); }); };
   s.evals = s.evals || []; ev(W, 'worker', 3, pm, 12); ev(A, 'assistant', 3, pm, 12); ev(W, 'worker', 4, pm2, 40); ev(A, 'assistant', 4, pm2, 40);
   var sig = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120"><path d="M18 84c22-30 40-58 52-56 10 2-14 52-4 54 12 2 26-40 38-38 8 2-2 30 6 30 10 0 20-26 30-24 8 2 0 22 8 22 14 0 30-34 46-30 10 3-6 26 6 26 18 0 44-22 70-26 20-3 40 2 66-6" fill="none" stroke="#1a2a6c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M60 98c70-8 160-10 250-16" fill="none" stroke="#1a2a6c" stroke-width="2" stroke-linecap="round"/></svg>');
@@ -10406,4 +10409,193 @@ var BIO_HEP = { name: 'هابرد إيفيشنسي بلس (دليل 2023)', w: [
 function BIO_hepAt(key, age) {
   var a = BIO_HEP[key], n = Number(age); if (!a || isNaN(n)) return null; if (n <= 0) return a[0]; if (n >= a.length - 1) return a[a.length - 1];
   var i = Math.floor(n), f = n - i, x = a[i], y = a[i + 1]; if (x == null) return y == null ? null : (f >= 0.5 ? y : null); if (y == null) return x; return x + (y - x) * f;
+}
+
+/* ============================ v36: ملف التقييمات (شهري + يومي لفريق الغسيل + الحضور) ============================
+   الملف بيتقري على جهاز المدير أو المسؤول، وبيتبعت منه: الموظفين (ورقة الإعدادات)، الدرجات الشهرية، الدرجات اليومية، والحضور الشهري.
+   المقياس من 10 زي الملف: 0-4 ضعيف، 5-6 مقبول، 7-8 جيد، 9 جيد جدا، 10 ممتاز، وأقل من 7 «دون المستوى».
+   درجات الملف بتظهر في شاشة التقييمات كتقييمات (من 100 داخلياً = الدرجة × 10) علشان الترتيب وشهادات التقدير تشتغل عليها. */
+TABLES.evScores = { sheet: 'درجات التقييم من الملف', key: 'id', cols: { id: 'الرقم', kind: 'النوع', period: 'الشهر', day: 'اليوم', team: 'الفريق', empCode: 'الكود الوظيفي', empName: 'الموظف', score: 'الدرجة من 10', evaluator: 'المقيِّم', notes: 'ملاحظات المقيِّم', approvedBy: 'الاعتماد', hash: 'البصمة', importId: 'رقم الاستيراد', time: 'آخر تحديث', by: 'رفعه' } };
+TABLES.evAttend = { sheet: 'حضور الموظفين الشهري', key: 'id', cols: { id: 'الرقم', month: 'الشهر', empCode: 'الكود الوظيفي', empName: 'الاسم', group: 'المجموعة', present: 'حضور', rest: 'راحة', down: 'نزول', absent: 'غياب', sick: 'مرضي', ratio: 'نسبة الالتزام', importId: 'رقم الاستيراد', time: 'آخر تحديث' } };
+TABLES.evStaff = { sheet: 'موظفو التقييم', key: 'id', cols: { id: 'الكود الوظيفي', name: 'اسم الموظف', team: 'الفريق', kind: 'نوع التقييم', active: 'فعّال', time: 'آخر تحديث' } };
+var BIO_EV_TEAMS = { 'المعاونون': 'assistant', 'الأمن الحيوي': 'worker', 'الغسيل والتطهير': 'washer' };
+var BIO_EV_LOW = 7, BIO_EV_ATT = 0.9, BIO_EV_DAYS = 5;
+function BIO_evGrade10(v) { v = Number(v); return v >= 10 ? 'ممتاز' : v >= 9 ? 'جيد جدا' : v >= 7 ? 'جيد' : v >= 5 ? 'مقبول' : 'ضعيف'; }
+// المعادلة الجديدة لكل التقييمات (حتى تقييم البنود من 100): نفس حدود الملف بعد القسمة على 10
+BIO_evalGrade = function (t) { return BIO_evGrade10(Number(t) / 10); };
+BIO_AWARD_JOBS = ['worker', 'assistant', 'washer'];
+function BIO_evTeamJob(team) { var t = String(team || '').replace(/\s+/g, ' ').trim(); return BIO_EV_TEAMS[t] || (/غسيل/.test(t) ? 'washer' : /معاون/.test(t) ? 'assistant' : 'worker'); }
+function BIO_evNum(v) { var n = Number(v); return v === '' || v == null || isNaN(n) ? null : n; }
+/** حضور الموظفين لكل شهر وكود */
+function BIO_evAttMap(store) {
+  var m = {}; try { store.all('evAttend').forEach(function (r) { var k = BIO_monthOf(r.month) + '|' + BIO_norm(r.empCode); var p = Number(r.present) || 0, a = Number(r.absent) || 0, s = Number(r.sick) || 0; m[k] = { present: p, absent: a, sick: s, rest: Number(r.rest) || 0, down: Number(r.down) || 0, ratio: p + a + s > 0 ? p / (p + a + s) : (BIO_evNum(r.ratio) == null ? null : Number(r.ratio)) }; }); } catch (e) {}
+  return m;
+}
+/** درجات الملف كتقييمات شهرية: الشهري زي ما هو، والغسيل متوسط أيام الشهر. onlyApproved: المعتمد بس (زي إعداد الملف) */
+function BIO_evfVirtual(store, onlyApproved) {
+  var rows; try { rows = store.all('evScores'); } catch (e) { return []; }
+  if (!rows.length) return [];
+  var att = BIO_evAttMap(store), out = [], agg = {};
+  rows.forEach(function (r) {
+    var sc = BIO_evNum(r.score); if (sc == null) return;
+    var code = BIO_norm(r.empCode), ok = String(r.approvedBy || '').trim() !== '', team = String(r.team || ''), job = BIO_evTeamJob(team);
+    if (String(r.kind) === 'شهري') {
+      var p = BIO_monthOf(r.period); if (!p) return;
+      var a = att[p + '|' + code];
+      out.push({ id: 'F|' + p + '|' + code, time: BIO_ms(r.time), period: p, job: job, empCode: code, empName: String(r.empName || ''), siteName: team, total: Math.round(sc * 100) / 10, scores: '{}', grade: BIO_evGrade10(sc),
+        strengths: '', improve: String(r.notes || ''), plan: '', recommend: '', status: ok ? 'معتمد' : 'بانتظار اعتماد المدير', by: String(r.evaluator || ''), byId: '', byRole: '', reviewBy: '', approveBy: String(r.approvedBy || ''), approveAt: ok ? BIO_ms(r.time) : '', returnWhy: '',
+        src: 'file', score10: sc, att: a && a.ratio != null ? a.ratio : null, days: 0, low: sc < BIO_EV_LOW ? 1 : 0 });
+    } else {
+      var d = BIO_dayOf(r.day); if (!d) return; var m = d.slice(0, 7);
+      if (onlyApproved !== false && !ok) { var g0 = agg[m + '|' + code] || (agg[m + '|' + code] = { m: m, code: code, name: String(r.empName || ''), team: team, sum: 0, n: 0, low: 0, pend: 0, ev: {}, t: 0 }); g0.pend++; return; }
+      var g = agg[m + '|' + code] || (agg[m + '|' + code] = { m: m, code: code, name: String(r.empName || ''), team: team, sum: 0, n: 0, low: 0, pend: 0, ev: {}, t: 0 });
+      g.sum += sc; g.n++; if (sc < BIO_EV_LOW) g.low++; if (r.evaluator) g.ev[String(r.evaluator)] = 1; g.t = Math.max(g.t, BIO_ms(r.time));
+    }
+  });
+  Object.keys(agg).forEach(function (k) {
+    var g = agg[k]; if (!g.n) return;
+    var avg = g.sum / g.n, a = att[g.m + '|' + g.code];
+    out.push({ id: 'F|' + g.m + '|' + g.code, time: g.t, period: g.m, job: 'washer', empCode: g.code, empName: g.name, siteName: g.team, total: Math.round(avg * 100) / 10, scores: '{}', grade: BIO_evGrade10(avg),
+      strengths: '', improve: g.low ? g.low + ' أيام دون ' + BIO_EV_LOW : '', plan: '', recommend: '', status: 'معتمد', by: Object.keys(g.ev).slice(0, 3).join('، '), byId: '', byRole: '', reviewBy: '', approveBy: 'من الملف', approveAt: g.t, returnWhy: '',
+      src: 'file', score10: Math.round(avg * 100) / 100, att: a && a.ratio != null ? a.ratio : null, days: g.n, low: g.low, pend: g.pend });
+  });
+  return out;
+}
+
+function BIO_v36ev(api, H) {
+  var store = H.store, deps = H.deps;
+  function has(t) { try { store.all(t); return true; } catch (e) { return false; } }
+  function rows(t) { return has(t) ? store.all(t) : []; }
+  function cl(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 120); }
+  function role(u) { return String(u && u.role || '').trim(); }
+  function canImport(u) { var r = BIO_role(role(u)); return !!u && (u.isAdmin || (r && (r.k === BIO.ROLE_MANAGER || r.k === BIO.ROLE_OFFICER))); }
+  function canView(u) { var r = BIO_role(role(u)); return !!u && (u.isAdmin || (r && (r.k === BIO.ROLE_MANAGER || r.k === BIO.ROLE_OFFICER || r.k === BIO.ROLE_SUPERVISOR))); }
+  function log(u, t, k, a, b, c) { if (api._log) try { api._log(u, t, k, a, b, c); } catch (e) { } }
+  function hashOf(o) { return BIO_hash ? BIO_hash(JSON.stringify(o)) : JSON.stringify(o).length; }
+  var MON = { 'يناير': 1, 'فبراير': 2, 'مارس': 3, 'ابريل': 4, 'أبريل': 4, 'إبريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'اغسطس': 8, 'أغسطس': 8, 'سبتمبر': 9, 'اكتوبر': 10, 'أكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12 };
+  /** «أكتوبر 2026» أو 2026-10 أو تاريخ ← 2026-10 */
+  function monthKey(v) {
+    if (v == null || v === '') return '';
+    var s = String(v).trim(), m = /^(\d{4})-(\d{1,2})/.exec(s); if (m) return m[1] + '-' + ('0' + m[2]).slice(-2);
+    var a = /([^\d\s]+)\s*(\d{4})/.exec(s); if (a) { var k = MON[a[1].trim()]; if (k) return a[2] + '-' + ('0' + k).slice(-2); }
+    return BIO_monthOf(v);
+  }
+
+  /** ما يحتاجه التطبيق قبل قراءة الملف */
+  api.evfMeta = function (pin) {
+    var u = H.auth(pin, true); if (!canView(u)) throw new Error('التقييمات للمشرف والمسؤول ومدير الإدارة فقط');
+    var imp = rows('evScores').reduce(function (a, r) { var t = BIO_ms(r.time); return t > a.t ? { t: t, id: String(r.importId || ''), by: String(r.by || '') } : a; }, { t: 0 });
+    return { canImport: canImport(u), last: imp.t ? imp : null, staff: rows('evStaff').length };
+  };
+
+  /** حفظ ما قرأه التطبيق من ملف التقييمات (على دفعات). الجديد يتضاف، واللي اتغير يتحدث، والمتطابق يتساب */
+  api.evfImport = function (pin, p) {
+    var u = H.auth(pin, true); if (!canImport(u)) throw new Error('رفع ملف التقييمات لمدير الإدارة والمسؤول فقط');
+    p = p || {}; var now = deps.now(), imp = cl(p.id, 40) || ('EF' + now.toString(36).toUpperCase()), res = { staff: [0, 0, 0], monthly: [0, 0, 0], daily: [0, 0, 0], attend: [0, 0, 0] };
+    var up = function (table, list, key) {
+      if (!list.length) return [0, 0, 0];
+      var ex = {}; rows(table).forEach(function (r) { ex[String(r.id)] = r; });
+      var add = [], upd = 0, same = 0;
+      list.forEach(function (o) {
+        var cur = ex[o.id];
+        if (!cur) { add.push(o); ex[o.id] = o; return; }
+        if (key && String(cur.hash || '') === String(o.hash)) { same++; return; }
+        if (!key) { var diff = Object.keys(o).some(function (k) { return k !== 'time' && k !== 'importId' && String(cur[k]) !== String(o[k]); }); if (!diff) { same++; return; } }
+        var patch = {}; Object.keys(o).forEach(function (k) { if (k !== 'id') patch[k] = o[k]; }); store.update(table, o.id, patch); upd++;
+      });
+      if (add.length) { if (store.appendMany) store.appendMany(table, add); else add.forEach(function (o) { store.append(table, o); }); }
+      return [add.length, upd, same];
+    };
+    var staff = (Array.isArray(p.staff) ? p.staff : []).slice(0, 400).map(function (s) {
+      var code = BIO_norm(s.code), name = cl(s.name, 80); if (!code || !name) return null;
+      return { id: code, name: name, team: cl(s.team, 40), kind: cl(s.kind, 10) || (BIO_evTeamJob(s.team) === 'washer' ? 'يومي' : 'شهري'), active: String(s.active || '').trim() === 'لا' ? 'لا' : 'نعم', time: now };
+    }).filter(Boolean);
+    var monthly = (Array.isArray(p.monthly) ? p.monthly : []).slice(0, 2500).map(function (s) {
+      var code = BIO_norm(s.code), m = monthKey(s.month), sc = BIO_evNum(s.score); if (!code || !m || sc == null || sc < 0 || sc > 10) return null;
+      var o = { id: 'M|' + m + '|' + code, kind: 'شهري', period: "'" + m, day: '', team: cl(s.team, 40), empCode: code, empName: cl(s.name, 80), score: sc, evaluator: cl(s.evaluator, 60), notes: cl(s.notes, 300), approvedBy: cl(s.approvedBy, 60) };
+      o.hash = hashOf([o.score, o.evaluator, o.notes, o.approvedBy, o.team, o.empName]); o.importId = imp; o.time = now; o.by = u.name; return o;
+    }).filter(Boolean);
+    var daily = (Array.isArray(p.daily) ? p.daily : []).slice(0, 2500).map(function (s) {
+      var code = BIO_norm(s.code), d = String(s.day || ''), sc = BIO_evNum(s.score); if (!code || !/^\d{4}-\d{2}-\d{2}$/.test(d) || sc == null || sc < 0 || sc > 10) return null;
+      var o = { id: 'D|' + d + '|' + code, kind: 'يومي', period: "'" + d.slice(0, 7), day: "'" + d, team: cl(s.team, 40) || 'الغسيل والتطهير', empCode: code, empName: cl(s.name, 80), score: sc, evaluator: cl(s.evaluator, 60), notes: cl(s.notes, 300), approvedBy: cl(s.approvedBy, 60) };
+      o.hash = hashOf([o.score, o.evaluator, o.notes, o.approvedBy, o.empName]); o.importId = imp; o.time = now; o.by = u.name; return o;
+    }).filter(Boolean);
+    var attend = (Array.isArray(p.attend) ? p.attend : []).slice(0, 2500).map(function (s) {
+      var code = BIO_norm(s.code), m = monthKey(s.month); if (!code || !m) return null;
+      var n = function (v) { var x = BIO_evNum(v); return x == null ? 0 : x; };
+      return { id: m + '|' + code, month: "'" + m, empCode: code, empName: cl(s.name, 80), group: cl(s.group, 40), present: n(s.present), rest: n(s.rest), down: n(s.down), absent: n(s.absent), sick: n(s.sick), ratio: BIO_evNum(s.ratio) == null ? '' : Math.round(Number(s.ratio) * 1000) / 1000, importId: imp, time: now };
+    }).filter(Boolean);
+    deps.lock(function () {
+      res.staff = up('evStaff', staff, false);
+      res.monthly = up('evScores', monthly, true);
+      res.daily = up('evScores', daily, true);
+      res.attend = up('evAttend', attend, false);
+    });
+    if (p.last) log(u, 'evScores', imp, 'رفع ملف التقييمات', null, { file: cl(p.file, 120), monthly: p.totals && p.totals.monthly, daily: p.totals && p.totals.daily, attend: p.totals && p.totals.attend });
+    return { ok: true, id: imp, res: res };
+  };
+
+  /** لوحة الفرق لشهر: الدرجة والتقدير والحضور والتنبيهات ونجوم الشهر */
+  api.evfData = function (pin, month) {
+    var u = H.auth(pin, true); if (!canView(u)) throw new Error('التقييمات للمشرف والمسؤول ومدير الإدارة فقط');
+    var V = BIO_evfVirtual(store), months = {}; V.forEach(function (e) { months[e.period] = (months[e.period] || 0) + 1; });
+    // الشهر الافتراضي: أحدث شهر مكتمل تقريباً (الشهر الجاري لسه في أوله بيبقى فيه فريق الغسيل بس)
+    var M = Object.keys(months).sort().reverse(), mx = M.reduce(function (a, k) { return Math.max(a, months[k]); }, 0), def = M.filter(function (k) { return months[k] >= mx * 0.6; })[0] || M[0] || '';
+    var m = /^\d{4}-\d{2}$/.test(String(month || '')) ? String(month) : def;
+    var prev = (function () { if (!m) return ''; var d = new Date(m + '-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); })();
+    var staff = {}; rows('evStaff').forEach(function (s) { staff[BIO_norm(s.id)] = s; });
+    var att = BIO_evAttMap(store), pend = 0;
+    rows('evScores').forEach(function (r) { var p = String(r.kind) === 'شهري' ? BIO_monthOf(r.period) : BIO_dayOf(r.day).slice(0, 7); if (p === m && !String(r.approvedBy || '').trim()) pend++; });
+    var cur = V.filter(function (e) { return e.period === m; }), pv = {}; V.filter(function (e) { return e.period === prev; }).forEach(function (e) { pv[e.job + '|' + e.empCode] = e; });
+    var list = cur.map(function (e) {
+      var a = att[m + '|' + e.empCode], p = pv[e.job + '|' + e.empCode], st = staff[e.empCode];
+      return { code: e.empCode, name: e.empName, team: e.siteName || (st ? st.team : ''), job: e.job, kind: e.job === 'washer' ? 'يومي' : 'شهري', score: e.score10, grade: BIO_evGrade10(e.score10), approved: e.status === 'معتمد',
+        days: e.days, low: e.low, notes: e.improve, by: e.by, att: a ? a.ratio : null, attD: a || null, prev: p ? p.score10 : null, trend: p ? Math.round((e.score10 - p.score10) * 100) / 100 : null };
+    }).sort(function (a, b) { return b.score - a.score || (b.att == null ? -1 : b.att) - (a.att == null ? -1 : a.att) || (b.days || 0) - (a.days || 0) || a.name.localeCompare(b.name, 'ar'); });
+    // الحضور المنخفض لمن ليس له درجة الشهر (موجود في ملف الحضور بس)
+    var alerts = [];
+    list.forEach(function (r) {
+      var lowScore = r.score < BIO_EV_LOW;
+      if (lowScore && r.kind === 'شهري' && r.prev != null && r.prev < BIO_EV_LOW) alerts.push({ lv: 'bad', code: r.code, name: r.name, team: r.team, t: 'دون المستوى شهرين متتاليين (' + r.prev + ' ثم ' + r.score + ')' });
+      else if (lowScore) alerts.push({ lv: 'warn', code: r.code, name: r.name, team: r.team, t: 'دون المستوى: ' + r.score + ' من 10' + (r.notes ? ' · ' + r.notes : '') });
+      if (r.kind === 'يومي' && r.low >= BIO_EV_DAYS) alerts.push({ lv: 'bad', code: r.code, name: r.name, team: r.team, t: 'نزل عن ' + BIO_EV_LOW + ' في ' + r.low + ' أيام في الشهر' });
+      else if (r.kind === 'يومي' && r.low >= BIO_EV_DAYS - 1) alerts.push({ lv: 'info', code: r.code, name: r.name, team: r.team, t: 'قرّب من التنبيه: ' + r.low + ' أيام دون ' + BIO_EV_LOW + ' من ' + BIO_EV_DAYS });
+      if (r.att != null && r.att < BIO_EV_ATT) alerts.push({ lv: lowScore ? 'bad' : 'warn', code: r.code, name: r.name, team: r.team, t: (lowScore ? 'أداء منخفض + ' : '') + 'حضور منخفض: ' + Math.round(r.att * 100) + '%' });
+    });
+    var teams = [['assistant', 'المعاونون'], ['worker', 'الأمن الحيوي'], ['washer', 'الغسيل والتطهير']].map(function (t) {
+      var L = list.filter(function (r) { return r.job === t[0]; }), avg = L.length ? L.reduce(function (a, r) { return a + r.score; }, 0) / L.length : null;
+      return { k: t[0], label: t[1], n: L.length, avg: avg == null ? null : Math.round(avg * 100) / 100, grade: avg == null ? '' : BIO_evGrade10(avg), low: L.filter(function (r) { return r.score < BIO_EV_LOW; }).length, top: L.filter(function (r) { return r.approved; }).slice(0, 3).map(function (r) { return { code: r.code, name: r.name, score: r.score, att: r.att }; }) };
+    });
+    var all = list.length ? list.reduce(function (a, r) { return a + r.score; }, 0) / list.length : null;
+    return { month: m, months: M, teams: teams, rows: list, alerts: alerts, pending: pend, avg: all == null ? null : Math.round(all * 100) / 100, grade: all == null ? '' : BIO_evGrade10(all), lowAtt: list.filter(function (r) { return r.att != null && r.att < BIO_EV_ATT; }).length,
+      rules: { low: BIO_EV_LOW, att: BIO_EV_ATT, days: BIO_EV_DAYS }, canImport: canImport(u) };
+  };
+
+  /** بطاقة موظف: أيام الشهر (للغسيل) وآخر 6 شهور والحضور */
+  api.evfCard = function (pin, code, month) {
+    var u = H.auth(pin, true); if (!canView(u)) throw new Error('التقييمات للمشرف والمسؤول ومدير الإدارة فقط');
+    code = BIO_norm(code); var m = String(month || '').slice(0, 7);
+    var V = BIO_evfVirtual(store).filter(function (e) { return e.empCode === code; }).sort(function (a, b) { return a.period < b.period ? -1 : 1; });
+    var days = rows('evScores').filter(function (r) { return BIO_norm(r.empCode) === code && String(r.kind) === 'يومي' && BIO_dayOf(r.day).slice(0, 7) === m; })
+      .map(function (r) { return { d: BIO_dayOf(r.day), s: Number(r.score), ev: String(r.evaluator || ''), n: String(r.notes || ''), ok: !!String(r.approvedBy || '').trim() }; }).sort(function (a, b) { return a.d < b.d ? -1 : 1; });
+    var mon = rows('evScores').filter(function (r) { return BIO_norm(r.empCode) === code && String(r.kind) === 'شهري' && BIO_monthOf(r.period) === m; })[0] || null;
+    var st = store.find('evStaff', code) || null, a = BIO_evAttMap(store)[m + '|' + code] || null, cur = V.filter(function (e) { return e.period === m; })[0] || null;
+    var peers = BIO_evfVirtual(store).filter(function (e) { return e.period === m && cur && e.job === cur.job; }).sort(function (x, y) { return y.score10 - x.score10 || (y.att || 0) - (x.att || 0); });
+    return { code: code, name: cur ? cur.empName : st ? String(st.name) : '', team: cur ? cur.siteName : st ? String(st.team) : '', kind: cur && cur.job === 'washer' ? 'يومي' : 'شهري', month: m,
+      score: cur ? cur.score10 : null, grade: cur ? BIO_evGrade10(cur.score10) : '', low: cur ? cur.low : 0, rank: cur ? peers.map(function (e) { return e.empCode; }).indexOf(code) + 1 : null, of: peers.length,
+      days: days, monthly: mon ? { score: Number(mon.score), ev: String(mon.evaluator || ''), notes: String(mon.notes || ''), appr: String(mon.approvedBy || '') } : null, att: a,
+      history: V.slice(-6).map(function (e) { return { m: e.period, s: e.score10 }; }), rules: { low: BIO_EV_LOW, days: BIO_EV_DAYS, att: BIO_EV_ATT } };
+  };
+
+  /** شاشة التقييمات: درجات الملف بتنضم للتقييمات كتقييمات شهرية (من 100 داخلياً)، ومعاها وظيفة «عامل غسيل وتطهير» */
+  var ed = api.evalData;
+  if (ed) api.evalData = function (pin, o) {
+    var d = ed(pin, o); if (!d) return d;
+    var V = BIO_evfVirtual(store);
+    d.evals = (d.evals || []).concat(V.map(function (r) { return { id: r.id, time: r.time, period: r.period, job: r.job, empCode: r.empCode, empName: r.empName, siteName: r.siteName, scores: {}, total: r.total, grade: r.grade, strengths: '', improve: r.improve, plan: '', recommend: '',
+      status: r.status, by: r.by, byId: '', byRole: '', reviewBy: '', approveBy: r.approveBy, approveAt: r.approveAt || 0, returnWhy: '', src: 'file', score10: r.score10, att: r.att, days: r.days, low: r.low }; })).sort(function (a, b) { return (b.time || 0) - (a.time || 0); });
+    if (d.allJobs && !d.allJobs.some(function (j) { return j.k === 'washer'; })) d.allJobs.push({ k: 'washer', label: 'عامل غسيل وتطهير' });
+    d.evf = { canImport: (function () { try { return canImport(H.auth(pin, true)); } catch (e) { return false; } })(), n: V.length };
+    return d;
+  };
 }
