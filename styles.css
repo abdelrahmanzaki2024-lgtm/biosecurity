@@ -5924,3 +5924,8 @@ body.wsl-driving #bottomNav { display: none !important; }
 .evf-hist i { display: block; width: 100%; max-width: 46px; border-radius: 6px; background: var(--ink-2); }
 .evf-hist i.low { background: var(--warn); }
 .evf-hist span { font-size: 11px; color: var(--muted); }
+/* 36.4: صورة نجم الأسبوع/الشهر في شاشة الاختيار */
+.st-pick { display: flex; align-items: center; gap: 14px; margin: 4px 0 12px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 14px; }
+.st-pick .ch-ph.sm .av.big { width: 76px; height: 76px; border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251, 191, 36, .3); }
+.st-pick .av.ini.big svg { width: 28px; height: 28px; }
+.st-pick #csPhT { flex: 1; line-height: 1.6; }
