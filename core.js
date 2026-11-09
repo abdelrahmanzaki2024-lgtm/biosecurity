@@ -4518,6 +4518,11 @@ BIO_seed = function (now) { return BIO_seedV14(BIO_seedV13_(now), now); };
    ===================================================================== */
 TABLES.drivers = { sheet: 'السائقون على المركبات', key: 'id', cols: { id: 'الرقم', vehicleId: 'كود المركبة', vehicleName: 'المركبة', plate: 'رقم اللوحة', name: 'السائق', count: 'مرات الدخول', first: 'أول مرة', last: 'آخر مرة', gate: 'البوابة' } };
 TABLES.daily = { sheet: 'البيانات اليومية للمزارع', key: 'id', cols: { id: 'الرقم', day: 'اليوم', siteId: 'كود الموقع', siteName: 'الموقع', farm: 'اسم المزرعة في الملف', cycle: 'الدورة', status: 'الحالة', age: 'العمر (يوم)', houses: 'عدد العنابر', stock: 'الرصيد', placed: 'كتاكيت مسكنة', dead: 'النافق', killed: 'الفرز والذبح', inj: 'الحقن', lab: 'عينات المعمل', feed: 'العلف (كجم)', sold: 'المباع (طائر)', soldKg: 'المباع (كجم)', culls: 'كتاكيت مستبعدة', cum: 'النافق التراكمي للدورة', breed: 'السلالة', source: 'مصدر الكتاكيت', detail: 'تفاصيل العنابر', hash: 'بصمة البيانات', importId: 'رقم الاستيراد', time: 'آخر تحديث' } };
+/* v36.2: السرعة. البيانات اليومية الأقدم من 120 يوم (DAILY_HOT_DAYS) بتتنقل لورقة أرشيف، فالشاشات اليومية بتقرا الشهور الأخيرة بس،
+   وشاشات الدورات وتقارير نهاية الدورة والمقارنة بتقرا الاتنين مع بعض (BIO_dailyFull). */
+TABLES.dailyArch = { sheet: 'البيانات اليومية للمزارع - أرشيف', key: 'id', cols: { id: 'الرقم', day: 'اليوم', siteId: 'كود الموقع', siteName: 'الموقع', farm: 'اسم المزرعة في الملف', cycle: 'الدورة', status: 'الحالة', age: 'العمر (يوم)', houses: 'عدد العنابر', stock: 'الرصيد', placed: 'كتاكيت مسكنة', dead: 'النافق', killed: 'الفرز والذبح', inj: 'الحقن', lab: 'عينات المعمل', feed: 'العلف (كجم)', sold: 'المباع (طائر)', soldKg: 'المباع (كجم)', culls: 'كتاكيت مستبعدة', cum: 'النافق التراكمي للدورة', breed: 'السلالة', source: 'مصدر الكتاكيت', detail: 'تفاصيل العنابر', hash: 'بصمة البيانات', importId: 'رقم الاستيراد', time: 'آخر تحديث' } };
+function BIO_dailyHotDays(st) { var n = Number(st && st.DAILY_HOT_DAYS); return n >= 30 && n <= 2000 ? n : 120; }
+function BIO_dailyFull(store) { var a = []; try { a = store.all('dailyArch') || []; } catch (e) { a = []; } return store.all('daily').concat(a); }
 TABLES.imports = { sheet: 'سجل استيراد ملفات البيانات', key: 'id', cols: { id: 'رقم الاستيراد', time: 'الوقت', file: 'اسم الملف', day: 'تاريخ البيانات', from: 'من يوم', rows: 'صفوف مقروءة', sites: 'المحطات', added: 'أيام جديدة', updated: 'أيام عُدلت', dead: 'نافق آخر يوم', alerts: 'ملاحظات مهمة', findings: 'نتيجة التحليل', by: 'رفعه', byId: 'كود من رفعه' } };
 var BIO_FARM_STATUS = { 'استلام': 'استقبال كتاكيت', 'تسكين': 'استقبال كتاكيت', 'تسمين': 'تربية', 'تربية': 'تربية', 'بيع': 'بيع', 'placement': 'استقبال كتاكيت', 'growing': 'تربية', 'sale': 'بيع', 'sales': 'بيع' };
 
@@ -4559,7 +4564,7 @@ function BIO_v15(api, H) {
   function histFrom() { var f = String(st().HIST_FROM || '').trim(); return /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : '2023-01-01'; }
   function histMeta(u, sites) {
     var by = {}, from = histFrom();
-    if (has('daily')) store.all('daily').forEach(function (x) { var sid = BIO_norm(x.siteId), d = dk(x.day); if (!d || d < from || !H.inScope(u, sid, sites)) return; (by[sid] = by[sid] || []).push(d); });
+    if (has('daily')) BIO_dailyFull(store).forEach(function (x) { var sid = BIO_norm(x.siteId), d = dk(x.day); if (!d || d < from || !H.inScope(u, sid, sites)) return; (by[sid] = by[sid] || []).push(d); });
     var ranges = {};
     Object.keys(by).forEach(function (sid) {
       var L = by[sid].sort(), R = [], a = L[0], b = L[0];
@@ -4576,7 +4581,7 @@ function BIO_v15(api, H) {
     if (!has('daily')) throw new Error('جدول البيانات اليومية مش موجود');
     p = p || {};
     var sites = H.sitesById(), now = deps.now(), from = histFrom(), list = Array.isArray(p.days) ? p.days.slice(0, 2500) : [], have = {}, adds = [], skipped = {}, dup = 0;
-    store.all('daily').forEach(function (x) { have[dk(x.day) + '|' + BIO_norm(x.siteId)] = 1; });
+    BIO_dailyFull(store).forEach(function (x) { have[dk(x.day) + '|' + BIO_norm(x.siteId)] = 1; });
     var imp = clean(p.id, 40) || deps.id('IH');
     list.forEach(function (r) {
       var sid = BIO_norm(r.siteId), s = sites[sid], day = String(r.day || '');
@@ -4588,7 +4593,12 @@ function BIO_v15(api, H) {
       o.hash = BIO_hash ? BIO_hash(JSON.stringify([o.status, o.breed, o.source, o.detail].concat(NUMS.map(function (k) { return o[k]; })))) : '';
       o.importId = imp; o.time = now; have[id] = 1; adds.push(o);
     });
-    if (adds.length) deps.lock(function () { if (store.appendMany) store.appendMany('daily', adds); else adds.forEach(function (o) { store.append('daily', o); }); });
+    // v36.2: الأيام الأقدم من فترة البيانات الحديثة بتروح على طول لورقة الأرشيف
+    var cut = dayKey(now - BIO_dailyHotDays(st()) * D), hot = adds.filter(function (o) { return o.day >= cut; }), old = adds.filter(function (o) { return o.day < cut; });
+    var arch = old.length && has('dailyArch') ? 'dailyArch' : 'daily';
+    if (adds.length) deps.lock(function () {
+      [[hot, 'daily'], [arch === 'daily' ? [] : old, 'dailyArch'], [arch === 'daily' ? old : [], 'daily']].forEach(function (x) { if (!x[0].length) return; if (store.appendMany) store.appendMany(x[1], x[0]); else x[0].forEach(function (o) { store.append(x[1], o); }); });
+    });
     if (p.last) setSetting('HIST_DONE', from, 'اتستورد أرشيف ملف المزارع من التاريخ ده (بعده بيتقري آخر 80 يوم بس من الملف)');
     if (p.last && has('imports') && (adds.length || num(p.added, 0))) {
       var tot = num(p.total, 0);
@@ -7809,7 +7819,7 @@ function BIO_v27(api, H) {
     var ids = {}; farms.forEach(function (s) { ids[s.id] = s; });
     // اليومي مجمّع لكل محطة ودورة: نافق أول أسبوع ومنحنى النافق التراكمي حسب العمر والوزن المباع
     var dy = {};
-    rows('daily').forEach(function (r) {
+    BIO_dailyFull(store).forEach(function (r) {
       var id = BIO_norm(r.siteId); if (!ids[id]) return; var c = String(r.cycle == null ? '' : r.cycle).trim(); if (!c) return;
       var k = id + '|' + c, o = dy[k] = dy[k] || { ages: {}, sold: 0, soldKg: 0, w1: 0, n: 0, maxStock: 0 };
       var age = Math.round(num(r.age, 0)), dead = num(r.dead, 0) + num(r.killed, 0);
@@ -9876,7 +9886,7 @@ function BIO_v34(api, H) {
       .sort(function (a, b) { var pa = BIO_placeRank(a), pb = BIO_placeRank(b); return String(a.sector).localeCompare(String(b.sector), 'ar') || (pa == null ? 999 : pa) - (pb == null ? 999 : pb); });
     var ids = {}; list.forEach(function (s) { ids[s.id] = s; });
     var daily = {}, latest = '';
-    rows('daily').forEach(function (x) {
+    BIO_dailyFull(store).forEach(function (x) {
       var sid = BIO_norm(x.siteId); if (!ids[sid]) return; var day = dk(x.day); if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
       var o = { day: day, cycle: String(x.cycle || ''), age: num(x.age, 0), stock: num(x.stock, 0), placed: num(x.placed, 0), mort: num(x.dead, 0) + num(x.killed, 0), feed: num(x.feed, 0), sold: num(x.sold, 0), soldKg: num(x.soldKg, 0), source: String(x.source || ''), status: String(x.status || ''), detail: (function () { try { return typeof x.detail === 'string' ? JSON.parse(x.detail || '[]') : (x.detail || []); } catch (e) { return []; } })() };
       (daily[sid] = daily[sid] || []).push(o); if (day > latest) latest = day;
