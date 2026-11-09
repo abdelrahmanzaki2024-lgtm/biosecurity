@@ -1,10 +1,10 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v36-2';
+var CACHE = 'bio-v36-3';
 var SHELL = ['./', 'index.html', 'reports.html', 'wassalni.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(CACHE).then(function (c) { return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); })); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CACHE).then(function (c) { return Promise.all(SHELL.map(function (u) { return c.add(new Request(u, { cache: 'reload' })).catch(function () {}); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
@@ -15,10 +15,22 @@ self.addEventListener('fetch', function (e) {
   // ملفات التطبيق: من الشبكة أولاً ثم المحفوظ. المكتبات والخطوط: المحفوظ أولاً
   var sameOrigin = url.origin === self.location.origin;
   if (sameOrigin) {
-    // يتأكد من الخادم كل مرة (no-cache) علشان أي تحديث مرفوع يوصل فوراً من غير انتظار ذاكرة المتصفح
-    var fresh = req.mode === 'navigate' ? req : new Request(req, { cache: 'no-cache' });
-    e.respondWith(fetch(fresh).then(function (res) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); return res; })
-      .catch(function () { return caches.match(req, { ignoreSearch: true }).then(function (r) { return r || caches.match('index.html'); }); }));
+    // 36.3 السرعة: ملفات التطبيق (js/css/صور) بتتفتح من المحفوظ على الجهاز فوراً، وفي الخلفية بتتحدّث من الخادم للمرة الجاية.
+    // أي إصدار جديد بيغيّر اسم CACHE هنا، فعامل الخدمة الجديد بينزّل كل الملفات طازة ويعيد فتح التطبيق لوحده.
+    if (req.mode === 'navigate') {
+      // الصفحة نفسها: من الشبكة لو ردّت في 3 ثواني، وإلا المحفوظ
+      var net = fetch(req).then(function (res) { if (res && res.ok) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put('index.html', copy); }); } return res; });
+      e.respondWith(new Promise(function (ok) {
+        var done = false, t = setTimeout(function () { caches.match('index.html').then(function (r) { if (r && !done) { done = true; ok(r); } }); }, 3000);
+        net.then(function (r) { if (!done) { done = true; clearTimeout(t); ok(r); } }).catch(function () { caches.match(req, { ignoreSearch: true }).then(function (r) { return r || caches.match('index.html'); }).then(function (r) { if (!done) { done = true; clearTimeout(t); ok(r); } }); });
+      }));
+      return;
+    }
+    var upd = fetch(new Request(req, { cache: 'no-cache' })).then(function (res) { if (res && res.ok) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); } return res; });
+    e.respondWith(caches.match(req, { ignoreSearch: true }).then(function (hit) {
+      if (hit) { e.waitUntil(upd.catch(function () {})); return hit; }
+      return upd.catch(function () { return caches.match('index.html'); });
+    }));
   } else if (/unpkg\.com|cdnjs\.cloudflare\.com|fonts\.(googleapis|gstatic)\.com|gstatic\.com\/firebasejs/.test(url.href)) {
     e.respondWith(caches.match(req).then(function (hit) {
       var net = fetch(req).then(function (res) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); return res; }).catch(function () { return hit; });
