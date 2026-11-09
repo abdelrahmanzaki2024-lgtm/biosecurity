@@ -3169,7 +3169,7 @@
       var list = cards.cards.filter(function (x) { return x.active && (!grp || x.group === grp); }), groups = [], url = cards.appUrl || appLink();
       list.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
       $('cdCards').innerHTML = groups.map(function (g) {
-        var inG = list.filter(function (x) { return x.group === g; }), off = n && !inG.some(function (x) { return pick[x.id]; });
+        var inG = list.filter(function (x) { return x.group === g; }), off = false;   // v36.1: شاشة الأكواد مفيهاش اختيار كروت (كان بيدي «n is not defined»)
         return '<div class="cd-pgrp' + (off ? ' uc-off' : '') + '"><h3 class="cd-gh">' + icon('pin') + ' ' + esc(g) + '</h3><div class="cd-cards">' + inG.map(function (x) {
           var lv = CODE_LV[x.lvl] || ['حساب', 'user'];
           return '<div class="cd-card lv-' + esc(x.lvl || 'X') + '"><div class="cd-top"><img src="' + esc(logoSrc()) + '" alt=""><span><b>منصة الأمن الحيوي</b><span>' + esc(S.session.company) + '</span></span><span class="cd-lv">' + icon(lv[1]) + ' ' + esc(x.roleLabel) + '</span></div>' +
