@@ -5968,3 +5968,42 @@ body.wsl-driving #bottomNav { display: none !important; }
 .sl-wd span { display: block; background: color-mix(in srgb, var(--ok) 70%, transparent); border-radius: 6px 6px 2px 2px; min-height: 2px; }
 .sl-wd b { font-size: .78rem; } .sl-wd small { font-size: .68rem; color: var(--muted); }
 .sl-tbl tr.sl-tot th, .sl-tbl tr.sl-tot td { font-weight: 800; background: var(--surface-2); }
+
+/* ===== v36.8: متابعة البيع الحالي (الرئيسية + معدلات البيع) ===== */
+.sl-head .sl-seg { max-width: none; display: flex; flex-wrap: wrap; gap: 4px; }
+.sll { display: grid; gap: 12px; border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--line)); background: linear-gradient(180deg, color-mix(in srgb, var(--ok-soft) 70%, var(--surface)) 0, var(--surface) 140px); }
+.sll.end { border-color: var(--line); background: var(--surface); }
+.sll-home { margin-bottom: 14px; }
+.sll-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sll-top h2 { margin: 2px 0 0; font-size: 1.2rem; }
+.sll-k { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 700; color: var(--ok); }
+.sll-k .ic { width: 16px; height: 16px; }
+.sll-bar { position: relative; height: 26px; border-radius: 13px; background: color-mix(in srgb, var(--warn) 16%, var(--surface-2)); overflow: hidden; }
+.sll-bar i { position: absolute; inset-block: 0; inset-inline-start: 0; background: linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 75%, #fff)); border-radius: 13px; transition: width .6s ease; }
+.sll-bar b { position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.sll-bl { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); margin-top: -4px; }
+.sll-bl i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; background: color-mix(in srgb, var(--warn) 35%, var(--surface-2)); }
+.sll-bl i.ok { background: var(--ok); }
+.sll .kpis { margin: 0; }
+.sll-td { margin: 0; color: var(--muted); }
+.sll-st { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sll-s { padding: 9px 11px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); display: grid; gap: 6px; }
+.sll-sh { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sll-sh b { font-size: .88rem; }
+.sll-sh em { font-style: normal; font-size: .7rem; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--surface); color: var(--muted); white-space: nowrap; }
+.sll-s.warn .sll-sh em { background: var(--warn-soft); color: var(--warn); }
+.sll-s.ok .sll-sh em { background: var(--ok-soft); color: var(--ok); }
+.sll-mini { display: block; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--warn) 18%, var(--surface)); overflow: hidden; }
+.sll-mini i { display: block; height: 100%; background: var(--ok); border-radius: 3px; }
+.sll-s.n .sll-mini i { background: var(--line-2); }
+.sll-s small { font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sl-svg .sll-col { fill: color-mix(in srgb, var(--ok) 65%, transparent); }
+.sl-svg .sll-cum { fill: none; stroke: var(--brand); stroke-width: 2.5; }
+.sl-svg .sll-dot { fill: var(--brand); }
+.sl-tbl .pill.n { background: var(--surface-2); color: var(--muted); }
+@media (max-width: 640px) { .sll-top h2 { font-size: 1.05rem; } .sll-st { grid-template-columns: 1fr 1fr; } }
+@media print { .sll-home { display: none; } }
+.sll .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 760px) { .sll .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } .sll.sll-full .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1500px) { .sll.sll-full .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.sll .kpi b { font-size: clamp(1.1rem, 1.9vw, 1.5rem); white-space: nowrap; }
