@@ -6364,3 +6364,40 @@ body.rpt-print .mg-ui { display: none !important; }
 .wa-gate-in .gico svg { width: 22px; height: 22px; }
 @media (max-width: 640px) { .wa-row { grid-template-columns: 1fr 1fr; } .wa-gate-in .btn { width: 100%; justify-content: center; } }
 .li .av.warn { background: var(--warn-soft); color: var(--warn); }
+/* 36.13: حالة المغسلة وإنذار التوقف وبحث اليومية */
+.wa-st { padding: 14px 16px; }
+.wa-st-in { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wa-st-in .t { flex: 1; min-width: 200px; display: grid; gap: 2px; }
+.wa-st-in .t b { font-size: 1.05rem; }
+.wa-st-ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+.wa-st-ico svg { width: 24px; height: 24px; }
+.wa-st-in.ok .wa-st-ico { background: var(--ok-soft); color: var(--ok); }
+.wa-st-in.bad .wa-st-ico { background: var(--bad-soft); color: var(--bad); animation: waPulse 1.4s ease-in-out infinite; }
+.wa-st-in.bad .t b { color: var(--bad); }
+.wa-hist { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.wa-hist summary { cursor: pointer; font-weight: 700; font-size: .9rem; color: var(--ink-2); }
+.wa-hist .vr-play { margin-top: 6px; }
+.wa-hist .li .av.ok { background: var(--ok-soft); color: var(--ok); }
+@keyframes waPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--bad) 45%, transparent); } 50% { box-shadow: 0 0 0 10px transparent; } }
+.wa-alarm { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); color: #fff; overflow-y: auto; }
+.wa-alarm.bad { background: radial-gradient(900px 500px at 50% 0%, #b3141f, #3a070b 70%); animation: waFlash 1.2s ease-in-out infinite; }
+.wa-alarm.ok { background: radial-gradient(900px 500px at 50% 0%, #0f7a55, #06261b 70%); }
+@keyframes waFlash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+.wa-al-in { width: min(560px, 100%); display: grid; gap: 12px; justify-items: center; text-align: center; }
+.wa-al-ico { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.14); box-shadow: 0 0 0 14px rgba(255,255,255,.07); }
+.wa-al-ico svg { width: 50px; height: 50px; }
+.wa-al-k { font-size: .85rem; font-weight: 800; letter-spacing: .03em; padding: 4px 14px; border-radius: 999px; background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.25); }
+.wa-al-in h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); margin: 0; color: #fff; text-wrap: balance; }
+.wa-al-in p { margin: 0; color: rgba(255,255,255,.88); }
+.wa-al-note { background: rgba(0,0,0,.22); border-radius: 12px; padding: 10px 14px; }
+.wa-al-v { width: 100%; display: grid; gap: 8px; justify-items: center; background: rgba(255,255,255,.1); border-radius: 16px; padding: 14px; }
+.wa-al-v audio { width: 100%; }
+.wa-al-v .btn { color: #fff; border-color: rgba(255,255,255,.35); }
+.wa-al-ok { width: 100%; justify-content: center; background: #fff; color: #222; border: 0; }
+.wa-al-ok:disabled { opacity: .45; }
+.wa-al-ok.ready { animation: waPulse 1.4s ease-in-out infinite; }
+.wa-alarm .xs { color: rgba(255,255,255,.75); }
+.ws-q { flex: 2 1 240px; }
+.ws-pre { margin-top: 10px; }
+.ws-sum .kpis { margin: 0; }
+@media (max-width: 640px) { .wa-st-in .btn { flex: 1 1 100%; justify-content: center; } .wa-st-in .t { min-width: 0; } }
