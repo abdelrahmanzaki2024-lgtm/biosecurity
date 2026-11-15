@@ -6343,3 +6343,24 @@ body.rpt-print .mg-ui { display: none !important; }
   .lm-sm { flex: none; }
   .lm-ready { padding: 12px; }
 }
+/* 36.12: تسجيل سيارة في المغسلة الخارجية والمبيع */
+.wa-g { align-items: start; }
+.wa-form { display: grid; gap: 12px; }
+.wa-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; }
+.wa-row .field, .wa-form > .field { margin: 0; }
+.wa-k { margin-bottom: 12px; }
+.wa-cks { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.wa-ck { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; font-weight: 600; cursor: pointer; }
+.wa-ck input { width: 18px; height: 18px; accent-color: var(--brand); }
+.wa-list .li.wa-open { border-inline-start: 3px solid var(--warn); }
+.wa-tm { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: .78rem; color: var(--muted); direction: rtl; }
+.wa-tm svg { width: 13px; height: 13px; vertical-align: -2px; }
+.wa-tag { font-size: .7rem; padding: 1px 6px; border-radius: 6px; font-weight: 700; }
+.wa-tag.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.wa-tag.no { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.wa-gate-in { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wa-gate-in .t { flex: 1; min-width: 180px; display: grid; gap: 2px; }
+.wa-gate-in .gico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand); flex: none; }
+.wa-gate-in .gico svg { width: 22px; height: 22px; }
+@media (max-width: 640px) { .wa-row { grid-template-columns: 1fr 1fr; } .wa-gate-in .btn { width: 100%; justify-content: center; } }
+.li .av.warn { background: var(--warn-soft); color: var(--warn); }
