@@ -1,5 +1,5 @@
 /* عامل الخدمة: تشغيل التطبيق دون إنترنت + استقبال الإشعارات الفورية والقرار منها مباشرة */
-var CACHE = 'bio-v36-13';
+var CACHE = 'bio-v36-14';
 var SHELL = ['./', 'index.html', 'reports.html', 'wassalni.html', 'styles.css', 'fonts.css', 'app.js', 'core.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'logo.png'];
 importScripts('config.js');
 
@@ -54,11 +54,13 @@ self.addEventListener('push', function (e) {
 function show(d) {
   var urgent = d.kind === 'request' || d.kind === 'violation' || d.kind === 'report' || d.kind === 'escalation' || /عاجل/.test(d.title || '');
   var bul = d.kind === 'bulletin'; if (bul && d.level && d.level !== 'عادي') urgent = true; // v33: رسائل الإدارة
+  var wa = d.kind === 'washstop' || d.level === 'مغسلة'; // 36.13.1: إنذار المغسلة: يفضل ظاهر وبيرن ويهتز مع كل تكرار
+  if (wa) { urgent = true; bul = false; }
   return self.registration.showNotification(d.title || 'الأمن الحيوي', {
     body: d.body || '', dir: 'rtl', lang: 'ar', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
-    tag: d.approvalId || d.reportId || (bul && d.msgId ? 'msg-' + d.msgId : '') || d.kind || 'bio', renotify: true, requireInteraction: urgent, vibrate: bul ? (d.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220, 100, 220]) : [200, 100, 200],
+    tag: wa ? 'wash-alert' : d.approvalId || d.reportId || (bul && d.msgId ? 'msg-' + d.msgId : '') || d.kind || 'bio', renotify: true, requireInteraction: urgent, silent: false, vibrate: wa ? [900, 250, 900, 250, 900, 250, 1500] : bul ? (d.level === 'عاجل' ? [400, 150, 400, 150, 700] : [220, 100, 220, 100, 220]) : [200, 100, 200],
     image: /^https:\/\//.test(d.img || '') ? d.img : undefined,
-    data: d, actions: d.kind === 'request' && d.approvalId ? [{ action: 'approve', title: 'موافقة' }, { action: 'reject', title: 'رفض' }]
+    data: d, actions: wa ? [{ action: 'wa-open', title: 'افتح واسمع الرسالة' }] : d.kind === 'request' && d.approvalId ? [{ action: 'approve', title: 'موافقة' }, { action: 'reject', title: 'رفض' }]
       : (d.kind === 'report' || d.kind === 'escalation') && d.reportId ? [{ action: 'r-ack', title: 'تم الاستلام' }, { action: 'r-alert', title: 'رفع إنذار على الموقع' }] : []
   });
 }
@@ -95,6 +97,7 @@ self.addEventListener('notificationclick', function (e) {
   }
   /* v33.3: رسالة الإدارة تفتح على الرسالة نفسها (تظهر الأول بالشكل الكبير، وبعدها تفضل في «رسائل الإدارة») */
   var route = d.route || '#';
+  if (d.kind === 'washstop' || d.level === 'مغسلة') route = '#wash';
   if (d.kind === 'bulletin' && d.msgId && !/^#inbox\/m\//.test(route)) route = '#inbox/m/' + d.msgId;
   e.waitUntil(kvSet('pendingRoute', { route: route, t: Date.now() }).then(function () { return openApp(route); }));
 });

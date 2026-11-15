@@ -6401,3 +6401,27 @@ body.rpt-print .mg-ui { display: none !important; }
 .ws-pre { margin-top: 10px; }
 .ws-sum .kpis { margin: 0; }
 @media (max-width: 640px) { .wa-st-in .btn { flex: 1 1 100%; justify-content: center; } .wa-st-in .t { min-width: 0; } }
+/* 36.14: تفعيل إنذار المغسلة */
+.wa-set{border-inline-start:4px solid var(--red)}
+.wa-set.ok{border-inline-start-color:var(--ok,#1e8e5a)}
+.wa-set-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.wa-set-h h2{margin:0}
+.wa-set-h .pill{margin-inline-start:auto;white-space:nowrap}
+.wa-set-ico{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);flex:0 0 auto}
+.wa-set.ok .wa-set-ico{background:color-mix(in srgb,var(--ok,#1e8e5a) 14%,transparent);color:var(--ok,#1e8e5a)}
+.wa-set-l{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
+.wa-set-l li{display:flex;align-items:center;gap:8px;font-size:.9em;color:var(--muted,#667)}
+.wa-set-l li svg{width:16px;height:16px;flex:0 0 auto}
+.wa-set-l li.ok{color:inherit}
+.wa-set-l li.ok svg{color:var(--ok,#1e8e5a)}
+.wa-sws{display:grid;gap:10px;margin:12px 0}
+.wa-sw{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line,#dde);border-radius:14px}
+.wa-sw.ok{border-color:color-mix(in srgb,var(--ok,#1e8e5a) 45%,transparent);background:color-mix(in srgb,var(--ok,#1e8e5a) 6%,transparent)}
+.wa-sw-n{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--red);color:#fff}
+.wa-sw.ok .wa-sw-n{background:var(--ok,#1e8e5a)}
+.wa-sw-n svg{width:16px;height:16px}
+.wa-sw-b{display:grid;gap:6px;min-width:0;flex:1}
+.wa-sw-b .btn{justify-self:start}
+.wa-guide{margin:0;padding-inline-start:18px;display:grid;gap:4px;font-size:.88em;line-height:1.6}
+.wa-done{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ok,#1e8e5a);margin:0 0 8px}
+.wa-done svg{width:18px;height:18px}
