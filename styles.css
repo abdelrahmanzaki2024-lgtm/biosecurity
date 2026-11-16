@@ -6425,3 +6425,27 @@ body.rpt-print .mg-ui { display: none !important; }
 .wa-guide{margin:0;padding-inline-start:18px;display:grid;gap:4px;font-size:.88em;line-height:1.6}
 .wa-done{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ok,#1e8e5a);margin:0 0 8px}
 .wa-done svg{width:18px;height:18px}
+
+/* 36.16: تعديل وحذف المركبات + طباعة الكروت للكل أو فردي */
+.btn.bad-o { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); background: transparent; }
+.btn.bad-o:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+#veForm .btn.bad { background: var(--red); color: #fff; }
+.ve-drv { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 14px; }
+.ve-drow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.ve-drow input { min-width: 0; }
+.ve-drow.gone input { text-decoration: line-through; opacity: .55; }
+#veForm .warnbox input { margin-block: 8px; }
+.uc-pick { justify-content: space-between; flex-wrap: wrap; }
+.uc-pick label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.qc-acts { gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.qc-pick { align-self: stretch; display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #555; cursor: pointer; justify-self: start; }
+.qrcards.q-sel .qrcard.q-off { opacity: .45; }
+.qrcard .qacts { flex-wrap: wrap; justify-content: center; }
+@media print {
+  .qrcards .q-off { display: none !important; }
+  body.pr-one .qrcard:not(.pr-me), body.pr-one .uc-item:not(.pr-me) { display: none !important; }
+  body.pr-one .cd-pgrp:not(:has(.pr-me)), body.pr-one .cd-gh { display: none !important; }
+  body.pr-one .uc-off { display: grid !important; opacity: 1 !important; }
+  body.pr-one .qrcard.pr-me, body.pr-one .uc-item.pr-me { display: grid !important; opacity: 1 !important; }
+  .qc-pick { display: none !important; }
+}
