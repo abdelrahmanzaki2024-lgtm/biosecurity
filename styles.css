@@ -6449,3 +6449,10 @@ body.rpt-print .mg-ui { display: none !important; }
   body.pr-one .qrcard.pr-me, body.pr-one .uc-item.pr-me { display: grid !important; opacity: 1 !important; }
   .qc-pick { display: none !important; }
 }
+/* 36.16.1: رقم اللوحة ظاهر على كارت المركبة */
+.qc-plate { width: min(100%, 220px); border: 3px solid #1d2a6b; border-radius: 10px; overflow: hidden; background: #fff; color: #111; display: grid; margin-top: 4px; }
+.qc-plate i { font-style: normal; background: #1d6fd8; color: #fff; font-size: .72rem; font-weight: 800; letter-spacing: .05em; padding: 2px 0; }
+.qc-plate b { font-size: 1.85rem; font-weight: 900; line-height: 1.3; letter-spacing: .04em; padding: 2px 6px; overflow-wrap: anywhere; }
+.qc-plate b.l2 { font-size: 1.45rem; }
+.qc-plate b.l3 { font-size: 1.15rem; }
+@media print { .qc-plate { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
