@@ -640,7 +640,7 @@ tr.sel td { background: var(--red-soft); }
 @media print { .audit { box-shadow: none; padding: 0; } .au-sec { break-inside: avoid-page; } }
 
 @media print {
-  .topbar, .bottomnav, .sidenav, .no-print, .toasts, .demo-strip { display: none !important; }
+  .topbar, .bottomnav, .sidenav, .no-print, .toasts, .demo-strip, #hubTabs, .ht-tabs, .ht-name { display: none !important; }
   html, body, .main { background: #fff; padding: 0; }
   .shell { display: block; }
   .card { box-shadow: none; }
@@ -6456,3 +6456,40 @@ body.rpt-print .mg-ui { display: none !important; }
 .qc-plate b.l2 { font-size: 1.45rem; }
 .qc-plate b.l3 { font-size: 1.15rem; }
 @media print { .qc-plate { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* 36.16.2: ورقة طباعة الكروت: الكروت بس، بمقاس ثابت، شبكة منظمة على A4، خطوط قص منقطة */
+#printRoot { display: none; }
+@page prc { size: A4 portrait; margin: 8mm; }
+@media print {
+  body.pr-sheet { background: #fff !important; overflow: visible !important; }
+  body.pr-sheet > *:not(#printRoot) { display: none !important; }
+  body.pr-sheet #printRoot { display: block !important; page: prc; direction: rtl; color: #111; font-family: var(--font-body, Tajawal, sans-serif); }
+  #printRoot .pr-grid { display: grid; justify-content: center; align-content: start; gap: 4mm; }
+  #printRoot * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: none !important; }
+  /* كروت الأفراد والمركبات والمعدات: 62×90 مم، 3 في الصف، 9 في الصفحة */
+  #printRoot.pr-qr .pr-grid { grid-template-columns: repeat(3, 62mm); grid-auto-rows: 90mm; }
+  #printRoot.pr-qr .qrcard { width: 62mm; height: 90mm; box-sizing: border-box; margin: 0; padding: 3mm 3mm 2.5mm; border: .3mm dashed #9a9a9a; border-top: 2.6mm solid #c8182a; border-radius: 3mm; background: #fff; color: #111;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1.2mm; text-align: center; overflow: hidden; break-inside: avoid; page-break-inside: avoid; opacity: 1 !important; }
+  #printRoot.pr-qr .qrcard .co { font-size: 7.5pt; gap: 1.5mm; white-space: nowrap; }
+  #printRoot.pr-qr .qrcard .co img, #printRoot.pr-qr .qrcard .co svg { width: 6mm; height: 6mm; }
+  #printRoot.pr-qr .qrcard .qr { width: 36mm; height: 36mm; display: grid; place-items: center; flex: none; }
+  #printRoot.pr-qr .qrcard .qr img, #printRoot.pr-qr .qrcard .qr canvas { width: 36mm !important; height: 36mm !important; }
+  #printRoot.pr-qr .qrcard > b { font-size: 10.5pt; line-height: 1.3; max-height: 2.7em; overflow: hidden; }
+  #printRoot.pr-qr .qrcard .kind { font-size: 7.5pt; padding: .4mm 2.5mm; border-radius: 99px; background: #fcebec; color: #a81323; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  #printRoot.pr-qr .qrcard .cid { font: 700 10pt "IBM Plex Mono", monospace; letter-spacing: .12em; }
+  #printRoot.pr-qr .qrcard .ver { font-size: 7pt; color: #555; }
+  #printRoot.pr-qr .qc-plate { width: 52mm; margin-top: auto; border-width: .6mm; border-radius: 2mm; }
+  #printRoot.pr-qr .qc-plate i { font-size: 6.5pt; padding: .3mm 0; }
+  #printRoot.pr-qr .qc-plate b { font-size: 17pt; line-height: 1.25; }
+  #printRoot.pr-qr .qc-plate b.l2 { font-size: 13pt; }
+  #printRoot.pr-qr .qc-plate b.l3 { font-size: 10pt; }
+  /* كروت الدخول للمستخدمين: 92 مم عرض، 2 في الصف */
+  #printRoot.pr-login .pr-grid { grid-template-columns: repeat(2, 92mm); }
+  #printRoot.pr-login .cd-card { width: 92mm; box-sizing: border-box; margin: 0; border: .3mm dashed #9a9a9a; border-radius: 3mm; break-inside: avoid; page-break-inside: avoid; opacity: 1 !important; font-size: 9pt; }
+  #printRoot.pr-login .cd-qr { width: 26mm; height: 26mm; }
+  #printRoot.pr-login .cd-qr img, #printRoot.pr-login .cd-qr canvas { width: 24mm !important; height: 24mm !important; }
+}
+@media print { /* لو اتطبعت الشاشة بـ Ctrl+P من غير زر الطباعة */
+  body:not(.pr-sheet) .qrcards { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 4mm !important; }
+  body:not(.pr-sheet) .qrcard { break-inside: avoid; box-shadow: none; }
+}
