@@ -6493,3 +6493,8 @@ body.rpt-print .mg-ui { display: none !important; }
   body:not(.pr-sheet) .qrcards { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 4mm !important; }
   body:not(.pr-sheet) .qrcard { break-inside: avoid; box-shadow: none; }
 }
+
+/* 36.17: إنذارات أيام سابقة لسه مفتوحة */
+.ews-old { margin-top: 12px; display: grid; gap: 10px; }
+.ews-old > .btn { justify-self: start; }
+.sll-s small > span { white-space: nowrap; }
