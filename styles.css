@@ -6498,3 +6498,30 @@ body.rpt-print .mg-ui { display: none !important; }
 .ews-old { margin-top: 12px; display: grid; gap: 10px; }
 .ews-old > .btn { justify-self: start; }
 .sll-s small > span { white-space: nowrap; }
+
+/* v36.18: تنفيذ مقترح البيع */
+.sl-ex { display: inline-block; min-width: 3.4em; text-align: center; padding: 2px 8px; border-radius: 999px; font-weight: 800; font-family: var(--font-mono); font-size: .86em; background: var(--surface-2); color: var(--ink-2); }
+.sl-ex.ok { background: var(--ok-soft); color: var(--ok); }
+.sl-ex.warn { background: var(--warn-soft); color: var(--warn); }
+.sl-ex.bad { background: var(--bad-soft); color: var(--bad); }
+.sl-svg .sll-plan { stroke: var(--bad); stroke-width: 3; stroke-linecap: round; }
+.sl-tbl tr.sl-click { cursor: pointer; }
+.sl-tbl tr.sl-click:hover th, .sl-tbl tr.sl-click:hover td { background: var(--surface-2); }
+.sl-tbl tr.sl-wait th, .sl-tbl tr.sl-wait td { background: color-mix(in srgb, var(--info-soft) 60%, transparent); }
+.sl-plan .fx-h { margin: 18px 0 8px; }
+.sl-plan-empty { margin: 0 0 14px; }
+.sll-pl { margin-top: 6px; }
+.infobox.bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 35%, transparent); color: var(--ink); }
+.infobox.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 35%, transparent); color: var(--ink); }
+.fx-wl { margin: 6px 0 0; padding-inline-start: 18px; font-size: .86rem; line-height: 1.7; }
+.fx-wd { margin: 10px 0; font-size: .9rem; } .fx-wd summary { cursor: pointer; font-weight: 700; color: var(--warn); }
+.fx-plan .row-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.sl-dh { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin-bottom: 14px; }
+.sl-dh > div { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 8px; font-size: .86rem; }
+.sl-dh em { font-style: normal; font-family: var(--font-mono); font-weight: 700; }
+.sl-dh .sll-mini i { background: var(--bad); }
+.sl-plan .kpis { margin: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 760px) { .sl-plan .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .sl-plan .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.sl-plan .kpi b { font-size: clamp(1.1rem, 1.9vw, 1.5rem); white-space: nowrap; }
+.sl-plan .kpi span:last-child { overflow-wrap: anywhere; }
