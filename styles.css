@@ -6525,3 +6525,11 @@ body.rpt-print .mg-ui { display: none !important; }
 @media (min-width: 1200px) { .sl-plan .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .sl-plan .kpi b { font-size: clamp(1.1rem, 1.9vw, 1.5rem); white-space: nowrap; }
 .sl-plan .kpi span:last-child { overflow-wrap: anywhere; }
+
+/* v36.19: التقرير المصور */
+.sll-hb { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.simg-bar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.simg-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.simg-box { text-align: center; }
+.simg-box img { display: block; width: 100%; max-width: 760px; margin: 0 auto; border-radius: 14px; box-shadow: var(--shadow); }
+.simg-n { flex-basis: 100%; margin: 0; }
