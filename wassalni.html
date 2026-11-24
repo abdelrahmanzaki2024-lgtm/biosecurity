@@ -2112,6 +2112,7 @@ html.rsim-on .nav{padding-top:calc(var(--rsh,110px) + 16px + env(safe-area-inset
           '<button class="wk-b dirty" data-act="w_go" data-id="' + esc(p.id) + '" data-k="dirty"><span class="wk-ic">د</span><span><b>الطريق الديرتي ← البوابة الخلفية</b><small>من طريق المبيع · التجار والنافق والسبلة والخدمات</small><em class="' + (kd ? 'y' : '') + '">' + (kd ? 'متسجّل · لفة بلفة بالصوت' : 'لسه مش متسجّل · سهم على خط مستقيم') + '</em></span></button></div>';
       })() : (rd.length ? '<div class="wps-n ok">' + ic('road', 'sm') + '<span><b>ليه طريق متسجّل</b>هيوجّهك لفة بلفة على نفس الطريق اللي المشرف سجّله بالعربية، وينبّهك أول ما تطلع منه.</span></div>'
         : '<div class="wps-n">' + ic('nav', 'sm') + '<span><b>مافيش طريق متسجّل لسه</b>هيوجّهك بسهم كبير على خط مستقيم للمكان، وامشي على الطرق الممهدة ناحية السهم.</span></div>')) +
+      backHTML(p, d) +
       '<div class="wps-n bio">' + ic('shield', 'sm') + '<span><b>قبل ما تدخل</b>عدّي على منطقة التطهير والتزم بتعليمات البوابة. الأمن الحيوي بيحمي الكل.</span></div>' +
       (isStation(p) ? '' : '<button class="btn" data-act="w_go" data-id="' + esc(p.id) + '">' + ic('nav') + '<span>ابدأ وصّلني</span></button>') +
       (CFG.demo ? '<button class="btn dk" data-act="w_sim" data-id="' + esc(p.id) + '" style="margin-top:8px">' + ic('play') + '<span>جرّب رحلة تجريبية (محاكاة)</span></button>' : '') +
@@ -2130,6 +2131,36 @@ html.rsim-on .nav{padding-top:calc(var(--rsh,110px) + 16px + env(safe-area-inset
     A.nav.open({ mode: 'free', title: nm, targets: [tg], roads: rs, hotline: CFG.hotline || '' });
   }
   H.w_go = function (el) { var p = byId(el.dataset.id); if (p) go(p, el.dataset.k || ''); };
+
+  /* 36.24.3: «وصّلني» في الرجوع. طريق الرجوع من أي محطة (كلين أو ديرتي) هو نفس طريق الذهاب بالعكس:
+     نفس النقط من الآخر للأول، ونفس العلامات (المفارق واللفات) في أماكنها، واللفات بتتحسب من جديد في الاتجاه العكسي. */
+  function decPts(r) { var raw = r.pts || (W.C3A && W.C3A.U && W.C3A.U.polyDec ? W.C3A.U.polyDec(r.poly) : []); return (raw || []).map(function (a) { return Array.isArray(a) ? [+a[0], +a[1]] : [+a.lat, +a.lng]; }).filter(function (a) { return isFinite(a[0]) && isFinite(a[1]); }); }
+  function revRoad(r) {
+    var pts = decPts(r); if (pts.length < 2) return null;
+    var n = pts.length;
+    return { id: (r.id || '') + '~back', sid: r.sid, kind: r.kind, name: 'رجوع: ' + (r.name || ''), pts: pts.slice().reverse(),
+      marks: (r.marks || []).map(function (m) { return { i: n - 1 - Math.max(0, Math.min(n - 1, Math.round(+m.i || 0))), k: m.k, t: m.t }; }), back: true };
+  }
+  var BACK_T = { clean: 'أول الطريق الكلين (بوابة التطهير اللي دخلت منها)', dirty: 'أول الطريق الديرتي (طريق المبيع)', '': 'أول الطريق المتسجّل' };
+  function backHTML(p, d) {
+    var ks = isStation(p) ? ['clean', 'dirty'] : [''], here = d != null && d < 700;
+    var bs = ks.filter(function (k) { return roadsFor(p.sid, k || undefined).length; });
+    if (!bs.length) return '';
+    return '<div class="wps-n back' + (here ? ' ok' : '') + '">' + ic('nav', 'sm') + '<span><b>' + (here ? 'إنت عند المكان ده دلوقتي؟ ارجع على نفس الطريق' : 'الرجوع من هنا') + '</b>طريق الرجوع هو نفس طريق الذهاب بالعكس، لفة بلفة بالصوت لحد أول الطريق.</span></div>' +
+      '<div class="wk">' + bs.map(function (k) {
+        return '<button class="wk-b ' + (k || 'clean') + '" data-act="w_back" data-id="' + esc(p.id) + '" data-k="' + k + '"><span class="wk-ic">' + (k === 'dirty' ? 'د' : 'ك') + '</span><span><b>رجوع' + (k ? ' على ' + KIND_T[k] : '') + '</b><small>من ' + esc(p.name) + ' ← ' + esc(BACK_T[k]) + '</small><em class="y">نفس طريق الذهاب بالعكس · لفة بلفة بالصوت</em></span></button>';
+      }).join('') + '</div>';
+  }
+  function goBack(p, kind) {
+    A.closeSheet();
+    if (!A.nav) return;
+    var rs = roadsFor(p.sid, kind || undefined).map(revRoad).filter(Boolean);
+    if (!rs.length) { A.toast('مافيش طريق متسجّل للمكان ده علشان نرجع عليه', 'err'); return; }
+    var e = rs[0].pts[rs[0].pts.length - 1];
+    var nm = 'الرجوع من ' + p.name + ' ← ' + BACK_T[kind || ''];
+    A.nav.open({ mode: 'free', title: nm, targets: [{ lat: e[0], lng: e[1], name: nm, sid: p.sid || '' }], roads: rs, hotline: CFG.hotline || '' });
+  }
+  H.w_back = function (el) { var p = byId(el.dataset.id); if (p) goBack(p, el.dataset.k || ''); };
 
   /* ---------- محاكاة رحلة (النسخة التجريبية بس): موقع وهمي بيمشي على الطريق ---------- */
   var SIM = null;
@@ -2179,7 +2210,7 @@ html.rsim-on .nav{padding-top:calc(var(--rsh,110px) + 16px + env(safe-area-inset
       if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'geolocation' }).then(function (r) { if (r.state === 'granted') locate(true); }, function () { /* ignore */ });
     } catch (e) { /* ignore */ }
     W.addEventListener('online', function () { load(); if (A.vp) A.vp.sync(true); });
-    if (CFG.start) { var sk = String(CFG.start), km = /:(clean|dirty)$/.exec(sk), p = byId(km ? sk.slice(0, -km[0].length) : sk); if (p) { if (km) go(p, km[1]); else H.w_pick({ dataset: { id: p.id } }); } }
+    if (CFG.start) { var sk = String(CFG.start), kb = /:(clean|dirty)?:?back$/.exec(sk), km = kb ? null : /:(clean|dirty)$/.exec(sk), p = byId(kb ? sk.slice(0, -kb[0].length) : km ? sk.slice(0, -km[0].length) : sk); if (p) { if (kb) goBack(p, kb[1] || ''); else if (km) go(p, km[1]); else H.w_pick({ dataset: { id: p.id } }); } }
   }
   A.wsl = { boot: boot, data: function () { return D; }, go: go };
 })();
