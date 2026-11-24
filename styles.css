@@ -4838,6 +4838,7 @@ td.pc-bad { color: var(--bad); font-weight: 800; } td.pc-warn { color: #b45309; 
 .pc-seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; } .pc-seg.wrap { grid-template-columns: repeat(3, 1fr); }
 .pc-seg button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 10px; min-height: 44px; font: 700 .9rem var(--font-body); color: var(--ink); cursor: pointer; }
 .pc-seg button.on { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+.pc-seg.pc-st button.st-bad.on { background: #b91c1c; border-color: #b91c1c; } .pc-seg.pc-st button.st-dirty.on { background: #b45309; border-color: #b45309; } .pc-seg.pc-st button { font-size: .82rem; padding: 0 2px; }
 .pc-tr, .pc-fd { display: grid; grid-template-columns: 2fr 80px 80px 1.3fr 1fr auto; gap: 6px; margin-bottom: 8px; align-items: center; }
 .pc-fd { grid-template-columns: 1.3fr 100px 2fr auto auto; }
 .pc-tr select, .pc-tr input, .pc-fd select, .pc-fd input { font: inherit; font-size: .86rem; border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; min-width: 0; background: var(--surface); color: var(--ink); }
